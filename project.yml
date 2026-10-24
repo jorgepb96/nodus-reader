@@ -1,0 +1,92 @@
+name: NodusReader
+options:
+  bundleIdPrefix: ai.nodus
+  deploymentTarget:
+    iOS: "18.0"
+    macOS: "15.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  developmentLanguage: en
+  xcodeVersion: "27.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+    CLANG_ENABLE_MODULES: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    CODE_SIGN_STYLE: Automatic
+
+packages:
+  DesignSystem:
+    path: Modules/DesignSystem
+  ZIPFoundation:
+    url: https://github.com/weichsel/ZIPFoundation
+    from: 0.9.19
+
+targets:
+  NodusReader:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: NodusReader
+        excludes:
+          - Info.plist
+          - PrivacyInfo.xcprivacy
+      - path: NodusReader/PrivacyInfo.xcprivacy
+        buildPhase: resources
+    dependencies:
+      - package: DesignSystem
+        product: DesignSystem
+      - package: ZIPFoundation
+        product: ZIPFoundation
+    settings:
+      base:
+        INFOPLIST_FILE: NodusReader/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: ai.nodus.reader
+        PRODUCT_NAME: Nodus Reader
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_PREVIEWS: YES
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 Nodus Research. AGPL-3.0-only."
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+    scheme:
+      testTargets:
+        - NodusReaderTests
+        - NodusReaderUITests
+
+  NodusReaderTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: NodusReaderTests
+    dependencies:
+      - target: NodusReader
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.nodus.reader.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Nodus Reader.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nodus Reader"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+  NodusReaderUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS]
+    sources:
+      - path: NodusReaderUITests
+    dependencies:
+      - target: NodusReader
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.nodus.reader.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: NodusReader

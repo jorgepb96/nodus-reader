@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings · iPhone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#C4B5FD}a:hover{color:#DDD6FE}
+svg.i{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #0E0D14; color: #F2EFE8; font-family: -apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif">
+
+  <div style="position: absolute; top: 54px; left: 12px; right: 12px; height: 44px; display: flex; align-items: center; justify-content: center">
+    <div style="display: flex; align-items: center; gap: 7px">
+      <svg viewBox="11.5 9.5 41 45" width="19" height="21" aria-hidden="true"><defs><linearGradient id="stA" gradientUnits="userSpaceOnUse" x1="14" y1="10" x2="50" y2="54"><stop offset="0" stop-color="#DDD6FE"></stop><stop offset=".45" stop-color="#A78BFA"></stop><stop offset="1" stop-color="#7C3AED"></stop></linearGradient></defs><path d="M18 48V16L46 48V16" fill="none" stroke="url(#stA)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="18" cy="16" r="6.5" fill="#DDD6FE"></circle><circle cx="18" cy="48" r="6.5" fill="#A78BFA"></circle><circle cx="46" cy="48" r="6.5" fill="#8B5CF6"></circle><circle cx="46" cy="16" r="6.5" fill="#7C3AED"></circle></svg>
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 3px; color: #C4B5FD">NODUS</span>
+      <span style="font-size: 10px; font-weight: 500; letter-spacing: 2px; color: #A8A3B5">/ READER</span>
+    </div>
+  </div>
+
+  <div style="position: absolute; top: 112px; left: 20px; right: 20px; display: flex; flex-direction: column; gap: 14px">
+    <h1 style="margin: 0; font-family: Newsreader, ui-serif, Georgia, serif; font-weight: 400; font-size: 36px; letter-spacing: -0.9px; line-height: 1.05">Settings</h1>
+
+    <span style="font-size: 10px; font-weight: 600; letter-spacing: 2px; color: #A8A3B5; margin-top: 4px">THEME</span>
+    <div role="tablist" aria-label="Theme applies to" style="height: 36px; padding: 3px; box-sizing: border-box; border-radius: 18px; background: #17151F; border: 1px solid rgba(255,255,255,0.08); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr))">
+      <button role="tab" aria-selected="false" style="border: 0; border-radius: 15px; background: transparent; color: #F2EFE8; font-size: 13px; font-family: inherit">App</button>
+      <button role="tab" aria-selected="true" style="border: 0; border-radius: 15px; background: #2A2638; color: #F2EFE8; font-size: 13px; font-weight: 600; font-family: inherit">Reader</button>
+    </div>
+
+    <div role="radiogroup" aria-label="Reader theme" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 12px; row-gap: 14px">
+      <sc-for list="{{themes}}" as="t" hint-placeholder-count="6">
+        <button role="radio" aria-checked="{{t.checked}}" style="padding: 0; border: 0; background: transparent; color: #F2EFE8; font-family: inherit; display: flex; flex-direction: column; gap: 7px; align-items: stretch">
+          <span style="position: relative; height: 64px; border-radius: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: Newsreader, Georgia, serif; font-size: 22px; background: {{t.bg}}; color: {{t.fg}}; border: {{t.border}}; box-shadow: {{t.ring}}">Aa
+            <sc-if value="{{t.sel}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 5px; right: 5px; width: 18px; height: 18px; border-radius: 9px; background: #C4B5FD; color: #16121F; display: flex; align-items: center; justify-content: center"><svg class="i" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" style="stroke-width: 3"><path d="M6 12.5l4 4 8-9"></path></svg></span></sc-if>
+          </span>
+          <span style="font-size: 12px; text-align: center">{{t.name}}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <a href="iPhone-Settings.dc.html" style="min-height: 48px; padding: 0 14px; box-sizing: border-box; border-radius: 16px; border: 1px dashed rgba(196,181,253,0.35); color: #C4B5FD; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Create custom theme</a>
+
+    <span style="font-size: 10px; font-weight: 600; letter-spacing: 2px; color: #A8A3B5; margin-top: 6px">GENERAL</span>
+    <div style="border-radius: 20px; background: #17151F; border: 1px solid rgba(255,255,255,0.08); overflow: hidden">
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+        <a href="{{r.href}}" style="min-height: 56px; padding: 0 12px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; color: #F2EFE8; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.07)">
+          <span style="flex-grow: 1; font-size: 15px">{{r.label}}</span>
+          <span style="font-size: 13px; color: #A8A3B5">{{r.value}}</span>
+          <svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="color: #A8A3B5"><path d="M9 6l6 6-6 6"></path></svg>
+        </a>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 200px; background: linear-gradient(180deg, rgba(14,13,20,0) 0%, rgba(14,13,20,0.94) 45%)"></div>
+
+  <a href="iPhone-NowPlaying.dc.html" style="position: absolute; left: 16px; right: 16px; bottom: 100px; height: 58px; box-sizing: border-box; padding: 0 8px 0 9px; border-radius: 29px; background: rgba(32,29,44,0.94); border: 1px solid rgba(196,181,253,0.14); display: flex; align-items: center; gap: 11px; color: #F2EFE8; text-decoration: none">
+    <div style="width: 40px; height: 40px; border-radius: 9px; background: #1F3A4D; flex-shrink: 0"></div>
+    <div style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1; min-width: 0">
+      <span style="font-size: 14px; font-weight: 500">Moby-Dick</span>
+      <span style="font-size: 12px; color: #A8A3B5">Ch. 1 · Heart · 1.1×</span>
+    </div>
+    <span aria-label="Play" style="width: 42px; height: 42px; border-radius: 21px; background: #C4B5FD; color: #16121F; display: flex; align-items: center; justify-content: center"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"></path></svg></span>
+  </a>
+
+  <nav style="position: absolute; left: 16px; right: 16px; bottom: 26px; height: 62px; display: flex; gap: 10px">
+    <div style="flex-grow: 1; height: 62px; box-sizing: border-box; padding: 4px; border-radius: 31px; background: rgba(32,29,44,0.94); border: 1px solid rgba(255,255,255,0.08); display: flex">
+      <a href="iPhone-ReadingNow.dc.html" style="flex: 1; border-radius: 27px; color: #F2EFE8; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10px; font-weight: 500"><svg class="i" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"></path></svg>Home</a>
+      <a href="iPhone-Library.dc.html" style="flex: 1; border-radius: 27px; color: #F2EFE8; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10px; font-weight: 500"><svg class="i" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>Library</a>
+      <a href="iPhone-Collections.dc.html" style="flex: 1; border-radius: 27px; color: #F2EFE8; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10px; font-weight: 500"><svg class="i" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Collections</a>
+      <a href="iPhone-Settings.dc.html" aria-current="page" style="flex: 1; border-radius: 27px; background: rgba(196,181,253,0.14); color: #C4B5FD; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10px; font-weight: 500"><svg class="i" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>Settings</a>
+    </div>
+    <a href="iPhone-Library.dc.html" aria-label="Search" style="width: 62px; height: 62px; flex-shrink: 0; box-sizing: border-box; border-radius: 31px; background: rgba(32,29,44,0.94); border: 1px solid rgba(255,255,255,0.08); color: #F2EFE8; display: flex; align-items: center; justify-content: center"><svg class="i" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const themes = [
+      { name: 'System', bg: 'linear-gradient(90deg, #FBF8F1 50%, #1C1A24 50%)', fg: '#7C6FA0', border: '1px solid rgba(255,255,255,0.14)' },
+      { name: 'Light', bg: '#FBF8F1', fg: '#1D1B22', border: '0', sel: true },
+      { name: 'Dark', bg: '#1C1A24', fg: '#E6E1D6', border: '1px solid rgba(255,255,255,0.12)' },
+      { name: 'OLED Black', bg: '#000000', fg: '#CFCAC0', border: '1px solid rgba(255,255,255,0.16)' },
+      { name: 'Sepia', bg: '#F2E7D3', fg: '#3B2F20', border: '0' },
+      { name: 'High Contrast', bg: '#FFFFFF', fg: '#000000', border: '2px solid #000000' }
+    ];
+    const rows = [
+      { label: 'iCloud Sync', value: 'Up to date', href: 'iPhone-Sync.dc.html' },
+      { label: 'Voices & Models', value: 'Heart', href: 'iPhone-Voices.dc.html' },
+      { label: 'Reading & Typography', value: 'Serif · 18 pt', href: 'iPhone-Settings.dc.html' },
+      { label: 'Privacy', value: '', href: 'iPhone-Settings.dc.html' },
+      { label: 'About Nodus Reader', value: '', href: 'iPhone-Settings.dc.html' }
+    ];
+    return {
+      themes: themes.map((t) => ({ ...t, sel: !!t.sel, checked: t.sel ? 'true' : 'false', ring: t.sel ? '0 0 0 2px #0E0D14, 0 0 0 4px #C4B5FD' : 'none' })),
+      rows
+    };
+  }
+}
+</script>
+</body>
+</html>

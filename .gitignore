@@ -1,0 +1,24 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcresult
+*.xcresult/
+project.xcworkspace/xcuserdata/
+NodusReader.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Swift Package Manager
+.swiftpm/
+.build/
+
+# macOS
+.DS_Store
+
+# Local screenshots / exports
+docs/screenshots/raw-*/
+docs/screenshots/raw-iphone/
+docs/screenshots/raw-ipad/
+
+# Temporary
+*.log
