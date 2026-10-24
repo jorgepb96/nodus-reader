@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import AVFoundation
 import Foundation
+import KokoroTTS
 import Observation
+import PhononTTS
 #if canImport(MediaPlayer)
 import MediaPlayer
 #endif
@@ -60,11 +62,17 @@ public struct NarrationSentence: Identifiable, Sendable {
     public let id: Int
     public let chapterIndex: Int
     public let text: String
+    /// UTF-16 range of this sentence inside the chapter text.
+    public let chapterOffset: Int
+    public let chapterLength: Int
+
+    public var chapterRange: NSRange {
+        NSRange(location: chapterOffset, length: chapterLength)
+    }
 }
 
-/// A real, local narration engine built on AVSpeechSynthesizer. It is the
-/// system-voice implementation that the modular Kokoro/Phonon engines in
-/// Milestone 6 will plug into behind the same interface.
+/// Local narration for system voices, Kokoro and Phonon. Neural audio uses an
+/// AVAudioEngine graph and the same sentence/word state as the system voice.
 @MainActor
 @Observable
 public final class PlaybackController {
@@ -72,9 +80,25 @@ public final class PlaybackController {
 
     @ObservationIgnored private let library: LibraryService
     public let voices: VoiceCatalog
+    @ObservationIgnored private let models: ModelManager
     @ObservationIgnored private let synthesizer = AVSpeechSynthesizer()
     @ObservationIgnored private let sampleSynthesizer = AVSpeechSynthesizer()
     @ObservationIgnored private let speechDelegate = SpeechDelegate()
+
+    @ObservationIgnored private let audioEngine = AVAudioEngine()
+    @ObservationIgnored private let audioPlayer = AVAudioPlayerNode()
+    @ObservationIgnored private let timePitch = AVAudioUnitTimePitch()
+    @ObservationIgnored private let neuralFormat = AVAudioFormat(standardFormatWithSampleRate: 24_000, channels: 1)
+    @ObservationIgnored private var neuralTask: Task<Void, Never>?
+    @ObservationIgnored private var neuralProgressTask: Task<Void, Never>?
+    @ObservationIgnored private var cacheTask: Task<Void, Never>?
+    @ObservationIgnored private var samplePlayer: AVAudioPlayer?
+    @ObservationIgnored private var neuralWords: [NarrationWordTiming] = []
+    @ObservationIgnored private var neuralBufferDuration: TimeInterval = 0
+    @ObservationIgnored private var neuralStartTime: TimeInterval = 0
+    @ObservationIgnored private var neuralStartOffset: Int = 0
+    @ObservationIgnored private var neuralPlaybackToken = UUID()
+    @ObservationIgnored private var neuralPaused = false
 
     public private(set) var activeBook: Book?
     public private(set) var chapters: [ExtractedChapter] = []
@@ -86,6 +110,9 @@ public final class PlaybackController {
     public private(set) var isPlayingSample = false
     public private(set) var currentWordRange: NSRange?
     public private(set) var currentWord: String?
+    public private(set) var audioCacheBytes: Int64 = 0
+    public private(set) var audioCacheProgress: Double?
+    public private(set) var isGeneratingAudioCache = false
     public var errorMessage: String?
     public var mode: ReadingMode = .listen
     public var speedMultiplier: Double = 1.0
@@ -98,15 +125,26 @@ public final class PlaybackController {
     @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
     @ObservationIgnored private var routeObserver: NSObjectProtocol?
 
-    public init(library: LibraryService, voices: VoiceCatalog) {
+    init(library: LibraryService, voices: VoiceCatalog, models: ModelManager) {
         self.library = library
         self.voices = voices
+        self.models = models
         synthesizer.delegate = speechDelegate
+        if let neuralFormat {
+            audioEngine.attach(audioPlayer)
+            audioEngine.attach(timePitch)
+            audioEngine.connect(audioPlayer, to: timePitch, format: neuralFormat)
+            audioEngine.connect(timePitch, to: audioEngine.mainMixerNode, format: neuralFormat)
+            audioEngine.prepare()
+        }
         speechDelegate.onFinish = { [weak self] in
             Task { @MainActor [weak self] in self?.handleUtteranceFinished() }
         }
         speechDelegate.onCancel = { [weak self] in
-            Task { @MainActor [weak self] in self?.isPlaying = false }
+            Task { @MainActor [weak self] in
+                guard let self, !self.isNeuralVoice else { return }
+                self.isPlaying = false
+            }
         }
         speechDelegate.onWillSpeakRange = { [weak self] range in
             Task { @MainActor [weak self] in self?.handleWillSpeak(range) }
@@ -184,6 +222,17 @@ public final class PlaybackController {
     public var chapterNumber: Int { chapterIndex + 1 }
     public var sentenceNumber: Int { currentIndex + 1 }
 
+    public var currentSentenceChapterRange: NSRange? {
+        guard sentences.indices.contains(currentIndex) else { return nil }
+        return sentences[currentIndex].chapterRange
+    }
+
+    public var currentWordChapterRange: NSRange? {
+        guard let sentence = sentences.indices.contains(currentIndex) ? sentences[currentIndex] : nil,
+              let word = currentWordRange else { return nil }
+        return NSRange(location: sentence.chapterOffset + word.location, length: word.length)
+    }
+
     public var sentenceIndexInChapter: Int {
         sentences.prefix(currentIndex).filter { $0.chapterIndex == chapterIndex }.count
     }
@@ -220,7 +269,13 @@ public final class PlaybackController {
         activeVoice?.name ?? "System voice"
     }
 
-    public var engineLabel: String { "System" }
+    public var engineLabel: String {
+        activeVoice?.engineLabel ?? "System"
+    }
+
+    public var isNeuralVoice: Bool {
+        activeVoice?.isSystem == false
+    }
 
     public var sleepRemainingLabel: String? {
         guard let end = sleepEndsAt else { return nil }
@@ -235,11 +290,23 @@ public final class PlaybackController {
     // MARK: Starting and stopping
 
     public func start(book: Book, mode: ReadingMode = .listen,
-                      startingSentence: String? = nil, wordOffset: Int = 0) async {
+                      startingSentence: String? = nil, wordOffset: Int = 0,
+                      startingChapterIndex: Int? = nil, startingChapterOffset: Int? = nil) async {
         if activeBook?.id == book.id {
+            if let startingChapterIndex, let startingChapterOffset,
+               let found = sentenceIndex(chapter: startingChapterIndex, offset: startingChapterOffset) {
+                let offset = startingChapterOffset - sentences[found].chapterOffset
+                stopAudio()
+                isPlaying = false
+                currentIndex = found
+                chapterIndex = sentences[found].chapterIndex
+                library.setReadingMode(book, mode: mode)
+                mode == .read ? pause() : speakCurrent(fromOffset: offset)
+                return
+            }
             if let startingSentence,
                let index = sentenceIndex(matching: startingSentence) {
-                synthesizer.stopSpeaking(at: .immediate)
+                stopAudio()
                 isPlaying = false
                 currentIndex = index
                 chapterIndex = sentences[index].chapterIndex
@@ -273,8 +340,14 @@ public final class PlaybackController {
             }
             let resumeChapter = min(max(book.locator.chapterIndex, 0), max(chapters.count - 1, 0))
             currentIndex = sentences.firstIndex { $0.chapterIndex == resumeChapter } ?? 0
-            if let startingSentence, let index = sentenceIndex(matching: startingSentence) {
+            var startOffset = 0
+            if let startingChapterIndex, let startingChapterOffset,
+               let found = sentenceIndex(chapter: startingChapterIndex, offset: startingChapterOffset) {
+                currentIndex = found
+                startOffset = max(0, startingChapterOffset - sentences[found].chapterOffset)
+            } else if let startingSentence, let index = sentenceIndex(matching: startingSentence) {
                 currentIndex = index
+                startOffset = wordOffset
             }
             chapterIndex = sentences[currentIndex].chapterIndex
             isLoading = false
@@ -282,7 +355,7 @@ public final class PlaybackController {
             library.open(book)
             if mode != .read {
                 configureAudioSession()
-                speakCurrent(fromOffset: startingSentence == nil ? 0 : wordOffset)
+                speakCurrent(fromOffset: startOffset)
             }
         } catch {
             isLoading = false
@@ -296,6 +369,25 @@ public final class PlaybackController {
     }
 
     public func pause() {
+        if isNeuralVoice {
+            if audioPlayer.isPlaying {
+                audioPlayer.pause()
+                neuralPaused = true
+                neuralProgressTask?.cancel()
+                neuralProgressTask = nil
+                isPlaying = false
+                saveProgress()
+                updateNowPlaying()
+            } else if isPlaying {
+                neuralTask?.cancel()
+                neuralTask = nil
+                neuralPaused = false
+                isPlaying = false
+                saveProgress()
+                updateNowPlaying()
+            }
+            return
+        }
         guard synthesizer.isSpeaking else {
             isPlaying = false
             return
@@ -310,6 +402,19 @@ public final class PlaybackController {
         guard activeBook != nil else { return }
         if mode == .read { mode = .listen }
         configureAudioSession()
+        if isNeuralVoice {
+            if neuralPaused {
+                startNeuralEngine()
+                audioPlayer.play()
+                neuralPaused = false
+                isPlaying = true
+                startNeuralProgress()
+            } else {
+                speakCurrent()
+            }
+            updateNowPlaying()
+            return
+        }
         if synthesizer.isPaused {
             synthesizer.continueSpeaking()
             isPlaying = true
@@ -328,7 +433,7 @@ public final class PlaybackController {
         sleepTask = nil
         sleepTimer = .off
         sleepEndsAt = nil
-        synthesizer.stopSpeaking(at: .immediate)
+        stopAudio()
         isPlaying = false
         resetWordState()
         if clearBook {
@@ -350,7 +455,7 @@ public final class PlaybackController {
         if mode == .read { mode = .readAndListen }
         library.setReadingMode(book, mode: mode)
         configureAudioSession()
-        synthesizer.stopSpeaking(at: .immediate)
+        stopAudio()
         isPlaying = false
         speakCurrent(fromOffset: offset)
     }
@@ -389,8 +494,17 @@ public final class PlaybackController {
 
     public func setSpeed(_ multiplier: Double) {
         speedMultiplier = multiplier
+        timePitch.rate = Float(multiplier)
         guard isPlaying else { return }
         let offset = currentWordRange?.location ?? 0
+        if isNeuralVoice {
+            neuralProgressTask?.cancel()
+            neuralProgressTask = nil
+            stopAudio()
+            isPlaying = false
+            speakCurrent(fromOffset: offset)
+            return
+        }
         synthesizer.stopSpeaking(at: .immediate)
         isPlaying = false
         speakCurrent(fromOffset: offset)
@@ -401,7 +515,7 @@ public final class PlaybackController {
         library.setPreferredVoice(book, voiceID: voice.id)
         if isPlaying {
             let offset = currentWordRange?.location ?? 0
-            synthesizer.stopSpeaking(at: .immediate)
+            stopAudio()
             isPlaying = false
             speakCurrent(fromOffset: offset)
         }
@@ -444,21 +558,131 @@ public final class PlaybackController {
 
     public func playSample(voice: VoiceCatalog.Voice) {
         if isPlaying { pause() }
+        configureAudioSession()
         sampleSynthesizer.stopSpeaking(at: .immediate)
+        samplePlayer?.stop()
         let sample = voice.language.hasPrefix("es")
             ? "Así suena esta voz al narrar tu biblioteca en Nodus Reader."
             : "This is how this voice sounds reading your library in Nodus Reader."
-        let utterance = AVSpeechUtterance(string: sample)
-        utterance.voice = AVSpeechSynthesisVoice(identifier: voice.id)
-        utterance.rate = clampRate(Float(AVSpeechUtteranceDefaultSpeechRate) * 0.95)
-        sampleSynthesizer.speak(utterance)
         isPlayingSample = true
-        Task { @MainActor [weak self] in
-            while self?.sampleSynthesizer.isSpeaking == true {
-                try? await Task.sleep(for: .milliseconds(250))
+
+        if voice.isSystem {
+            let utterance = AVSpeechUtterance(string: sample)
+            utterance.voice = AVSpeechSynthesisVoice(identifier: voice.id)
+            utterance.rate = clampRate(Float(AVSpeechUtteranceDefaultSpeechRate) * 0.95)
+            sampleSynthesizer.speak(utterance)
+            Task { @MainActor [weak self] in
+                while self?.sampleSynthesizer.isSpeaking == true {
+                    try? await Task.sleep(for: .milliseconds(250))
+                }
+                self?.isPlayingSample = false
             }
-            self?.isPlayingSample = false
+            return
         }
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let audio = try await self.synthesize(text: sample, voice: voice)
+                guard let buffer = self.makeBuffer(samples: audio.samples, sampleRate: audio.sampleRate) else {
+                    self.isPlayingSample = false
+                    return
+                }
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("nodus-sample-\(UUID().uuidString).caf")
+                let file = try AVAudioFile(forWriting: url, settings: buffer.format.settings,
+                                           commonFormat: .pcmFormatFloat32, interleaved: false)
+                try file.write(from: buffer)
+                let player = try AVAudioPlayer(contentsOf: url)
+                self.samplePlayer = player
+                player.play()
+                while player.isPlaying {
+                    try? await Task.sleep(for: .milliseconds(200))
+                }
+                try? FileManager.default.removeItem(at: url)
+                self.isPlayingSample = false
+            } catch {
+                self.isPlayingSample = false
+            }
+        }
+    }
+
+    // MARK: Audio cache
+
+    func refreshAudioCacheSize() async {
+        guard let book = activeBook else {
+            audioCacheBytes = 0
+            return
+        }
+        audioCacheBytes = await models.narrationCache.bytes(for: book.id)
+    }
+
+    func generateAudioCacheForCurrentBook() {
+        guard let book = activeBook, let voice = activeVoice, !voice.isSystem else {
+            errorMessage = "Choose a Kokoro or Phonon voice before generating audio."
+            return
+        }
+        guard !isGeneratingAudioCache else { return }
+        let allSentences = sentences
+        guard !allSentences.isEmpty else { return }
+        isGeneratingAudioCache = true
+        audioCacheProgress = 0
+        let cache = models.narrationCache
+        cacheTask = Task { [weak self] in
+            guard let self else { return }
+            var completed = 0
+            for sentence in allSentences {
+                if Task.isCancelled { break }
+                let key = cache.key(text: sentence.text, engine: voice.engineRaw, voice: voice.id)
+                let existing = await cache.load(bookID: book.id, key: key)
+                if existing == nil {
+                    do {
+                        let audio = try await self.synthesize(text: sentence.text, voice: voice)
+                        let words = AudioWordAligner.align(text: sentence.text,
+                                                           samples: audio.samples,
+                                                           sampleRate: audio.sampleRate)
+                        if let buffer = self.makeBuffer(samples: audio.samples,
+                                                        sampleRate: audio.sampleRate) {
+                            let saved = await cache.save(bookID: book.id, key: key,
+                                                         buffer: buffer, words: words)
+                            self.audioCacheBytes += saved
+                        }
+                    } catch {
+                        if !Task.isCancelled {
+                            self.errorMessage = (error as? LocalizedError)?.errorDescription
+                                ?? error.localizedDescription
+                        }
+                        break
+                    }
+                }
+                completed += 1
+                self.audioCacheProgress = Double(completed) / Double(allSentences.count)
+            }
+            self.isGeneratingAudioCache = false
+            self.audioCacheProgress = nil
+            await self.refreshAudioCacheSize()
+            self.cacheTask = nil
+        }
+    }
+
+    func cancelAudioCacheGeneration() {
+        cacheTask?.cancel()
+        cacheTask = nil
+        isGeneratingAudioCache = false
+        audioCacheProgress = nil
+    }
+
+    func deleteAudioCacheForCurrentBook() async {
+        guard let book = activeBook else { return }
+        cancelAudioCacheGeneration()
+        await models.narrationCache.deleteBook(bookID: book.id)
+        await refreshAudioCacheSize()
+    }
+
+    func deleteAllNarrationCaches() async {
+        cancelAudioCacheGeneration()
+        await models.narrationCache.deleteAll()
+        audioCacheBytes = 0
     }
 
     // MARK: Internals
@@ -466,8 +690,15 @@ public final class PlaybackController {
     private static func buildSentences(from chapters: [ExtractedChapter]) -> [NarrationSentence] {
         var result: [NarrationSentence] = []
         for (chapterIndex, chapter) in chapters.enumerated() {
-            for sentence in SentenceTokenizer.sentences(from: chapter.text) {
-                result.append(NarrationSentence(id: result.count, chapterIndex: chapterIndex, text: sentence))
+            let ns = chapter.text as NSString
+            guard ns.length > 0 else { continue }
+            ns.enumerateSubstrings(in: NSRange(location: 0, length: ns.length),
+                                   options: [.bySentences, .substringNotRequired]) { _, range, _, _ in
+                let text = ns.substring(with: range)
+                guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                result.append(NarrationSentence(id: result.count, chapterIndex: chapterIndex,
+                                                text: text, chapterOffset: range.location,
+                                                chapterLength: range.length))
             }
         }
         return result
@@ -476,7 +707,7 @@ public final class PlaybackController {
     private func move(to index: Int) {
         guard sentences.indices.contains(index) else { return }
         let wasPlaying = isPlaying
-        synthesizer.stopSpeaking(at: .immediate)
+        stopAudio()
         isPlaying = false
         currentIndex = index
         chapterIndex = sentences[index].chapterIndex
@@ -486,20 +717,32 @@ public final class PlaybackController {
 
     private func speakCurrent(fromOffset offset: Int = 0) {
         guard let book = activeBook, sentences.indices.contains(currentIndex) else { return }
-        guard let voice = voices.resolvedVoice(preferredID: book.preferredVoiceID, language: book.language) else {
+        guard let voice = voices.narrationVoice(preferredID: book.preferredVoiceID,
+                                                language: book.language) else {
+            errorMessage = "No voice is available for this document."
+            return
+        }
+        if voice.isSystem {
+            speakSystemCurrent(voice: voice, fromOffset: offset)
+        } else {
+            speakNeuralCurrent(voice: voice, fromOffset: offset)
+        }
+    }
+
+    private func speakSystemCurrent(voice: VoiceCatalog.Voice, fromOffset offset: Int) {
+        guard let resolved = voices.systemVoice(for: voice) else {
             errorMessage = "No system voice is available for this document."
             return
         }
-        let fullText = sentences[currentIndex].text
-        let clamped = min(max(offset, 0), max(fullText.count - 1, 0))
-        let start = fullText.index(fullText.startIndex, offsetBy: clamped)
-        let spokenText = String(fullText[start...])
+        let fullText = sentences[currentIndex].text as NSString
+        let clamped = min(max(offset, 0), max(fullText.length - 1, 0))
+        let spokenText = fullText.substring(from: clamped)
         guard !spokenText.isEmpty else { return }
         utteranceStartOffset = clamped
         resetWordState()
 
         let utterance = AVSpeechUtterance(string: spokenText)
-        utterance.voice = voice
+        utterance.voice = resolved
         utterance.rate = clampRate(Float(AVSpeechUtteranceDefaultSpeechRate) * Float(speedMultiplier))
         utterance.pitchMultiplier = 1
         utterance.postUtteranceDelay = 0.05
@@ -508,6 +751,268 @@ public final class PlaybackController {
         chapterIndex = sentences[currentIndex].chapterIndex
         saveProgress()
         updateNowPlaying()
+    }
+
+    // MARK: Neural playback
+
+    private func speakNeuralCurrent(voice: VoiceCatalog.Voice, fromOffset offset: Int) {
+        guard let book = activeBook, sentences.indices.contains(currentIndex) else { return }
+        stopAudio()
+        let sentence = sentences[currentIndex]
+        let text = sentence.text
+        let clamped = min(max(offset, 0), max((text as NSString).length - 1, 0))
+        resetWordState()
+        neuralPaused = false
+        neuralStartOffset = clamped
+        chapterIndex = sentence.chapterIndex
+        isPlaying = true
+        isLoading = true
+        library.setReadingMode(book, mode: mode)
+        saveProgress()
+        updateNowPlaying()
+
+        let token = UUID()
+        neuralPlaybackToken = token
+        neuralTask = Task { [weak self] in
+            guard let self else { return }
+            await self.prepareNeuralSentence(text: text, voice: voice,
+                                             chapterIndex: sentence.chapterIndex,
+                                             offset: clamped, token: token)
+        }
+    }
+
+    private func prepareNeuralSentence(text: String, voice: VoiceCatalog.Voice,
+                                       chapterIndex: Int, offset: Int, token: UUID) async {
+        guard let book = activeBook else { return }
+        let cache = models.narrationCache
+        let key = cache.key(text: text, engine: voice.engineRaw, voice: voice.id)
+        var cached = await cache.load(bookID: book.id, key: key)
+        if cached == nil {
+            do {
+                let audio = try await synthesize(text: text, voice: voice)
+                let words = AudioWordAligner.align(text: text,
+                                                   samples: audio.samples,
+                                                   sampleRate: audio.sampleRate)
+                guard let buffer = makeBuffer(samples: audio.samples,
+                                              sampleRate: audio.sampleRate) else {
+                    throw NeuralNarrationError.invalidAudio
+                }
+                let saved = await cache.save(bookID: book.id, key: key, buffer: buffer, words: words)
+                audioCacheBytes += saved
+                cached = CachedNarration(buffer: buffer, words: words,
+                                         duration: Double(audio.samples.count) / max(audio.sampleRate, 1))
+            } catch {
+                if !Task.isCancelled {
+                    isPlaying = false
+                    isLoading = false
+                    errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                }
+                return
+            }
+        }
+        guard !Task.isCancelled, token == neuralPlaybackToken, let cached else { return }
+        guard cached.buffer.frameLength > 0 else {
+            errorMessage = "The neural engine returned no audio."
+            isPlaying = false
+            isLoading = false
+            return
+        }
+        neuralWords = cached.words
+        neuralBufferDuration = cached.duration
+        let start = startTime(for: offset, in: cached)
+        neuralStartTime = start
+        let buffer = slice(cached.buffer, from: start) ?? cached.buffer
+        neuralBufferDuration = Double(buffer.frameLength) / cached.buffer.format.sampleRate
+
+        configureAudioSession()
+        startNeuralEngine()
+        audioPlayer.stop()
+        audioPlayer.scheduleBuffer(buffer, at: nil, options: []) { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.neuralSentenceFinished(token: token)
+            }
+        }
+        audioPlayer.play()
+        isPlaying = true
+        isLoading = false
+        neuralPaused = false
+        if let word = currentWordTiming(for: offset) {
+            setNeuralWord(word)
+        }
+        startNeuralProgress()
+        updateNowPlaying()
+    }
+
+    private struct NeuralAudio {
+        var samples: [Float]
+        var sampleRate: Double
+    }
+
+    private func synthesize(text: String, voice: VoiceCatalog.Voice) async throws -> NeuralAudio {
+        switch voice.engineRaw {
+        case "kokoro":
+            if models.kokoroEngine() == nil {
+                await models.loadInstalledEnginesIfNeeded()
+            }
+            guard let engine = models.kokoroEngine() else {
+                throw NeuralNarrationError.engineNotLoaded("Kokoro")
+            }
+            let raw = voice.id.hasPrefix("kokoro:")
+                ? String(voice.id.dropFirst("kokoro:".count))
+                : voice.id
+            let voiceID = KokoroVoiceID(raw)
+            let audio = try await engine.synthesize(text, voice: voiceID)
+            return NeuralAudio(samples: audio.samples, sampleRate: Double(audio.sampleRate))
+        case "phonon":
+            if models.phononEngine() == nil {
+                await models.loadInstalledEnginesIfNeeded()
+            }
+            guard let engine = models.phononEngine() else {
+                throw NeuralNarrationError.engineNotLoaded("Phonon")
+            }
+            let name = voice.id.hasPrefix("phonon:")
+                ? String(voice.id.dropFirst("phonon:".count))
+                : voice.id
+            if engine.voice != name, engine.voices.contains(name) {
+                try await engine.setVoice(name)
+            }
+            let samples = try await engine.synthesize(text)
+            return NeuralAudio(samples: samples, sampleRate: Phonon.sampleRate)
+        default:
+            throw NeuralNarrationError.engineNotLoaded(voice.engineRaw)
+        }
+    }
+
+    private func makeBuffer(samples: [Float], sampleRate: Double) -> AVAudioPCMBuffer? {
+        guard let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1),
+              let buffer = AVAudioPCMBuffer(pcmFormat: format,
+                                            frameCapacity: AVAudioFrameCount(samples.count)),
+              let channel = buffer.floatChannelData?[0] else { return nil }
+        buffer.frameLength = AVAudioFrameCount(samples.count)
+        samples.withUnsafeBufferPointer { pointer in
+            if let base = pointer.baseAddress {
+                channel.update(from: base, count: samples.count)
+            }
+        }
+        return buffer
+    }
+
+    private func slice(_ buffer: AVAudioPCMBuffer, from time: TimeInterval) -> AVAudioPCMBuffer? {
+        guard time > 0, let channel = buffer.floatChannelData?[0] else { return nil }
+        let sampleRate = buffer.format.sampleRate
+        let start = min(Int(time * sampleRate), Int(buffer.frameLength))
+        let remaining = Int(buffer.frameLength) - start
+        guard remaining > 0,
+              let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1),
+              let sliced = AVAudioPCMBuffer(pcmFormat: format,
+                                            frameCapacity: AVAudioFrameCount(remaining)),
+              let destination = sliced.floatChannelData?[0] else { return nil }
+        destination.update(from: channel.advanced(by: start), count: remaining)
+        sliced.frameLength = AVAudioFrameCount(remaining)
+        return sliced
+    }
+
+    private func startTime(for offset: Int, in cached: CachedNarration) -> TimeInterval {
+        guard offset > 0 else { return 0 }
+        if let word = cached.words.last(where: { $0.location <= offset }) {
+            return word.start
+        }
+        let ns = currentSentenceText() as NSString
+        let fraction = Double(min(offset, ns.length)) / Double(max(ns.length, 1))
+        return cached.duration * fraction
+    }
+
+    private func currentWordTiming(for offset: Int) -> NarrationWordTiming? {
+        neuralWords.last { $0.location <= offset }
+    }
+
+    private func currentSentenceText() -> String {
+        guard sentences.indices.contains(currentIndex) else { return "" }
+        return sentences[currentIndex].text
+    }
+
+    private func startNeuralEngine() {
+        guard neuralFormat != nil else { return }
+        if !audioEngine.isRunning {
+            try? audioEngine.start()
+        }
+    }
+
+    private func startNeuralProgress() {
+        neuralProgressTask?.cancel()
+        neuralProgressTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(60))
+                guard !Task.isCancelled, let self else { return }
+                self.tickNeuralProgress()
+            }
+        }
+    }
+
+    private func tickNeuralProgress() {
+        guard isPlaying, !neuralPaused,
+              let nodeTime = audioPlayer.lastRenderTime,
+              let playerTime = audioPlayer.playerTime(forNodeTime: nodeTime) else { return }
+        let elapsed = Double(playerTime.sampleTime) / max(playerTime.sampleRate, 1)
+        let absolute = neuralStartTime + elapsed
+        if let word = neuralWords.last(where: { $0.start <= absolute }) {
+            setNeuralWord(word)
+        }
+    }
+
+    private func setNeuralWord(_ word: NarrationWordTiming) {
+        let range = NSRange(location: word.location, length: word.length)
+        guard range != currentWordRange else { return }
+        currentWordRange = range
+        let text = currentSentenceText() as NSString
+        if NSMaxRange(range) <= text.length {
+            currentWord = text.substring(with: range)
+        }
+    }
+
+    private func neuralSentenceFinished(token: UUID) {
+        guard token == neuralPlaybackToken, isPlaying, !neuralPaused else { return }
+        neuralProgressTask?.cancel()
+        neuralProgressTask = nil
+        guard currentIndex + 1 < sentences.count else {
+            finishBook()
+            return
+        }
+        let nextIndex = currentIndex + 1
+        let nextChapter = sentences[nextIndex].chapterIndex
+        if sleepTimer == .endOfChapter, nextChapter != chapterIndex {
+            pause()
+            sleepTimer = .off
+            return
+        }
+        currentIndex = nextIndex
+        chapterIndex = nextChapter
+        resetWordState()
+        saveProgress()
+        speakCurrent()
+    }
+
+    private func stopAudio() {
+        synthesizer.stopSpeaking(at: .immediate)
+        neuralTask?.cancel()
+        neuralTask = nil
+        neuralProgressTask?.cancel()
+        neuralProgressTask = nil
+        audioPlayer.stop()
+        neuralPaused = false
+        neuralWords = []
+        neuralBufferDuration = 0
+        neuralStartTime = 0
+        neuralPlaybackToken = UUID()
+    }
+
+    private func sentenceIndex(chapter: Int, offset: Int) -> Int? {
+        let target = max(0, offset)
+        return sentences.firstIndex { sentence in
+            sentence.chapterIndex == chapter &&
+            target >= sentence.chapterOffset &&
+            target < sentence.chapterOffset + max(sentence.chapterLength, 1)
+        }
     }
 
     private func sentenceIndex(matching text: String) -> Int? {
@@ -526,7 +1031,7 @@ public final class PlaybackController {
     }
 
     private func handleWillSpeak(_ range: NSRange) {
-        guard sentences.indices.contains(currentIndex) else { return }
+        guard !isNeuralVoice, sentences.indices.contains(currentIndex) else { return }
         let sentence = sentences[currentIndex].text as NSString
         let absolute = NSRange(location: utteranceStartOffset + range.location, length: range.length)
         guard absolute.location >= 0,
@@ -545,7 +1050,7 @@ public final class PlaybackController {
     }
 
     private func handleUtteranceFinished() {
-        guard isPlaying else { return }
+        guard isPlaying, !isNeuralVoice else { return }
         guard currentIndex + 1 < sentences.count else {
             finishBook()
             return
@@ -671,5 +1176,19 @@ private final class SpeechDelegate: NSObject, AVSpeechSynthesizerDelegate {
                            willSpeakRangeOfSpeechString characterRange: NSRange,
                            utterance: AVSpeechUtterance) {
         onWillSpeakRange?(characterRange)
+    }
+}
+
+enum NeuralNarrationError: LocalizedError {
+    case engineNotLoaded(String)
+    case invalidAudio
+
+    var errorDescription: String? {
+        switch self {
+        case .engineNotLoaded(let engine):
+            "The \(engine) engine is not loaded. Open Settings → Voices & Models and install it again."
+        case .invalidAudio:
+            "The neural engine returned audio in an unsupported format."
+        }
     }
 }

@@ -8,6 +8,7 @@ struct SettingsView: View {
     @Environment(ThemeManager.self) private var themeManager
     @Environment(VoiceCatalog.self) private var voices
     @Environment(ReaderPreferences.self) private var preferences
+    @Environment(CloudSyncService.self) private var sync
     @Environment(\.nodusPalette) private var palette
 
     @State private var target: ThemeTarget = .reader
@@ -74,7 +75,7 @@ struct SettingsView: View {
                     NavigationLink {
                         StorageSettingsView()
                     } label: {
-                        SettingsRow(title: "iCloud & Storage", value: "Local only")
+                        SettingsRow(title: "iCloud & Storage", value: syncValue)
                     }
                     divider
                     NavigationLink {
@@ -135,6 +136,11 @@ struct SettingsView: View {
         Divider()
             .overlay(palette.line)
             .padding(.leading, 14)
+    }
+
+    private var syncValue: String {
+        guard sync.isEnabled else { return "Off" }
+        return sync.isAvailable ? "On" : "Unavailable"
     }
 }
 

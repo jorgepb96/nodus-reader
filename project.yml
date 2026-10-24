@@ -24,9 +24,14 @@ settings:
 packages:
   DesignSystem:
     path: Modules/DesignSystem
+  PhononTTS:
+    path: Modules/PhononTTS
   ZIPFoundation:
     url: https://github.com/weichsel/ZIPFoundation
     from: 0.9.19
+  KokoroCoreML:
+    url: https://github.com/mattmireles/kokoro-coreml.git
+    revision: 43ef0237306c3c1ea0138098c9f92930ae4cf3f7
 
 targets:
   NodusReader:
@@ -39,14 +44,22 @@ targets:
           - PrivacyInfo.xcprivacy
       - path: NodusReader/PrivacyInfo.xcprivacy
         buildPhase: resources
+      - path: Shared
     dependencies:
       - package: DesignSystem
         product: DesignSystem
       - package: ZIPFoundation
         product: ZIPFoundation
+      - package: PhononTTS
+        product: ptts
+      - package: KokoroCoreML
+        product: KokoroTTS
+      - target: NodusReaderShare
+        platformFilter: iOS
     settings:
       base:
         INFOPLIST_FILE: NodusReader/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Config/NodusReader.entitlements
         PRODUCT_BUNDLE_IDENTIFIER: ai.nodus.reader
         PRODUCT_NAME: Nodus Reader
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -55,6 +68,8 @@ targets:
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
         TARGETED_DEVICE_FAMILY: "1,2"
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+        "EXCLUDED_ARCHS[sdk=macosx*]": x86_64
         INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 Nodus Research. AGPL-3.0-only."
       configs:
         Debug:
@@ -77,6 +92,27 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Nodus Reader.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nodus Reader"
         BUNDLE_LOADER: "$(TEST_HOST)"
+
+  NodusReaderShare:
+    type: app-extension
+    supportedDestinations: [iOS]
+    sources:
+      - path: NodusShareExtension
+        excludes:
+          - Info.plist
+      - path: Shared
+    dependencies:
+      - package: DesignSystem
+        product: DesignSystem
+    settings:
+      base:
+        INFOPLIST_FILE: NodusShareExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Config/NodusReaderShare.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: ai.nodus.reader.share
+        PRODUCT_NAME: NodusReaderShare
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
 
   NodusReaderUITests:
     type: bundle.ui-testing

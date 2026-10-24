@@ -5,15 +5,34 @@ import SwiftUI
 
 struct StorageSettingsView: View {
     @Environment(LibraryService.self) private var library
+    @Environment(CloudSyncService.self) private var sync
+    @Environment(ModelManager.self) private var models
+    @Environment(PlaybackController.self) private var playback
     @Environment(\.nodusPalette) private var palette
     @Query private var books: [Book]
 
     @State private var booksBytes: Int64 = 0
     @State private var coversBytes: Int64 = 0
-    @State private var syncEnabled = false
 
     private var totalBytes: Int64 {
-        booksBytes + coversBytes
+        booksBytes + coversBytes + modelBytes + audioBytes
+    }
+
+    private var modelBytes: Int64 {
+        models.storage.kokoroBytes + models.storage.phononBytes
+    }
+
+    private var audioBytes: Int64 {
+        models.storage.narrationCacheBytes
+    }
+
+    private var cloudOnlyBooks: [Book] {
+        books.filter { $0.downloadState == .cloudOnly }
+            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
+
+    private var downloadedCount: Int {
+        books.filter { $0.downloadState != .cloudOnly }.count
     }
 
     var body: some View {
@@ -21,41 +40,18 @@ struct StorageSettingsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 6) {
                     DisplayTitle("iCloud")
-                    Text("One library across your devices will be powered by your personal iCloud account. This build is local-only.")
+                    Text("One library across your devices through your personal iCloud account. Nodus Reader never runs a sync server.")
                         .font(.footnote)
                         .foregroundStyle(palette.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                VStack(spacing: 0) {
-                    Toggle("Sync with iCloud", isOn: $syncEnabled)
-                        .disabled(true)
-                        .padding(.horizontal, 14)
-                        .frame(minHeight: 56)
-                    Divider().overlay(palette.line)
-                    HStack(alignment: .top, spacing: 12) {
-                        Image(systemName: "lock.shield")
-                            .font(.system(size: 18))
-                            .foregroundStyle(palette.accent)
-                            .frame(width: 36, height: 36)
-                            .background(palette.selection, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Local library")
-                                .font(.subheadline.weight(.medium))
-                            Text("Your documents, metadata and reading progress are stored in this app's container on this device.")
-                                .font(.caption)
-                                .foregroundStyle(palette.muted)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Text("iCloud sync is planned for a later milestone. Nothing is uploaded by this build.")
-                                .font(.caption)
-                                .foregroundStyle(palette.muted)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(.top, 2)
-                        }
-                    }
-                    .padding(14)
+                syncCard
+
+                statusCard
+                if sync.isEnabled, !cloudOnlyBooks.isEmpty {
+                    cloudLibraryCard
                 }
-                .panelCard(radius: 20)
 
                 Eyebrow("On this \(DeviceInfo.platformName)")
                     .padding(.top, 2)
@@ -65,7 +61,7 @@ struct StorageSettingsView: View {
                         Text("Downloaded books")
                             .font(.body)
                         Spacer()
-                        Text("\(books.count)")
+                        Text("\(downloadedCount) of \(books.count)")
                             .font(.footnote)
                             .foregroundStyle(palette.muted)
                     }
@@ -89,8 +85,21 @@ struct StorageSettingsView: View {
                                    text: "Covers \(ByteCountFormatter.string(fromByteCount: coversBytes, countStyle: .file))")
                         }
                         HStack(spacing: 14) {
-                            legend(color: palette.muted, text: "Voices 0 MB")
-                            legend(color: palette.muted.opacity(0.6), text: "Caches 0 MB")
+                            legend(color: palette.violet.opacity(0.7),
+                                   text: "Models \(ByteCountFormatter.string(fromByteCount: modelBytes, countStyle: .file))")
+                            legend(color: palette.muted.opacity(0.6),
+                                   text: "Audio cache \(ByteCountFormatter.string(fromByteCount: audioBytes, countStyle: .file))")
+                        }
+                        if audioBytes > 0 {
+                            Button("Delete generated audio") {
+                                Task {
+                                    await playback.deleteAllNarrationCaches()
+                                    await models.refreshStorage()
+                                }
+                            }
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(palette.accent)
+                            .padding(.top, 2)
                         }
                     }
                     .padding(14)
@@ -101,12 +110,51 @@ struct StorageSettingsView: View {
                     Image(systemName: "lock")
                         .font(.system(size: 15))
                         .foregroundStyle(palette.muted)
-                    Text("Voices, neural models, generated audio and OCR caches stay on this device and are never uploaded.")
+                    Text("Metadata and annotations sync through your private CloudKit database. Original documents and covers live in your iCloud Drive. Voices, neural models, generated audio, OCR caches and credentials stay on this device and are never uploaded.")
                         .font(.caption)
                         .foregroundStyle(palette.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, 4)
+
+                DisclosureGroup {
+                    VStack(alignment: .leading, spacing: 8) {
+                        troubleshootingLine(
+                            "Sync is optional and off by default. Turning it off leaves every local file untouched."
+                        )
+                        troubleshootingLine(
+                            "If iCloud is unavailable, check that you are signed in to iCloud and that iCloud Drive is enabled for Nodus Reader."
+                        )
+                        troubleshootingLine(
+                            "A document uploaded on another device may take a moment to appear. Pull to refresh or tap Check Again."
+                        )
+                        troubleshootingLine(
+                            "Removing a download keeps the book in your library and in iCloud. Delete from Library removes it everywhere."
+                        )
+                        if !sync.availabilityMessage.isEmpty {
+                            Text(sync.availabilityMessage)
+                                .font(.caption)
+                                .foregroundStyle(palette.muted)
+                                .padding(.top, 2)
+                        }
+                        Button("Check Again") {
+                            Task {
+                                await sync.refreshAvailability()
+                                await sync.syncNow()
+                            }
+                        }
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(palette.accent)
+                        .padding(.top, 4)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } label: {
+                    Text("Troubleshooting")
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(palette.text)
+                }
+                .padding(14)
+                .panelCard(radius: 16)
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -119,19 +167,241 @@ struct StorageSettingsView: View {
         .toolbar {
             ToolbarItem(placement: .principal) { BrandToolbar() }
         }
-        .task {
-            booksBytes = library.localLibraryBytes
-            coversBytes = library.localCoversBytes
+        .refreshable {
+            await sync.refreshAvailability()
+            await sync.syncNow()
+            await models.refreshStorage()
+            refreshStorage()
         }
+        .task {
+            refreshStorage()
+            await models.refreshStorage()
+            await sync.refreshAvailability()
+        }
+    }
+
+    private var syncCard: some View {
+        VStack(spacing: 0) {
+            Toggle(isOn: Binding(
+                get: { sync.isEnabled },
+                set: { value in
+                    Task { await sync.setEnabled(value) }
+                }
+            )) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sync with iCloud")
+                        .font(.body)
+                    Text(sync.isEnabled
+                         ? "Your library is kept in step across your devices."
+                         : "Your library stays on this device.")
+                        .font(.caption2)
+                        .foregroundStyle(palette.muted)
+                }
+            }
+            .tint(palette.accent)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 64)
+
+            Divider().overlay(palette.line)
+
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: sync.isEnabled ? "icloud.fill" : "lock.shield")
+                    .font(.system(size: 18))
+                    .foregroundStyle(palette.accent)
+                    .frame(width: 36, height: 36)
+                    .background(palette.selection, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(sync.isEnabled ? "Private iCloud library" : "Local library")
+                        .font(.subheadline.weight(.medium))
+                    Text(sync.isEnabled
+                         ? "CloudKit stores titles, collections, bookmarks, notes and reading positions. iCloud Drive stores the documents and covers."
+                         : "Your documents, metadata and reading progress are stored in this app's container on this device.")
+                        .font(.caption)
+                        .foregroundStyle(palette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if !sync.isEnabled {
+                        Text("You can enable sync at any time. Local data is never deleted when you do.")
+                            .font(.caption)
+                            .foregroundStyle(palette.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 2)
+                    }
+                }
+            }
+            .padding(14)
+        }
+        .panelCard(radius: 20)
+    }
+
+    private var statusCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: statusSymbol)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(statusColor)
+                    .frame(width: 32, height: 32)
+                    .background(statusColor.opacity(0.12), in: Circle())
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(sync.status.title)
+                        .font(.subheadline.weight(.semibold))
+                    if let detail = sync.status.detail {
+                        Text(detail)
+                            .font(.caption)
+                            .foregroundStyle(palette.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: 8)
+                if sync.isSyncing {
+                    ProgressView().controlSize(.small)
+                }
+            }
+
+            if sync.isAvailable {
+                HStack(spacing: 14) {
+                    Text(sync.lastSyncText)
+                        .font(.caption2)
+                        .foregroundStyle(palette.muted)
+                    if sync.pendingCount > 0 {
+                        Text("· \(sync.pendingCount) waiting")
+                            .font(.caption2)
+                            .foregroundStyle(palette.muted)
+                    }
+                }
+            } else if !sync.availabilityMessage.isEmpty {
+                Text(sync.availabilityMessage)
+                    .font(.caption)
+                    .foregroundStyle(palette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if sync.isAvailable {
+                Button {
+                    Task { await sync.syncNow() }
+                } label: {
+                    Text(sync.isSyncing ? "Syncing…" : "Sync Now")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(palette.accent)
+                }
+                .buttonStyle(.plain)
+                .disabled(sync.isSyncing)
+            }
+
+            if let error = sync.downloadError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(palette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard(radius: 18)
+    }
+
+    private var cloudLibraryCard: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("In iCloud only")
+                        .font(.body)
+                    Text("\(cloudOnlyBooks.count) \(cloudOnlyBooks.count == 1 ? "book is" : "books are") not downloaded on this \(DeviceInfo.platformName).")
+                        .font(.caption2)
+                        .foregroundStyle(palette.muted)
+                }
+                Spacer()
+                Button("Download All") {
+                    Task { await sync.downloadAllCloudOnlyBooks() }
+                }
+                .font(.footnote.weight(.semibold))
+                .buttonStyle(.plain)
+                .foregroundStyle(palette.accent)
+            }
+            .padding(14)
+
+            Divider().overlay(palette.line)
+
+            ForEach(cloudOnlyBooks) { book in
+                HStack(spacing: 10) {
+                    Image(systemName: "icloud.and.arrow.down")
+                        .font(.system(size: 14))
+                        .foregroundStyle(palette.accent)
+                        .frame(width: 26)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(book.title)
+                            .font(.footnote.weight(.medium))
+                            .lineLimit(1)
+                        Text("\(book.format.badge) · \(ByteCountFormatter.string(fromByteCount: book.fileSize, countStyle: .file))")
+                            .font(.caption2)
+                            .foregroundStyle(palette.muted)
+                    }
+                    Spacer(minLength: 8)
+                    if sync.downloadingBookIDs.contains(book.id) {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Button("Download") {
+                            Task { await sync.download(book) }
+                        }
+                        .font(.caption.weight(.semibold))
+                        .buttonStyle(.plain)
+                        .foregroundStyle(palette.accent)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .frame(minHeight: 48)
+                Divider().overlay(palette.line).padding(.leading, 50)
+            }
+        }
+        .panelCard(radius: 20)
+    }
+
+    private var statusSymbol: String {
+        switch sync.status {
+        case .disabled: "icloud.slash"
+        case .unavailable: "exclamationmark.icloud"
+        case .syncing: "arrow.triangle.2.circlepath.icloud"
+        case .upToDate: "checkmark.icloud"
+        case .offline: "icloud.slash"
+        case .error: "xmark.icloud"
+        }
+    }
+
+    private var statusColor: Color {
+        switch sync.status {
+        case .disabled, .offline: palette.muted
+        case .unavailable, .error: palette.accent
+        case .syncing, .upToDate: palette.accent
+        }
+    }
+
+    private func troubleshootingLine(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 7) {
+            Circle().fill(palette.muted.opacity(0.5)).frame(width: 4, height: 4).padding(.top, 6)
+            Text(text)
+                .font(.caption)
+                .foregroundStyle(palette.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func refreshStorage() {
+        booksBytes = library.localLibraryBytes
+        coversBytes = library.localCoversBytes
     }
 
     private var storageBar: some View {
         GeometryReader { proxy in
             let total = max(totalBytes, 1)
-            let bookWidth = proxy.size.width * CGFloat(booksBytes) / CGFloat(total)
+            let width = proxy.size.width
             HStack(spacing: 0) {
-                Rectangle().fill(palette.accent).frame(width: bookWidth)
+                Rectangle().fill(palette.accent)
+                    .frame(width: width * CGFloat(booksBytes) / CGFloat(total))
                 Rectangle().fill(palette.violet)
+                    .frame(width: width * CGFloat(coversBytes) / CGFloat(total))
+                Rectangle().fill(palette.violet.opacity(0.45))
+                    .frame(width: width * CGFloat(modelBytes) / CGFloat(total))
+                Rectangle().fill(palette.muted.opacity(0.55))
+                    .frame(width: width * CGFloat(audioBytes) / CGFloat(total))
             }
             .clipShape(Capsule())
         }
@@ -177,7 +447,7 @@ struct PrivacyView: View {
                 )
                 section(
                     title: "Your iCloud",
-                    body: "When sync arrives it will use your personal iCloud account through Apple frameworks. Nodus Research will not operate a sync server. Sync will remain optional."
+                    body: "Sync is optional and off by default. When you enable it, Nodus Reader uses your personal iCloud account through CloudKit and iCloud Drive. Nodus Research does not operate a sync server and cannot read your library."
                 )
                 section(
                     title: "Device-local data",

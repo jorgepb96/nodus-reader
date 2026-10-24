@@ -46,15 +46,53 @@ No changes were made to the original Nodus Drift repository.
 - **Copyright:** © 2017 Thomas Zoechling.
 - The MIT permission notice is the same as above, with Thomas Zoechling's copyright line.
 
+## Kokoro Core ML SDK and G2P
+
+- **Component:** `KokoroTTS`, `KokoroPipeline`, `KokoroG2P`.
+- **Source:** <https://github.com/mattmireles/kokoro-coreml>, pinned at revision
+  `43ef0237306c3c1ea0138098c9f92930ae4cf3f7`; product `KokoroTTS`.
+- **Licence:** Apache-2.0.
+- **Model:** Kokoro-82M by hexgrad, Apache-2.0; hosted starter bundle from
+  `mattmireles/kokoro-coreml` at revision `034f7741bf938fd6b4b9c75c22bc72cd795f908a`.
+- **G2P:** MisakiSwift (`https://github.com/mattmireles/MisakiSwift`, Apache-2.0),
+  MLX Swift (`https://github.com/ml-explore/mlx-swift`, MIT), FluidAudio-derived
+  English G2P (Apache-2.0) and the NemoTextProcessing binary
+  (`https://github.com/FluidInference/text-processing-rs` v0.3.1, Apache-2.0).
+- **Use:** downloaded and executed only on the user's device. The app never bundles
+  weights. The pinned SDK verifies the hosted manifest and every file hash.
+
+## Phonon Core ML SDK
+
+- **Component:** `ptts` Swift package / `PhononTTS` / `PhononCore.xcframework`.
+- **Source:** <https://github.com/gradium-ai/xn-ptts> release v0.4.1. The package is
+  vendored under `Modules/PhononTTS/`; it declares Apache-2.0 and also includes an
+  MIT licence for parts of the runtime.
+- **Model:** Phonon 31M English by Gradium, Apache-2.0, from
+  `https://huggingface.co/gradium/phonon-31m-en`. Core ML bundle
+  `https://huggingface.co/mosiah/phonon-31m-en-coreml`, pinned revision
+  `0a2596e9154f0340005b6445514fdd57f7bc9ddb`.
+- **Voices:** `https://huggingface.co/gradium/phonon-voices`, Apache-2.0.
+- **Use:** downloaded on request, verified by `bundle.json` size and SHA-256, and run
+  locally. No weights are distributed in this repository.
+- **Not used:** the gated, CC BY-NC 4.0 Phonon 40M Spanish and multilingual
+  checkpoints. They have no published Core ML bundle and the app does not offer them
+  for download.
+
 ## Apple frameworks
 
-The app links Apple SDK frameworks including SwiftUI, Foundation, SwiftData, PDFKit, AVFoundation, MediaPlayer, PhotosUI, CoreGraphics, CoreText, ImageIO, Vision (planned) and UniformTypeIdentifiers. These frameworks are provided with the Apple SDK and are not redistributed as part of this repository. Their use is governed by the Apple Developer Program License Agreement and the Xcode licence.
+The app links Apple SDK frameworks including SwiftUI, Foundation, SwiftData, CloudKit, PDFKit, AVFoundation, MediaPlayer, PhotosUI, CoreGraphics, CoreText, ImageIO, Vision and UniformTypeIdentifiers. These frameworks are provided with the Apple SDK and are not redistributed as part of this repository. Their use is governed by the Apple Developer Program License Agreement and the Xcode licence.
 
 System voices used by `AVSpeechSynthesizer` are part of the operating system and are not distributed by Nodus Reader.
 
 ## Nodus narration sync design reference
 
-The pause-detection and pause-to-word alignment design documented in `docs/NARRATION_SYNC.md` was reviewed from the Nodus repository (`shared/narrationSync.ts`, `electron/tts/fragmentSync.ts`, `electron/tts/wavConcat.ts`), which is AGPL-3.0-only. No Nodus source code has been copied into Nodus Reader yet. If the algorithm is ported, the ported files will retain the AGPL-3.0-only SPDX header and an attribution to the Nodus project will be added here.
+The pause-detection and pause-to-word alignment design documented in
+`docs/NARRATION_SYNC.md` was reviewed from the Nodus repository
+(`shared/narrationSync.ts`, `electron/tts/fragmentSync.ts`,
+`electron/tts/wavConcat.ts`), which is AGPL-3.0-only. The Swift implementation is an
+independent reimplementation of the published algorithm; no Nodus source file was
+copied. If code is ported later, it must retain the AGPL-3.0-only SPDX header and an
+attribution here.
 
 ## Design assets
 

@@ -21,6 +21,7 @@ struct PlayerView: View {
                 scrubber
                 transport
                 controlGrid
+                audioCacheCard
                 footer
             }
             .frame(maxWidth: 520)
@@ -42,6 +43,72 @@ struct PlayerView: View {
                 errorOverlay(error)
             }
         }
+        .task { await playback.refreshAudioCacheSize() }
+    }
+
+    private var audioCacheCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: "internaldrive")
+                    .font(.system(size: 15))
+                    .foregroundStyle(palette.accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Offline audio")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text(playback.audioCacheBytes > 0
+                         ? "\(ByteCountFormatter.string(fromByteCount: playback.audioCacheBytes, countStyle: .file)) cached on this device"
+                         : "Cached sentence by sentence as you listen")
+                        .font(.system(size: 11))
+                        .foregroundStyle(palette.muted)
+                }
+                Spacer()
+            }
+
+            if playback.isGeneratingAudioCache {
+                ProgressView(value: playback.audioCacheProgress ?? 0)
+                    .tint(palette.accent)
+                HStack {
+                    Text("Generating every sentence with \(playback.activeVoice?.name ?? "this voice")…")
+                        .font(.system(size: 10))
+                        .foregroundStyle(palette.muted)
+                    Spacer()
+                    Button("Cancel") { playback.cancelAudioCacheGeneration() }
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(palette.accent)
+                }
+            } else {
+                HStack(spacing: 16) {
+                    Button("Generate for this book") {
+                        playback.generateAudioCacheForCurrentBook()
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(playback.isNeuralVoice ? palette.accent : palette.muted)
+                    .disabled(!playback.isNeuralVoice)
+
+                    if playback.audioCacheBytes > 0 {
+                        Button("Delete cache") {
+                            Task { await playback.deleteAudioCacheForCurrentBook() }
+                        }
+                        .font(.system(size: 11))
+                        .foregroundStyle(palette.muted)
+                    }
+                    Spacer()
+                }
+                if !playback.isNeuralVoice {
+                    Text("Choose a Kokoro or Phonon voice to generate offline audio. System voices never write audio files.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(palette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(12)
+        .background(Color(hex: 0x1A1724), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(palette.line, lineWidth: 1)
+        )
+        .padding(.top, 12)
     }
 
     private var playerBackground: some View {
@@ -469,6 +536,7 @@ struct VoicePickerSheet: View {
         return voices.voices.filter {
             $0.name.localizedCaseInsensitiveContains(trimmed)
                 || $0.languageName.localizedCaseInsensitiveContains(trimmed)
+                || $0.engineLabel.localizedCaseInsensitiveContains(trimmed)
         }
     }
 
@@ -492,7 +560,7 @@ struct VoicePickerSheet: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(voice.name)
                                             .foregroundStyle(palette.text)
-                                        Text("System · \(voice.qualityLabel)")
+                                        Text("\(voice.engineLabel) · \(voice.qualityLabel)")
                                             .font(.caption)
                                             .foregroundStyle(palette.muted)
                                     }

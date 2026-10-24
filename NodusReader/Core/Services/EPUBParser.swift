@@ -6,7 +6,7 @@ import ZIPFoundation
 ///
 /// It extracts package metadata, the cover image, spine text and navigation
 /// labels. Layout, CFI and rendering belong to the EPUBReader module in
-/// Milestone 3; this parser deliberately has no opinion about presentation.
+/// The parser deliberately has no opinion about presentation.
 public enum EPUBParser {
     public static func parse(url: URL, fallbackTitle: String) throws -> DocumentExtraction {
         guard let archive = Archive(url: url, accessMode: .read) else {

@@ -99,8 +99,8 @@ public enum ReadingMode: String, Codable, CaseIterable, Identifiable, Sendable {
 
 // MARK: - Locator
 
-/// A small, format-independent reading locator. EPUB CFI and exact PDF
-/// destinations will replace the body of this type in Milestone 3.
+/// A small, format-independent reading locator. Paginated text stores a chapter
+/// and page fraction; PDFs also store a page index. EPUB CFI is future work.
 public struct ReadingLocator: Codable, Equatable, Sendable {
     public var chapterIndex: Int
     public var scrollFraction: Double
@@ -148,6 +148,12 @@ public final class Book {
 
     @Relationship(deleteRule: .cascade, inverse: \CollectionMembership.book)
     public var memberships: [CollectionMembership] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \Bookmark.book)
+    public var bookmarks: [Bookmark] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \Annotation.book)
+    public var annotations: [Annotation] = []
 
     public init(id: UUID = UUID(),
                 title: String,
@@ -389,5 +395,195 @@ public enum LibrarySort: String, CaseIterable, Identifiable, Sendable {
         case .title: "Title"
         case .author: "Author"
         }
+    }
+}
+
+
+// MARK: - Bookmarks and annotations
+
+public enum AnnotationColor: String, Codable, CaseIterable, Identifiable, Sendable {
+    case yellow
+    case green
+    case blue
+    case pink
+    case purple
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .yellow: "Yellow"
+        case .green: "Green"
+        case .blue: "Blue"
+        case .pink: "Pink"
+        case .purple: "Purple"
+        }
+    }
+
+    /// Fill used behind selected text. Kept as a raw value so the model layer
+    /// does not depend on the design system.
+    public var fillHex: UInt32 {
+        switch self {
+        case .yellow: 0xFBEFC0
+        case .green: 0xCFE6C2
+        case .blue: 0xC7DDF5
+        case .pink: 0xF6D0DF
+        case .purple: 0xE2D3F2
+        }
+    }
+
+    public var underlineHex: UInt32 {
+        switch self {
+        case .yellow: 0xD4A72C
+        case .green: 0x6FA35A
+        case .blue: 0x4D7EA8
+        case .pink: 0xB35D7E
+        case .purple: 0x7C3AED
+        }
+    }
+}
+
+@Model
+public final class Bookmark {
+    @Attribute(.unique) public var id: UUID = UUID()
+    public var book: Book?
+    public var title: String = ""
+    public var chapterTitle: String = ""
+    public var locatorJSON: String = ""
+    public var createdAt: Date = Date()
+    public var updatedAt: Date = Date()
+
+    public init(id: UUID = UUID(), book: Book, title: String, chapterTitle: String = "",
+                locator: ReadingLocator = ReadingLocator()) {
+        self.id = id
+        self.book = book
+        self.title = title
+        self.chapterTitle = chapterTitle
+        self.createdAt = Date()
+        self.updatedAt = Date()
+        self.locator = locator
+    }
+
+    public var locator: ReadingLocator {
+        get {
+            guard let data = locatorJSON.data(using: .utf8),
+                  let value = try? JSONDecoder().decode(ReadingLocator.self, from: data) else {
+                return ReadingLocator()
+            }
+            return value
+        }
+        set {
+            if let data = try? JSONEncoder().encode(newValue), let string = String(data: data, encoding: .utf8) {
+                locatorJSON = string
+            }
+        }
+    }
+
+    public func touch() { updatedAt = Date() }
+}
+
+@Model
+public final class Annotation {
+    @Attribute(.unique) public var id: UUID = UUID()
+    public var book: Book?
+    public var chapterIndex: Int = 0
+    public var startOffset: Int = 0
+    public var endOffset: Int = 0
+    public var quote: String = ""
+    public var note: String = ""
+    public var colorRaw: String = AnnotationColor.yellow.rawValue
+    public var createdAt: Date = Date()
+    public var updatedAt: Date = Date()
+
+    public init(id: UUID = UUID(), book: Book, chapterIndex: Int, startOffset: Int, endOffset: Int,
+                quote: String, note: String = "", color: AnnotationColor = .yellow) {
+        self.id = id
+        self.book = book
+        self.chapterIndex = chapterIndex
+        self.startOffset = startOffset
+        self.endOffset = endOffset
+        self.quote = quote
+        self.note = note
+        self.colorRaw = color.rawValue
+        self.createdAt = Date()
+        self.updatedAt = Date()
+    }
+
+    public var color: AnnotationColor {
+        get { AnnotationColor(rawValue: colorRaw) ?? .yellow }
+        set { colorRaw = newValue.rawValue }
+    }
+
+    public var isNote: Bool { !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+    public func touch() { updatedAt = Date() }
+}
+
+// MARK: - Sync outbox
+
+public enum SyncEntityType: String, Codable, CaseIterable, Sendable {
+    case book
+    case collection
+    case membership
+    case bookmark
+    case annotation
+    case readingPosition
+    case theme
+    case preference
+}
+
+public enum SyncOperationKind: String, Codable, Sendable {
+    case upsert
+    case delete
+}
+
+@Model
+public final class SyncOutboxEntry {
+    @Attribute(.unique) public var id: UUID = UUID()
+    public var entityTypeRaw: String = SyncEntityType.book.rawValue
+    public var entityID: UUID = UUID()
+    public var operationRaw: String = SyncOperationKind.upsert.rawValue
+    public var payloadJSON: String = ""
+    public var createdAt: Date = Date()
+    public var attempts: Int = 0
+    public var nextAttemptAt: Date = Date()
+    public var lastError: String = ""
+
+    public init(id: UUID = UUID(), entityType: SyncEntityType, entityID: UUID,
+                operation: SyncOperationKind, payloadJSON: String = "") {
+        self.id = id
+        self.entityTypeRaw = entityType.rawValue
+        self.entityID = entityID
+        self.operationRaw = operation.rawValue
+        self.payloadJSON = payloadJSON
+        self.createdAt = Date()
+        self.nextAttemptAt = Date()
+    }
+
+    public var entityType: SyncEntityType {
+        SyncEntityType(rawValue: entityTypeRaw) ?? .book
+    }
+
+    public var operation: SyncOperationKind {
+        SyncOperationKind(rawValue: operationRaw) ?? .upsert
+    }
+}
+
+@Model
+public final class SyncTombstone {
+    @Attribute(.unique) public var id: UUID = UUID()
+    public var entityTypeRaw: String = SyncEntityType.book.rawValue
+    public var entityID: UUID = UUID()
+    public var deletedAt: Date = Date()
+
+    public init(id: UUID = UUID(), entityType: SyncEntityType, entityID: UUID) {
+        self.id = id
+        self.entityTypeRaw = entityType.rawValue
+        self.entityID = entityID
+        self.deletedAt = Date()
+    }
+
+    public var entityType: SyncEntityType {
+        SyncEntityType(rawValue: entityTypeRaw) ?? .book
     }
 }

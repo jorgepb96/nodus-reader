@@ -7,7 +7,10 @@ struct RootView: View {
     @Environment(ImportCoordinator.self) private var imports
     @Environment(VoiceCatalog.self) private var voices
     @Environment(LibraryService.self) private var library
+    @Environment(CloudSyncService.self) private var sync
+    @Environment(ModelManager.self) private var models
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
 
     private var palette: NodusPalette {
         theme.palette(colorScheme: colorScheme)
@@ -56,6 +59,18 @@ struct RootView: View {
                     await SampleLibrary.seedIfNeeded(library: library)
                 }
                 #endif
+                await imports.consumeSharedInbox()
+                await sync.start()
+                await models.loadInstalledEnginesIfNeeded()
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
+                    Task {
+                        await imports.consumeSharedInbox()
+                        await sync.refreshAvailability()
+                        await sync.syncNow()
+                    }
+                }
             }
     }
 

@@ -1,103 +1,139 @@
-# iCloud Sync Architecture (Milestone 4)
+# iCloud Sync
 
-**Status: not implemented.** The app currently reports “Local only”. This document is the implementation plan required before the Sync screen can claim otherwise. It must not be presented as a working feature until real-device testing passes.
+Status: **implemented behind an opt-in switch; signed real-device validation still required.**
 
-## Goals
+The app uses only the user's personal iCloud account. There is no Nodus account and
+no Nodus sync server. Sync is off by default; the library works fully without it.
 
-- One library across the user's iPhone, iPad and Mac, using only the user's personal iCloud account.
-- No Nodus account or Nodus server.
-- Fully usable offline; changes queue locally and sync later.
-- Never sync models, voices, generated audio, OCR caches or credentials.
-- Preserve data on conflicts whenever possible.
-- Keep “Remove Download” and “Delete from Library” semantically separate.
+## Container and entitlements
+
+| Item | Value |
+|---|---|
+| CloudKit container | `iCloud.ai.nodus.reader` |
+| iCloud Documents container | `iCloud.ai.nodus.reader` |
+| App Group (Share Extension) | `group.ai.nodus.reader` |
+| Entitlements file | `Config/NodusReader.entitlements` |
+| CloudKit services | `CloudKit`, `CloudDocuments` |
+
+`project.yml` points the app at that entitlements file. Xcode automatic signing must
+have a team that owns the container, and the CloudKit record types must be deployed
+from the development environment to production before a release.
+
+An unsigned or simulator build has no iCloud entitlement. `CloudSyncService` detects
+that (no ubiquity identity token) and reports iCloud as unavailable instead of
+constructing `CKContainer`, which would terminate the process. This is deliberate.
 
 ## Split of responsibilities
 
 | Data | Mechanism |
 |---|---|
-| Bibliographic metadata, collections, memberships, bookmarks, annotations, highlights, reading progress, custom themes, per-book preferences | CloudKit private database |
-| Original EPUB/PDF/document files, custom covers, generated cover fallbacks that cannot be regenerated | iCloud Documents container |
-| Fast local queries and offline operation | SwiftData local replica |
-| Models, voices, embeddings, TTS audio, OCR caches, temp files, Hugging Face token, hardware-specific settings | Local only, excluded |
+| Book metadata, reading position, status, favourite, per-book voice/mode | CloudKit private database, `Book` record |
+| Collections and explicit memberships | `Collection`, `Membership` records |
+| Bookmarks and annotations (highlights/notes) | `Bookmark`, `Annotation` records |
+| Deletions | `Tombstone` records, never inferred from absence |
+| Original documents and covers | iCloud Documents |
+| Fast local queries and offline state | SwiftData local replica |
+| Models, voices, TTS audio, OCR caches, temp files, Hugging Face token | Local only; never uploaded |
 
-iCloud Documents paths:
+iCloud Documents layout:
 
 ```
 Documents/NodusReader/
-  Books/<content-hash>/<original-file-name>
-  Covers/<book-id>/<cover-file-name>
+  Books/<book-id>/<original-file-name>
+  Covers/<book-id>.jpg
 ```
 
-The iCloud container should be `iCloud.ai.nodus.reader` (to be created in the Developer portal; identifier may change). Metadata-then-file ordering must be allowed: a book can exist in CloudKit before its asset finishes downloading.
+The metadata can arrive before the file. A book whose file is not local is marked
+`cloudOnly`; opening it triggers a download.
 
-## CloudKit record types
+## Implementation map
 
-All records use stable string/UUID identifiers and a `schemaVersion`, `updatedAt` and `updatedByDevice` field.
+| Piece | File |
+|---|---|
+| Durable outbox and tombstones | `NodusReader/Core/Sync/SyncJournal.swift` |
+| SwiftData models | `NodusReader/Core/Persistence/Models.swift` |
+| CloudKit + downloads | `NodusReader/Core/Sync/CloudSyncService.swift` |
+| iCloud Documents | `NodusReader/Core/Sync/ICloudDocumentStore.swift` |
+| Settings UI | `NodusReader/Features/Settings/StorageSettingsView.swift` |
+| Share staging | `Shared/SharedImportInbox.swift` |
 
-- `Book`: id, contentHash, title, author, language, published, description, format, fileRelativePath, fileSize, coverRelativePath, addedAt, status, favorite, readingMode, preferredVoiceID.
-- `ReadingPosition`: bookID, locator JSON, progress, sourceDevice, updatedAt.
-- `Collection`: id, name, parentID, sortIndex, createdAt.
-- `Membership`: id (bookID+collectionID stable ID), bookID, collectionID, sortIndex, addedAt.
-- `Bookmark`: id, bookID, locator JSON, title, createdAt.
-- `Annotation`: id, bookID, locator/range, kind, color, text, note, createdAt, updatedAt.
-- `CustomTheme`: id, name, colours, createdAt.
-- `ReaderPreference`: per-book typography JSON.
-- `Tombstone`: entity type, entity id, deletedAt, deletedByDevice. Deletions must be explicit and durable.
+### Outbox
 
-Sets (for example the collection membership of a book) are represented by explicit `Membership` records, not by mutating a single collection record. This avoids last-writer-wins destroying memberships added on another device.
+`SyncJournal` observes `ModelContext.didSave` and enqueues an upsert for every
+inserted/updated `Book`, `LibraryCollection`, `CollectionMembership`, `Bookmark` or
+`Annotation`. It deduplicates by entity type + id. Deleting through `LibraryService`
+records a durable `SyncTombstone` and a `delete` outbox entry with the book's file
+name for remote-file cleanup. The queue survives launches because it is stored in
+SwiftData.
 
-## Sync engine
+### Push, pull and conflicts
 
-1. All local mutations go through `LibraryService`, which writes SwiftData in a transaction and appends an entry to a durable outbox table (`SyncOperation`): create/update/delete + entity ID + payload + attempt count.
-2. A `CloudSyncEngine` observes connectivity (`NWPathMonitor`) and CloudKit account status. It drains the outbox in order with exponential backoff and jitter.
-3. Remote changes are fetched with `CKFetchRecordZoneChangesOperation` using a persisted server change token. Each record is mapped to SwiftData by stable ID.
-4. Files are uploaded to iCloud Documents only after metadata is committed. Downloads resume through `NSMetadataQuery`/UbiquitousItem APIs and update `downloadState`.
-5. Use a private custom zone with server change tokens; never sync the SQLite file as a document.
-6. Persist `lastSuccessfulSync` locally and display it honestly; never claim “instant”.
+1. `CloudSyncService.start()` refreshes account/iCloud Drive availability.
+2. When enabled, it creates the custom zone `NodusReader` if needed.
+3. `pushOutbox()` drains entries in creation order. Each entry becomes a CloudKit
+   record with an `updatedAt`.
+4. A remote tombstone that is newer than the local record deletes the local record.
+   A newer remote record is applied instead of being overwritten by a stale queued
+   edit.
+5. `pullChanges()` uses `recordZoneChanges(inZoneWith:since:)` with a persisted
+   server change token. An expired token resets and refetches.
+6. Upserts and tombstones applied from the server suspend outbox recording, save on
+   the main actor and update the UI.
+7. Retries use exponential backoff (5 s doubling to 300 s) and store the last error
+   on the outbox entry.
 
-## Conflict resolution
+Scalar conflicts are last-writer-wins by `updatedAt`. Memberships, bookmarks and
+annotations are individual records, so an edit on one device does not erase
+unrelated rows. A recoverable side-by-side conflict UI for simultaneous annotation
+edits is still future work.
 
-- Scalar fields: compare `updatedAt`; newer wins per field where the model allows it. For collections and book metadata, merge non-conflicting fields instead of replacing the whole object.
-- Sets/memberships: union by stable ID; deletions are tombstones, not absences.
-- Reading positions: last writer wins, but preserve `sourceDevice` and `updatedAt` so the UI can say where the position came from. Never regress a position backwards solely because a device synced later with an older position.
-- Annotations: merge by ID; if both edit the same note, keep both versions in a conflict field and surface a recoverable conflict UI rather than silently discarding.
-- Tombstones are retained for a bounded period (for example 90 days) and prevent an offline device from resurrecting deleted content.
-- A device that was offline during a deletion must not overwrite the tombstone on reconnect.
+### Files
 
-## Download states and deletion
+- Uploading a `Book` after a successful metadata push copies the local document and
+  cover into the ubiquity container. iCloud Drive performs the transfer.
+- Downloading uses a scoped `NSMetadataQuery` to find the item even when only a
+  hidden `.icloud` placeholder exists, calls
+  `startDownloadingUbiquitousItem(at:)`, polls `ubiquitousItemDownloadingStatus`
+  (up to two minutes), then copies the document and cover into the app container.
+- `Remove Download` first checks that an iCloud copy really exists, then removes only
+  the local file and marks the book `cloudOnly`. The cover and metadata remain.
+- `Delete from Library…` creates a tombstone, deletes local files and, when the
+  deletion is pushed, removes the iCloud Drive files and CloudKit records.
 
-- `downloaded`: metadata and file are local.
-- `cloudOnly`: metadata is local, file is an iCloud placeholder; opening triggers a download.
-- `downloading`: progress shown everywhere the book appears.
-- `Remove Download`: delete the local document copy, keep metadata, annotations and the iCloud copy. Never delete the document from other devices.
-- `Delete from Library…`: destructive confirmation, creates a tombstone and deletes metadata, local file, cover and (after sync) remote records. Must not be confused with cache deletion.
-- Disabling iCloud must not silently delete local files. Explain the choice and require confirmation if anything will be removed.
+## UI behaviour
 
-## UI
+- **Settings → iCloud & Storage** shows the opt-in toggle, real account status, last
+  successful sync, pending queue count, a Sync Now action, local storage, cloud-only
+  books with individual downloads, Download All, troubleshooting and the privacy
+  explanation.
+- Books show an iCloud-download badge when their document is not local.
+- The context menu exposes `Remove Download` and `Download from iCloud` only when
+  sync is enabled.
+- Opening a cloud-only book attempts a download and shows the real failure reason if
+  it cannot complete.
+- Disabling sync does not delete local files, metadata or iCloud data.
 
-- `iPhone-Sync.dc.html` / `iPhone-Sync.png` define the screen: toggle, status, last successful sync, downloaded books, download all/selected, storage bars, local-only note and troubleshooting.
-- Add per-book context menu items once sync exists. Until then, keep only “Delete from Library…” and do not show a non-functional “Remove Download”.
-- Surface queue state (“Changes queued while offline”) and per-book download failure with retry.
-- Distinguish storage: Books (iCloud files), Voices/Models (local only), Caches (local only).
+## Setup for a signed build
 
-## Testing
+1. Create the `iCloud.ai.nodus.reader` container in the Apple Developer portal.
+2. Enable iCloud → CloudKit and iCloud Documents for the app identifier.
+3. Enable the `group.ai.nodus.reader` App Group for both the app and the Share
+   Extension.
+4. Select the team in Xcode and let automatic signing update the provisioning
+   profiles.
+5. Run on two signed devices with the same iCloud account.
+6. Open the CloudKit Dashboard, verify the development record types, then deploy the
+   schema to production.
 
-1. Unit-test outbox ordering, retry/backoff, tombstone handling, merge rules and locator conflict resolution with a simulated sync service.
-2. Integration-test with a real CloudKit development container: import on device A, verify metadata appears on B before the file, then verify download and opening.
-3. Two real devices signed into the same iCloud account:
-   - import on iPhone, sync, open on Mac;
-   - read to chapter 5 on Mac, verify the iPhone Continue card says “from your Mac”;
-   - edit the same annotation offline on both, reconnect, verify both versions are recoverable;
-   - delete a book on one device, verify it disappears on the other but a stale offline device cannot resurrect it;
-   - Remove Download on one device, verify others keep their downloads.
-4. Network-loss tests: airplane mode during import, during annotation creation and during file download; verify the queue drains when connectivity returns.
-5. Verify models/voices/caches are absent from the CloudKit container and iCloud Documents.
-6. Do not mark sync as validated only because mock tests pass; real-device verification is required.
+## Validation checklist
 
-## Open decisions
-
-- Zone granularity (one library zone vs per-book zones) and CloudKit asset limits.
-- Whether large PDFs are always iCloud Documents or optionally chunked assets.
-- Conflict UI scope for simultaneous annotation edits.
-- Migration from a local-only library to iCloud when the user first enables sync.
-- Apple Developer container/bundle identifiers and App Store review implications.
+- [ ] Import on iPhone; verify metadata on Mac before the file finishes.
+- [ ] Open the cloud-only book on Mac and confirm the document downloads.
+- [ ] Read ahead on Mac; verify the iPhone Continue card shows the Mac as source and
+      does not regress.
+- [ ] Create bookmarks/notes on both devices; verify they merge by id.
+- [ ] Delete on one device; verify the other removes it and a stale offline device
+      cannot resurrect it.
+- [ ] `Remove Download` on one device; verify other devices keep their downloads.
+- [ ] Airplane mode during import/annotation/download; verify the queue drains later.
+- [ ] Confirm models, audio and OCR caches are absent from CloudKit and iCloud Drive.

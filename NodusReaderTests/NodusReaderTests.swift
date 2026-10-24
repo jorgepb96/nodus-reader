@@ -195,6 +195,76 @@ func themeManagerPersistsBuiltInAndCustomThemes() throws {
     #expect(persisted.readerTheme(colorScheme: .light).name == "Night Ink")
 }
 
+// MARK: - Narration alignment
+
+@Test
+func wordAlignmentMatchesTextRangesAndMonotonicTimes() throws {
+    let text = "One two three four."
+    let sampleRate = 1_000.0
+    var samples = [Float](repeating: 0, count: 1_300)
+    for range in [100..<300, 350..<600, 650..<900, 950..<1_200] {
+        for index in range { samples[index] = 0.5 }
+    }
+
+    let timings = AudioWordAligner.align(text: text, samples: samples, sampleRate: sampleRate)
+    #expect(timings.count == 4)
+    #expect(timings.map(\.location) == [0, 4, 8, 14])
+    #expect(timings[0].start == 0)
+    #expect(abs(timings[3].end - 1.3) < 0.001)
+    for index in 1..<timings.count {
+        #expect(timings[index].start >= timings[index - 1].start)
+    }
+    #expect(timings.allSatisfy { $0.end > $0.start })
+}
+
+@Test
+func wordAlignmentHandlesOneWordAndSilence() {
+    let one = AudioWordAligner.align(text: "Hello", samples: [0.2, 0.3, 0.1], sampleRate: 100)
+    #expect(one.count == 1)
+    #expect(one[0].end > 0)
+
+    let silent = AudioWordAligner.align(text: "No signal here", samples: [0, 0, 0], sampleRate: 100)
+    #expect(silent.count == 3)
+    #expect(silent.allSatisfy { $0.end > $0.start })
+}
+
+// MARK: - Sync journal
+
+@Test @MainActor
+func syncJournalBuildsDurableOutboxAndTombstones() throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let journal = SyncJournal(context: fixture.container.mainContext)
+    fixture.service.syncJournal = journal
+
+    let book = Book(
+        title: "Synced", author: "Test", format: .txt,
+        fileName: "synced.txt", relativePath: "Library/synced.txt",
+        fileSize: 12, contentHash: UUID().uuidString
+    )
+    fixture.container.mainContext.insert(book)
+    try fixture.container.mainContext.save()
+
+    journal.enqueueAll()
+    let entries = try fixture.container.mainContext.fetch(FetchDescriptor<SyncOutboxEntry>())
+    #expect(entries.count == 1)
+    #expect(entries.first?.entityType == .book)
+    #expect(entries.first?.operation == .upsert)
+
+    journal.recordDelete(.book, id: book.id)
+    let tombstones = try fixture.container.mainContext.fetch(FetchDescriptor<SyncTombstone>())
+    #expect(tombstones.count == 1)
+    #expect(tombstones.first?.entityID == book.id)
+    let afterDelete = try fixture.container.mainContext.fetch(FetchDescriptor<SyncOutboxEntry>())
+    #expect(afterDelete.count == 1)
+    #expect(afterDelete.first?.operation == .delete)
+
+    // Deleting the same entity twice must not duplicate tombstones or outbox rows.
+    journal.recordDelete(.book, id: book.id)
+    #expect(try fixture.container.mainContext.fetchCount(FetchDescriptor<SyncTombstone>()) == 1)
+    #expect(journal.pendingCount() == 1)
+}
+
 // MARK: - Utilities
 
 @Test

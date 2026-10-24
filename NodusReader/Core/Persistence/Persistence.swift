@@ -9,12 +9,16 @@ public enum Persistence {
     public static let schema = Schema([
         Book.self,
         LibraryCollection.self,
-        CollectionMembership.self
+        CollectionMembership.self,
+        Bookmark.self,
+        Annotation.self,
+        SyncOutboxEntry.self,
+        SyncTombstone.self
     ])
 
-    /// The app store lives in Application Support. Synchronisation in
-    /// Milestone 4 layers CloudKit metadata and iCloud Documents on top of this
-    /// local replica; the SwiftData file itself is never treated as a document.
+    /// The app store lives in Application Support. CloudKit metadata and
+    /// iCloud Documents are layered on top of this local replica; the SwiftData
+    /// file itself is never treated as a document.
     public static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
         let configuration = ModelConfiguration(
             "NodusReader",

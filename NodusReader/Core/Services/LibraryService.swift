@@ -61,6 +61,9 @@ public struct ImportProgress: Sendable {
 public final class LibraryService {
     public let context: ModelContext
     public let fileStore: FileStore
+    weak var syncJournal: SyncJournal?
+    var narrationCache: NarrationAudioCache?
+    @ObservationIgnored private var publishedCollectionsFingerprint: String?
 
     public init(context: ModelContext, fileStore: FileStore = .shared) {
         self.context = context
@@ -301,6 +304,107 @@ public final class LibraryService {
         save()
     }
 
+    // MARK: Bookmarks
+
+    public func bookmarks(for book: Book) -> [Bookmark] {
+        book.bookmarks.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    @discardableResult
+    public func addBookmark(_ book: Book, title: String, chapterTitle: String,
+                            locator: ReadingLocator) -> Bookmark {
+        let bookmark = Bookmark(book: book, title: title, chapterTitle: chapterTitle, locator: locator)
+        context.insert(bookmark)
+        save()
+        return bookmark
+    }
+
+    public func renameBookmark(_ bookmark: Bookmark, title: String) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        bookmark.title = trimmed
+        bookmark.touch()
+        save()
+    }
+
+    public func deleteBookmark(_ bookmark: Bookmark) {
+        syncJournal?.recordDelete(.bookmark, id: bookmark.id)
+        context.delete(bookmark)
+        save()
+    }
+
+    // MARK: Annotations
+
+    public func annotations(for book: Book) -> [Annotation] {
+        book.annotations.sorted {
+            $0.chapterIndex == $1.chapterIndex
+                ? $0.startOffset < $1.startOffset
+                : $0.chapterIndex < $1.chapterIndex
+        }
+    }
+
+    public func annotations(for book: Book, chapterIndex: Int) -> [Annotation] {
+        book.annotations
+            .filter { $0.chapterIndex == chapterIndex }
+            .sorted { $0.startOffset < $1.startOffset }
+    }
+
+    @discardableResult
+    public func addAnnotation(_ book: Book, chapterIndex: Int, startOffset: Int, endOffset: Int,
+                              quote: String, color: AnnotationColor = .yellow,
+                              note: String = "") -> Annotation {
+        let annotation = Annotation(book: book, chapterIndex: chapterIndex,
+                                    startOffset: startOffset, endOffset: endOffset,
+                                    quote: quote, note: note, color: color)
+        context.insert(annotation)
+        save()
+        return annotation
+    }
+
+    public func updateAnnotation(_ annotation: Annotation, note: String? = nil,
+                                 color: AnnotationColor? = nil) {
+        if let note { annotation.note = note }
+        if let color { annotation.color = color }
+        annotation.touch()
+        save()
+    }
+
+    public func deleteAnnotation(_ annotation: Annotation) {
+        syncJournal?.recordDelete(.annotation, id: annotation.id)
+        context.delete(annotation)
+        save()
+    }
+
+    public func exportNotes(for book: Book) -> String {
+        var lines: [String] = ["# \(book.title)", "", "by \(book.displayAuthor)", ""]
+        let bookmarks = bookmarks(for: book)
+        if !bookmarks.isEmpty {
+            lines.append("## Bookmarks")
+            lines.append("")
+            for bookmark in bookmarks {
+                let chapter = bookmark.chapterTitle.isEmpty ? "Chapter \(bookmark.locator.chapterIndex + 1)" : bookmark.chapterTitle
+                lines.append("- **\(bookmark.title)** — \(chapter)")
+            }
+            lines.append("")
+        }
+        let notes = annotations(for: book)
+        if !notes.isEmpty {
+            lines.append("## Highlights and notes")
+            lines.append("")
+            for annotation in notes {
+                lines.append("> \(annotation.quote)")
+                lines.append("")
+                if annotation.isNote {
+                    lines.append(annotation.note)
+                    lines.append("")
+                }
+                lines.append("— Chapter \(annotation.chapterIndex + 1)")
+                lines.append("")
+            }
+        }
+        return lines.joined(separator: "\n")
+    }
+
     // MARK: Metadata
 
     public func updateMetadata(_ book: Book, title: String, author: String,
@@ -361,17 +465,38 @@ public final class LibraryService {
     }
 
     public func delete(_ book: Book) {
+        let bookID = book.id
+        recordDeletions(for: book)
         fileStore.removeBookFiles(book)
         context.delete(book)
         save()
+        if let cache = narrationCache {
+            Task.detached { await cache.deleteBook(bookID: bookID) }
+        }
     }
 
     public func deleteBooks(_ books: [Book]) {
+        let ids = books.map(\.id)
         for book in books {
+            recordDeletions(for: book)
             fileStore.removeBookFiles(book)
             context.delete(book)
         }
         save()
+        if let cache = narrationCache {
+            Task.detached {
+                for id in ids { await cache.deleteBook(bookID: id) }
+            }
+        }
+    }
+
+    private func recordDeletions(for book: Book) {
+        let payload = (try? JSONSerialization.data(withJSONObject: ["fileName": book.fileName]))
+            .flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        syncJournal?.recordDelete(.book, id: book.id, payloadJSON: payload)
+        for membership in book.memberships { syncJournal?.recordDelete(.membership, id: membership.id) }
+        for bookmark in book.bookmarks { syncJournal?.recordDelete(.bookmark, id: bookmark.id) }
+        for annotation in book.annotations { syncJournal?.recordDelete(.annotation, id: annotation.id) }
     }
 
     // MARK: Collections
@@ -431,7 +556,9 @@ public final class LibraryService {
         let memberships = allMemberships().filter { membership in
             membership.collection.map { ids.contains($0.id) } ?? false
         }
+        for id in ids { syncJournal?.recordDelete(.collection, id: id) }
         for membership in memberships {
+            syncJournal?.recordDelete(.membership, id: membership.id)
             context.delete(membership)
         }
         for item in allCollections() where ids.contains(item.id) {
@@ -489,6 +616,7 @@ public final class LibraryService {
     public func remove(_ book: Book, from collection: LibraryCollection) {
         let matches = collection.memberships.filter { $0.book?.id == book.id }
         for membership in matches {
+            syncJournal?.recordDelete(.membership, id: membership.id)
             context.delete(membership)
         }
         save()
@@ -561,8 +689,22 @@ public final class LibraryService {
     public func save() {
         do {
             try context.save()
+            publishSharedCollectionsIfNeeded()
         } catch {
             assertionFailure("SwiftData save failed: \(error)")
         }
+    }
+
+    /// Keeps the Share Extension's collection picker in sync without opening the
+    /// SwiftData store from a second process.
+    private func publishSharedCollectionsIfNeeded() {
+        let flat = flattenedCollections()
+        let fingerprint = flat.map { "\($0.collection.id.uuidString)|\($0.depth)|\($0.collection.name)" }
+            .joined(separator: "\n")
+        guard fingerprint != publishedCollectionsFingerprint else { return }
+        publishedCollectionsFingerprint = fingerprint
+        SharedImportInbox.publishCollections(flat.map {
+            SharedCollection(id: $0.collection.id, name: $0.collection.name, depth: $0.depth)
+        })
     }
 }

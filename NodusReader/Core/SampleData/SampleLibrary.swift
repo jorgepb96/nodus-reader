@@ -262,17 +262,15 @@ enum SampleLibrary {
         for page in 0..<pageCount {
             context.beginPDFPage(nil)
             context.saveGState()
-            context.translateBy(x: 0, y: mediaBox.height)
-            context.scaleBy(x: 1, y: -1)
 
-            draw(text: spec.title, at: CGPoint(x: 72, y: 64),
+            draw(text: spec.title, at: CGPoint(x: 72, y: mediaBox.height - 64),
                  font: CTFontCreateWithName("Georgia" as CFString, 20, nil),
                  in: context, width: 468)
-            draw(text: spec.author, at: CGPoint(x: 72, y: 92),
+            draw(text: spec.author, at: CGPoint(x: 72, y: mediaBox.height - 92),
                  font: CTFontCreateWithName("Georgia-Italic" as CFString, 11, nil),
                  in: context, width: 468)
 
-            let bodyRect = CGRect(x: 72, y: 120, width: 468, height: 590)
+            let bodyRect = CGRect(x: 72, y: 120, width: 468, height: 560)
             let text = page < pages.count ? pages[page].1 : "Sample page."
             let attributed = NSAttributedString(
                 string: text,
@@ -286,7 +284,7 @@ enum SampleLibrary {
             let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: 0, length: 0), path, nil)
             CTFrameDraw(frame, context)
 
-            draw(text: "\(page + 1)", at: CGPoint(x: 296, y: 742),
+            draw(text: "\(page + 1)", at: CGPoint(x: 296, y: 30),
                  font: CTFontCreateWithName("Georgia" as CFString, 10, nil),
                  in: context, width: 20)
 

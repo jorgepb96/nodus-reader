@@ -81,6 +81,48 @@ public final class ImportCoordinator {
         Task { await importFiles(files) }
     }
 
+    /// Imports documents staged by the Share Extension in the App Group.
+    /// Each item is removed only after the app has attempted it; the app never
+    /// parses inside the extension.
+    public func consumeSharedInbox() async {
+        guard !isImporting,
+              let root = SharedImportInbox.defaultRoot else { return }
+        let pending = SharedImportInbox.pending(root: root)
+        guard !pending.isEmpty else { return }
+
+        isImporting = true
+        progress = ImportProgress(current: 0, total: pending.count, fileName: "")
+        defer {
+            isImporting = false
+            progress = nil
+        }
+
+        var imported = 0
+        var failures: [ImportFailure] = []
+        for (index, item) in pending.enumerated() {
+            progress = ImportProgress(current: index + 1, total: pending.count, fileName: item.fileName)
+            guard let url = SharedImportInbox.fileURL(for: item, root: root) else {
+                SharedImportInbox.remove(item, root: root)
+                continue
+            }
+            let result = await library.importFiles([url], into: item.collectionID) { [weak self] update in
+                self?.progress = update
+            }
+            imported += result.imported.count + result.duplicates.count
+            failures.append(contentsOf: result.failures)
+            SharedImportInbox.remove(item, root: root)
+        }
+
+        if !failures.isEmpty {
+            alert = LibraryAlert(
+                title: imported > 0 ? "Shared documents imported with errors" : "Shared documents could not be imported",
+                message: failures.map { "\($0.fileName): \($0.message)" }.joined(separator: "\n")
+            )
+        } else if imported > 0 {
+            show(toast: imported == 1 ? "1 shared document imported" : "\(imported) shared documents imported")
+        }
+    }
+
     private func show(toast message: String) {
         toastTask?.cancel()
         toast = message

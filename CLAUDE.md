@@ -19,10 +19,13 @@ Non-negotiable principles:
 ## Stack
 
 - Swift, SwiftUI, UIKit/AppKit where native behaviour requires it.
-- SwiftData for the local replica; CloudKit and iCloud Documents planned for Milestone 4.
-- PDFKit, Vision (planned), AVFoundation, Core ML/ONNX (planned).
+- SwiftData for the local replica; CloudKit and iCloud Documents for optional sync.
+- PDFKit, Vision OCR, AVFoundation, Core ML (KokoroTTS and `ptts`/Phonon).
 - `Modules/DesignSystem` is a local Swift package for tokens, marks and shared components.
-- ZIPFoundation (MIT) is the only third-party runtime dependency, used for EPUB container parsing.
+- `Modules/PhononTTS` vendors the Apache-2.0/MIT `ptts` 0.4.1 Swift package; its
+  `PhononCore` binary target is downloaded from the pinned GitHub release.
+- Swift packages: ZIPFoundation (MIT), KokoroTTS (Apache-2.0, pinned revision),
+  MisakiSwift/MLX (Apache-2.0/MIT) and NemoTextProcessing (Apache-2.0 binary).
 
 ## Commands
 
@@ -44,9 +47,12 @@ xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader \
 
 - `NodusReader/App` — scene, environment objects, adaptive roots (phone, iPad, Mac), navigation.
 - `NodusReader/Core/Persistence` — SwiftData models and container.
-- `NodusReader/Core/Services` — file store, import, EPUB parser, text extraction, covers, library, voices, playback.
-- `NodusReader/Features` — Home, Library, Collections, Reader, Player, Settings, Search, Mac, shared components.
+- `NodusReader/Core/Services` — file store, import, EPUB parser, text extraction, covers, library, voices, playback, model manager, narration cache/alignment.
+- `NodusReader/Core/Sync` — durable outbox, CloudKit/iCloud Documents service.
+- `NodusReader/Features` — Home, Library, Collections, Reader (pagination, PDF reflow), Player, Settings, Search, Mac, shared components.
 - `Modules/DesignSystem` — colour tokens, themes, typography, NodusMark, ReaderMark, cover language, shared controls.
+- `Modules/PhononTTS` — vendored Phonon Swift runtime (no model weights).
+- `Shared` and `NodusShareExtension` — App Group staging and the iOS Share Extension.
 - `NodusReaderTests` — Swift Testing unit/integration tests.
 - `NodusReaderUITests` — black-box UI tests and screenshot capture.
 
@@ -62,14 +68,30 @@ xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader \
 
 ## Current status
 
-Milestone 1 is implemented end to end: multiplatform project, DesignSystem, app icon, adaptive navigation, Home, Library, EPUB/PDF/TXT/Markdown/HTML/RTF import, metadata, generated and custom covers, hierarchical collections with multi-membership, local persistence, themes and typography, settings, and tests.
+The app is implemented end to end: multiplatform project, DesignSystem, adaptive
+navigation, Home/Library/Collections/Search, document import, covers, themes and
+settings; paginated reader with page curl and macOS spread; bookmarks, highlights and
+notes; PDF Intelligent Reading with OCR; Share Extension; optional CloudKit +
+iCloud Documents sync with a durable outbox; system-voice narration plus Kokoro and
+Phonon Core ML; word-level alignment; and a partial audio cache with prefetch and
+deletion.
 
-A functional reader and a real system-voice narration path (`AVSpeechSynthesizer`) are already present: sentence and word highlighting, tap-a-word to start narration, transport, speed, voice selection, sleep timer and a compact/expanded player. Neural Kokoro/Phonon engines, audio cache management, iCloud sync, Share Extension and intelligent PDF reflow remain on the roadmap.
+Kokoro is English-only and unavailable in the Simulator (MLX needs a Metal device).
+Phonon 31M is English; the CC BY-NC 40M Spanish/multilingual checkpoints are listed
+as unavailable because no Core ML bundle exists. Real-device iCloud and Share
+Extension validation, distribution and the final accessibility/licence audits remain.
 
-See `docs/ROADMAP.md` for milestone status and known deviations, and `docs/NARRATION_SYNC.md` for the required word-level audio/text synchronisation, tap-to-play and partial cache/deletion design.
+See `docs/ROADMAP.md`, `docs/ICLOUD.md` and `docs/NARRATION_SYNC.md`.
 
 ## Verification
 
-- Unit tests cover EPUB parsing, import, duplicate detection, PDF import, collection deletion preserving books, manual membership order, theme persistence and text utilities.
-- UI tests cover Home, Library, Reader, Appearance, Collections, Settings, Voices/Models, Typography, Search, Player and tap-a-word Read & Listen.
-- Screenshots are stored in `docs/screenshots/` and compared with `design/screens/` at each UI milestone.
+- 14 unit/integration tests cover EPUB/PDF import, duplicate detection, collections,
+  themes, text utilities, pause-based word alignment and the durable sync outbox.
+- 8 UI tests cover the phone screens, reader, page turn, bookmarks, system
+  narration, tap-a-word, PDF Intelligent Reading, Phonon narration (behavioural:
+  progress past sentence 1) and iCloud settings. The iPad capture test is skipped on
+  an iPhone destination.
+- Screenshots are stored in `docs/screenshots/` and compared with `design/screens/`.
+- Unsigned simulator builds cannot exercise CloudKit or the App Group; those paths
+  report unavailability explicitly and are documented as requiring signed
+  real-device validation.

@@ -1,40 +1,62 @@
 # Model and Voice Licences
 
-Nodus Reader does not bundle or distribute any neural model weights or voice embeddings. This file records the licences that must be verified before the model manager ships.
+Nodus Reader does not bundle or redistribute neural model weights or voice
+embeddings. Models are downloaded on the user's device, after an explicit action, and
+remain local. This file records the verified licences for the engines that ship in
+the app.
 
-## Voice engines in this build
+## Engines in this build
 
-| Engine | Weights | Licence | Status |
+| Engine | Source | Licence | Distribution |
 |---|---|---|---|
-| Apple system voices (`AVSpeechSynthesizer`) | Provided by the OS | Apple OS licence | In use; no weights distributed by Nodus Reader |
+| Apple system voices (`AVSpeechSynthesizer`) | Operating system | Apple OS licence | No weights distributed by Nodus Reader |
+| Kokoro 82M Core ML | [mattmireles/kokoro-coreml](https://github.com/mattmireles/kokoro-coreml), pinned at `43ef0237306c3c1ea0138098c9f92930ae4cf3f7`; weights [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M), hosted bundle [mattmireles/kokoro-coreml](https://huggingface.co/mattmireles/kokoro-coreml) | Apache-2.0 | Downloaded from a pinned Hugging Face revision; starter bundle, one voice (`af_heart`), English |
+| Kokoro G2P | [mattmireles/MisakiSwift](https://github.com/mattmireles/MisakiSwift) pinned revision `3a27756a…`, MIT-licensed [mlx-swift](https://github.com/ml-explore/mlx-swift), Apache-2.0 FluidAudio-derived G2P and NemoTextProcessing | Apache-2.0 / MIT | Swift Package dependencies |
+| Phonon 31M Core ML | [gradium/phonon-31m-en](https://huggingface.co/gradium/phonon-31m-en) weights, Core ML bundle [mosiah/phonon-31m-en-coreml](https://huggingface.co/mosiah/phonon-31m-en-coreml), runtime [gradium-ai/xn-ptts](https://github.com/gradium-ai/xn-ptts) v0.4.1 | Apache-2.0 (`ptts` also offers MIT) | Downloaded from a pinned Hugging Face revision; English, nine voices |
+| Phonon voices | [gradium/phonon-voices](https://huggingface.co/gradium/phonon-voices) | Apache-2.0 | Included in the Phonon bundle |
+| Phonon 40M Spanish / Multilingual | [gradium/phonon-40m-es](https://huggingface.co/gradium/phonon-40m-es), [gradium/phonon-40m-multilingual](https://huggingface.co/gradium/phonon-40m-multilingual) | CC BY-NC 4.0, gated | **Not downloaded and not usable.** No Core ML bundle is published; the Models screen lists them as unavailable for transparency |
 
-System voices are installed by the operating system. Voice names, quality levels and availability vary by device and OS version. They never sync and are never uploaded.
+## Third-party runtime packages
 
-## Planned neural engines
+| Package | Licence | Use |
+|---|---|---|
+| `KokoroCoreML` / `KokoroTTS` | Apache-2.0 | Kokoro inference and text preparation |
+| `MisakiSwift` | Apache-2.0 | English phonemization |
+| `mlx-swift` | MIT | Misaki runtime |
+| `NemoTextProcessing` binary | Apache-2.0 | Text normalisation FSTs |
+| `ptts` / `PhononCore` | Apache-2.0 (package also includes MIT) | Phonon Core ML inference |
+| ZIPFoundation | MIT | EPUB container parsing |
 
-These engines are **not included** in this build. The Hugging Face model manager and neural engines are Milestone 6.
+Exact source, licence and attribution notices are in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
-| Engine | Intended source | Licence to verify | Status |
-|---|---|---|---|
-| Kokoro 82M | <https://huggingface.co/hexgrad/Kokoro-82M> | Apache-2.0 (verify the model card and any third-party voice packs) | Not installed |
-| Phonon 31M | Phonon release channel — verify before use | **Unknown / to verify** | Not installed |
-| Phonon 40M Spanish | Phonon release channel — verify before use | **Unknown / to verify** | Not installed |
-| Phonon 40M Multilingual | Phonon release channel — verify before use | **Unknown / to verify** | Not installed |
-| sherpa-onnx / ONNX Runtime | <https://github.com/k2-fsa/sherpa-onnx> | Apache-2.0 (verify runtime and model conversions) | Not integrated |
-| Core ML conversion tooling | Apple | Apple SDK licence | Not shipped |
-| `xn-ptts` reference | <https://github.com/gradium-ai/xn-ptts> | Verify before reuse | Reference only |
+## Downloaded model pins
 
-The `[size]` and `[Voice name]` placeholders in `design/DESIGN.md` must stay unresolved until the corresponding model artefacts and licences are verified. Do not advertise sizes or voice names that have not been confirmed.
+- Kokoro: the SDK pins `mattmireles/kokoro-coreml` revision
+  `034f7741bf938fd6b4b9c75c22bc72cd795f908a` and verifies
+  `HostedManifest.json` (`f3abd581…`) before any file is trusted. Each file is
+  checked against its SHA-256.
+- Phonon: Nodus Reader downloads from
+  `https://huggingface.co/mosiah/phonon-31m-en-coreml/resolve/0a2596e9154f0340005b6445514fdd57f7bc9ddb`.
+  `PhononModels.download` verifies `bundle.json`, file sizes and SHA-256 hashes, and
+  resumes already verified files.
 
 ## Distribution rules
 
 - Do not distribute restricted or gated model weights without explicit permission.
-- Do not upload model files, voice embeddings, generated audio or OCR caches to iCloud.
-- Store an optional Hugging Face token in the Keychain only. Never put it in CloudKit, the library folder or a shared file.
-- Downloads are per device and strictly local. A book's preferred voice may sync, but a missing voice must fall back to the device default with an “Install voice” affordance.
-- Any conversion scripts added for Core ML/ONNX must carry the source model's licence, attribution and conversion instructions.
-- The final App Store/Mac App Store licence audit (Milestone 8) must re-check every engine, voice pack and model conversion before release.
+- Do not upload model files, voice embeddings, generated audio or OCR caches to
+  iCloud. They are excluded from backup where the SDK permits it.
+- Store the optional Hugging Face token in the Keychain only. Never write it to
+  CloudKit, iCloud Drive, the library folder or logs.
+- Downloads are per device. A book's preferred voice ID may sync, but if the voice is
+  absent the app falls back to an installed voice without breaking narration.
+- Kokoro Spanish voices are not advertised: the pinned SDK only performs English
+  raw-text phonemization. Phonon Spanish/multilingual checkpoints are not advertised
+  because no runnable Core ML bundle is published.
+- Re-check every upstream licence and model card before an App Store release. This
+  file is not legal advice.
 
 ## Attribution in the app
 
-The Models screen links to this file. The About screen links to the third-party notices. Both must remain reachable without a network connection in a future release; consider bundling a generated copy of the licence texts.
+The Models screen links each model card, shows the licence and source, and links to
+this file from About. The About screen also links to the third-party notices.

@@ -1,6 +1,6 @@
 # Nodus Reader Privacy Policy
 
-_Last updated: 2026-10-24_
+_Last updated: 2026-10-25_
 
 Nodus Reader is local-first. Nodus Research does not operate a server for books, reading data, narration or analytics, and the app does not require a Nodus account.
 
@@ -8,18 +8,19 @@ Nodus Reader is local-first. Nodus Research does not operate a server for books,
 
 - **Documents you import** — EPUB, PDF, TXT, Markdown, HTML and RTF files. The app copies the file into its own container and never modifies or deletes the original file.
 - **Library metadata** — title, author, language, publication data, description, file hash, covers, collections, reading status, progress and per-book preferences.
-- **Reading data** — position, bookmarks, highlights, notes and annotations when those features are implemented.
-- **Narration preferences** — voice identifiers and speed. Audio is generated locally and is not uploaded.
+- **Reading data** — position, bookmarks, highlights, notes and annotations.
+- **Narration preferences** — voice identifiers and speed. Audio is generated locally and is not uploaded. Sentences you listen to may be cached as audio on this device.
+- **Optional Hugging Face token** — only if you choose to save one; stored in the device Keychain.
 - **Custom covers** — an image you choose from Photos is copied into the app's cover directory.
 
-All of the above is stored locally today. The iCloud sync described in `docs/ICLOUD.md` is **not enabled** in this build; the Settings screen states “Local only”.
+All of the above is stored locally by default. iCloud sync is optional and off by default. When you enable it, the app uses your personal iCloud account as described below.
 
 ## Data the app does not collect
 
 - No telemetry, analytics, crash reporting SDK, advertising identifier or usage profiling.
 - No location, contacts, calendar, health data, microphone or camera access.
 - No Nodus account, email address or password.
-- No remote inference, OCR or text-to-speech. System voices are provided by the operating system.
+- No remote inference, OCR or text-to-speech. System voices are provided by the operating system; Kokoro and Phonon run locally after an explicit model download.
 
 ## Permissions
 
@@ -27,9 +28,9 @@ All of the above is stored locally today. The iCloud sync described in `docs/ICL
 - **Photos** — only when you choose a custom cover; the selected image is converted and stored locally.
 - **Audio session** — used for narration and background/lock-screen playback. No recording is performed.
 
-## iCloud (planned, opt-in)
+## iCloud (optional)
 
-When Milestone 4 lands, sync will use the user's personal iCloud account through Apple frameworks: CloudKit private database for metadata and iCloud Documents for original files and covers. Nodus Research will not run a sync server. Sync will be optional, and the app will continue to work with a local-only library.
+When you enable sync, it uses your personal iCloud account through Apple frameworks: a CloudKit private database for metadata, collections, bookmarks, annotations, reading positions and deletions, and iCloud Documents for original files and covers. Nodus Research does not run a sync server and cannot read your library. Sync is off by default, and the app works fully with a local-only library.
 
 The following will never be uploaded: neural model weights, voice embeddings, downloaded voices, generated audio, OCR caches, the Hugging Face token and hardware-specific settings.
 
@@ -39,14 +40,15 @@ The following will never be uploaded: neural model weights, voice embeddings, do
 
 ## Data deletion
 
-- **Delete from Library** removes the local file and metadata from this device. Once sync exists it will also delete the book from the user's iCloud library after confirmation.
-- **Remove Download** (once sync exists) will remove only the local copy while keeping the book in iCloud and on other devices.
+- **Delete from Library** removes the local file, metadata and narration cache on this device. When sync is enabled it also deletes the book from the user's iCloud library after confirmation.
+- **Remove Download** removes only the local document copy while keeping the book in iCloud and on other devices.
+- **Delete generated audio** removes cached narration without touching the book.
 - Deleting a collection never deletes its documents.
 - Uninstalling the app deletes its container, including the local library, covers and preferences.
 
 ## Network access
 
-This build accesses the network only if a future feature is used (for example model downloads). It does not send documents, audio or reading data anywhere. The About/Privacy links open GitHub in the system browser.
+The app accesses the network only for explicit model downloads from pinned Hugging Face revisions, for an optional token verification you request, and, when sync is enabled, Apple's CloudKit/iCloud services. It does not send documents, audio, reading data or telemetry to Nodus Research. The About/Privacy links open GitHub in the system browser.
 
 ## Children and sensitive data
 

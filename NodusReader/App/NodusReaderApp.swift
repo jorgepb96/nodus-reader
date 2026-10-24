@@ -13,6 +13,8 @@ struct NodusReaderApp: App {
     @State private var library: LibraryService
     @State private var imports: ImportCoordinator
     @State private var playback: PlaybackController
+    @State private var sync: CloudSyncService
+    @State private var models: ModelManager
 
     init() {
         let container: ModelContainer
@@ -24,11 +26,20 @@ struct NodusReaderApp: App {
         self.container = container
 
         let library = LibraryService(context: container.mainContext)
+        let journal = SyncJournal(context: container.mainContext)
+        library.syncJournal = journal
         let voices = VoiceCatalog()
+        let models = ModelManager(voices: voices)
+        library.narrationCache = models.narrationCache
         _library = State(initialValue: library)
         _voices = State(initialValue: voices)
         _imports = State(initialValue: ImportCoordinator(library: library))
-        _playback = State(initialValue: PlaybackController(library: library, voices: voices))
+        _playback = State(initialValue: PlaybackController(library: library, voices: voices,
+                                                           models: models))
+        _models = State(initialValue: models)
+        _sync = State(initialValue: CloudSyncService(context: container.mainContext,
+                                                     library: library,
+                                                     journal: journal))
         _theme = State(initialValue: ThemeManager())
         _preferences = State(initialValue: ReaderPreferences())
         _navigation = State(initialValue: NavigationModel())
@@ -44,6 +55,8 @@ struct NodusReaderApp: App {
                 .environment(library)
                 .environment(imports)
                 .environment(playback)
+                .environment(sync)
+                .environment(models)
                 .modelContainer(container)
         }
         #if os(macOS)
@@ -63,6 +76,8 @@ struct NodusReaderApp: App {
             .environment(library)
             .environment(imports)
             .environment(playback)
+            .environment(sync)
+            .environment(models)
             .modelContainer(container)
             .frame(minWidth: 560, minHeight: 640)
         }

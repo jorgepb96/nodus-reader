@@ -6,8 +6,16 @@
 |---|---|---|
 | `NodusReader` | App, `supportedDestinations: [iOS, macOS]` | The shipping app for iPhone, iPad and Mac |
 | `DesignSystem` | Local Swift package | Tokens, themes, marks, typography, shared visual components |
+| `PhononTTS` | Local Swift package | Vendored `ptts` 0.4.1 Swift runtime; downloads `PhononCore.xcframework` from the pinned GitHub release; contains no model weights |
+| `NodusReaderShare` | iOS app extension | Share Extension that stages files in the App Group inbox |
 | `NodusReaderTests` | Unit/integration tests | Swift Testing, in-memory SwiftData, real fixture EPUB/PDF files |
 | `NodusReaderUITests` | UI tests | Black-box flows and screenshot capture |
+
+Third-party Swift packages: ZIPFoundation (MIT), KokoroTTS pinned to
+`mattmireles/kokoro-coreml` (Apache-2.0), its Fairness/Misaki/MLX dependencies, and
+the local `ptts` package. The iOS Share Extension is excluded from the macOS build
+with an XcodeGen `platformFilter`; the Phonon binary is arm64-only, so x86_64 is
+excluded for simulator/macOS builds.
 
 The app is a single multiplatform target so that navigation, library and settings code is shared while platform roots differ. Deployment targets are iOS 18.0 and macOS 15.0. iOS 26 APIs (for example a floating tab accessory) may be used behind availability checks, but native fallbacks must keep iOS 18 functional.
 
@@ -22,12 +30,20 @@ NodusReader/
     Persistence/      SwiftData models, schema, container, DeviceInfo
     Services/         FileStore, Import, EPUBParser, DocumentExtractor, covers,
                       LibraryService, ImportCoordinator, VoiceCatalog, PlaybackController,
-                      BookTextLoader, HTMLText, ImagePipeline
+                      BookTextLoader, HTMLText, ImagePipeline, ModelManager,
+                      NarrationAudioCache (cache + word alignment)
+    Sync/             SyncJournal (outbox/tombstones), CloudSyncService,
+                      ICloudDocumentStore
     Settings/         ReaderPreferences (typography)
     SampleData/       DEBUG-only real sample EPUB/PDF generator
   Features/
     Home/ Library/ Collections/ Reader/ Player/ Settings/ Search/ Sidebar/ Mac/ Shared/
-  Resources/          Asset catalog and app icon
+    Reader/Pagination/ TextKit pagination, page view, page curl, Mac spread
+    Reader/PDF/        Intelligent Reading engine, reflow view, source panel
+  Resources/           Asset catalog and app icon
+Shared/               App Group staging shared with the extension
+NodusShareExtension/  Share UI, activation rules, provider loading
+Modules/PhononTTS/    ptts Swift package (Apache-2.0/MIT), no weights
 Modules/DesignSystem/
   Sources/DesignSystem/
     Theme.swift       App palettes, reader themes, custom themes, ThemeManager
@@ -52,7 +68,13 @@ Feature folders are namespaced by responsibility today. The DesignSystem is a re
 - state: added/last-opened dates, progress, JSON `ReadingLocator`, status, favorite, cover file name;
 - placement: memberships, source device, last position device/date;
 - preferences: preferred voice ID, reading mode;
-- download state (downloaded/cloud-only/downloading) reserved for sync.
+- download state (`downloaded`/`cloudOnly`/`downloading`);
+- sync fields: `createdAt`/`updatedAt`, `sourceDevice`, `lastPositionDevice/date`.
+
+`Bookmark` stores a title, chapter title and `ReadingLocator` JSON. `Annotation`
+stores a chapter index, UTF-16 start/end offsets, quote, note and colour. Both cascade
+with their book. `SyncOutboxEntry` and `SyncTombstone` are durable local sync state;
+they are not uploaded as models themselves.
 
 `LibraryCollection`:
 - `id`, `name`, `parentID`, `sortIndex`, timestamps, memberships.
@@ -64,7 +86,10 @@ Feature folders are namespaced by responsibility today. The DesignSystem is a re
 
 Deleting a collection deletes its membership rows (cascade) but not the books. Deleting a book cascades its memberships. Deleting a parent collection recursively deletes its descendants and their memberships.
 
-`ReadingLocator` is a small Codable value (`chapterIndex`, `scrollFraction`, optional `pageIndex`). EPUB CFI and exact PDF destinations will extend this in Milestone 3. Positions are stored as JSON to keep schema migration cheap.
+`ReadingLocator` is a small Codable value (`chapterIndex`, `scrollFraction`, optional
+`pageIndex`). Paginated text stores the chapter plus a page fraction; PDFs also store
+the page index. EPUB CFI is not implemented. Positions are stored as JSON to keep
+schema migration cheap.
 
 ## Persistence and file storage
 
@@ -76,7 +101,11 @@ Deleting a collection deletes its membership rows (cascade) but not the books. D
 - Only relative paths are persisted, because the container URL changes across launches/platforms.
 - `FileStore` is `@unchecked Sendable` and serialises filesystem operations at the API level; callers do not assume a particular actor.
 - Cover filenames carry a timestamp so the SwiftUI image cache naturally invalidates when a cover is replaced.
-- The SQLite store is never treated as an iCloud document. Sync will use CloudKit records plus iCloud Documents (see `docs/ICLOUD.md`).
+- The SQLite store is never treated as an iCloud document. Sync uses CloudKit records
+  plus iCloud Documents (see `docs/ICLOUD.md`).
+- Neural models live under `Application Support/NodusReader/Models/<engine>` and
+  narration audio under `Application Support/NodusReader/Audio/<book-id>`, both
+  excluded from backup and never uploaded.
 
 ## Import pipeline
 
@@ -98,27 +127,46 @@ The import is sequential to keep memory bounded and progress deterministic. Back
 ## Reading
 
 - `BookTextLoader` reuses `DocumentExtractor` off-main to load chapter text on demand. EPUB is parsed with the same import parser; PDF text is page-based.
-- The native text reader uses `JustifiedText` (UITextView/NSTextField) so paragraphs can be justified and tapped. A chapter is rendered as paragraphs; scroll offset is tracked with `onScrollGeometryChange` and persisted with a debounce.
+- The native paginated reader uses TextKit to lay out each chapter into pages
+  (`TextPaginator`), `UITextView`/`NSTextView` page hosts, `UIPageViewController` page
+  curl on iOS and a two-page spread on macOS. Selection menus create highlights and
+  notes; overlays draw annotations and the narration word.
 - PDF Original uses `PDFKitReader`, a thin `UIViewRepresentable`/`NSViewRepresentable` around `PDFView` with page-change notifications, outline/page jumps and background colouring.
+- PDF Intelligent Reading uses `PDFReflowExtractor`: PDFKit line selections first,
+  Vision OCR fallback for scanned pages, column detection, block merging, repeated
+  header filtering, table image crops and a JSON/image cache. `PDFReaderContainer`
+  switches between original and reflow and exposes a source-page overlay panel.
 - Reader themes are resolved by `ThemeManager`; reader typography is a separate observable (`ReaderPreferences`) so hardware-independent preferences remain simple.
 - Progress is written through `LibraryService`, which always records the source device and last-position date. This is what enables the Home “Continue · from your Mac” eyebrow later.
 
 ## Narration
 
-`PlaybackController` is the current system-voice engine and the de facto interface to replace later:
-- loads chapter text, tokenises sentences, speaks them with `AVSpeechSynthesizer`;
-- exposes sentence/word ranges from the delegate callbacks;
-- supports start/pause/resume, sentence/chapter transport, seek, speed, voice, sleep timer and modes;
-- starts from an arbitrary sentence and character offset (`startingSentence`, `wordOffset`);
-- updates book progress, Now Playing metadata and iOS remote commands;
-- uses an audio session with `.playback`/`.spokenAudio` and the `audio` background mode.
+`PlaybackController` owns narration for all three engine families:
+- system voices through `AVSpeechSynthesizer`, using native word ranges;
+- Kokoro through `KokoroTTS` (24 kHz PCM) and Phonon through `ptts` (24 kHz PCM),
+  played with `AVAudioEngine → AVAudioUnitTimePitch → main mixer`;
+- sentence/word state, transport, speed, voice, sleep timer, modes, background audio,
+  Now Playing and remote commands;
+- start from an arbitrary chapter offset or word, including mid-sentence neural start;
+- a 60 ms player-time loop maps word timings to UTF-16 ranges;
+- per-sentence cache access and whole-book generation with progress/cancellation.
 
-The target engine abstraction, word alignment and audio cache are specified in `docs/NARRATION_SYNC.md`.
+`ModelManager` owns model install/pause/resume/delete, engine instances, voice
+injection and storage accounting. `NarrationAudioCache` is an actor that writes PCM
+`.caf` files and timing JSON under Application Support. `AudioWordAligner` is a pure
+pause-detection/syllable-DP estimator tested independently. Details are in
+`docs/NARRATION_SYNC.md`.
 
 ## App state and injection
 
 `NodusReaderApp` owns the `ModelContainer` and creates one instance of each observable service:
-`ThemeManager`, `ReaderPreferences`, `NavigationModel`, `VoiceCatalog`, `LibraryService`, `ImportCoordinator`, `PlaybackController`. They are injected with `.environment(...)`; the model container is injected with `.modelContainer(...)`. SwiftData queries in views provide live updates. `LibraryService` is the only place that mutates the library.
+`ThemeManager`, `ReaderPreferences`, `NavigationModel`, `VoiceCatalog`,
+`LibraryService`, `ImportCoordinator`, `PlaybackController`, `CloudSyncService` and
+`ModelManager`. The `SyncJournal` is retained by `CloudSyncService` and weakly
+referenced by `LibraryService` for deletion tombstones. Services are injected with
+`.environment(...)`; the model container is injected with `.modelContainer(...)`.
+SwiftData queries in views provide live updates. `LibraryService` is the only place
+that mutates the library.
 
 ## Platform roots
 
@@ -139,12 +187,25 @@ The target engine abstraction, word alignment and audio cache are specified in `
 ## Security and privacy
 
 - Security-scoped access is always released with `defer`; coordinated reads are used.
-- The app does not use a network client for reading, store or narration.
-- No telemetry, accounts or tokens are present in this build.
-- Future iCloud and Hugging Face credentials have explicit storage rules in `docs/ICLOUD.md` and `MODEL_LICENSES.md`.
+- Reading and narration make no network requests. Network access is used only for
+  explicit model downloads from pinned Hugging Face revisions and, if the user saves
+  one, verification of an optional Hugging Face token. There is no telemetry and no
+  Nodus account.
+- The optional Hugging Face token is stored in the Keychain
+  (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`) and is never written to
+  CloudKit, iCloud Drive, the library or logs.
+- iCloud uses the user's private CloudKit database and iCloud Documents. Models,
+  audio, OCR caches and credentials are excluded.
 
 ## Testing
 
-- Unit tests build real EPUB and PDF fixtures, import through the production pipeline into in-memory SwiftData, and cover duplicates, collections, ordering, themes and utilities.
-- UI tests launch the app with the debug sample library and capture Home, Library, Reader, Appearance, Collections, Settings, Voices, Models, Typography, Search, Player and Read & Listen.
+- 14 unit/integration tests build real EPUB and PDF fixtures, import through the
+  production pipeline into in-memory SwiftData, and cover duplicates, collections,
+  ordering, themes, utilities, pause-based word alignment and the durable sync
+  outbox/tombstone behaviour.
+- 8 UI tests launch the app with the debug sample library and cover Home, Library,
+  Reader, Appearance, Collections, Settings, Voices/Models, Typography, Search,
+  Player/Read & Listen, page turn/bookmarks, PDF Intelligent Reading, Phonon
+  narration advancing past the first sentence, and iCloud status/storage.
+- Unsigned simulator builds skip CloudKit and App Group operations by design.
 - Screenshots are stored in `docs/screenshots/` and compared with `design/screens/`.

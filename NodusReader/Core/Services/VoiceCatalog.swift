@@ -14,6 +14,7 @@ public final class VoiceCatalog {
         public var languageName: String
         public var quality: Int
         public var gender: String?
+        public var engineRaw: String
 
         public var qualityLabel: String {
             switch quality {
@@ -24,6 +25,16 @@ public final class VoiceCatalog {
         }
 
         public var displayName: String { name }
+
+        public var engineLabel: String {
+            switch engineRaw {
+            case "kokoro": "Kokoro"
+            case "phonon": "Phonon"
+            default: "System"
+            }
+        }
+
+        public var isSystem: Bool { engineRaw == "system" }
     }
 
     public private(set) var voices: [Voice] = []
@@ -42,14 +53,15 @@ public final class VoiceCatalog {
     }
 
     public func reload() {
-        voices = []
+        voices.removeAll { $0.isSystem }
         Task { await loadVoices() }
     }
 
     /// Enumerating system voices can take time on first launch. It is kept off
-    /// the main thread so the interface appears immediately.
+    /// the main thread so the interface appears immediately. A populated neural
+    /// catalogue must not stop the system voices from loading.
     public func loadIfNeeded() async {
-        guard voices.isEmpty else { return }
+        guard !voices.contains(where: { $0.isSystem }) else { return }
         await loadVoices()
     }
 
@@ -64,7 +76,8 @@ public final class VoiceCatalog {
                     languageName: Locale.current.localizedString(forLanguageCode: voice.language)
                         ?? voice.language,
                     quality: Int(voice.quality.rawValue),
-                    gender: voice.gender.rawValue == 0 ? nil : String(describing: voice.gender)
+                    gender: voice.gender.rawValue == 0 ? nil : String(describing: voice.gender),
+                    engineRaw: "system"
                 )
             }
         }.value
@@ -72,6 +85,7 @@ public final class VoiceCatalog {
             isLoading = false
             return
         }
+        let neural = voices.filter { !$0.isSystem }
         let preferredLanguage = Locale.current.language.languageCode?.identifier ?? "en"
         voices = mapped.sorted { lhs, rhs in
             let lhsPreferred = lhs.language.hasPrefix(preferredLanguage)
@@ -83,11 +97,61 @@ public final class VoiceCatalog {
             }
             return lhs.languageName.localizedStandardCompare(rhs.languageName) == .orderedAscending
         }
-        if defaultVoiceID.isEmpty || !mapped.contains(where: { $0.id == defaultVoiceID }) {
+        voices.append(contentsOf: neural)
+        if defaultVoiceID.isEmpty || !voices.contains(where: { $0.id == defaultVoiceID }) {
             defaultVoiceID = bestDefaultVoiceID() ?? mapped.first?.id ?? ""
             defaults.set(defaultVoiceID, forKey: defaultKey)
         }
         isLoading = false
+    }
+
+    /// Replaces the neural voices while leaving the system catalogue untouched.
+    /// Called when a model is installed, deleted or loaded at launch.
+    public func setNeuralVoices(_ neural: [Voice]) {
+        voices.removeAll { !$0.isSystem }
+        voices.append(contentsOf: neural)
+        if !defaultVoiceID.isEmpty, !voices.contains(where: { $0.id == defaultVoiceID }) {
+            defaultVoiceID = bestDefaultVoiceID() ?? voices.first?.id ?? ""
+            defaults.set(defaultVoiceID, forKey: defaultKey)
+        }
+    }
+
+    public var neuralVoices: [Voice] {
+        voices.filter { !$0.isSystem }
+    }
+
+    public func voice(withID id: String?,
+                      engine: String? = nil) -> Voice? {
+        guard let id else { return nil }
+        return voices.first { $0.id == id && (engine == nil || $0.engineRaw == engine) }
+    }
+
+    /// Resolves a saved per-book voice ID to a real entry in this catalogue.
+    /// A missing neural voice falls back to a system voice for the book's
+    /// language, so a deleted model never breaks narration.
+    public func narrationVoice(preferredID: String?, language: String?) -> Voice? {
+        if let preferredID, let exact = voices.first(where: { $0.id == preferredID }) {
+            return exact
+        }
+        if let language {
+            let prefix = String(language.prefix(2))
+            if let match = voices.first(where: { $0.language.hasPrefix(prefix) && $0.quality >= 3 })
+                ?? voices.first(where: { $0.language.hasPrefix(prefix) && $0.quality >= 2 })
+                ?? voices.first(where: { $0.language.hasPrefix(prefix) }) {
+                return match
+            }
+        }
+        return defaultVoice
+    }
+
+    public func systemVoice(for voice: Voice?) -> AVSpeechSynthesisVoice? {
+        if let voice, let resolved = AVSpeechSynthesisVoice(identifier: voice.id) {
+            return resolved
+        }
+        if let chosen = AVSpeechSynthesisVoice(identifier: defaultVoiceID) {
+            return chosen
+        }
+        return fallbackVoice()
     }
 
     public var languages: [String] {
@@ -99,11 +163,6 @@ public final class VoiceCatalog {
 
     public func languageName(for code: String) -> String {
         Locale.current.localizedString(forLanguageCode: code) ?? code
-    }
-
-    public func voice(withID id: String?) -> Voice? {
-        guard let id else { return nil }
-        return voices.first { $0.id == id }
     }
 
     public var defaultVoice: Voice? {

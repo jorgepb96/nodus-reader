@@ -1,6 +1,49 @@
 {
-  "originHash" : "4eb1f2d5db61edbd542079c127f38c937536685ed74aa8ca3e4b2b5bfc5363ac",
+  "originHash" : "ee8773f76011c99689f87ce0c573de2918ccb32b40e7709e7f4ff8978338c093",
   "pins" : [
+    {
+      "identity" : "kokoro-coreml",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mattmireles/kokoro-coreml.git",
+      "state" : {
+        "revision" : "43ef0237306c3c1ea0138098c9f92930ae4cf3f7"
+      }
+    },
+    {
+      "identity" : "misakiswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mattmireles/MisakiSwift",
+      "state" : {
+        "revision" : "3a27756a780fc138e328a96e533fb440a3419d5b"
+      }
+    },
+    {
+      "identity" : "mlx-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ml-explore/mlx-swift",
+      "state" : {
+        "revision" : "dc43e62d7055353c7f99fa071a4e71d29dfddc44",
+        "version" : "0.31.4"
+      }
+    },
+    {
+      "identity" : "mlxutilslibrary",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mlalma/MLXUtilsLibrary.git",
+      "state" : {
+        "revision" : "41f6cfd5d68b65aa3c65a34efe3b71c371ed915b",
+        "version" : "0.0.6"
+      }
+    },
+    {
+      "identity" : "swift-numerics",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-numerics",
+      "state" : {
+        "revision" : "0c0290ff6b24942dadb83a929ffaaa1481df04a2",
+        "version" : "1.1.1"
+      }
+    },
     {
       "identity" : "zipfoundation",
       "kind" : "remoteSourceControl",

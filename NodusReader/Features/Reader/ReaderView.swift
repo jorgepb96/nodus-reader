@@ -16,31 +16,61 @@ struct ReaderView: View {
     @Environment(ReaderPreferences.self) private var preferences
     @Environment(ThemeManager.self) private var themeManager
     @Environment(PlaybackController.self) private var playback
+    @Environment(CloudSyncService.self) private var sync
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
     let book: Book
 
     @State private var content: ReaderContent = .loading
-    @State private var chapterIndex: Int
-    @State private var scrollFraction: Double = 0
     @State private var pdfPageIndex: Int
     @State private var pdfPageCount = 0
     @State private var pdfJumpPage: Int?
+    @State private var pdfChapterSelection = 0
+    @State private var pageIndex = 0
+    @State private var pageInfo = ReaderPageInfo()
+    @State private var firstPageByChapter: [Int: Int] = [:]
+    @State private var readerPages: [ReaderPage] = []
+    @State private var pageStep = 1
     @State private var chromeVisible = true
     @State private var showContents = false
     @State private var showAppearance = false
     @State private var showPlayer = false
-    @State private var pendingSave: Task<Void, Never>?
+    @State private var annotationDraft: ReaderAnnotationDraft?
 
     init(book: Book) {
         self.book = book
-        _chapterIndex = State(initialValue: max(book.locator.chapterIndex, 0))
         _pdfPageIndex = State(initialValue: max(book.locator.pageIndex ?? 0, 0))
     }
 
     private var readerTheme: ReaderTheme {
         themeManager.readerTheme(colorScheme: colorScheme)
+    }
+
+    private var chapters: [ExtractedChapter] {
+        if case .chapters(let chapters) = content { return chapters }
+        return []
+    }
+
+    private var pdfURL: URL? {
+        if case .pdf(let url) = content { return url }
+        return nil
+    }
+
+    private var narrationActive: Bool {
+        playback.activeBook?.id == book.id && playback.mode != .read
+    }
+
+    private var paginationColumns: Int {
+        #if os(macOS)
+        2
+        #else
+        1
+        #endif
+    }
+
+    private var pageBuildKey: String {
+        "\(book.id.uuidString)-\(themeManager.readerThemeSelection)-\(colorScheme.hashValue)-\(preferences.fontScale)-\(preferences.lineSpacing)-\(preferences.margin)-\(preferences.justify)-\(preferences.useSerif)-\(preferences.weightIndex)"
     }
 
     var body: some View {
@@ -62,41 +92,40 @@ struct ReaderView: View {
         .preferredColorScheme(theme.isDark ? .dark : .light)
         .animation(.easeInOut(duration: 0.2), value: chromeVisible)
         .task { await load() }
-        .onDisappear {
-            pendingSave?.cancel()
-            saveProgress()
-        }
-        .onChange(of: chapterIndex) { _, _ in
-            scrollFraction = 0
-            saveProgress()
-        }
-        .onChange(of: pdfPageIndex) { _, _ in
-            saveProgress()
-        }
-        .onChange(of: playback.chapterIndex) { _, newValue in
-            guard playback.activeBook?.id == book.id,
-                  playback.mode == .readAndListen,
-                  case .chapters(let chapters) = content,
-                  chapters.indices.contains(newValue),
-                  newValue != chapterIndex else { return }
-            chapterIndex = newValue
-        }
+        .onDisappear { saveProgress() }
+        .onChange(of: pageInfo.pageIndex) { _, _ in saveProgress() }
+        .onChange(of: pageInfo.chapterIndex) { _, _ in saveProgress() }
+        .onChange(of: pdfPageIndex) { _, _ in saveProgress() }
         .sheet(isPresented: $showContents) {
-            ReaderContentsSheet(
-                bookTitle: book.title,
-                chapters: chapters,
-                currentChapter: $chapterIndex,
-                pdfURL: pdfURL,
-                pageCount: pdfPageCount,
-                currentPage: $pdfPageIndex,
-                jumpToPage: $pdfJumpPage
-            )
+            if book.format == .pdf {
+                ReaderContentsSheet(
+                    bookTitle: book.title,
+                    chapters: [],
+                    currentChapter: $pdfChapterSelection,
+                    pdfURL: pdfURL,
+                    pageCount: pdfPageCount,
+                    currentPage: $pdfPageIndex,
+                    jumpToPage: $pdfJumpPage
+                )
+            } else {
+                ReaderNavigationSheet(
+                    book: book,
+                    chapters: chapters,
+                    pages: readerPages,
+                    firstPageByChapter: firstPageByChapter,
+                    pageIndex: $pageIndex,
+                    onEditAnnotation: editAnnotation
+                )
+            }
         }
         .sheet(isPresented: $showAppearance) {
             ReaderAppearanceSheet()
         }
         .sheet(isPresented: $showPlayer) {
             PlayerView().presentationDragIndicator(.hidden)
+        }
+        .sheet(item: $annotationDraft) { draft in
+            AnnotationEditorSheet(book: book, draft: draft)
         }
     }
 
@@ -108,16 +137,38 @@ struct ReaderView: View {
         case .loading:
             loadingView(theme)
         case .chapters(let chapters):
-            textReader(chapters, theme: theme)
-        case .pdf(let url):
-            PDFKitReader(
-                url: url,
-                pageIndex: $pdfPageIndex,
-                pageCount: $pdfPageCount,
-                jumpToPage: $pdfJumpPage,
-                background: theme.background
+            PaginatedReaderContent(
+                book: book,
+                chapters: chapters,
+                style: ReaderPageStyle(theme: theme, preferences: preferences),
+                theme: theme,
+                buildKey: pageBuildKey,
+                initialChapterIndex: max(book.locator.chapterIndex, 0),
+                initialFraction: min(max(book.locator.scrollFraction, 0), 1),
+                annotations: book.annotations,
+                narrationChapterIndex: narrationActive ? playback.chapterIndex : nil,
+                narrationSentenceRange: narrationActive ? playback.currentSentenceChapterRange : nil,
+                narrationWordRange: narrationActive ? playback.currentWordChapterRange : nil,
+                columns: paginationColumns,
+                followNarration: playback.mode == .readAndListen,
+                onWordTap: startNarration(at:),
+                onHighlight: { range, color in presentAnnotation(range: range, color: color, note: false) },
+                onNote: { range in presentAnnotation(range: range, color: .yellow, note: true) },
+                pageIndex: $pageIndex,
+                pageInfo: $pageInfo,
+                firstPageByChapter: $firstPageByChapter,
+                pageStep: $pageStep,
+                readerPages: $readerPages
             )
-            .ignoresSafeArea(edges: .bottom)
+        case .pdf(let url):
+            PDFReaderContainer(
+                book: book,
+                url: url,
+                theme: theme,
+                pdfPageIndex: $pdfPageIndex,
+                pdfPageCount: $pdfPageCount,
+                jumpToPage: $pdfJumpPage
+            )
         case .failed(let message):
             failureView(message, theme: theme)
         }
@@ -149,85 +200,21 @@ struct ReaderView: View {
             Button("Close") { dismiss() }
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(theme.accent)
+            Button("Try Again") {
+                content = .loading
+                Task { await load() }
+            }
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(theme.muted)
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func textReader(_ chapters: [ExtractedChapter], theme: ReaderTheme) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    Color.clear.frame(height: 1).id("top")
-                    chapterOpener(theme)
-                    ForEach(Array(paragraphs.enumerated()), id: \.offset) { index, paragraph in
-                        let ranges = highlightRanges(for: paragraph)
-                        JustifiedText(
-                            text: paragraph,
-                            size: preferences.baseFontSize,
-                            weight: textWeight,
-                            useSerif: preferences.useSerif,
-                            color: theme.text,
-                            lineSpacing: preferences.lineSpacing,
-                            justified: preferences.justify,
-                            sentenceHighlight: ranges.sentence,
-                            sentenceHighlightColor: theme.narration,
-                            wordHighlight: ranges.word,
-                            wordHighlightColor: wordHighlightColor(theme),
-                            onWordTap: { range in
-                                startNarration(from: paragraph, range: range)
-                            }
-                        )
-                        .id(index)
-                    }
-                }
-                .frame(maxWidth: 720)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, readingMargin)
-                .padding(.top, 18)
-                .padding(.bottom, 44)
-            }
-            .scrollIndicators(.hidden)
-            .onScrollGeometryChange(for: Double.self) { geometry in
-                let scrollable = max(geometry.contentSize.height - geometry.containerSize.height, 1)
-                return min(max(geometry.contentOffset.y / scrollable, 0), 1)
-            } action: { _, newValue in
-                scrollFraction = newValue
-                scheduleSave()
-            }
-            .onChange(of: chapterIndex) { _, _ in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    proxy.scrollTo("top", anchor: .top)
-                }
-            }
-            .onChange(of: playback.currentIndex) { _, _ in
-                scrollToNarration(proxy)
-            }
-        }
-    }
-
-    private func chapterOpener(_ theme: ReaderTheme) -> some View {
-        let chapter = currentChapter
-        return VStack(spacing: 5) {
-            Text("CHAPTER \(chapterIndex + 1)")
-                .font(.system(size: 10, weight: .medium))
-                .tracking(2.4)
-                .foregroundStyle(theme.muted)
-            Text(chapter?.title ?? "")
-                .font(.system(size: DeviceInfo.isPad ? 36 : 32, weight: .regular, design: .serif))
-                .italic()
-                .foregroundStyle(theme.text)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-        }
-        .padding(.bottom, 2)
-        .accessibilityElement(children: .combine)
-    }
-
     // MARK: Bars
 
     private func topBar(_ theme: ReaderTheme) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 2) {
             Button {
                 dismiss()
             } label: {
@@ -239,7 +226,7 @@ struct ReaderView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Back to library")
 
-            Spacer(minLength: 4)
+            Spacer(minLength: 2)
 
             VStack(spacing: 1) {
                 Text(book.title)
@@ -253,7 +240,7 @@ struct ReaderView: View {
             }
             .accessibilityElement(children: .combine)
 
-            Spacer(minLength: 4)
+            Spacer(minLength: 2)
 
             Button {
                 showContents = true
@@ -264,7 +251,18 @@ struct ReaderView: View {
                     .frame(width: 40, height: 44)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Contents")
+            .accessibilityLabel("Contents, bookmarks and notes")
+
+            Button {
+                toggleBookmark()
+            } label: {
+                Image(systemName: isCurrentPageBookmarked ? "bookmark.fill" : "bookmark")
+                    .font(.system(size: 17))
+                    .foregroundStyle(isCurrentPageBookmarked ? theme.accent : theme.text)
+                    .frame(width: 40, height: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isCurrentPageBookmarked ? "Remove bookmark from this page" : "Bookmark this page")
 
             Button {
                 showAppearance = true
@@ -277,7 +275,7 @@ struct ReaderView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Appearance and typography")
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 6)
         .frame(height: 44)
         .background(theme.background)
         .overlay(alignment: .bottom) {
@@ -295,16 +293,16 @@ struct ReaderView: View {
                 HStack {
                     if book.format != .pdf {
                         Button {
-                            goToChapter(chapterIndex - 1)
+                            goToPage(pageIndex - pageStep)
                         } label: {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(chapterIndex > 0 ? theme.text : theme.muted.opacity(0.4))
+                                .foregroundStyle(canGoPreviousPage ? theme.text : theme.muted.opacity(0.4))
                                 .frame(width: 44, height: 32)
                         }
                         .buttonStyle(.plain)
-                        .disabled(chapterIndex <= 0)
-                        .accessibilityLabel("Previous chapter")
+                        .disabled(!canGoPreviousPage)
+                        .accessibilityLabel("Previous page")
                     }
 
                     Spacer()
@@ -318,16 +316,16 @@ struct ReaderView: View {
 
                     if book.format != .pdf {
                         Button {
-                            goToChapter(chapterIndex + 1)
+                            goToPage(pageIndex + pageStep)
                         } label: {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(canAdvanceChapter ? theme.text : theme.muted.opacity(0.4))
+                                .foregroundStyle(canGoNextPage ? theme.text : theme.muted.opacity(0.4))
                                 .frame(width: 44, height: 32)
                         }
                         .buttonStyle(.plain)
-                        .disabled(!canAdvanceChapter)
-                        .accessibilityLabel("Next chapter")
+                        .disabled(!canGoNextPage)
+                        .accessibilityLabel("Next page")
                     }
                 }
                 .padding(.horizontal, 4)
@@ -353,13 +351,23 @@ struct ReaderView: View {
 
     private func load() async {
         library.open(book)
-        if book.format == .pdf {
-            let url = library.fileStore.documentURL(for: book)
-            guard FileManager.default.fileExists(atPath: url.path) else {
-                content = .failed("The PDF file is not available on this device.")
+
+        let localURL = library.fileStore.documentURL(for: book)
+        if !FileManager.default.fileExists(atPath: localURL.path) {
+            if sync.isEnabled {
+                await sync.download(book)
+            }
+            guard FileManager.default.fileExists(atPath: localURL.path) else {
+                let hint = sync.isEnabled
+                    ? (sync.downloadError ?? "The document could not be downloaded from iCloud.")
+                    : "This book is stored in iCloud. Enable iCloud sync in Settings to download it on this device."
+                content = .failed(hint)
                 return
             }
-            content = .pdf(url)
+        }
+
+        if book.format == .pdf {
+            content = .pdf(localURL)
             return
         }
 
@@ -369,7 +377,6 @@ struct ReaderView: View {
                 content = .failed("This document does not contain readable text.")
                 return
             }
-            chapterIndex = min(max(chapterIndex, 0), loaded.count - 1)
             content = .chapters(loaded)
         } catch {
             content = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
@@ -379,12 +386,16 @@ struct ReaderView: View {
     private func saveProgress() {
         switch content {
         case .chapters(let chapters):
-            guard !chapters.isEmpty else { return }
-            let fraction = min(max(scrollFraction, 0), 1)
-            let overall = min(1, (Double(chapterIndex) + fraction) / Double(chapters.count))
+            guard pageInfo.pageCount > 0, !chapters.isEmpty else { return }
+            let chapterFraction = pageInfo.pagesInChapter > 0
+                ? Double(pageInfo.pageIndexInChapter) / Double(pageInfo.pagesInChapter)
+                : 0
+            let overall = min(1, Double(pageInfo.pageIndex + 1) / Double(pageInfo.pageCount))
             library.updateProgress(
                 book,
-                locator: ReadingLocator(chapterIndex: chapterIndex, scrollFraction: fraction),
+                locator: ReadingLocator(chapterIndex: pageInfo.chapterIndex,
+                                        scrollFraction: chapterFraction,
+                                        pageIndex: pageInfo.pageIndex),
                 progress: overall
             )
         case .pdf:
@@ -392,7 +403,8 @@ struct ReaderView: View {
             let overall = min(1, Double(pdfPageIndex + 1) / Double(total))
             library.updateProgress(
                 book,
-                locator: ReadingLocator(chapterIndex: pdfPageIndex, scrollFraction: overall, pageIndex: pdfPageIndex),
+                locator: ReadingLocator(chapterIndex: pdfPageIndex, scrollFraction: overall,
+                                        pageIndex: pdfPageIndex),
                 progress: overall
             )
         default:
@@ -400,64 +412,29 @@ struct ReaderView: View {
         }
     }
 
-    private func scheduleSave() {
-        pendingSave?.cancel()
-        pendingSave = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(650))
-            guard !Task.isCancelled else { return }
-            saveProgress()
-        }
+    // MARK: Page helpers
+
+    private var canGoPreviousPage: Bool {
+        pageIndex > 0
     }
 
-    // MARK: Helpers
-
-    private var chapters: [ExtractedChapter] {
-        if case .chapters(let chapters) = content { return chapters }
-        return []
+    private var canGoNextPage: Bool {
+        pageInfo.pageCount > 0 && pageIndex + pageStep < pageInfo.pageCount
     }
 
-    private var pdfURL: URL? {
-        if case .pdf(let url) = content { return url }
-        return nil
-    }
-
-    private var currentChapter: ExtractedChapter? {
-        guard chapters.indices.contains(chapterIndex) else { return nil }
-        return chapters[chapterIndex]
-    }
-
-    private var paragraphs: [String] {
-        guard let text = currentChapter?.text else { return [] }
-        var blocks = text.components(separatedBy: "\n\n")
-        if blocks.count == 1 {
-            blocks = text.components(separatedBy: "\n")
-        }
-        return blocks
-            .map { $0.replacingOccurrences(of: "\n", with: " ").trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-    }
-
-    private var canAdvanceChapter: Bool {
-        chapterIndex + 1 < chapters.count
-    }
-
-    private var readingMargin: CGFloat {
-        DeviceInfo.isPad ? max(preferences.margin, 40) : preferences.margin
-    }
-
-    private var textWeight: JustifiedText.Weight {
-        switch preferences.weightIndex {
-        case 2: .semibold
-        case 1: .medium
-        default: .regular
-        }
+    private func goToPage(_ index: Int) {
+        guard pageInfo.pageCount > 0 else { return }
+        pageIndex = min(max(index, 0), pageInfo.pageCount - 1)
     }
 
     private var currentChapterLabel: String {
         if book.format == .pdf {
             return pdfPageCount > 0 ? "Page \(min(pdfPageIndex + 1, pdfPageCount)) of \(pdfPageCount)" : "PDF"
         }
-        return currentChapter?.title ?? "Chapter \(chapterIndex + 1)"
+        if !pageInfo.chapterTitle.isEmpty {
+            return pageInfo.chapterTitle
+        }
+        return "Chapter \(pageInfo.chapterIndex + 1)"
     }
 
     private var progressLine: String {
@@ -466,92 +443,93 @@ struct ReaderView: View {
             let percent = Int(((Double(pdfPageIndex + 1) / Double(total)) * 100).rounded())
             return "Page \(min(pdfPageIndex + 1, total)) of \(total) · \(percent)%"
         }
-        let count = max(chapters.count, 1)
-        let overall: Double
-        if playback.activeBook?.id == book.id, playback.mode != .read {
-            overall = playback.overallProgress
+        guard pageInfo.pageCount > 0 else { return "Paginating…" }
+        let percent = Int((Double(pageInfo.pageIndex + 1) / Double(pageInfo.pageCount) * 100).rounded())
+        return "Page \(pageInfo.pageIndex + 1) of \(pageInfo.pageCount) · \(percent)%"
+    }
+
+    // MARK: Bookmarks and annotations
+
+    private var isCurrentPageBookmarked: Bool {
+        if book.format == .pdf {
+            return book.bookmarks.contains { $0.locator.pageIndex == pdfPageIndex }
+        }
+        return book.bookmarks.contains { $0.locator.pageIndex == pageIndex }
+    }
+
+    private func toggleBookmark() {
+        if let existing = book.bookmarks.first(where: {
+            book.format == .pdf ? $0.locator.pageIndex == pdfPageIndex : $0.locator.pageIndex == pageIndex
+        }) {
+            library.deleteBookmark(existing)
+            return
+        }
+
+        if book.format == .pdf {
+            library.addBookmark(
+                book,
+                title: "Page \(pdfPageIndex + 1)",
+                chapterTitle: "PDF page \(pdfPageIndex + 1)",
+                locator: ReadingLocator(chapterIndex: pdfPageIndex,
+                                        scrollFraction: Double(pdfPageIndex + 1) / Double(max(pdfPageCount, 1)),
+                                        pageIndex: pdfPageIndex)
+            )
         } else {
-            let fraction = min(max(scrollFraction, 0), 1)
-            overall = (Double(chapterIndex) + fraction) / Double(count)
+            guard readerPages.indices.contains(pageIndex) else { return }
+            let page = readerPages[pageIndex]
+            library.addBookmark(
+                book,
+                title: "Page \(pageIndex + 1)",
+                chapterTitle: page.chapterTitle,
+                locator: ReadingLocator(chapterIndex: page.chapterIndex,
+                                        scrollFraction: page.pagesInChapter > 0
+                                            ? Double(page.pageIndexInChapter) / Double(page.pagesInChapter) : 0,
+                                        pageIndex: pageIndex)
+            )
         }
-        let percent = Int((overall * 100).rounded())
-        return "Chapter \(min(chapterIndex + 1, count)) of \(count) · \(percent)%"
     }
 
-    private func highlightRanges(for paragraph: String) -> (sentence: NSRange?, word: NSRange?) {
-        guard playback.activeBook?.id == book.id,
-              playback.mode != .read,
-              playback.chapterIndex == chapterIndex else { return (nil, nil) }
-        let sentence = playback.currentSentence
-        guard !sentence.isEmpty else { return (nil, nil) }
-        let ns = paragraph as NSString
-        var range = ns.range(of: sentence)
-        if range.location == NSNotFound {
-            range = ns.range(of: String(sentence.prefix(48)))
-        }
-        guard range.location != NSNotFound else { return (nil, nil) }
-
-        var wordRange: NSRange?
-        if let word = playback.currentWordRange,
-           word.location >= 0,
-           word.location + word.length <= (sentence as NSString).length {
-            let candidate = NSRange(location: range.location + word.location, length: word.length)
-            if candidate.location + candidate.length <= ns.length {
-                wordRange = candidate
-            }
-        }
-        return (range, wordRange)
-    }
-
-    private func wordHighlightColor(_ theme: ReaderTheme) -> Color {
-        theme.isDark ? Color(hex: 0xC4B5FD, opacity: 0.65) : Color(hex: 0x7C3AED, opacity: 0.42)
-    }
-
-    /// Tapping a word starts narration from that sentence and word, the
-    /// ElevenReader-style interaction requested for Read & Listen.
-    private func startNarration(from paragraph: String, range: NSRange) {
-        let ns = paragraph as NSString
-        guard ns.length > 0 else { return }
-        let location = min(max(range.location, 0), ns.length - 1)
-        let spans = sentenceSpans(in: paragraph)
-        let span = spans.first(where: { NSLocationInRange(location, $0) })
-            ?? NSRange(location: 0, length: ns.length)
-        let sentence = ns.substring(with: span)
-        let wordOffset = max(0, location - span.location)
+    private func startNarration(at chapterOffset: Int) {
+        let chapter = readerPages.indices.contains(pageIndex)
+            ? readerPages[pageIndex].chapterIndex
+            : pageInfo.chapterIndex
         Task {
             await playback.start(book: book, mode: .readAndListen,
-                                 startingSentence: sentence, wordOffset: wordOffset)
+                                 startingChapterIndex: chapter,
+                                 startingChapterOffset: chapterOffset)
         }
     }
 
-    private func sentenceSpans(in paragraph: String) -> [NSRange] {
-        var spans: [NSRange] = []
-        let ns = paragraph as NSString
-        ns.enumerateSubstrings(in: NSRange(location: 0, length: ns.length),
-                               options: [.bySentences, .substringNotRequired]) { _, range, _, _ in
-            spans.append(range)
-        }
-        return spans
+    private func presentAnnotation(range: NSRange, color: AnnotationColor, note: Bool) {
+        let chapter = readerPages.indices.contains(pageIndex)
+            ? readerPages[pageIndex].chapterIndex
+            : pageInfo.chapterIndex
+        guard chapters.indices.contains(chapter) else { return }
+        let ns = chapters[chapter].text as NSString
+        guard range.length > 0, range.location >= 0, NSMaxRange(range) <= ns.length else { return }
+        let quote = ns.substring(with: range).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !quote.isEmpty else { return }
+        annotationDraft = ReaderAnnotationDraft(
+            chapterIndex: chapter,
+            range: range,
+            quote: quote,
+            color: color,
+            note: "",
+            existing: nil
+        )
+        _ = note
     }
 
-    private func scrollToNarration(_ proxy: ScrollViewProxy) {
-        guard playback.activeBook?.id == book.id,
-              playback.chapterIndex == chapterIndex else { return }
-        let sentence = playback.currentSentence
-        guard !sentence.isEmpty,
-              let index = paragraphs.firstIndex(where: {
-                  $0.contains(sentence) || $0.contains(String(sentence.prefix(48)))
-              }) else { return }
-        withAnimation(.easeInOut(duration: 0.35)) {
-            proxy.scrollTo(index, anchor: .center)
-        }
-    }
-
-    private func goToChapter(_ newIndex: Int) {
-        guard chapters.indices.contains(newIndex) else { return }
-        chapterIndex = newIndex
-        scrollFraction = 0
-        saveProgress()
+    private func editAnnotation(_ annotation: Annotation) {
+        annotationDraft = ReaderAnnotationDraft(
+            chapterIndex: annotation.chapterIndex,
+            range: NSRange(location: annotation.startOffset,
+                           length: max(1, annotation.endOffset - annotation.startOffset)),
+            quote: annotation.quote,
+            color: annotation.color,
+            note: annotation.note,
+            existing: annotation
+        )
     }
 }
 

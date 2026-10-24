@@ -139,6 +139,117 @@ final class NodusReaderUITests: XCTestCase {
         snap("iPhone-13-ReadAndListen")
     }
 
+    func testPagedReaderTurnsPagesAndBookmarks() throws {
+        let app = launch()
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let width = app.windows.firstMatch.frame.width
+        try XCTSkipIf(width >= 700, "This test runs on iPhone")
+
+        app.buttons["Read"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Loomings"].firstMatch.waitForExistence(timeout: 15))
+        let firstPage = app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'Page 1 of'")).firstMatch
+        XCTAssertTrue(firstPage.waitForExistence(timeout: 15))
+
+        app.swipeLeft()
+        let secondPage = app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'Page 2 of'")).firstMatch
+        XCTAssertTrue(secondPage.waitForExistence(timeout: 15))
+
+        if app.buttons["Remove bookmark from this page"].waitForExistence(timeout: 2) {
+            // The simulator keeps the sample library between runs and this page
+            // may already carry a bookmark from an earlier test.
+        } else {
+            let addBookmark = app.buttons["Bookmark this page"]
+            XCTAssertTrue(addBookmark.waitForExistence(timeout: 5))
+            addBookmark.tap()
+        }
+        app.buttons["Contents, bookmarks and notes"].tap()
+        let bookmarksTab = app.buttons["Bookmarks"].firstMatch
+        if bookmarksTab.waitForExistence(timeout: 3) {
+            bookmarksTab.tap()
+        } else {
+            app.segmentedControls.buttons["Bookmarks"].firstMatch.tap()
+        }
+        XCTAssertTrue(app.staticTexts["Page 2"].firstMatch.waitForExistence(timeout: 8))
+        snap("iPhone-15-Bookmarks")
+    }
+
+    func testNeuralVoiceNarration() throws {
+        let app = launch()
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let width = app.windows.firstMatch.frame.width
+        try XCTSkipIf(width >= 700, "This test runs on iPhone")
+
+        tapTab("Settings", in: app)
+        app.staticTexts["Voices & Models"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Voices"].firstMatch.waitForExistence(timeout: 10))
+        app.segmentedControls.buttons["Models"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Kokoro 82M"].waitForExistence(timeout: 10))
+
+        let useVoices = app.buttons["Use voices"].firstMatch
+        guard useVoices.waitForExistence(timeout: 5) else {
+            throw XCTSkip("Kokoro is not installed in this simulator; install it from Models to run this test.")
+        }
+        useVoices.tap()
+
+        tapTab("Home", in: app)
+        let listen = app.buttons["Listen"].firstMatch
+        XCTAssertTrue(listen.waitForExistence(timeout: 10))
+        listen.tap()
+
+        let pause = app.buttons["Pause narration"].firstMatch
+        XCTAssertTrue(pause.waitForExistence(timeout: 180),
+                      "Neural narration never started")
+        XCTAssertTrue(app.staticTexts["Phonon"].firstMatch.waitForExistence(timeout: 10))
+        snap("iPhone-18-NeuralNarration")
+
+        let progressed = app.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH 'Sentence 2 '")
+        ).firstMatch
+        XCTAssertTrue(progressed.waitForExistence(timeout: 60),
+                      "Phonon audio never advanced past the first sentence")
+        snap("iPhone-19-NeuralProgress")
+    }
+
+    func testICloudAndStorage() throws {
+        let app = launch()
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let width = app.windows.firstMatch.frame.width
+        try XCTSkipIf(width >= 700, "This test runs on iPhone")
+
+        tapTab("Settings", in: app)
+        app.staticTexts["iCloud & Storage"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["iCloud"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Sync with iCloud"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Sync is off"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Troubleshooting"].waitForExistence(timeout: 5))
+        snap("iPhone-20-ICloudStorage")
+    }
+
+    func testPDFIntelligentReading() throws {
+        let app = launch()
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let width = app.windows.firstMatch.frame.width
+        try XCTSkipIf(width >= 700, "This test runs on iPhone")
+
+        let pdf = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@",
+                                                    "Experiments in Plant Hybridization")).firstMatch
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+        pdf.tap()
+
+        let intelligent = app.segmentedControls.buttons["Intelligent Reading"].firstMatch
+        XCTAssertTrue(intelligent.waitForExistence(timeout: 15))
+        intelligent.tap()
+
+        let pageMarker = app.buttons.matching(NSPredicate(format: "label == 'Page 1'")).firstMatch
+        XCTAssertTrue(pageMarker.waitForExistence(timeout: 60))
+        XCTAssertTrue(app.textViews.firstMatch.waitForExistence(timeout: 20))
+        snap("iPhone-16-PDFReflow")
+
+        app.buttons["Original page panel"].tap()
+        XCTAssertTrue(app.staticTexts["Original page"].firstMatch.waitForExistence(timeout: 10))
+        snap("iPhone-17-PDFSource")
+    }
+
     // MARK: - Helpers
 
     private func launch() -> XCUIApplication {

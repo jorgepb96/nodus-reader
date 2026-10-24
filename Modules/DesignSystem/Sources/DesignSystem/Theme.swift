@@ -398,7 +398,9 @@ public final class ThemeManager {
         let appTheme = NodusAppTheme(rawValue: defaults.string(forKey: Key.appTheme) ?? "") ?? .dark
         self.appTheme = appTheme
         let hasFollowPreference = defaults.object(forKey: Key.readerFollowsApp) != nil
-        let follows = hasFollowPreference ? defaults.bool(forKey: Key.readerFollowsApp) : true
+        // The approved design starts with a light reader while the app chrome is
+        // dark. Following the app theme remains available through followAppTheme().
+        let follows = hasFollowPreference ? defaults.bool(forKey: Key.readerFollowsApp) : false
         self.readerFollowsApp = follows
         self.readerThemeSelection = follows
             ? Self.matchingReaderTheme(for: appTheme).rawValue

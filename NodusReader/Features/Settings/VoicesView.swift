@@ -11,18 +11,25 @@ private enum VoicesMode: String, CaseIterable, Identifiable {
 struct VoicesView: View {
     @Environment(VoiceCatalog.self) private var voices
     @Environment(PlaybackController.self) private var playback
+    @Environment(ModelManager.self) private var models
     @Environment(\.nodusPalette) private var palette
 
     @State private var mode: VoicesMode = .voices
     @State private var searchText = ""
     @State private var languageFilter: String?
     @State private var qualityFilter: Int?
+    @State private var engineFilter: String?
     @State private var didSetInitialLanguage = false
+    @State private var hfToken = ""
+    @State private var hfStatus: String?
+    @State private var isVerifyingToken = false
+    @State private var tokenSaved = false
 
     private var filteredVoices: [VoiceCatalog.Voice] {
         voices.voices.filter { voice in
             if let languageFilter, voice.language != languageFilter { return false }
             if let qualityFilter, voice.quality != qualityFilter { return false }
+            if let engineFilter, voice.engineRaw != engineFilter { return false }
             let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty {
                 return voice.name.localizedCaseInsensitiveContains(trimmed)
@@ -34,7 +41,7 @@ struct VoicesView: View {
     }
 
     private var hasFilters: Bool {
-        languageFilter != nil || qualityFilter != nil || !searchText.isEmpty
+        languageFilter != nil || qualityFilter != nil || engineFilter != nil || !searchText.isEmpty
     }
 
     var body: some View {
@@ -79,6 +86,9 @@ struct VoicesView: View {
                 languageFilter = voices.defaultVoice?.language
                 didSetInitialLanguage = true
             }
+            hfToken = HuggingFaceTokenStore.load() ?? ""
+            tokenSaved = !hfToken.isEmpty
+            await models.refreshStorage()
         }
     }
 
@@ -112,7 +122,22 @@ struct VoicesView: View {
 
     @ViewBuilder
     private var voicesContent: some View {
-        HStack(spacing: 8) {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+            filterMenu(title: "Model",
+                       value: engineLabel(for: engineFilter),
+                       isActive: engineFilter != nil) {
+                Button("All models") { engineFilter = nil }
+                Divider()
+                Button("System") { engineFilter = "system" }
+                if voices.voices.contains(where: { $0.engineRaw == "kokoro" }) {
+                    Button("Kokoro 82M") { engineFilter = "kokoro" }
+                }
+                if voices.voices.contains(where: { $0.engineRaw == "phonon" }) {
+                    Button("Phonon 31M") { engineFilter = "phonon" }
+                }
+            }
+
             filterMenu(title: "Language",
                        value: languageFilter.map { voices.languageName(for: $0) } ?? "All",
                        isActive: languageFilter != nil) {
@@ -133,18 +158,19 @@ struct VoicesView: View {
                 Button("Premium") { qualityFilter = 3 }
             }
 
-            Spacer()
-
             if hasFilters {
                 Button("Clear") {
                     searchText = ""
                     languageFilter = nil
                     qualityFilter = nil
+                    engineFilter = nil
                 }
                 .font(.footnote)
                 .foregroundStyle(palette.accent)
             }
+            }
         }
+        .scrollClipDisabled()
 
         Text("\(filteredVoices.count) voices\(languageFilter.map { " · \(voices.languageName(for: $0))" } ?? "")")
             .font(.caption)
@@ -217,7 +243,7 @@ struct VoicesView: View {
                                 .background(palette.selection, in: RoundedRectangle(cornerRadius: 5))
                         }
                     }
-                    Text("System · \(voice.languageName) · \(voice.qualityLabel)")
+                    Text("\(voice.engineLabel) · \(voice.languageName) · \(voice.qualityLabel)")
                         .font(.caption)
                         .foregroundStyle(palette.muted)
                         .lineLimit(1)
@@ -255,7 +281,7 @@ struct VoicesView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("System voices")
                         .font(.subheadline.weight(.medium))
-                    Text("\(voices.voices.count) voices · Provided by the operating system")
+                    Text("\(voices.voices.filter(\.isSystem).count) voices · Provided by the operating system")
                         .font(.caption)
                         .foregroundStyle(palette.muted)
                 }
@@ -271,34 +297,285 @@ struct VoicesView: View {
         Eyebrow("Neural engines")
             .padding(.top, 6)
 
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Kokoro and Phonon are not installed")
-                .font(.system(.title3, design: .serif))
-            Text("This build narrates with the system voices above. When the neural engine arrives, Kokoro 82M and Phonon models will download here, run entirely on this device and never be uploaded to iCloud.")
-                .font(.footnote)
-                .foregroundStyle(palette.muted)
-                .lineSpacing(2)
-            Link("Model licences and sources", destination: URL(string: "https://github.com/jorgepb96/nodus-reader-mobile/blob/main/MODEL_LICENSES.md")!)
-                .font(.footnote.weight(.medium))
-                .foregroundStyle(palette.accent)
+        ForEach(models.models) { model in
+            modelCard(model)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .panelCard(radius: 20)
+
+        Eyebrow("Hugging Face")
+            .padding(.top, 6)
+
+        huggingFaceCard
 
         HStack {
-            Text("Models on this \(DeviceInfo.platformName)")
+            Text("Models and audio on this \(DeviceInfo.platformName)")
             Spacer()
-            Text("0 MB")
+            Text(byteText(models.storage.totalBytes))
         }
         .font(.caption)
         .foregroundStyle(palette.muted)
         .padding(.horizontal, 4)
 
-        Text("Voice models, audio caches and OCR caches are device-local by design.")
+        Text("Voice models, generated audio and OCR caches are device-local by design. They are excluded from backup and never enter iCloud.")
             .font(.caption)
             .foregroundStyle(palette.muted)
             .padding(.horizontal, 4)
+    }
+
+    private func modelCard(_ model: ModelManager.Model) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(model.name)
+                        .font(.system(.title3, design: .serif))
+                    Text("\(model.detail) · \(model.language)")
+                        .font(.caption)
+                        .foregroundStyle(palette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                stateBadge(for: model)
+            }
+
+            HStack(spacing: 10) {
+                Label(model.license, systemImage: "doc.text")
+                Text(model.sizeText)
+                if !model.voices.isEmpty, models.isInstalled(model) {
+                    Text("\(model.voices.count) voices")
+                }
+            }
+            .font(.caption2)
+            .foregroundStyle(palette.muted)
+
+            if let note = model.availabilityNote {
+                Text(note)
+                    .font(.caption)
+                    .foregroundStyle(palette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            modelActions(model)
+
+            Link("Model card and licence", destination: model.source)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(palette.accent)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard(radius: 18)
+    }
+
+    @ViewBuilder
+    private func stateBadge(for model: ModelManager.Model) -> some View {
+        switch models.state(for: model) {
+        case .installed:
+            Label("Installed", systemImage: "checkmark.circle.fill")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(palette.accent)
+        case .downloading(let progress):
+            Text("\(Int(progress * 100))%")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(palette.accent)
+        case .paused(let progress):
+            Text("Paused · \(Int(progress * 100))%")
+                .font(.caption)
+                .foregroundStyle(palette.muted)
+        case .loading:
+            Label("Preparing", systemImage: "gearshape.2")
+                .font(.caption)
+                .foregroundStyle(palette.muted)
+        case .failed:
+            Label("Failed", systemImage: "exclamationmark.triangle")
+                .font(.caption)
+                .foregroundStyle(palette.accent)
+        case .notInstalled:
+            if model.isAvailable {
+                Text("Available")
+                    .font(.caption)
+                    .foregroundStyle(palette.muted)
+            } else {
+                Label("Unavailable", systemImage: "lock")
+                    .font(.caption)
+                    .foregroundStyle(palette.muted)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func modelActions(_ model: ModelManager.Model) -> some View {
+        switch models.state(for: model) {
+        case .installed:
+            HStack(spacing: 14) {
+                Button("Use voices") {
+                    if let voice = voices.voice(withID: model.voices.first?.id) {
+                        voices.setDefault(voice)
+                    }
+                }
+                .font(.footnote.weight(.semibold))
+                .buttonStyle(.plain)
+                .foregroundStyle(palette.accent)
+
+                Button("Delete", role: .destructive) {
+                    models.delete(model)
+                }
+                .font(.footnote)
+                .buttonStyle(.plain)
+                .foregroundStyle(palette.muted)
+            }
+        case .downloading(let progress):
+            VStack(alignment: .leading, spacing: 8) {
+                ProgressView(value: progress)
+                    .tint(palette.accent)
+                HStack {
+                    Text("Downloading from Hugging Face")
+                        .font(.caption2)
+                        .foregroundStyle(palette.muted)
+                    Spacer()
+                    Button("Pause") { models.pause(model) }
+                        .font(.caption.weight(.semibold))
+                        .buttonStyle(.plain)
+                        .foregroundStyle(palette.accent)
+                }
+            }
+        case .paused:
+            HStack(spacing: 14) {
+                Button("Resume") { models.resume(model) }
+                    .font(.footnote.weight(.semibold))
+                    .buttonStyle(.plain)
+                    .foregroundStyle(palette.accent)
+                Button("Delete partial download", role: .destructive) { models.delete(model) }
+                    .font(.footnote)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(palette.muted)
+            }
+        case .loading:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Compiling for this device. This can take a minute the first time.")
+                    .font(.caption2)
+                    .foregroundStyle(palette.muted)
+            }
+        case .failed(let message):
+            VStack(alignment: .leading, spacing: 8) {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(palette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 14) {
+                    Button("Retry") { models.install(model) }
+                        .font(.footnote.weight(.semibold))
+                        .buttonStyle(.plain)
+                        .foregroundStyle(palette.accent)
+                    Button("Delete", role: .destructive) { models.delete(model) }
+                        .font(.footnote)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(palette.muted)
+                }
+            }
+        case .notInstalled:
+            if model.isAvailable {
+                Button {
+                    models.install(model)
+                } label: {
+                    Label("Download \(model.sizeText)", systemImage: "arrow.down.circle")
+                        .font(.footnote.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .tint(palette.accent)
+            }
+        }
+    }
+
+    private var huggingFaceCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Optional access token")
+                .font(.subheadline.weight(.medium))
+            Text("The Kokoro and Phonon bundles used here are public, so no account is required. A token is kept in this device's Keychain only and is never written to iCloud, the library or logs.")
+                .font(.caption)
+                .foregroundStyle(palette.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            SecureField("hf_…", text: $hfToken)
+                .textFieldStyle(.plain)
+                .font(.system(.footnote, design: .monospaced))
+                .padding(.horizontal, 12)
+                .frame(height: 42)
+                .background(palette.panel, in: RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(palette.line, lineWidth: 1))
+            HStack(spacing: 14) {
+                Button(tokenSaved ? "Update token" : "Save token") {
+                    saveToken()
+                }
+                .font(.footnote.weight(.semibold))
+                .buttonStyle(.plain)
+                .foregroundStyle(palette.accent)
+                .disabled(hfToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                if tokenSaved {
+                    Button("Verify") { verifyToken() }
+                        .font(.footnote)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(palette.accent)
+                        .disabled(isVerifyingToken)
+                    Button("Remove") {
+                        HuggingFaceTokenStore.delete()
+                        hfToken = ""
+                        tokenSaved = false
+                        hfStatus = nil
+                    }
+                    .font(.footnote)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(palette.muted)
+                }
+                if isVerifyingToken {
+                    ProgressView().controlSize(.small)
+                }
+            }
+            if let hfStatus {
+                Text(hfStatus)
+                    .font(.caption2)
+                    .foregroundStyle(palette.muted)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard(radius: 18)
+    }
+
+    private func saveToken() {
+        do {
+            try HuggingFaceTokenStore.save(hfToken)
+            tokenSaved = !hfToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            hfStatus = "Token saved in the Keychain."
+        } catch {
+            hfStatus = error.localizedDescription
+        }
+    }
+
+    private func verifyToken() {
+        isVerifyingToken = true
+        hfStatus = nil
+        let token = hfToken
+        Task {
+            do {
+                let name = try await HuggingFaceTokenStore.verify(token)
+                hfStatus = "Signed in to Hugging Face as \(name)."
+            } catch {
+                hfStatus = error.localizedDescription
+            }
+            isVerifyingToken = false
+        }
+    }
+
+    private func byteText(_ bytes: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+
+    private func engineLabel(for engine: String?) -> String {
+        switch engine {
+        case "system": "System"
+        case "kokoro": "Kokoro 82M"
+        case "phonon": "Phonon 31M"
+        default: "All"
+        }
     }
 
     // MARK: Helpers

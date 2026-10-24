@@ -145,6 +145,7 @@ struct LibrarySortMenu: View {
 
 struct BookContextActions: View {
     @Environment(LibraryService.self) private var library
+    @Environment(CloudSyncService.self) private var sync
     let book: Book
     var onOpen: () -> Void
     var onReadAndListen: () -> Void
@@ -192,6 +193,20 @@ struct BookContextActions: View {
             }
         } label: {
             Label("Mark as", systemImage: "checkmark.circle")
+        }
+        if sync.isEnabled, book.downloadState == .downloaded {
+            Button {
+                Task { await sync.removeLocalDownload(book) }
+            } label: {
+                Label("Remove Download", systemImage: "icloud.and.arrow.up")
+            }
+        }
+        if sync.isEnabled, book.downloadState == .cloudOnly {
+            Button {
+                Task { await sync.download(book) }
+            } label: {
+                Label("Download from iCloud", systemImage: "icloud.and.arrow.down")
+            }
         }
         Divider()
         Button(role: .destructive) {

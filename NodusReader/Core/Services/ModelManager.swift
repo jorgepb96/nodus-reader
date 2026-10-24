@@ -1,0 +1,520 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+import Foundation
+import KokoroTTS
+import Observation
+import PhononTTS
+import Security
+
+/// Device-local management of the optional neural narration engines.
+///
+/// Weight files are downloaded on request into Application Support, are excluded
+/// from backup and iCloud sync, and can be deleted at any time. Nothing here is
+/// uploaded; the app never contacts a Nodus server.
+@MainActor
+@Observable
+final class ModelManager {
+    enum Engine: String, Sendable {
+        case kokoro
+        case phonon
+
+        var label: String {
+            switch self {
+            case .kokoro: "Kokoro"
+            case .phonon: "Phonon"
+            }
+        }
+    }
+
+    enum Availability: Sendable {
+        case available
+        case unavailable(String)
+    }
+
+    struct Voice: Identifiable, Hashable, Sendable {
+        let id: String
+        let name: String
+        let language: String
+        let engine: Engine
+    }
+
+    struct Model: Identifiable, Sendable {
+        let id: String
+        let engine: Engine
+        let name: String
+        let detail: String
+        let language: String
+        let sizeText: String
+        let license: String
+        let source: URL
+        let voices: [Voice]
+        let availability: Availability
+
+        var isAvailable: Bool {
+            if case .available = availability { return true }
+            return false
+        }
+
+        var availabilityNote: String? {
+            if case .unavailable(let note) = availability { return note }
+            return nil
+        }
+    }
+
+    enum State: Equatable {
+        case notInstalled
+        case downloading(Double)
+        case paused(Double)
+        case loading
+        case installed
+        case failed(String)
+
+        var isInstalled: Bool { self == .installed }
+        var isBusy: Bool {
+            switch self {
+            case .downloading, .loading: true
+            default: false
+            }
+        }
+    }
+
+    struct StorageSummary: Equatable {
+        var kokoroBytes: Int64 = 0
+        var phononBytes: Int64 = 0
+        var narrationCacheBytes: Int64 = 0
+        var totalBytes: Int64 { kokoroBytes + phononBytes + narrationCacheBytes }
+    }
+
+    private(set) var states: [String: State] = [:]
+    private(set) var storage = StorageSummary()
+    private(set) var errorMessage: String?
+
+    private let voices: VoiceCatalog
+    private let audioCache: NarrationAudioCache
+    private let defaults: UserDefaults
+    private var installTasks: [String: Task<Void, Never>] = [:]
+
+    @ObservationIgnored private var kokoro: KokoroTTS?
+    @ObservationIgnored private var phonon: Phonon?
+
+    private static let kokoroCacheDirectory = FileManager.default
+        .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("NodusReader/Models/Kokoro", isDirectory: true)
+
+    private static let phononDirectory = FileManager.default
+        .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("NodusReader/Models/Phonon", isDirectory: true)
+
+    /// Pinned Hugging Face revision used for the public Phonon 31M Core ML bundle.
+    /// The bundle's own `bundle.json` verifies the size and SHA-256 of every file.
+    static let phononBundleBase = URL(string:
+        "https://huggingface.co/mosiah/phonon-31m-en-coreml/resolve/0a2596e9154f0340005b6445514fdd57f7bc9ddb"
+    )!
+
+    let models: [Model] = [
+        Model(
+            id: "kokoro-82m",
+            engine: .kokoro,
+            name: "Kokoro 82M",
+            detail: "Expressive English narration on the Neural Engine, GPU and CPU.",
+            language: "English",
+            sizeText: "About 210 MB download",
+            license: "Apache-2.0",
+            source: URL(string: "https://huggingface.co/mattmireles/kokoro-coreml")!,
+            voices: [
+                Voice(id: "kokoro:af_heart", name: "Heart", language: "en-US", engine: .kokoro)
+            ],
+            availability: {
+                #if targetEnvironment(simulator)
+                .unavailable("Kokoro's English phonemizer uses MLX, which needs a Metal GPU. The Simulator does not provide one. Install Kokoro on an iPhone, iPad or Mac; Phonon and system voices work in the Simulator.")
+                #else
+                .available
+                #endif
+            }()
+        ),
+        Model(
+            id: "phonon-31m-en",
+            engine: .phonon,
+            name: "Phonon 31M",
+            detail: "Streaming English speech with nine built-in voices.",
+            language: "English",
+            sizeText: "About 300 MB download",
+            license: "Apache-2.0",
+            source: URL(string: "https://huggingface.co/mosiah/phonon-31m-en-coreml")!,
+            voices: ModelManager.phononVoices,
+            availability: .available
+        ),
+        Model(
+            id: "phonon-40m-es",
+            engine: .phonon,
+            name: "Phonon 40M Spanish",
+            detail: "Spanish Phonon checkpoint.",
+            language: "Spanish",
+            sizeText: "Not available",
+            license: "CC BY-NC 4.0",
+            source: URL(string: "https://huggingface.co/gradium/phonon-40m-es")!,
+            voices: [],
+            availability: .unavailable(
+                "Gradium publishes this checkpoint as gated CC BY-NC weights but has not published a Core ML bundle. Nodus Reader will not offer a download it cannot run."
+            )
+        ),
+        Model(
+            id: "phonon-40m-multilingual",
+            engine: .phonon,
+            name: "Phonon 40M Multilingual",
+            detail: "Multilingual Phonon checkpoint.",
+            language: "Multilingual",
+            sizeText: "Not available",
+            license: "CC BY-NC 4.0",
+            source: URL(string: "https://huggingface.co/gradium/phonon-40m-multilingual")!,
+            voices: [],
+            availability: .unavailable(
+                "This checkpoint is gated and non-commercial, and there is no Core ML bundle for it. It is listed for transparency only."
+            )
+        )
+    ]
+
+    init(voices: VoiceCatalog,
+         audioCache: NarrationAudioCache = NarrationAudioCache(),
+         defaults: UserDefaults = .standard) {
+        self.voices = voices
+        self.audioCache = audioCache
+        self.defaults = defaults
+        Self.excludeFromBackup(Self.kokoroCacheDirectory)
+        Self.excludeFromBackup(Self.phononDirectory)
+        refreshStates()
+        publishVoices()
+    }
+
+    var kokoroDirectory: URL { Self.kokoroCacheDirectory }
+    var phononModelDirectory: URL { Self.phononDirectory }
+    var narrationCache: NarrationAudioCache { audioCache }
+
+    // MARK: State
+
+    func state(for model: Model) -> State {
+        states[model.id] ?? (isInstalled(model) ? .installed : .notInstalled)
+    }
+
+    func isInstalled(_ model: Model) -> Bool {
+        guard model.isAvailable else { return false }
+        switch model.engine {
+        case .kokoro:
+            return model.id == "kokoro-82m" && FileManager.default.fileExists(
+                atPath: Self.kokoroCacheDirectory.appendingPathComponent("KokoroRuntimeManifest.json").path
+            )
+        case .phonon:
+            return model.id == "phonon-31m-en" && PhononModels.isInstalled(at: Self.phononDirectory)
+        }
+    }
+
+    func refreshStates() {
+        for model in models {
+            if states[model.id] == nil || states[model.id] == .notInstalled || states[model.id]?.isInstalled == true {
+                states[model.id] = isInstalled(model) ? .installed : .notInstalled
+            }
+        }
+        Task { await refreshStorage() }
+    }
+
+    func refreshStorage() async {
+        var summary = StorageSummary()
+        summary.kokoroBytes = Self.directorySize(Self.kokoroCacheDirectory)
+        summary.phononBytes = Self.directorySize(Self.phononDirectory)
+        summary.narrationCacheBytes = await audioCache.totalBytes()
+        storage = summary
+    }
+
+    func clearError() {
+        errorMessage = nil
+    }
+
+    // MARK: Install
+
+    func install(_ model: Model) {
+        guard model.isAvailable else { return }
+        guard installTasks[model.id] == nil else { return }
+        states[model.id] = .downloading(0)
+        errorMessage = nil
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.performInstall(model)
+        }
+        installTasks[model.id] = task
+    }
+
+    func pause(_ model: Model) {
+        guard case .downloading(let progress) = state(for: model) else { return }
+        installTasks[model.id]?.cancel()
+        installTasks[model.id] = nil
+        states[model.id] = .paused(progress)
+    }
+
+    func resume(_ model: Model) {
+        guard case .paused = state(for: model) else { return }
+        install(model)
+    }
+
+    func delete(_ model: Model) {
+        installTasks[model.id]?.cancel()
+        installTasks[model.id] = nil
+        switch model.engine {
+        case .kokoro:
+            kokoro = nil
+            try? FileManager.default.removeItem(at: Self.kokoroCacheDirectory)
+        case .phonon:
+            phonon = nil
+            try? FileManager.default.removeItem(at: Self.phononDirectory)
+        }
+        states[model.id] = .notInstalled
+        publishVoices()
+        Task { await refreshStorage() }
+    }
+
+    private func performInstall(_ model: Model) async {
+        states[model.id] = .downloading(0)
+        do {
+            switch model.engine {
+            case .kokoro:
+                let resources = try await KokoroResourceProvider.huggingFace(
+                    cacheDirectory: Self.kokoroCacheDirectory
+                ) { [weak self] progress in
+                    guard progress.phase == .downloading else { return }
+                    Task { @MainActor [weak self] in
+                        self?.states[model.id] = .downloading(progress.fraction)
+                    }
+                }
+                try Task.checkCancellation()
+                Self.excludeFromBackup(Self.kokoroCacheDirectory)
+                states[model.id] = .loading
+                let loaded = try await KokoroTTS.load(resources: resources)
+                try Task.checkCancellation()
+                kokoro = loaded
+                try await loaded.prewarm(text: "Nodus Reader is ready to narrate.", voice: .afHeart)
+            case .phonon:
+                let directory = try await PhononModels.download(
+                    from: Self.phononBundleBase,
+                    to: Self.phononDirectory
+                ) { [weak self] fraction in
+                    Task { @MainActor [weak self] in
+                        self?.states[model.id] = .downloading(fraction)
+                    }
+                }
+                try Task.checkCancellation()
+                states[model.id] = .loading
+                phonon = try await Phonon.load(models: directory, language: .english)
+            }
+            states[model.id] = .installed
+            installTasks[model.id] = nil
+            publishVoices()
+            await refreshStorage()
+        } catch is CancellationError {
+            if states[model.id]?.isBusy == true {
+                states[model.id] = .paused(progressValue(for: model))
+            }
+            installTasks[model.id] = nil
+        } catch {
+            states[model.id] = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            installTasks[model.id] = nil
+            await refreshStorage()
+        }
+    }
+
+    private func progressValue(for model: Model) -> Double {
+        switch states[model.id] {
+        case .downloading(let value), .paused(let value): value
+        default: 0
+        }
+    }
+
+    // MARK: Runtime
+
+    func kokoroEngine() -> KokoroTTS? { kokoro }
+
+    func phononEngine() -> Phonon? { phonon }
+
+    /// Lazily loads an installed engine when the app starts after a previous
+    /// install, so playback can use it without visiting the Models screen.
+    func loadInstalledEnginesIfNeeded() async {
+        #if !targetEnvironment(simulator)
+        if kokoro == nil, let kokoroModel = models.first(where: { $0.id == "kokoro-82m" }),
+           isInstalled(kokoroModel) {
+            do {
+                let resources = try await KokoroResourceProvider.huggingFace(
+                    cacheDirectory: Self.kokoroCacheDirectory
+                )
+                kokoro = try await KokoroTTS.load(resources: resources)
+            } catch {
+                states["kokoro-82m"] = .failed(
+                    (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                )
+            }
+        }
+        #endif
+        if phonon == nil, let phononModel = models.first(where: { $0.id == "phonon-31m-en" }),
+           isInstalled(phononModel) {
+            do {
+                phonon = try await Phonon.load(models: Self.phononDirectory, language: .english)
+            } catch {
+                states["phonon-31m-en"] = .failed(
+                    (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                )
+            }
+        }
+        publishVoices()
+        await refreshStorage()
+    }
+
+    func voices(for model: Model) -> [Voice] {
+        guard isInstalled(model) else { return [] }
+        return model.voices
+    }
+
+    private func publishVoices() {
+        var neural: [VoiceCatalog.Voice] = []
+        if let kokoroModel = models.first(where: { $0.id == "kokoro-82m" }), isInstalled(kokoroModel) {
+            neural.append(contentsOf: kokoroModel.voices.map { voice in
+                VoiceCatalog.Voice(
+                    id: voice.id,
+                    name: voice.name,
+                    language: voice.language,
+                    languageName: Locale.current.localizedString(forLanguageCode: voice.language) ?? "English",
+                    quality: 3,
+                    gender: nil,
+                    engineRaw: voice.engine.rawValue
+                )
+            })
+        }
+        if let phononModel = models.first(where: { $0.id == "phonon-31m-en" }), isInstalled(phononModel) {
+            neural.append(contentsOf: phononModel.voices.map { voice in
+                VoiceCatalog.Voice(
+                    id: voice.id,
+                    name: voice.name,
+                    language: voice.language,
+                    languageName: Locale.current.localizedString(forLanguageCode: voice.language) ?? "English",
+                    quality: 3,
+                    gender: nil,
+                    engineRaw: voice.engine.rawValue
+                )
+            })
+        }
+        voices.setNeuralVoices(neural)
+    }
+
+    private static func excludeFromBackup(_ url: URL) {
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        var mutable = url
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? mutable.setResourceValues(values)
+    }
+
+    private static func directorySize(_ directory: URL) -> Int64 {
+        guard let enumerator = FileManager.default.enumerator(
+            at: directory,
+            includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey]
+        ) else { return 0 }
+        var total: Int64 = 0
+        for case let url as URL in enumerator {
+            guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
+                  values.isRegularFile == true else { continue }
+            total += Int64(values.fileSize ?? 0)
+        }
+        return total
+    }
+
+    private static let phononVoices: [Voice] = [
+        Voice(id: "phonon:default", name: "Default", language: "en-US", engine: .phonon),
+        Voice(id: "phonon:Harper", name: "Harper", language: "en-US", engine: .phonon),
+        Voice(id: "phonon:Hadley", name: "Hadley", language: "en-US", engine: .phonon),
+        Voice(id: "phonon:Miles", name: "Miles", language: "en-US", engine: .phonon),
+        Voice(id: "phonon:Preston", name: "Preston", language: "en-US", engine: .phonon),
+        Voice(id: "phonon:Maeve", name: "Maeve", language: "en-US", engine: .phonon),
+        Voice(id: "phonon:Bryony", name: "Bryony", language: "en-US", engine: .phonon),
+        Voice(id: "phonon:Edwin", name: "Edwin", language: "en-US", engine: .phonon),
+        Voice(id: "phonon:Hugh", name: "Hugh", language: "en-US", engine: .phonon)
+    ]
+}
+
+// MARK: - Hugging Face token
+
+/// Optional personal access token, stored only in the device Keychain. It is
+/// never written to the library folder, CloudKit, iCloud Drive or logs.
+enum HuggingFaceTokenStore {
+    private static let service = "ai.nodus.reader.huggingface"
+
+    static func load() -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var item: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
+              let data = item as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    static func save(_ token: String) throws {
+        let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        delete()
+        guard !trimmed.isEmpty else { return }
+        let attributes: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+            kSecValueData as String: Data(trimmed.utf8)
+        ]
+        let status = SecItemAdd(attributes as CFDictionary, nil)
+        guard status == errSecSuccess else {
+            throw HuggingFaceTokenError.keychain(status)
+        }
+    }
+
+    static func delete() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service
+        ]
+        SecItemDelete(query as CFDictionary)
+    }
+
+    /// Checks the token against Hugging Face and returns the account name.
+    static func verify(_ token: String) async throws -> String {
+        var request = URLRequest(url: URL(string: "https://huggingface.co/api/whoami-v2")!)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 20
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw HuggingFaceTokenError.invalidResponse
+        }
+        guard http.statusCode == 200 else {
+            throw HuggingFaceTokenError.rejected(http.statusCode)
+        }
+        struct WhoAmI: Decodable { let name: String }
+        guard let who = try? JSONDecoder().decode(WhoAmI.self, from: data) else {
+            throw HuggingFaceTokenError.invalidResponse
+        }
+        return who.name
+    }
+}
+
+enum HuggingFaceTokenError: LocalizedError {
+    case keychain(OSStatus)
+    case rejected(Int)
+    case invalidResponse
+
+    var errorDescription: String? {
+        switch self {
+        case .keychain(let status):
+            "The token could not be saved in the Keychain (status \(status))."
+        case .rejected(let code):
+            code == 401
+                ? "Hugging Face rejected this token."
+                : "Hugging Face returned HTTP \(code)."
+        case .invalidResponse:
+            "Hugging Face returned an unexpected response."
+        }
+    }
+}
