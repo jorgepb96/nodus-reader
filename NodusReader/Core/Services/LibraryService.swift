@@ -662,6 +662,7 @@ public final class LibraryService {
         memberships.move(fromOffsets: fromOffsets, toOffset: toOffset)
         for (index, membership) in memberships.enumerated() {
             membership.sortIndex = index
+            membership.updatedAt = Date()
         }
         save()
     }

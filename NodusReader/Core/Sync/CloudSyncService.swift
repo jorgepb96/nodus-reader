@@ -3,6 +3,9 @@ import CloudKit
 import Foundation
 import Observation
 import SwiftData
+#if os(macOS)
+import Security
+#endif
 
 /// CloudKit + iCloud Documents synchronisation for the personal library.
 ///
@@ -135,7 +138,8 @@ final class CloudSyncService {
     func refreshAvailability() async {
         pendingCount = journal.pendingCount()
         fileSyncAvailable = documents.isAvailable
-        guard FileManager.default.ubiquityIdentityToken != nil else {
+        guard FileManager.default.ubiquityIdentityToken != nil,
+              Self.hasCloudKitContainerEntitlement() else {
             isAvailable = false
             availabilityMessage = "Sign in to iCloud and enable iCloud Drive for Nodus Reader to sync your library."
             if !isEnabled { status = .disabled } else { status = .unavailable(availabilityMessage) }
@@ -360,10 +364,14 @@ final class CloudSyncService {
             do {
                 let changes = try await database.recordZoneChanges(inZoneWith: zoneID, since: token)
                 journal.withSuspendedRecording {
-                    for (_, result) in changes.modificationResultsByID {
-                        if case .success(let modification) = result {
-                            applyRemote(modification.record)
-                        }
+                    // Parents must exist before children: a membership or
+                    // annotation can arrive in the same batch as its book.
+                    let records = changes.modificationResultsByID.values.compactMap { result -> CKRecord? in
+                        guard case .success(let modification) = result else { return nil }
+                        return modification.record
+                    }
+                    for record in records.sorted(by: { Self.applyPriority($0.recordType) < Self.applyPriority($1.recordType) }) {
+                        applyRemote(record)
                     }
                     for deletion in changes.deletions {
                         applyRemoteDeletion(deletion.recordID, recordType: deletion.recordType)
@@ -431,7 +439,7 @@ final class CloudSyncService {
             record["collectionID"] = collectionID.uuidString
             record["sortIndex"] = Int64(membership.sortIndex)
             record["addedAt"] = membership.addedAt
-            record["updatedAt"] = localUpdatedAt
+            record["updatedAt"] = membership.updatedAt
         case .bookmark:
             guard let bookmark = fetchBookmark(id: entry.entityID), let bookID = bookmark.book?.id else { return nil }
             record = CKRecord(recordType: "Bookmark", recordID: id)
@@ -557,6 +565,8 @@ final class CloudSyncService {
               let collectionID = UUID(uuidString: collectionIDString),
               let book = fetchBook(id: bookID),
               let collection = fetchCollection(id: collectionID) else { return }
+        let remoteDate = record["updatedAt"] as? Date ?? .distantPast
+        if let local = fetchMembership(id: id), local.updatedAt > remoteDate { return }
         let membership: CollectionMembership
         if let existing = fetchMembership(id: id) {
             membership = existing
@@ -568,6 +578,7 @@ final class CloudSyncService {
         membership.collection = collection
         membership.sortIndex = Int(integer(record, "sortIndex") ?? Int64(membership.sortIndex))
         membership.addedAt = record["addedAt"] as? Date ?? membership.addedAt
+        membership.updatedAt = remoteDate
     }
 
     private func applyRemoteBookmark(_ record: CKRecord) {
@@ -637,6 +648,18 @@ final class CloudSyncService {
         deleteLocal(type: type, id: id)
         removeOutbox(type: type, id: id)
         NotificationCenter.default.post(name: .nodusSyncOutboxChanged, object: nil)
+    }
+
+    private static func applyPriority(_ recordType: CKRecord.RecordType) -> Int {
+        switch recordType {
+        case "Book": 0
+        case "Collection": 1
+        case "Membership": 2
+        case "Bookmark": 3
+        case "Annotation": 4
+        case "Tombstone": 5
+        default: 6
+        }
     }
 
     private func applyRemoteDeletion(_ recordID: CKRecord.ID, recordType: CKRecord.RecordType) {
@@ -731,6 +754,20 @@ final class CloudSyncService {
 
     // MARK: Helpers
 
+    private static func hasCloudKitContainerEntitlement() -> Bool {
+        #if os(macOS)
+        guard let task = SecTaskCreateFromSelf(nil),
+              let value = SecTaskCopyValueForEntitlement(
+                task,
+                "com.apple.developer.icloud-container-identifiers" as CFString,
+                nil
+              ) as? [String] else { return false }
+        return value.contains(ICloudDocumentStore.containerIdentifier)
+        #else
+        return true
+        #endif
+    }
+
     private func status(for error: Error) -> Status {
         if error is URLError { return .offline }
         if let ck = error as? CKError {
@@ -785,7 +822,7 @@ final class CloudSyncService {
         switch type {
         case .book: fetchBook(id: id)?.updatedAt
         case .collection: fetchCollection(id: id)?.updatedAt
-        case .membership: fetchMembership(id: id)?.addedAt
+        case .membership: fetchMembership(id: id)?.updatedAt
         case .bookmark: fetchBookmark(id: id)?.updatedAt
         case .annotation: fetchAnnotation(id: id)?.updatedAt
         case .readingPosition, .theme, .preference: nil

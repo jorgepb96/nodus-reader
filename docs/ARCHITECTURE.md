@@ -81,7 +81,8 @@ they are not uploaded as models themselves.
 - Depth is unlimited; the tree is derived from `parentID`.
 
 `CollectionMembership`:
-- explicit join object with `book`, `collection`, `sortIndex`, `addedAt`.
+- explicit join object with `book`, `collection`, `sortIndex`, `addedAt` and
+  `updatedAt` so reordering syncs as a real edit.
 - Enables multi-membership without duplicating a book and per-collection manual order.
 
 Deleting a collection deletes its membership rows (cascade) but not the books. Deleting a book cascades its memberships. Deleting a parent collection recursively deletes its descendants and their memberships.

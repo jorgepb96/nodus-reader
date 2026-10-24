@@ -383,6 +383,7 @@ public final class PlaybackController {
                 neuralTask = nil
                 neuralPaused = false
                 isPlaying = false
+                isLoading = false
                 saveProgress()
                 updateNowPlaying()
             }
@@ -1004,6 +1005,7 @@ public final class PlaybackController {
         neuralBufferDuration = 0
         neuralStartTime = 0
         neuralPlaybackToken = UUID()
+        isLoading = false
     }
 
     private func sentenceIndex(chapter: Int, offset: Int) -> Int? {

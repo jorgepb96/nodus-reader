@@ -303,6 +303,7 @@ public final class CollectionMembership {
     public var collection: LibraryCollection?
     public var sortIndex: Int = 0
     public var addedAt: Date = Date()
+    public var updatedAt: Date = Date()
 
     public init(id: UUID = UUID(), book: Book, collection: LibraryCollection, sortIndex: Int = 0) {
         self.id = id
@@ -310,6 +311,7 @@ public final class CollectionMembership {
         self.collection = collection
         self.sortIndex = sortIndex
         self.addedAt = Date()
+        self.updatedAt = Date()
     }
 }
 
