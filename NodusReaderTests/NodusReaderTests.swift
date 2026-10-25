@@ -80,6 +80,65 @@ func epubTitlePrefixDoesNotEatBodyText() throws {
 }
 
 @Test @MainActor
+func epubWithEncryptedChaptersIsReportedAsDRM() throws {
+    let container = """
+    <?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+    <rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>
+    """
+    let fontsOnly = """
+    <encryption xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><EncryptedData xmlns="http://www.w3.org/2001/04/xmlenc#">
+    <CipherData><CipherReference URI="OEBPS/Fonts/Body.otf"/></CipherData></EncryptedData></encryption>
+    """
+    #expect(!EPUBParser.encryptsText(Data(fontsOnly.utf8)))
+    let url = try SampleLibrary.makeArchive([
+        ("mimetype", "application/epub+zip"),
+        ("META-INF/container.xml", container),
+        ("META-INF/encryption.xml", fontsOnly.replacingOccurrences(of: "Fonts/Body.otf", with: "Text/c1.xhtml")),
+        ("OEBPS/content.opf", "<package/>")
+    ])
+    defer { try? FileManager.default.removeItem(at: url) }
+    #expect(throws: ImportError.drmProtected(url.lastPathComponent)) {
+        try EPUBParser.parse(url: url, fallbackTitle: "Protected")
+    }
+}
+
+@Test @MainActor
+func importsEPUBFolderPackage() async throws {
+    // Apple Books and some Files providers keep an EPUB as a folder package.
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let package = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        .appendingPathComponent("Folder Book.epub", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: package.deletingLastPathComponent()) }
+    let files: [(String, String)] = [
+        ("mimetype", "application/epub+zip"),
+        ("META-INF/container.xml", """
+        <?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+        <rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>
+        """),
+        ("OEBPS/content.opf", """
+        <?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0">
+        <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Folder Book</dc:title><dc:language>en</dc:language></metadata>
+        <manifest><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/></manifest>
+        <spine><itemref idref="c1"/></spine></package>
+        """),
+        ("OEBPS/c1.xhtml", "<html><body><h1>Opening</h1><p>Death was a tall figure with a scythe and a horse.</p></body></html>")
+    ]
+    for (path, contents) in files {
+        let url = package.appendingPathComponent(path)
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(contents.utf8).write(to: url)
+    }
+
+    let result = await fixture.service.importFiles([package]) { _ in }
+    #expect(result.failures.isEmpty)
+    let book = try #require(result.imported.first)
+    #expect(book.title == "Folder Book")
+    #expect(book.format == .epub)
+}
+
+@Test @MainActor
 func importsEPUBAndRejectsDuplicateContent() async throws {
     let fixture = try Fixture()
     defer { fixture.cleanUp() }
@@ -437,6 +496,82 @@ func htmlTextStripsMarkupAndDecodesEntities() {
     #expect(!text.contains("<p>"))
     #expect(!text.contains("ignored"))
     #expect(HTMLText.firstHeading(from: Data(html.utf8)) == "Heading")
+}
+
+@Test
+func htmlTextJoinsWrappedLinesAndSkipsMarkers() {
+    // Project Gutenberg wraps every source line; inline tags, footnote calls
+    // and page numbers must not break sentences for reading or narration.
+    let html = """
+    <body><h2 id="c1">CHAPTER 1.</h2>
+    <p>Call me Ishmael. Some years
+    ago, never mind how long<a class="noteref" href="#n1">1</a> precisely,
+    having <i>little</i> or no money.</p><p>Second <em>para</em>.</p>
+    <span class="pagenum">[Pg 12]</span><p>Third&nbsp;one &amp; done.</p></body>
+    """
+    let conversion = HTMLText.convert(html)
+    #expect(conversion.text == """
+    CHAPTER 1.
+
+    Call me Ishmael. Some years ago, never mind how long precisely, having little or no money.
+
+    Second para.
+
+    Third one & done.
+    """)
+    #expect(conversion.anchors["c1"] == 0)
+    #expect(HTMLText.plainText(from: "a < b and <br/>c") == "a < b and\nc")
+}
+
+@Test @MainActor
+func epubChaptersFollowContentsAnchors() throws {
+    let url = try SampleLibrary.makeArchive([
+        ("mimetype", "application/epub+zip"),
+        ("META-INF/container.xml", """
+        <?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+        <rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>
+        """),
+        ("OEBPS/content.opf", """
+        <?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="2.0">
+        <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Moby Dick</dc:title><dc:language>en</dc:language></metadata>
+        <manifest>
+          <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+          <item id="p1" href="text/part1.xhtml" media-type="application/xhtml+xml"/>
+          <item id="p2" href="text/part2.xhtml" media-type="application/xhtml+xml"/>
+        </manifest>
+        <spine toc="ncx"><itemref idref="p1"/><itemref idref="p2"/></spine></package>
+        """),
+        ("OEBPS/toc.ncx", """
+        <?xml version="1.0"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><navMap>
+          <navPoint id="a"><navLabel><text>ETYMOLOGY.</text></navLabel><content src="text/part1.xhtml#etym"/></navPoint>
+          <navPoint id="b"><navLabel><text>CHAPTER 1. Loomings.</text></navLabel><content src="text/part1.xhtml#ch1"/></navPoint>
+          <navPoint id="c"><navLabel><text>CHAPTER 2. The Carpet-Bag.</text></navLabel><content src="text/part1.xhtml#ch2"/></navPoint>
+        </navMap><pageList><pageTarget><navLabel><text>12</text></navLabel><content src="text/part2.xhtml"/></pageTarget></pageList></ncx>
+        """),
+        ("OEBPS/text/part1.xhtml", """
+        <html><head><title>Moby Dick</title></head><body>
+        <p>The Project Gutenberg edition of this classic novel.</p>
+        <h2 id="etym">ETYMOLOGY.</h2><p>Supplied by a Late Consumptive Usher to a Grammar School.</p>
+        <div id="ch1"><h2>CHAPTER 1. Loomings.</h2><p>Call me Ishmael. Some years ago, never mind how long precisely.</p></div>
+        <h2 id="ch2">CHAPTER 2. The Carpet-Bag.</h2><p>I stuffed a shirt or two into my old carpet-bag.</p>
+        </body></html>
+        """),
+        ("OEBPS/text/part2.xhtml", """
+        <html><head><title>Moby Dick</title></head><body>
+        <p>It was a very dubious-looking, nay, a very dark and dismal night.</p></body></html>
+        """)
+    ])
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let extraction = try EPUBParser.parse(url: url, fallbackTitle: "Fallback")
+    #expect(extraction.chapters.map(\.title) == [
+        "Moby Dick", "ETYMOLOGY.", "CHAPTER 1. Loomings.", "CHAPTER 2. The Carpet-Bag."
+    ])
+    #expect(extraction.chapters.map(\.id) == [0, 1, 2, 3])
+    #expect(extraction.chapters[2].text == "Call me Ishmael. Some years ago, never mind how long precisely.")
+    // The untitled continuation file belongs to chapter 2.
+    #expect(extraction.chapters[3].text.hasPrefix("I stuffed a shirt"))
+    #expect(extraction.chapters[3].text.hasSuffix("dark and dismal night."))
 }
 
 @Test

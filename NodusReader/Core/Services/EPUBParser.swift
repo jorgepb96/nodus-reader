@@ -46,6 +46,12 @@ public enum EPUBParser {
         guard let containerData = try data("META-INF/container.xml") else {
             throw ImportError.unreadableDocument(url.lastPathComponent)
         }
+        // Encrypted chapters mean DRM (font obfuscation only covers fonts).
+        // Nodus Reader does not remove DRM, so say so instead of importing
+        // ciphertext as text.
+        if let encryption = try data("META-INF/encryption.xml"), encryptsText(encryption) {
+            throw ImportError.drmProtected(url.lastPathComponent)
+        }
 
         let container = ContainerParser()
         let containerXML = XMLParser(data: containerData)
@@ -67,19 +73,19 @@ public enum EPUBParser {
 
         let baseDirectory = (normalize(packagePath) as NSString).deletingLastPathComponent
 
-        var navigationTitles: [String: String] = [:]
+        var navigationPoints: [NavigationPoint] = []
         if let navItem = package.navigationItem {
             let navPath = resolve(navItem.href, relativeTo: baseDirectory)
+            let navDirectory = (navPath as NSString).deletingLastPathComponent
             if let navData = try? data(navPath) {
                 if navItem.mediaType.contains("dtbncx") {
-                    navigationTitles = NCXParser.titles(from: navData, relativeTo: baseDirectory)
+                    navigationPoints = NCXParser.points(from: navData, relativeTo: navDirectory)
                 } else {
-                    navigationTitles = NavigationDocumentParser.titles(from: navData, relativeTo: baseDirectory)
+                    navigationPoints = NavigationDocumentParser.points(from: navData, relativeTo: navDirectory)
                 }
             }
         }
 
-        var chapters: [ExtractedChapter] = []
         var spineItems: [OPFManifestItem] = package.spineIDs.compactMap { package.manifest[$0] }
         if spineItems.isEmpty {
             spineItems = package.manifest.values
@@ -87,33 +93,22 @@ public enum EPUBParser {
                 .sorted { $0.href.localizedStandardCompare($1.href) == .orderedAscending }
         }
 
-        for (index, item) in spineItems.enumerated() {
+        var builder = ChapterBuilder(hasNavigation: !navigationPoints.isEmpty)
+        for item in spineItems {
             guard item.mediaType.contains("html") || item.href.lowercased().hasSuffix(".xhtml") else { continue }
             let path = resolve(item.href, relativeTo: baseDirectory)
             guard let chapterData = try? data(path) else { continue }
-
-            var text = HTMLText.plainText(from: chapterData)
-
-            let pathKey = normalize(path)
-            let title = navigationTitles[pathKey]
-                ?? navigationTitles[item.href]
-                ?? HTMLText.firstHeading(from: chapterData)
-                ?? "Chapter \(chapters.count + 1)"
-
-            if text.hasPrefix(title) {
-                let remainder = text.dropFirst(title.count)
-                // Only strip a real heading line. A title such as "I" or "A"
-                // must not eat the first letter of the body ("It was…").
-                if remainder.isEmpty || remainder.first?.isWhitespace == true {
-                    text = String(remainder).trimmingCharacters(in: .whitespacesAndNewlines)
-                }
-            }
-            guard text.count > 10 else { continue }
-
-            chapters.append(ExtractedChapter(id: chapters.count, title: title, text: text))
-            if chapters.count >= 500 { break }
-            _ = index
+            let raw = String(data: chapterData, encoding: .utf8)
+                ?? String(data: chapterData, encoding: .isoLatin1)
+                ?? ""
+            let conversion = HTMLText.convert(raw)
+            let points = navigationPoints.filter { $0.path.caseInsensitiveCompare(path) == .orderedSame }
+            builder.add(conversion, points: points, heading: HTMLText.firstHeading(from: chapterData),
+                        documentTitle: HTMLText.documentTitle(from: chapterData),
+                        hasSectionHeading: HTMLText.hasSectionHeading(raw))
+            if builder.chapters.count >= 500 { break }
         }
+        let chapters = builder.chapters
 
         guard !chapters.isEmpty else {
             throw ImportError.emptyDocument(url.lastPathComponent)
@@ -149,6 +144,17 @@ public enum EPUBParser {
         )
     }
 
+    static func encryptsText(_ encryptionXML: Data) -> Bool {
+        let xml = String(data: encryptionXML, encoding: .utf8) ?? ""
+        guard let regex = try? NSRegularExpression(pattern: "(?i)URI\\s*=\\s*[\"']([^\"']+)[\"']") else { return false }
+        let range = NSRange(xml.startIndex..<xml.endIndex, in: xml)
+        return regex.matches(in: xml, range: range).contains { match in
+            guard let uri = Range(match.range(at: 1), in: xml) else { return false }
+            let path = xml[uri].lowercased()
+            return path.hasSuffix(".xhtml") || path.hasSuffix(".html") || path.hasSuffix(".htm")
+        }
+    }
+
     // MARK: - Paths
 
     static func normalize(_ path: String) -> String {
@@ -159,6 +165,12 @@ public enum EPUBParser {
             components.append(String(part))
         }
         return components.joined(separator: "/")
+    }
+
+    static func navigationPoint(_ href: String, title: String, relativeTo base: String) -> NavigationPoint {
+        let parts = href.split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false)
+        let fragment = parts.count > 1 ? String(parts[1]).removingPercentEncoding ?? String(parts[1]) : nil
+        return NavigationPoint(path: resolve(href, relativeTo: base), fragment: fragment, title: title)
     }
 
     static func resolve(_ href: String, relativeTo base: String) -> String {
@@ -287,21 +299,137 @@ private final class OPFParser: NSObject, XMLParserDelegate {
     }
 }
 
-// MARK: - Navigation labels
+// MARK: - Chapters
+
+/// One table-of-contents entry: a spine file, an optional element id inside
+/// it and the label the book gives that place.
+struct NavigationPoint: Equatable, Sendable {
+    var path: String
+    var fragment: String?
+    var title: String
+}
+
+/// Turns spine documents into reading chapters that follow the book's own
+/// table of contents: a file holding several chapters is split at the anchors
+/// the contents point to, and a file the contents never mention (a split
+/// continuation, a page with no heading) continues the previous chapter
+/// instead of becoming a chapter of its own.
+struct ChapterBuilder {
+    private(set) var chapters: [ExtractedChapter] = []
+    let hasNavigation: Bool
+
+    init(hasNavigation: Bool) {
+        self.hasNavigation = hasNavigation
+    }
+
+    mutating func add(_ conversion: HTMLText.Conversion, points: [NavigationPoint],
+                      heading: String?, documentTitle: String?, hasSectionHeading: Bool) {
+        let text = conversion.text as NSString
+        // Contents entries resolved to offsets in this file, in reading
+        // order. Entries sharing an offset (a part and its first chapter)
+        // keep the most specific, the last one listed.
+        var starts: [(offset: Int, title: String)] = []
+        for point in points {
+            let offset: Int
+            if let fragment = point.fragment, !fragment.isEmpty {
+                guard let anchor = conversion.anchors[fragment] else { continue }
+                offset = anchor
+            } else {
+                offset = 0
+            }
+            if let index = starts.firstIndex(where: { $0.offset == offset }) {
+                starts[index].title = point.title
+            } else {
+                starts.append((offset, point.title))
+            }
+        }
+        starts.sort { $0.offset < $1.offset }
+
+        let leadingEnd = starts.first?.offset ?? text.length
+        if leadingEnd > 0 {
+            let leading = Self.slice(text, from: 0, to: leadingEnd)
+            if starts.isEmpty, !(hasNavigation && !hasSectionHeading && !chapters.isEmpty) {
+                // Without contents (or with a real heading) a file is a chapter.
+                append(title: heading, text: leading)
+            } else {
+                // Text before the first contents entry: its headings belong to
+                // later sections, so an opening chunk is named by the page.
+                continuePrevious(with: leading,
+                                 fallbackTitle: starts.isEmpty ? heading : Self.pageTitle(documentTitle, text: leading))
+            }
+        }
+        for (index, start) in starts.enumerated() {
+            let end = index + 1 < starts.count ? starts[index + 1].offset : text.length
+            append(title: start.title, text: Self.slice(text, from: start.offset, to: end))
+        }
+    }
+
+    private mutating func append(title: String?, text: String) {
+        let title = title.map(HTMLText.normalize) ?? ""
+        let body = Self.removingHeading(title, from: text)
+        guard body.count > 10 else { return }
+        chapters.append(ExtractedChapter(id: chapters.count,
+                                         title: title.isEmpty ? "Chapter \(chapters.count + 1)" : title,
+                                         text: body))
+    }
+
+    private mutating func continuePrevious(with text: String, fallbackTitle: String?) {
+        guard !text.isEmpty else { return }
+        guard let last = chapters.indices.last else {
+            append(title: fallbackTitle, text: text)
+            return
+        }
+        chapters[last].text += "\n\n" + text
+    }
+
+    /// A page's `<title>` unless it is only a file name ("content.html"),
+    /// otherwise its first line when that line is short enough to be one.
+    private static func pageTitle(_ documentTitle: String?, text: String) -> String? {
+        if let documentTitle,
+           !documentTitle.lowercased().hasSuffix(".html"), !documentTitle.lowercased().hasSuffix(".xhtml"),
+           !documentTitle.lowercased().hasSuffix(".htm") {
+            return documentTitle
+        }
+        let firstLine = text.prefix { $0 != "\n" }
+        return firstLine.count <= 80 ? String(firstLine) : nil
+    }
+
+    private static func slice(_ text: NSString, from start: Int, to end: Int) -> String {
+        let lower = min(max(0, start), text.length)
+        let upper = min(max(lower, end), text.length)
+        return text.substring(with: NSRange(location: lower, length: upper - lower))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Drops the chapter label when the text opens with it, so the heading is
+    /// not shown (or narrated) twice. Only a whole heading line is removed: a
+    /// title such as "I" or "A" must not eat the first letter of "It was…",
+    /// and a heading that continues on the next line is kept whole.
+    static func removingHeading(_ title: String, from text: String) -> String {
+        guard !title.isEmpty,
+              let range = text.range(of: title, options: [.anchored, .caseInsensitive]) else { return text }
+        let remainder = text[range.upperBound...]
+        guard remainder.isEmpty || remainder.hasPrefix("\n\n") else { return text }
+        return String(remainder).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+// MARK: - Navigation
 
 private enum NCXParser {
-    static func titles(from data: Data, relativeTo base: String) -> [String: String] {
+    static func points(from data: Data, relativeTo base: String) -> [NavigationPoint] {
         let delegate = NCXDelegate(baseDirectory: base)
         let parser = XMLParser(data: data)
         parser.shouldProcessNamespaces = true
         parser.delegate = delegate
         parser.parse()
-        return delegate.titles
+        return delegate.points
     }
 
     private final class NCXDelegate: NSObject, XMLParserDelegate {
-        var titles: [String: String] = [:]
+        var points: [NavigationPoint] = []
         private let baseDirectory: String
+        private var inNavMap = false
         private var inLabel = false
         private var label = ""
 
@@ -312,13 +440,15 @@ private enum NCXParser {
         func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?,
                     qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
             let local = localName(elementName)
-            if local == "text" {
+            if local == "navMap" {
+                inNavMap = true
+            } else if local == "text" {
                 inLabel = true
                 label = ""
-            } else if local == "content", let src = attributeDict["src"] {
-                let path = EPUBParser.resolve(src, relativeTo: baseDirectory)
-                if !label.isEmpty {
-                    titles[path] = label
+            } else if inNavMap, local == "content", let src = attributeDict["src"] {
+                let title = HTMLText.normalize(label)
+                if !title.isEmpty {
+                    points.append(EPUBParser.navigationPoint(src, title: title, relativeTo: baseDirectory))
                 }
             }
         }
@@ -329,9 +459,10 @@ private enum NCXParser {
 
         func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?,
                     qualifiedName qName: String?) {
-            if localName(elementName) == "text" {
-                inLabel = false
-                label = label.trimmingCharacters(in: .whitespacesAndNewlines)
+            switch localName(elementName) {
+            case "text": inLabel = false
+            case "navMap": inNavMap = false
+            default: break
             }
         }
 
@@ -345,27 +476,36 @@ private enum NCXParser {
 }
 
 private enum NavigationDocumentParser {
-    static func titles(from data: Data, relativeTo base: String) -> [String: String] {
-        let html = String(data: data, encoding: .utf8)
+    static func points(from data: Data, relativeTo base: String) -> [NavigationPoint] {
+        var html = String(data: data, encoding: .utf8)
             ?? String(data: data, encoding: .isoLatin1)
             ?? ""
-        var result: [String: String] = [:]
+        // Only the table of contents: a nav document also lists landmarks and
+        // page lists, whose links must not become chapters.
+        if let toc = firstCapture("(?is)<nav[^>]*epub:type\\s*=\\s*[\"'][^\"']*\\btoc\\b[^\"']*[\"'][^>]*>(.*?)</nav>", in: html) {
+            html = toc
+        }
         guard let regex = try? NSRegularExpression(
-            pattern: "(?is)<a[^>]*href=\"([^\"]+)\"[^>]*>(.*?)</a>"
-        ) else { return result }
+            pattern: "(?is)<a[^>]*?href\\s*=\\s*[\"']([^\"']+)[\"'][^>]*>(.*?)</a>"
+        ) else { return [] }
+        var result: [NavigationPoint] = []
         let range = NSRange(html.startIndex..<html.endIndex, in: html)
         for match in regex.matches(in: html, range: range) {
             guard match.numberOfRanges > 2,
                   let hrefRange = Range(match.range(at: 1), in: html),
                   let textRange = Range(match.range(at: 2), in: html) else { continue }
-            let href = String(html[hrefRange])
-            let title = HTMLText.normalize(
-                HTMLText.plainText(from: String(html[textRange]))
-            )
+            let title = HTMLText.normalize(HTMLText.plainText(from: String(html[textRange])))
             guard !title.isEmpty else { continue }
-            let path = EPUBParser.resolve(href, relativeTo: base)
-            result[path] = title
+            result.append(EPUBParser.navigationPoint(String(html[hrefRange]), title: title, relativeTo: base))
         }
         return result
+    }
+
+    private static func firstCapture(_ pattern: String, in text: String) -> String? {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        guard let match = regex.firstMatch(in: text, range: range),
+              let capture = Range(match.range(at: 1), in: text) else { return nil }
+        return String(text[capture])
     }
 }

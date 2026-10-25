@@ -522,6 +522,10 @@ struct ReaderView: View {
             return "Page \(min(pdfPageIndex + 1, total)) of \(total) · \(percent)%"
         }
         guard pageInfo.pageCount > 0 else { return "Paginating…" }
+        if pageInfo.isProvisional {
+            // Only this chapter is laid out yet; book-wide numbers follow.
+            return "Page \(pageInfo.pageIndexInChapter + 1) of \(pageInfo.pagesInChapter) in this chapter"
+        }
         let percent = Int((Double(pageInfo.pageIndex + 1) / Double(pageInfo.pageCount) * 100).rounded())
         return "Page \(pageInfo.pageIndex + 1) of \(pageInfo.pageCount) · \(percent)%"
     }

@@ -27,8 +27,10 @@ final class ReaderMacPageContainer: NSView {
         textView.textContainer?.heightTracksTextView = false
         addSubview(textView)
 
+        // Highlights are painted behind the glyphs (the text view draws no
+        // background), so even opaque narration colours never hide words.
         overlay.textView = textView
-        textView.addSubview(overlay)
+        addSubview(overlay, positioned: .below, relativeTo: textView)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -40,7 +42,7 @@ final class ReaderMacPageContainer: NSView {
         let frame = bounds.insetBy(dx: style.margin, dy: 8)
         textView.frame = frame
         textView.textContainer?.containerSize = frame.size
-        overlay.frame = textView.bounds
+        overlay.frame = frame
         overlay.needsDisplay = true
     }
 }

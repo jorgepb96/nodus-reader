@@ -70,7 +70,7 @@ metadata, chapters, duplicates, covers, collections, manual order, themes, utili
 pause-based word alignment and the durable sync outbox/tombstone rules, queued and
 folder imports, synced-book text rebuilding, synced preferences, background search and
 off-main pagination, per-book appearance, continuous-scroll slicing and PDF note
-anchoring. As of the last run: **36 tests pass**.
+anchoring. As of the last run: **42 tests pass** (plus the opt-in model test).
 
 An opt-in integration test downloads every model this machine can run (Phonon 31M
 and, on an Apple Silicon Mac, Kokoro 82M; about 500 MB), synthesizes a sentence with

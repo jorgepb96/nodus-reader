@@ -35,10 +35,12 @@ final class ReaderSelectableTextView: UIView, UITextViewDelegate {
         textView.delegate = self
         addSubview(textView)
 
+        // Highlights are painted behind the glyphs (the text view is clear),
+        // so even opaque narration colours never hide words.
         overlay.textView = textView
         overlay.backgroundColor = .clear
         overlay.isUserInteractionEnabled = false
-        textView.addSubview(overlay)
+        insertSubview(overlay, belowSubview: textView)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         tap.cancelsTouchesInView = false
@@ -50,7 +52,7 @@ final class ReaderSelectableTextView: UIView, UITextViewDelegate {
     override func layoutSubviews() {
         super.layoutSubviews()
         textView.frame = bounds.inset(by: contentInsets)
-        overlay.frame = textView.bounds
+        overlay.frame = textView.frame
         overlay.setNeedsDisplay()
     }
 
@@ -160,8 +162,8 @@ final class ReaderPageHostController: UIViewController {
     }
 }
 
-/// Draws sentence, word and annotation tint behind the text. It sits above the
-/// text view's content but uses translucent fills, so glyphs stay readable.
+/// Draws sentence, word and annotation tint behind the text: it is a sibling
+/// placed below the clear text view, so glyphs are always drawn on top.
 final class ReaderHighlightOverlayView: UIView {
     struct Span {
         var range: NSRange

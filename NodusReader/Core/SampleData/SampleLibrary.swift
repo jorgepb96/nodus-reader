@@ -258,6 +258,26 @@ enum SampleLibrary {
         return url
     }
 
+    /// A ZIP archive with the given entries in order, for EPUB fixtures that
+    /// need a hand-written package (several chapters per file, NCX, etc.).
+    static func makeArchive(_ entries: [(path: String, contents: String)],
+                            pathExtension: String = "epub") throws -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NodusSamples", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appendingPathComponent("\(UUID().uuidString).\(pathExtension)")
+        let archive = try Archive(url: url, accessMode: .create)
+        for entry in entries {
+            let data = Data(entry.contents.utf8)
+            try archive.addEntry(with: entry.path, type: .file, uncompressedSize: Int64(data.count),
+                                 compressionMethod: entry.path == "mimetype" ? .none : .deflate) { position, size in
+                let start = Int(position)
+                return data.subdata(in: start..<min(start + size, data.count))
+            }
+        }
+        return url
+    }
+
     // MARK: - PDF
 
     static func makePDF(_ spec: Spec) throws -> URL {

@@ -13,17 +13,159 @@ public enum HTMLText {
     }
 
     public static func plainText(from html: String) -> String {
-        var text = html
+        convert(html).text
+    }
 
-        text = text.replacingOccurrences(of: "(?is)<script[^>]*>.*?</script>", with: " ", options: .regularExpression)
-        text = text.replacingOccurrences(of: "(?is)<style[^>]*>.*?</style>", with: " ", options: .regularExpression)
-        text = text.replacingOccurrences(of: "(?is)<head[^>]*>.*?</head>", with: " ", options: .regularExpression)
-        text = text.replacingOccurrences(of: "(?is)<br\\s*/?>", with: "\n", options: .regularExpression)
-        text = text.replacingOccurrences(of: "(?is)</(p|div|section|article|li|tr|h[1-6]|blockquote)>", with: "\n\n", options: .regularExpression)
-        text = text.replacingOccurrences(of: "(?is)<img[^>]*alt=\"([^\"]*)\"[^>]*>", with: " $1 ", options: .regularExpression)
-        text = text.replacingOccurrences(of: "(?is)<[^>]+>", with: " ", options: .regularExpression)
-        text = decodeEntities(text)
-        return normalize(text)
+    /// Reading text plus the UTF-16 offset of every element `id` (and `<a
+    /// name>`), so EPUB chapters can be split exactly where the table of
+    /// contents points.
+    public struct Conversion: Sendable {
+        public var text: String
+        public var anchors: [String: Int]
+    }
+
+    private static let blockTags: Set<String> = [
+        "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "blockquote", "section",
+        "article", "header", "footer", "aside", "nav", "figure", "figcaption", "table",
+        "tr", "ul", "ol", "dl", "dt", "dd", "hr", "pre", "body", "main", "address", "center"
+    ]
+
+    /// HTML to clean reading text, built for both the reader and narration:
+    /// whitespace and source line breaks inside a paragraph collapse to single
+    /// spaces (HTML semantics; Project Gutenberg files wrap every line), block
+    /// elements become paragraph breaks, `<br>` a line break, and inline tags
+    /// add nothing (no stray space before "." after `</i>`). Footnote call
+    /// markers and page-number markers are left out, so narration does not
+    /// read "12" in the middle of a sentence.
+    public static func convert(_ html: String) -> Conversion {
+        var source = html
+        for pattern in ["(?is)<script[^>]*>.*?</script>", "(?is)<style[^>]*>.*?</style>",
+                        "(?is)<head[^>]*>.*?</head>", "(?s)<!--.*?-->"] {
+            source = source.replacingOccurrences(of: pattern, with: " ", options: .regularExpression)
+        }
+        let chars = Array(source.utf16)
+        var out: [UInt16] = []
+        out.reserveCapacity(chars.count)
+        var anchors: [String: Int] = [:]
+        var pendingSpace = false
+        var inPre = false
+        var skipTag: String?
+        var skipDepth = 0
+
+        func lastIsNewline() -> Bool { out.last == 10 }
+        func trimTrailingSpaces() { while out.last == 32 { out.removeLast() } }
+        func breakLine(_ count: Int) {
+            trimTrailingSpaces()
+            guard !out.isEmpty else { pendingSpace = false; return }
+            var existing = 0
+            var index = out.count - 1
+            while index >= 0, out[index] == 10 { existing += 1; index -= 1 }
+            for _ in existing..<max(existing, count) { out.append(10) }
+            pendingSpace = false
+        }
+        func emit(_ units: [UInt16]) {
+            guard skipTag == nil else { return }
+            if pendingSpace, !out.isEmpty, !lastIsNewline() { out.append(32) }
+            pendingSpace = false
+            out.append(contentsOf: units)
+        }
+
+        var i = 0
+        while i < chars.count {
+            let c = chars[i]
+            if c == 60 /* < */, i + 1 < chars.count, isTagStart(chars[i + 1]) {
+                guard let close = chars[i...].firstIndex(of: 62 /* > */) else { break }
+                let tag = String(decoding: chars[(i + 1)..<close], as: UTF16.self)
+                i = close + 1
+                let isClosing = tag.hasPrefix("/")
+                let body = isClosing ? String(tag.dropFirst()) : tag
+                let name = body.prefix { !$0.isWhitespace && $0 != "/" && $0 != ">" }.lowercased()
+                guard !name.isEmpty, !name.hasPrefix("!"), !name.hasPrefix("?") else { continue }
+                let selfClosing = body.hasSuffix("/") || ["br", "hr", "img", "meta", "link", "input", "col", "wbr"].contains(name)
+
+                if let skipping = skipTag {
+                    if name == skipping, !selfClosing {
+                        skipDepth += isClosing ? -1 : 1
+                        if skipDepth == 0 { skipTag = nil }
+                    }
+                    continue
+                }
+                let anchor = isClosing ? nil
+                    : attribute(idPattern, in: body) ?? (name == "a" ? attribute(namePattern, in: body) : nil)
+                if !isClosing, !blockTags.contains(name) {
+                    let lower = body.lowercased()
+                    if lower.contains("noteref") || lower.contains("pagebreak") || lower.contains("pagenum") {
+                        // Footnote calls and page numbers: not part of the prose.
+                        if let anchor { anchors[anchor] = out.count }
+                        if !selfClosing { skipTag = name; skipDepth = 1 }
+                        continue
+                    }
+                }
+                if blockTags.contains(name) {
+                    breakLine(2)
+                } else if name == "br" {
+                    breakLine(1)
+                } else if name == "td" || name == "th" {
+                    pendingSpace = true
+                }
+                if name == "pre" { inPre = !isClosing }
+                if let id = anchor {
+                    if pendingSpace, !out.isEmpty, !lastIsNewline() { out.append(32); pendingSpace = false }
+                    anchors[id] = out.count
+                }
+                continue
+            }
+            if c == 38 /* & */, let semicolon = chars[i...].prefix(12).firstIndex(of: 59 /* ; */) {
+                let entity = "&" + String(decoding: chars[(i + 1)...semicolon], as: UTF16.self)
+                let decoded = decodeEntities(entity)
+                if decoded != entity {
+                    i = semicolon + 1
+                    if decoded == " " { pendingSpace = true } else { emit(Array(decoded.utf16)) }
+                    continue
+                }
+            }
+            if c == 32 || c == 9 || c == 10 || c == 13 || c == 0xA0 || c == 12 {
+                if inPre, c == 10 { breakLine(1) } else { pendingSpace = true }
+            } else {
+                emit([c])
+            }
+            i += 1
+        }
+        trimTrailingSpaces()
+        while out.last == 10 { out.removeLast() }
+        let text = String(decoding: out, as: UTF16.self)
+        let length = out.count
+        return Conversion(text: text, anchors: anchors.mapValues { min($0, length) })
+    }
+
+    private static func isTagStart(_ unit: UInt16) -> Bool {
+        // Letters, "/", "!" and "?": anything else is a literal "<" in text.
+        (unit >= 65 && unit <= 90) || (unit >= 97 && unit <= 122) || unit == 47 || unit == 33 || unit == 63
+    }
+
+    private static let idPattern = attributePattern("id")
+    private static let namePattern = attributePattern("name")
+
+    private static func attributePattern(_ name: String) -> NSRegularExpression? {
+        try? NSRegularExpression(
+            pattern: "(?i)(?:^|\\s)\(name)\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))"
+        )
+    }
+
+    private static func attribute(_ regex: NSRegularExpression?, in tag: String) -> String? {
+        guard let regex, tag.count > 3 else { return nil }
+        let range = NSRange(tag.startIndex..<tag.endIndex, in: tag)
+        guard let match = regex.firstMatch(in: tag, range: range) else { return nil }
+        for group in 1...3 {
+            if let value = Range(match.range(at: group), in: tag) { return String(tag[value]) }
+        }
+        return nil
+    }
+
+    /// Whether the document has an `<h1>`–`<h3>`: a page that opens a section
+    /// of its own rather than continuing the previous one.
+    public static func hasSectionHeading(_ html: String) -> Bool {
+        html.range(of: "(?i)<h[1-3][\\s>]", options: .regularExpression) != nil
     }
 
     /// First heading or `<title>` in the document, used as the chapter label.
@@ -38,6 +180,16 @@ public enum HTMLText {
             }
         }
         return nil
+    }
+
+    /// The document's `<title>`, without falling back to its headings.
+    public static func documentTitle(from data: Data) -> String? {
+        let html = String(data: data, encoding: .utf8)
+            ?? String(data: data, encoding: .isoLatin1)
+            ?? ""
+        guard let match = firstMatch("(?is)<title[^>]*>(.*?)</title>", in: html) else { return nil }
+        let cleaned = normalize(decodeEntities(stripTags(match)))
+        return cleaned.isEmpty ? nil : cleaned
     }
 
     public static func normalize(_ text: String) -> String {

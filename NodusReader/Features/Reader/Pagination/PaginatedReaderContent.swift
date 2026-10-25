@@ -15,6 +15,9 @@ struct ReaderPageInfo: Equatable {
     var chapterTitle: String = ""
     var pageIndexInChapter: Int = 0
     var pagesInChapter: Int = 0
+    /// Only the chapter on screen is laid out yet (the rest of the book is
+    /// still being paginated), so book-wide page numbers are not known.
+    var isProvisional = false
 }
 
 /// Owns TextKit pagination and turns a chapter list into page-curl (iOS), a
@@ -51,7 +54,14 @@ struct PaginatedReaderContent: View {
     @State private var pages: [ReaderPage] = []
     @State private var generation = UUID()
     @State private var builtKey = ""
-    @State private var isBuilding = true
+    /// Layout signature and style of the pages on screen, and whether they
+    /// cover the whole book or only the chapter laid out first.
+    @State private var shownLayout = ""
+    @State private var shownStyle: ReaderPageStyle?
+    @State private var shownComplete = false
+    /// Changes only when page breaks change, so the scroll view is rebuilt
+    /// at the right slice instead of animating across the book.
+    @State private var layoutGeneration = UUID()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var pageTurn: PageTurnStyle {
         reduceMotion && typography.pageTurn == .curl ? .slide : typography.pageTurn
@@ -96,9 +106,11 @@ struct PaginatedReaderContent: View {
             let key = "\(buildKey)-\(flow.rawValue)-\(Int(size.width))x\(Int(size.height))-\(Int(pageStyle.margin))-\(columnCount)-\(chapters.count)"
 
             ZStack {
-                if isBuilding || pages.isEmpty {
+                if pages.isEmpty {
                     ProgressView()
+                        .controlSize(.large)
                         .tint(Color(theme.accent))
+                        .accessibilityLabel("Laying out pages")
                 } else if flow.isContinuous {
                     ContinuousReaderContent(
                         pages: pages,
@@ -112,6 +124,7 @@ struct PaginatedReaderContent: View {
                         onHighlight: onHighlight,
                         onNote: onNote
                     )
+                    .id(layoutGeneration)
                 } else {
                     #if os(macOS)
                     MacPageSpread(
@@ -142,6 +155,9 @@ struct PaginatedReaderContent: View {
                     #endif
                 }
             }
+            // GeometryReader places content at its top-leading corner; the
+            // first-open progress indicator belongs in the middle of the page.
+            .frame(width: proxy.size.width, height: proxy.size.height)
             .task(id: key) {
                 await buildPages(size: size, key: key, columns: columnCount, style: pageStyle)
             }
@@ -167,61 +183,125 @@ struct PaginatedReaderContent: View {
         }
     }
 
+    /// Rebuilds the pages for a new size, font or theme without ever blanking
+    /// the reader: the current pages stay on screen until their replacement
+    /// is ready. A colour-only change recolours the pages in place; a layout
+    /// change lays out the chapter on screen first (a fraction of a second)
+    /// and then the whole book, every chapter in parallel. A newer change
+    /// cancels this pass through `.task(id:)`.
     private func buildPages(size: CGSize, key: String, columns: Int,
                             style: ReaderPageStyle) async {
         guard key != builtKey || pages.isEmpty else { return }
-        isBuilding = true
-        // Let the progress indicator appear before TextKit does its work.
-        await Task.yield()
-
-        let previousChapter = pageInfo.chapterIndex
-        let previousPagesInChapter = pageInfo.pagesInChapter
-        let previousPageInChapter = pageInfo.pageIndexInChapter
-        let hadPages = !pages.isEmpty
-        let previousFraction = previousPagesInChapter > 1
-            ? Double(previousPageInChapter) / Double(previousPagesInChapter - 1)
-            : 0
-
-        // TextKit layout of a whole book takes seconds on long books; it runs
-        // off the main actor (each pass owns its own text storage and layout
-        // manager) so the window stays responsive. A newer size, font or theme
-        // cancels this pass through `.task(id:)`.
+        pageStep = max(1, columns)
         let chapters = self.chapters
-        let job = Task.detached(priority: .userInitiated) {
-            TextPaginator.paginate(chapters: chapters, style: style, pageSize: size)
-        }
-        let paginated = await withTaskCancellationHandler {
-            await job.value
-        } onCancel: {
-            job.cancel()
-        }
-        guard !Task.isCancelled else { return }
-        guard !paginated.pages.isEmpty else {
-            pages = []
-            isBuilding = false
+        let layout = "\(book.id.uuidString)-\(chapters.count)-" +
+            TextPaginator.layoutSignature(style, pageSize: size)
+
+        if layout == shownLayout, shownComplete, !pages.isEmpty {
+            if shownStyle != style {
+                let current = PaginatedBook(pages: pages, firstPageByChapter: firstPageByChapter)
+                let recolored = await Self.offMain {
+                    TextPaginator.recolored(current, chapters: chapters, style: style)
+                }
+                guard !Task.isCancelled else { return }
+                pages = recolored.pages
+                readerPages = recolored.pages
+                generation = UUID()
+                shownStyle = style
+            }
             builtKey = key
             return
         }
 
-        let targetChapter = hadPages ? previousChapter : initialChapterIndex
-        let targetFraction = hadPages ? previousFraction : max(0, min(initialFraction, 1))
+        let hadPages = !pages.isEmpty
+        let targetChapter = min(max(hadPages ? pageInfo.chapterIndex : initialChapterIndex, 0),
+                                max(chapters.count - 1, 0))
+        let targetFraction: Double = {
+            guard hadPages else { return max(0, min(initialFraction, 1)) }
+            return pageInfo.pagesInChapter > 1
+                ? Double(pageInfo.pageIndexInChapter) / Double(pageInfo.pagesInChapter - 1)
+                : 0
+        }()
 
+        // 1. The chapter on screen, so the new layout appears at once.
+        var known: [Int: [ReaderPage]] = [:]
+        var showedFirst = false
+        if chapters.indices.contains(targetChapter) {
+            let chapter = chapters[targetChapter]
+            let first = await Self.offMain {
+                TextPaginator.paginateChapter(chapter, index: targetChapter, style: style, pageSize: size)
+            }
+            guard !Task.isCancelled else { return }
+            if !first.isEmpty {
+                known[targetChapter] = first
+                if chapters.count > 1 {
+                    show(PaginatedBook(pages: first, firstPageByChapter: [targetChapter: 0]),
+                         chapter: targetChapter, fraction: targetFraction,
+                         layout: layout, style: style, complete: false)
+                    showedFirst = true
+                }
+            }
+        }
+
+        // 2. The whole book.
+        let paginated = await Self.offMain {
+            await TextPaginator.paginateConcurrently(chapters: chapters, style: style,
+                                                     pageSize: size, known: known)
+        }
+        guard !Task.isCancelled else { return }
+        if showedFirst, pageInfo.isProvisional {
+            // Keep the exact page the reader turned to while the book was
+            // being laid out: the chapter's pages are identical.
+            show(paginated, chapter: pageInfo.chapterIndex, pageInChapter: pageInfo.pageIndexInChapter,
+                 layout: layout, style: style, complete: true)
+        } else {
+            show(paginated, chapter: targetChapter, fraction: targetFraction,
+                 layout: layout, style: style, complete: true)
+        }
+        builtKey = key
+    }
+
+    private func show(_ paginated: PaginatedBook, chapter: Int, fraction: Double,
+                      layout: String, style: ReaderPageStyle, complete: Bool) {
+        let chapterPages = paginated.pages.lazy.filter { $0.chapterIndex == chapter }.count
+        let offset = Int((fraction * Double(max(chapterPages - 1, 0))).rounded())
+        show(paginated, chapter: chapter, pageInChapter: offset,
+             layout: layout, style: style, complete: complete)
+    }
+
+    private func show(_ paginated: PaginatedBook, chapter: Int, pageInChapter: Int,
+                      layout: String, style: ReaderPageStyle, complete: Bool) {
         pages = paginated.pages
         readerPages = paginated.pages
         firstPageByChapter = paginated.firstPageByChapter
         generation = UUID()
-        builtKey = key
-        pageStep = max(1, columns)
-
-        let chapter = min(max(targetChapter, 0), max(chapters.count - 1, 0))
+        layoutGeneration = UUID()
+        shownLayout = layout
+        shownStyle = style
+        shownComplete = complete
+        guard !paginated.pages.isEmpty else {
+            pageIndex = 0
+            updatePageInfo()
+            return
+        }
         let start = paginated.firstPageByChapter[chapter] ?? 0
-        let chapterPages = pages.filter { $0.chapterIndex == chapter }.count
-        let offset = Int((targetFraction * Double(max(chapterPages - 1, 0))).rounded())
-        let clampedOffset = min(max(offset, 0), max(chapterPages - 1, 0))
-        pageIndex = min(start + clampedOffset, pages.count - 1)
-        isBuilding = false
+        let chapterPages = paginated.pages.lazy.filter { $0.chapterIndex == chapter }.count
+        let offset = min(max(pageInChapter, 0), max(chapterPages - 1, 0))
+        pageIndex = min(start + offset, paginated.pages.count - 1)
         updatePageInfo()
         followNarrationIfNeeded()
+    }
+
+    /// TextKit layout of a whole book takes seconds on long books; it runs off
+    /// the main actor (each pass owns its own text storage and layout manager)
+    /// so the reader stays responsive, and is cancelled with the calling task.
+    private static func offMain<T>(_ work: @escaping @Sendable () async -> T) async -> T {
+        let job = Task.detached(priority: .userInitiated) { await work() }
+        return await withTaskCancellationHandler {
+            await job.value
+        } onCancel: {
+            job.cancel()
+        }
     }
 
     private func pagesInChapter(_ book: PaginatedBook, chapter: Int) -> Int {
@@ -238,7 +318,8 @@ struct PaginatedReaderContent: View {
                                   chapterIndex: page.chapterIndex,
                                   chapterTitle: page.chapterTitle,
                                   pageIndexInChapter: page.pageIndexInChapter,
-                                  pagesInChapter: page.pagesInChapter)
+                                  pagesInChapter: page.pagesInChapter,
+                                  isProvisional: !shownComplete)
         if pageInfo != info {
             pageInfo = info
         }

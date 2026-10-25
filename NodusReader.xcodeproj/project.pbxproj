@@ -83,6 +83,7 @@
 		F289F4BEDF7BAF4126608B69 /* FileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54A1DAC5355DA2195645F962 /* FileStore.swift */; };
 		F3A691E5719B03583B05E0D8 /* NodusReaderUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3AFA22A66FD5602FA6E23C9 /* NodusReaderUITests.swift */; };
 		F4D3008382E0BAB90EE21BD8 /* MacLibraryContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EBEA7473BC0766073097847 /* MacLibraryContentView.swift */; };
+		F5129BBA885EAA346F2DD97F /* HuggingFaceGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF973736607426E8F65FD4D8 /* HuggingFaceGuideView.swift */; };
 		F52E201525C84D6F12A758EA /* ReaderAppearanceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59B6977FE1E3E11D55CD470 /* ReaderAppearanceSheet.swift */; };
 		F64397C92F45624BF794B80C /* ptts in Frameworks */ = {isa = PBXBuildFile; productRef = B6EAE7E2B49A93B0400912EF /* ptts */; };
 		FB478062FA4BED3AD0480A97 /* LibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57311E698E2CF61276C51600 /* LibraryService.swift */; };
@@ -198,6 +199,7 @@
 		D593BBC908B5D057F4618106 /* PaginatedReaderContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginatedReaderContent.swift; sourceTree = "<group>"; };
 		DE36EC19E2D87BCF092916A9 /* DocumentExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExtractor.swift; sourceTree = "<group>"; };
 		DF27C98D03CA7B77D5353E99 /* DocumentExtraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExtraction.swift; sourceTree = "<group>"; };
+		DF973736607426E8F65FD4D8 /* HuggingFaceGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HuggingFaceGuideView.swift; sourceTree = "<group>"; };
 		E1FCA4689FD81FCF3C0A3D93 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		E2E20562AA22E60E323BDE92 /* BookTextLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookTextLoader.swift; sourceTree = "<group>"; };
 		E2FA94F52B8C7B9E71224107 /* SelectableReaderText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableReaderText.swift; sourceTree = "<group>"; };
@@ -422,6 +424,7 @@
 		987D5A66A3065B6BD01FC938 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				DF973736607426E8F65FD4D8 /* HuggingFaceGuideView.swift */,
 				3B1DBD289B69A2FBE2AFE55C /* ReadingSettingsView.swift */,
 				B201867985D495B5C0CED08B /* SettingsView.swift */,
 				FEA231B6036008AC4763DC43 /* StorageSettingsView.swift */,
@@ -719,6 +722,7 @@
 				F289F4BEDF7BAF4126608B69 /* FileStore.swift in Sources */,
 				67F386AD47DD382F646DF469 /* HTMLText.swift in Sources */,
 				E26147E7713A3800E8D13589 /* HomeView.swift in Sources */,
+				F5129BBA885EAA346F2DD97F /* HuggingFaceGuideView.swift in Sources */,
 				9E2B9E5CFFC051B62F738CE3 /* ICloudDocumentStore.swift in Sources */,
 				2816587FB924F9E9459981FF /* IOSPageCurlReader.swift in Sources */,
 				16143A1BAB297801FB6E7E8B /* IOSReaderPageView.swift in Sources */,

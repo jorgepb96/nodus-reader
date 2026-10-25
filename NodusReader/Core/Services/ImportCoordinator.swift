@@ -10,7 +10,8 @@ public enum DocumentTypes {
         ?? .plainText
 
     public static var supported: [UTType] {
-        [.epub, .pdf, .plainText, .html, .rtf, markdown]
+        // EPUB folder packages (as kept by Apple Books) are accepted too.
+        [.epub, .pdf, .plainText, .html, .rtf, markdown] + [UTType("org.idpf.epub-folder")].compactMap { $0 }
     }
 }
 
@@ -100,14 +101,23 @@ public final class ImportCoordinator {
         var files: [URL] = []
         var scoped: [URL] = []
         for url in urls {
-            var isDirectory: ObjCBool = false
-            guard url.isFileURL,
-                  FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
-                  isDirectory.boolValue else {
+            // A supported document is imported as one item even when it is a
+            // directory: an EPUB folder package is zipped while staging.
+            guard url.isFileURL, BookFormat(fileExtension: url.pathExtension) == nil else {
                 files.append(url)
                 continue
             }
-            if url.startAccessingSecurityScopedResource() { scoped.append(url) }
+            // Picker URLs are only reachable inside their security scope, so
+            // it is opened before asking whether the item is a folder.
+            let accessed = url.startAccessingSecurityScopedResource()
+            var isDirectory: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+                  isDirectory.boolValue else {
+                if accessed { url.stopAccessingSecurityScopedResource() }
+                files.append(url)
+                continue
+            }
+            if accessed { scoped.append(url) }
             guard let enumerator = FileManager.default.enumerator(
                 at: url,
                 includingPropertiesForKeys: [.isRegularFileKey],
@@ -115,9 +125,14 @@ public final class ImportCoordinator {
             ) else { continue }
             var found: [URL] = []
             for case let child as URL in enumerator
-                where BookFormat(fileExtension: child.pathExtension) != nil
-                    && (try? child.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true {
-                found.append(child)
+                where BookFormat(fileExtension: child.pathExtension) != nil {
+                let isFile = (try? child.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
+                // An EPUB folder package inside the folder is one book; its
+                // own chapters are not imported as separate documents.
+                if !isFile { enumerator.skipDescendants() }
+                if isFile || BookFormat(fileExtension: child.pathExtension) == .epub {
+                    found.append(child)
+                }
             }
             files.append(contentsOf: found.sorted {
                 $0.path.localizedStandardCompare($1.path) == .orderedAscending

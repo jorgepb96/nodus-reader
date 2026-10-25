@@ -24,6 +24,7 @@ struct VoicesView: View {
     @State private var hfStatus: String?
     @State private var isVerifyingToken = false
     @State private var tokenSaved = false
+    @State private var showTokenGuide = false
     @State private var showBundleImporter = false
 
     private var filteredVoices: [VoiceCatalog.Voice] {
@@ -160,26 +161,11 @@ struct VoicesView: View {
 
     @ViewBuilder
     private var voicesContent: some View {
+        // One row: icon chips, then Clear. On the narrowest widths the row
+        // scrolls sideways instead of wrapping.
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) {
-                modelFilterMenu
-                languageFilterMenu
-                qualityFilterMenu
-                Spacer(minLength: 4)
-                clearFiltersButton
-            }
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    modelFilterMenu
-                    Spacer(minLength: 4)
-                    clearFiltersButton
-                }
-                HStack(spacing: 8) {
-                    languageFilterMenu
-                    qualityFilterMenu
-                    Spacer(minLength: 0)
-                }
-            }
+            filterRow
+            ScrollView(.horizontal, showsIndicators: false) { filterRow }
         }
 
         Text("\(filteredVoices.count) voices\(languageFilter.map { " · \(voices.languageName(for: $0))" } ?? "")")
@@ -586,6 +572,20 @@ struct VoicesView: View {
                 .font(.caption)
                 .foregroundStyle(palette.muted)
                 .fixedSize(horizontal: false, vertical: true)
+            Button {
+                showTokenGuide = true
+            } label: {
+                Label("What is Hugging Face and how do I get a token?", systemImage: "questionmark.circle")
+                    .font(.footnote.weight(.semibold))
+                    .multilineTextAlignment(.leading)
+                    .frame(minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(palette.accent)
+            .sheet(isPresented: $showTokenGuide) {
+                HuggingFaceGuideView(gatedModels: models.models.filter(\.requiresAcceptedLicense))
+            }
             SecureField("hf_…", text: $hfToken)
                 .textFieldStyle(.plain)
                 .font(.system(.footnote, design: .monospaced))
@@ -673,9 +673,19 @@ struct VoicesView: View {
 
     // MARK: Helpers
 
+    private var filterRow: some View {
+        HStack(spacing: 6) {
+            modelFilterMenu
+            languageFilterMenu
+            qualityFilterMenu
+            Spacer(minLength: 0)
+            clearFiltersButton
+        }
+    }
+
     private var modelFilterMenu: some View {
-        filterMenu(title: "Model",
-                   value: engineLabel(for: engineFilter),
+        filterMenu(title: "Model", systemImage: "cpu",
+                   value: engineFilter == nil ? nil : engineLabel(for: engineFilter),
                    isActive: engineFilter != nil) {
             Button("All models") { engineFilter = nil }
             Divider()
@@ -690,8 +700,8 @@ struct VoicesView: View {
     }
 
     private var languageFilterMenu: some View {
-        filterMenu(title: "Language",
-                   value: languageFilter.map { voices.languageName(for: $0) } ?? "All",
+        filterMenu(title: "Language", systemImage: "globe",
+                   value: languageFilter.map { voices.languageName(for: $0) },
                    isActive: languageFilter != nil) {
             Button("All languages") { languageFilter = nil }
             Divider()
@@ -702,8 +712,8 @@ struct VoicesView: View {
     }
 
     private var qualityFilterMenu: some View {
-        filterMenu(title: "Quality",
-                   value: qualityLabel(for: qualityFilter),
+        filterMenu(title: "Quality", systemImage: "waveform",
+                   value: qualityFilter == nil ? nil : qualityLabel(for: qualityFilter),
                    isActive: qualityFilter != nil) {
             Button("All qualities") { qualityFilter = nil }
             Divider()
@@ -716,37 +726,48 @@ struct VoicesView: View {
     @ViewBuilder
     private var clearFiltersButton: some View {
         if hasFilters {
-            Button("Clear") {
+            Button {
                 searchText = ""
                 languageFilter = nil
                 qualityFilter = nil
                 engineFilter = nil
+            } label: {
+                Label("Clear", systemImage: "xmark.circle.fill")
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 20))
+                    .foregroundStyle(palette.accent)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
-            .font(.footnote)
-            .foregroundStyle(palette.accent)
+            .buttonStyle(.plain)
+            .accessibilityLabel("Clear filters")
         }
     }
 
-    private func filterMenu<Content: View>(title: String, value: String, isActive: Bool,
+    /// A compact chip: the filter's icon with its name, or with the chosen
+    /// value once the filter is active.
+    private func filterMenu<Content: View>(title: String, systemImage: String, value: String?,
+                                           isActive: Bool,
                                            @ViewBuilder content: () -> Content) -> some View {
         Menu {
             content()
         } label: {
-            HStack(spacing: 6) {
-                Text(title).foregroundStyle(isActive ? palette.onAccent : palette.muted)
-                Text(value)
-                Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold))
+            HStack(spacing: 5) {
+                Image(systemName: systemImage).font(.system(size: 12, weight: .semibold))
+                Text(value ?? title).lineLimit(1)
+                Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
             }
             .font(.footnote)
             .foregroundStyle(isActive ? palette.onAccent : palette.text)
             .fixedSize(horizontal: true, vertical: false)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 10)
             .frame(height: 36)
             .background(isActive ? palette.accent : palette.panel, in: Capsule())
             .overlay(Capsule().stroke(isActive ? Color.clear : palette.line, lineWidth: 1))
         }
         .menuIndicator(.hidden)
         .accessibilityLabel("Filter by \(title)")
+        .accessibilityValue(value ?? "All")
     }
 
     private func qualityLabel(for quality: Int?) -> String {

@@ -52,6 +52,9 @@ final class ModelManager {
         let source: URL
         let voices: [Voice]
         let availability: Availability
+        /// The publisher asks for a signed-in account that accepted the
+        /// licence on Hugging Face before the files can be downloaded.
+        var requiresAcceptedLicense = false
 
         var isAvailable: Bool {
             if case .available = availability { return true }
@@ -163,7 +166,8 @@ final class ModelManager {
             voices: [],
             availability: .unavailable(
                 "Gradium publishes this checkpoint as gated CC BY-NC weights but has not published a Core ML bundle. Nodus Reader will not offer a download it cannot run."
-            )
+            ),
+            requiresAcceptedLicense: true
         ),
         Model(
             id: "phonon-40m-multilingual",
@@ -177,7 +181,8 @@ final class ModelManager {
             voices: [],
             availability: .unavailable(
                 "This checkpoint is gated and non-commercial, and there is no Core ML bundle for it. It is listed for transparency only."
-            )
+            ),
+            requiresAcceptedLicense: true
         )
     ]
 

@@ -7,6 +7,8 @@ public enum ImportError: LocalizedError, Equatable {
     case unreadableDocument(String)
     case emptyDocument(String)
     case fileTooLarge(String)
+    case providerUnavailable(String)
+    case drmProtected(String)
     case cancelled
 
     public var errorDescription: String? {
@@ -21,6 +23,10 @@ public enum ImportError: LocalizedError, Equatable {
             "“\(name)” does not contain readable text."
         case .fileTooLarge(let name):
             "“\(name)” is too large to import safely on this device."
+        case .providerUnavailable(let name):
+            "“\(name)” could not be read from where it is stored. If it is in iCloud Drive or another cloud service, open it once in Files so it downloads to this device, then import it again."
+        case .drmProtected(let name):
+            "“\(name)” is protected with DRM. Nodus Reader does not remove DRM; import a DRM-free copy of the book."
         case .cancelled:
             "The import was cancelled."
         }

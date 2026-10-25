@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import CryptoKit
 import Foundation
+import ZIPFoundation
 
 /// Owns the on-disk layout of the library.
 ///
@@ -195,7 +196,7 @@ public final class FileStore: @unchecked Sendable {
         return Int64(values?.fileSize ?? 0)
     }
 
-    private static func directorySize(_ directory: URL, fileManager: FileManager) -> Int64 {
+    static func directorySize(_ directory: URL, fileManager: FileManager) -> Int64 {
         guard let enumerator = fileManager.enumerator(
             at: directory,
             includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey]
@@ -218,7 +219,9 @@ public enum FileAccess {
     public static let maximumImportBytes: Int64 = 250 * 1024 * 1024
 
     /// Copies an externally supplied URL into the app's staging area using
-    /// coordinated access. The original file is never modified.
+    /// coordinated access. The original file is never modified. An EPUB kept
+    /// as a folder package (Apple Books, some Files providers) is zipped into
+    /// a regular `.epub` file.
     public static func stageCopy(from source: URL, suggestedName: String? = nil,
                                  store: FileStore = .shared) throws -> URL {
         let accessed = source.startAccessingSecurityScopedResource()
@@ -226,32 +229,85 @@ public enum FileAccess {
             if accessed { source.stopAccessingSecurityScopedResource() }
         }
 
-        let staged = store.makeTemporaryURL(suggestedName: suggestedName ?? source.lastPathComponent)
-        var coordinationError: NSError?
-        var copyError: Error?
-
-        NSFileCoordinator().coordinate(readingItemAt: source, options: [], error: &coordinationError) { readURL in
+        let name = suggestedName ?? source.lastPathComponent
+        let staged = store.makeTemporaryURL(suggestedName: name)
+        do {
+            // The coordinated read also downloads a cloud file that is not
+            // on this device yet.
+            var coordinationError: NSError?
+            var copyError: Error?
+            NSFileCoordinator().coordinate(readingItemAt: source, options: [], error: &coordinationError) { readURL in
+                do { try copy(readURL, to: staged, name: name) } catch { copyError = error }
+            }
+            if let copyError { throw copyError }
+            if let coordinationError { throw coordinationError }
+        } catch let error as ImportError {
+            throw error
+        } catch {
+            // File providers sometimes drop the coordination connection
+            // ("Couldn't communicate with a helper application") although the
+            // item is readable under its security scope: copy it directly.
             do {
-                // Check the size first: copying a multi-gigabyte file only to
-                // reject it wastes minutes and disk space.
-                if FileStore.fileSize(at: readURL) > maximumImportBytes {
-                    throw ImportError.fileTooLarge(source.lastPathComponent)
-                }
-                if FileManager.default.fileExists(atPath: staged.path) {
-                    try FileManager.default.removeItem(at: staged)
-                }
-                try FileManager.default.copyItem(at: readURL, to: staged)
+                try copy(source, to: staged, name: name)
+            } catch let error as ImportError {
+                throw error
             } catch {
-                copyError = error
+                throw ImportError.providerUnavailable(name)
             }
         }
-
-        if let coordinationError { throw coordinationError }
-        if let copyError { throw copyError }
         guard FileManager.default.fileExists(atPath: staged.path) else {
-            throw ImportError.fileAccessDenied(source.lastPathComponent)
+            throw ImportError.fileAccessDenied(name)
         }
         return staged
+    }
+
+    private static func copy(_ readURL: URL, to staged: URL, name: String) throws {
+        let fileManager = FileManager.default
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: readURL.path, isDirectory: &isDirectory) else {
+            throw ImportError.providerUnavailable(name)
+        }
+        // Check the size first: copying a multi-gigabyte file only to reject
+        // it wastes minutes and disk space.
+        let size = isDirectory.boolValue
+            ? FileStore.directorySize(readURL, fileManager: fileManager)
+            : FileStore.fileSize(at: readURL)
+        if size > maximumImportBytes {
+            throw ImportError.fileTooLarge(name)
+        }
+        if fileManager.fileExists(atPath: staged.path) {
+            try fileManager.removeItem(at: staged)
+        }
+        if isDirectory.boolValue {
+            try zipPackage(readURL, to: staged)
+        } else {
+            try fileManager.copyItem(at: readURL, to: staged)
+        }
+    }
+
+    /// Zips a package directory with its contents at the archive root, the
+    /// `mimetype` entry first and stored, as the EPUB container requires.
+    static func zipPackage(_ directory: URL, to destination: URL) throws {
+        let archive = try Archive(url: destination, accessMode: .create)
+        let root = directory.standardizedFileURL.resolvingSymlinksInPath()
+        let rootPath = root.path.hasSuffix("/") ? root.path : root.path + "/"
+        guard let enumerator = FileManager.default.enumerator(
+            at: root, includingPropertiesForKeys: [.isRegularFileKey]
+        ) else { throw ImportError.unreadableDocument(directory.lastPathComponent) }
+        var paths: [String] = []
+        for case let url as URL in enumerator
+            where (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true {
+            let full = url.standardizedFileURL.resolvingSymlinksInPath().path
+            guard full.hasPrefix(rootPath) else { continue }
+            paths.append(String(full.dropFirst(rootPath.count)))
+        }
+        paths.sort { lhs, rhs in
+            lhs == "mimetype" || (rhs != "mimetype" && lhs < rhs)
+        }
+        for path in paths {
+            try archive.addEntry(with: path, relativeTo: root,
+                                 compressionMethod: path == "mimetype" ? .none : .deflate)
+        }
     }
 }
 

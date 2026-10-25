@@ -412,3 +412,55 @@ check a **signed** build before uploading.
 - **Tabs and Library.** iPhone tabs are Home, Library, Settings (gear, last); Library
   shows collections as folders above the books; Library and collections each have a
   search field. See `docs/DESIGN_FIDELITY.md`.
+
+## Feedback from build 3: reading quality and responsiveness (2026-10-25)
+
+- **Narration highlight hid the text.** Sentence/word/annotation tint was drawn by an
+  overlay *above* the text view, and the narration colours are opaque. The overlay is
+  now a sibling *below* the (clear) text view on iOS and macOS, so glyphs are always
+  drawn on top.
+- **EPUB text read in fragments.** `HTMLText` kept the source's hard line breaks
+  (Project Gutenberg wraps every line) and replaced every tag with a space ("Morals ."
+  after `</i>`). It is now a single-pass scanner with HTML whitespace semantics: line
+  breaks inside a paragraph collapse to spaces, block elements become paragraph
+  breaks, `<br>` a line break, inline tags add nothing, and footnote calls
+  (`noteref`) and page numbers (`pagebreak`, `pagenum`) are left out so narration
+  does not read "12" mid-sentence. Test `htmlTextJoinsWrappedLinesAndSkipsMarkers`.
+- **Chapter detection.** Navigation fragments were dropped, so a file holding several
+  chapters became one chapter named after its *last* contents entry. The parser now
+  reads the ordered contents (EPUB 3 `toc` nav only, not landmarks or page lists;
+  NCX `navMap` only), records element ids while converting, and splits each spine
+  file at the anchors the contents point to. A file the contents never mention and
+  that has no `<h1>`–`<h3>` continues the previous chapter. Hrefs resolve relative to
+  the navigation file. A heading is only removed from the body when it is a whole
+  paragraph. Tests `epubChaptersFollowContentsAnchors`; checked on two real DRM-free
+  EPUBs (22 and 9 chapters with correct titles).
+- **DRM.** An EPUB whose chapters are listed in `META-INF/encryption.xml` is reported
+  as "protected with DRM" instead of being imported as ciphertext. Font obfuscation
+  alone is accepted. Nothing is decrypted. Test
+  `epubWithEncryptedChaptersIsReportedAsDRM`; checked on a real Adobe-DRM EPUB.
+- **Text disappeared and took long to return after any appearance change.** Every
+  change (including theme only) re-laid out the whole book behind a spinner. Now the
+  pages on screen stay visible until their replacement is ready; a colour-only change
+  recolours the existing pages without layout; a layout change lays out the chapter
+  on screen first (shown at once, footer "Page x of y in this chapter") and then the
+  whole book with every chapter in parallel, keeping the exact page. The first-open
+  spinner is centred (GeometryReader placed it top-leading). Switching between paged
+  and continuous reading reuses the same pages.
+- **Import error "Couldn't communicate with a helper application."** File-provider
+  coordination can drop its XPC connection. Staging now falls back to a direct copy
+  under the security scope, accepts EPUB folder packages (zipped into a regular
+  `.epub`, `mimetype` first), opens the security scope before checking whether a
+  picked item is a folder, and explains provider failures in plain words. Test
+  `importsEPUBFolderPackage`. The original file could not be reproduced here; real
+  device validation with the user's file provider remains.
+- **Lock screen / Dynamic Island artwork** now shows the book cover (or the same
+  typographic cover the library draws).
+- **Voices filters** are one row of icon chips (Model, Language, Quality) with an
+  icon-only Clear button (44 pt, labelled "Clear filters"); the row scrolls sideways
+  on the narrowest widths instead of wrapping.
+- **Hugging Face guide.** The optional-token card links to a plain-English sheet:
+  what Hugging Face is, that the downloadable models (Kokoro 82M, Phonon 31M) are
+  public, how to create a Read token, how to accept a gated model's licence, and links
+  to the gated models (Gradium Phonon 40M Spanish and Multilingual, which this build
+  lists but cannot run because no Core ML version exists).

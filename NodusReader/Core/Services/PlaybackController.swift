@@ -85,6 +85,10 @@ public final class PlaybackController {
     @ObservationIgnored private let sampleSynthesizer = AVSpeechSynthesizer()
     @ObservationIgnored private let speechDelegate = SpeechDelegate()
 
+    #if canImport(MediaPlayer) && os(iOS)
+    /// The lock screen and Dynamic Island artwork, built once per book.
+    @ObservationIgnored private var nowPlayingArtwork: (bookID: UUID, artwork: MPMediaItemArtwork)?
+    #endif
     @ObservationIgnored private let audioEngine = AVAudioEngine()
     @ObservationIgnored private let audioPlayer = AVAudioPlayerNode()
     @ObservationIgnored private let timePitch = AVAudioUnitTimePitch()
@@ -1358,9 +1362,34 @@ public final class PlaybackController {
         ]
         info[MPNowPlayingInfoPropertyPlaybackQueueCount] = sentences.count
         info[MPNowPlayingInfoPropertyPlaybackQueueIndex] = currentIndex
+        if let artwork = artwork(for: book) {
+            info[MPMediaItemPropertyArtwork] = artwork
+        }
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
         #endif
     }
+
+    #if canImport(MediaPlayer) && os(iOS)
+    /// The book's cover, or the same typographic cover the library draws when
+    /// the book has none (or it has not downloaded yet).
+    private func artwork(for book: Book) -> MPMediaItemArtwork? {
+        if let cached = nowPlayingArtwork, cached.bookID == book.id { return cached.artwork }
+        let image = library.fileStore.coverURL(for: book.coverFileName)
+            .flatMap { UIImage(contentsOfFile: $0.path) }
+            ?? CoverGenerator.typographicCover(title: book.title, author: book.displayAuthor)
+                .flatMap { UIImage(data: $0) }
+        guard let image else { return nil }
+        let artwork = Self.makeArtwork(image)
+        nowPlayingArtwork = (book.id, artwork)
+        return artwork
+    }
+
+    /// Built outside the main actor: MediaPlayer calls the image handler on
+    /// its own queue.
+    private nonisolated static func makeArtwork(_ image: UIImage) -> MPMediaItemArtwork {
+        MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+    }
+    #endif
 }
 
 // MARK: - Speech delegate
