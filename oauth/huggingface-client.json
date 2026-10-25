@@ -1,0 +1,10 @@
+{
+  "client_id": "https://raw.githubusercontent.com/jorgepb96/nodus-reader-mobile/main/oauth/huggingface-client.json",
+  "client_name": "Nodus Reader",
+  "client_uri": "https://github.com/jorgepb96/nodus-reader-mobile",
+  "redirect_uris": ["nodusreader://oauth/huggingface"],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none",
+  "scope": "openid profile gated-repos"
+}
