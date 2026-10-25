@@ -10,8 +10,13 @@ let package = Package(
         .library(name: "ptts", targets: ["PhononTTS"]),
     ],
     targets: [
-        // DEV: local build with ptts_export_coreml; replaced by the release URL before commit.
-        .binaryTarget(name: "PhononCore", path: "PhononCore.xcframework"),
+        // Gradium's PhononCore 0.4.1 rebuilt with ptts_export_coreml (on-device Core ML
+        // export); source change and build script in engine/.
+        .binaryTarget(
+            name: "PhononCore",
+            url: "https://github.com/jorgepb96/nodus-reader-mobile/releases/download/phononcore-0.4.1-nodus.1/PhononCore.xcframework.zip",
+            checksum: "58083b754f4d4c9d87e18007446bf5a671722dde82f68cc0884294a6e78bbc3b"
+        ),
         .target(
             name: "PhononTTS",
             dependencies: ["PhononCore"],
