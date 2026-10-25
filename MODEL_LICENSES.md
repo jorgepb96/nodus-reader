@@ -14,7 +14,8 @@ the app.
 | Kokoro G2P | [mattmireles/MisakiSwift](https://github.com/mattmireles/MisakiSwift) pinned revision `3a27756a…`, MIT-licensed [mlx-swift](https://github.com/ml-explore/mlx-swift), Apache-2.0 FluidAudio-derived G2P and NemoTextProcessing | Apache-2.0 / MIT | Swift Package dependencies |
 | Phonon 31M Core ML | [gradium/phonon-31m-en](https://huggingface.co/gradium/phonon-31m-en) weights, Core ML bundle [mosiah/phonon-31m-en-coreml](https://huggingface.co/mosiah/phonon-31m-en-coreml), runtime [gradium-ai/xn-ptts](https://github.com/gradium-ai/xn-ptts) v0.4.1 | Apache-2.0 (`ptts` also offers MIT) | Downloaded from a pinned Hugging Face revision; English, nine voices |
 | Phonon voices | [gradium/phonon-voices](https://huggingface.co/gradium/phonon-voices) | Apache-2.0 | Included in the Phonon bundle |
-| Phonon 40M Spanish / Multilingual | [gradium/phonon-40m-es](https://huggingface.co/gradium/phonon-40m-es), [gradium/phonon-40m-multilingual](https://huggingface.co/gradium/phonon-40m-multilingual) | CC BY-NC 4.0, gated | **Not downloaded and not usable.** No Core ML bundle is published; the Models screen lists them as unavailable for transparency |
+| Phonon 40M Spanish | [gradium/phonon-40m-es](https://huggingface.co/gradium/phonon-40m-es) | CC BY-NC 4.0, gated | **Never downloaded or distributed by Nodus Reader.** A user who has accepted the gate converts it to Core ML on their own Mac with Gradium's exporter (see `docs/BUILD.md`) and installs the folder with *Install from file*; it runs with the 25 Spanish voices of `gradium/phonon-voices`. Personal, non-commercial use |
+| Phonon 40M Multilingual | [gradium/phonon-40m-multilingual](https://huggingface.co/gradium/phonon-40m-multilingual) | CC BY-NC 4.0, gated | Not usable in this version (no Core ML bundle); listed for transparency |
 
 ## Third-party runtime packages
 
@@ -51,8 +52,8 @@ Exact source, licence and attribution notices are in
 - Downloads are per device. A book's preferred voice ID may sync, but if the voice is
   absent the app falls back to an installed voice without breaking narration.
 - Kokoro Spanish voices are not advertised: the pinned SDK only performs English
-  raw-text phonemization. Phonon Spanish/multilingual checkpoints are not advertised
-  because no runnable Core ML bundle is published.
+  raw-text phonemization. Phonon 40M Spanish runs only from a bundle the user converted
+  on their own Mac; the multilingual checkpoint is not usable (no Core ML bundle).
 - Re-check every upstream licence and model card before an App Store release. This
   file is not legal advice.
 

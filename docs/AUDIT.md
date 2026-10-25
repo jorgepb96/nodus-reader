@@ -562,3 +562,14 @@ for the gated repository; the result is not ours to republish (gated, CC BY-NC 4
 The Voices & Models screen now lists the public models first, then the Hugging Face
 account section, then the gated models, each saying plainly that signing in does not
 make it downloadable and why.
+- **Follow-up: Phonon 40M Spanish converted for personal use.** The licence (CC BY-NC
+  4.0) allows adapting the model for non-commercial use. The gate asks each person to
+  share their details with Gradium, so the converted copy is not published. It was
+  converted with Gradium's exporter (xn-ptts v0.4.1, same runtime as the app) from the
+  owner's account, with the 25 Spanish voices of `gradium/phonon-voices`, and placed
+  in the owner's iCloud Drive. The app recognises a Phonon bundle's language from
+  `bundle.json`, installs Spanish into its own folder beside 31M English, loads it with
+  Spanish text normalization, lists its 25 voices (Spain and Mexico), and switches
+  checkpoints when the selected model changes. Verified with the opt-in test
+  `convertedPhonon40SpanishBundleNarratesSpanish` on the Mac (install through Install
+  from file, selection, Spanish synthesis with Lucía-Sol, word timings).

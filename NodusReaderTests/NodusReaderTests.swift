@@ -1175,6 +1175,37 @@ func modelDownloadsSynthesizeAndAlignWithText() async throws {
     }
 }
 
+/// A Phonon 40M Spanish bundle converted on a Mac (see docs/MODEL_LICENSES.md):
+/// installed through Install from file, selected, and narrating Spanish. Opt in
+/// with `TEST_RUNNER_NODUS_PHONON40_ES_BUNDLE=<folder>`.
+@Test(.enabled(if: ProcessInfo.processInfo.environment["NODUS_PHONON40_ES_BUNDLE"] != nil),
+      .timeLimit(.minutes(10)))
+@MainActor
+func convertedPhonon40SpanishBundleNarratesSpanish() async throws {
+    let folder = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["NODUS_PHONON40_ES_BUNDLE"]))
+    let suite = "nodus.tests.phonon40.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let model = try #require(manager.models.first { $0.id == ModelManager.phonon40SpanishID })
+    #expect(!model.downloadable)
+
+    await manager.installFromFolder(folder)
+    #expect(manager.errorMessage == nil)
+    #expect(manager.isInstalled(model))
+    manager.selectModel(model)
+
+    let sentence = "En un lugar de la Mancha, de cuyo nombre no quiero acordarme, vivía un hidalgo."
+    let audio = try await manager.synthesize(sentence, voiceID: "phonon:Lucía-Sol", engine: .phonon)
+    let duration = Double(audio.samples.count) / audio.sampleRate
+    #expect(duration > 2, "produced \(duration) s")
+    #expect(audio.samples.contains { abs($0) > 0.01 })
+    let timings = AudioWordAligner.align(text: sentence, samples: audio.samples, sampleRate: audio.sampleRate)
+    #expect(timings.count == 15)
+    #expect(zip(timings, timings.dropFirst()).allSatisfy { $0.start <= $1.start })
+    #expect(manager.loadedEngines == [.phonon])
+}
+
 @Test
 func localStoreNeverUsesSwiftDataCloudKitOrTheAppGroup() {
     // Signed builds carry iCloud and App Group entitlements. With SwiftData's

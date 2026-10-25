@@ -59,6 +59,14 @@ final class ModelManager {
         /// The publisher asks for a signed-in account that accepted the
         /// licence on Hugging Face before the files can be downloaded.
         var requiresAcceptedLicense = false
+        /// Offered as a download inside the app. A model that is not (its
+        /// publisher has no Core ML build) is installed from a converted
+        /// folder with Install from file.
+        var downloadable = true
+        /// The language Phonon normalizes text as for this checkpoint.
+        var phononLanguage: PhononTTS.Language = .english
+        /// How to get the model when it cannot be downloaded in the app.
+        var installNote: String?
 
         var isAvailable: Bool {
             if case .available = availability { return true }
@@ -109,7 +117,11 @@ final class ModelManager {
     @ObservationIgnored private var engineLoadToken = UUID()
 
     @ObservationIgnored private var kokoro: KokoroTTS?
-    @ObservationIgnored private var phonon: Phonon?
+    @ObservationIgnored private var phonon: Phonon? {
+        didSet { if phonon == nil { phononModelID = nil } }
+    }
+    /// Which Phonon checkpoint `phonon` holds (English 31M or Spanish 40M).
+    @ObservationIgnored private var phononModelID: String?
 
     // Memory: loaded engines hold hundreds of MB of Core ML models (and Kokoro
     // MLX buffers). They are released when narration has not needed them for
@@ -128,6 +140,25 @@ final class ModelManager {
     nonisolated private static let phononDirectory = FileManager.default
         .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("NodusReader/Models/Phonon", isDirectory: true)
+
+    nonisolated private static let phonon40SpanishDirectory = FileManager.default
+        .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("NodusReader/Models/Phonon-40m-es", isDirectory: true)
+
+    static let phonon40SpanishID = "phonon-40m-es"
+
+    /// Each model keeps its own folder, so the English and Spanish Phonon
+    /// checkpoints can both be installed.
+    nonisolated static func directory(forModelID id: String, engine: Engine) -> URL {
+        switch engine {
+        case .kokoro: kokoroCacheDirectory
+        case .phonon: id == phonon40SpanishID ? phonon40SpanishDirectory : phononDirectory
+        }
+    }
+
+    private func directory(for model: Model) -> URL {
+        Self.directory(forModelID: model.id, engine: model.engine)
+    }
 
     /// Pinned Hugging Face revision used for the public Phonon 31M Core ML bundle.
     /// The bundle's own `bundle.json` verifies the size and SHA-256 of every file.
@@ -169,19 +200,20 @@ final class ModelManager {
             availability: .available
         ),
         Model(
-            id: "phonon-40m-es",
+            id: ModelManager.phonon40SpanishID,
             engine: .phonon,
             name: String(localized: "Phonon 40M Spanish"),
-            detail: String(localized: "Spanish Phonon checkpoint."),
+            detail: String(localized: "Spanish narration with 25 voices from Spain and Mexico."),
             language: String(localized: "Spanish"),
-            sizeText: String(localized: "Not available"),
+            sizeText: String(localized: "Installed from a file"),
             license: "CC BY-NC 4.0",
             source: URL(string: "https://huggingface.co/gradium/phonon-40m-es")!,
-            voices: [],
-            availability: .unavailable(
-                String(localized: "Signing in to Hugging Face does not make this model downloadable yet. Gradium publishes it only in formats for computers (PyTorch and GGUF), and Nodus Reader runs voices with Core ML, Apple's on-device format. No Core ML version of this model exists, so it cannot run on iPhone, iPad or Mac in this version.")
-            ),
-            requiresAcceptedLicense: true
+            voices: ModelManager.phonon40SpanishVoices,
+            availability: .available,
+            requiresAcceptedLicense: true,
+            downloadable: false,
+            phononLanguage: .spanish,
+            installNote: String(localized: "Gradium publishes this model only for computers, so it cannot be downloaded here. Convert it to Core ML once on a Mac with Gradium's export tool, using a Hugging Face account that accepted its licence, put the folder in Files (for example in iCloud Drive) and choose Install from file. The licence is CC BY-NC 4.0: personal, non-commercial use, and the converted copy is not shared.")
         ),
         Model(
             id: "phonon-40m-multilingual",
@@ -209,6 +241,7 @@ final class ModelManager {
         self.selectedModelID = defaults.string(forKey: "nodus.models.selected") ?? Self.systemModelID
         Self.excludeFromBackup(Self.kokoroCacheDirectory)
         Self.excludeFromBackup(Self.phononDirectory)
+        Self.excludeFromBackup(Self.phonon40SpanishDirectory)
         refreshStates()
         validateSelection()
         publishVoices()
@@ -249,8 +282,10 @@ final class ModelManager {
               isInstalled(model) else { return }
         selectedModelID = id
         defaults.set(id, forKey: "nodus.models.selected")
-        // Only one neural engine stays in memory: the one just selected.
+        // Only one neural engine stays in memory: the one just selected (and
+        // for Phonon, only the selected checkpoint).
         releaseEngines(keeping: model.engine)
+        if model.engine == .phonon, phononModelID != model.id { phonon = nil }
         publishVoices()
         if let first = voices.voice(withID: model.voices.first?.id) {
             voices.setDefault(first)
@@ -286,7 +321,7 @@ final class ModelManager {
         case .kokoro:
             return model.id == "kokoro-82m" && Self.kokoroBundleIsComplete(at: Self.kokoroCacheDirectory)
         case .phonon:
-            return model.id == "phonon-31m-en" && PhononModels.isInstalled(at: Self.phononDirectory)
+            return PhononModels.isInstalled(at: directory(for: model))
         }
     }
 
@@ -332,7 +367,8 @@ final class ModelManager {
     func refreshStorage() async {
         var summary = StorageSummary()
         let sizes = await Task.detached(priority: .utility) {
-            (Self.directorySize(Self.kokoroCacheDirectory), Self.directorySize(Self.phononDirectory))
+            (Self.directorySize(Self.kokoroCacheDirectory),
+             Self.directorySize(Self.phononDirectory) + Self.directorySize(Self.phonon40SpanishDirectory))
         }.value
         summary.kokoroBytes = sizes.0
         summary.phononBytes = sizes.1
@@ -347,7 +383,7 @@ final class ModelManager {
     // MARK: Install
 
     func install(_ model: Model) {
-        guard model.isAvailable else { return }
+        guard model.isAvailable, model.downloadable else { return }
         guard installTasks[model.id] == nil else { return }
         states[model.id] = .downloading(0)
         errorMessage = nil
@@ -385,7 +421,7 @@ final class ModelManager {
             // A cancelled download can still finish moving files into place
             // after this delete; remove them again once it has stopped, unless
             // the user has started a new install meanwhile.
-            let directory = model.engine == .kokoro ? Self.kokoroCacheDirectory : Self.phononDirectory
+            let directory = directory(for: model)
             Task { [weak self] in
                 await cancelledInstall.value
                 guard let self, self.installTasks[model.id] == nil,
@@ -399,8 +435,8 @@ final class ModelManager {
             kokoro = nil
             try? FileManager.default.removeItem(at: Self.kokoroCacheDirectory)
         case .phonon:
-            phonon = nil
-            try? FileManager.default.removeItem(at: Self.phononDirectory)
+            if phononModelID == model.id { phonon = nil }
+            try? FileManager.default.removeItem(at: directory(for: model))
         }
         states[model.id] = .notInstalled
         validateSelection()
@@ -442,7 +478,7 @@ final class ModelManager {
             case .phonon:
                 let directory = try await PhononModels.download(
                     from: Self.phononBundleBase,
-                    to: Self.phononDirectory
+                    to: directory(for: model)
                 ) { [weak self] fraction in
                     Task { @MainActor [weak self] in
                         guard let self, self.installTokens[model.id] == token else { return }
@@ -452,10 +488,11 @@ final class ModelManager {
                 try Task.checkCancellation()
                 guard installTokens[model.id] == token else { return }
                 states[model.id] = .loading
-                let loaded = try await Phonon.load(models: directory, language: .english)
+                let loaded = try await Phonon.load(models: directory, language: model.phononLanguage)
                 try Task.checkCancellation()
                 guard installTokens[model.id] == token else { return }
                 phonon = loaded
+                phononModelID = model.id
             }
             guard installTokens[model.id] == token else { return }
             states[model.id] = .installed
@@ -490,23 +527,31 @@ final class ModelManager {
         let accessed = folder.startAccessingSecurityScopedResource()
         defer { if accessed { folder.stopAccessingSecurityScopedResource() } }
 
-        let engine: Engine? = await Task.detached(priority: .userInitiated) {
-            if Self.kokoroBundleIsComplete(at: folder) { return .kokoro }
-            if PhononModels.isInstalled(at: folder) { return .phonon }
+        let detected: (engine: Engine, languages: [String])? = await Task.detached(priority: .userInitiated) {
+            if Self.kokoroBundleIsComplete(at: folder) { return (Engine.kokoro, []) }
+            if PhononModels.isInstalled(at: folder) { return (Engine.phonon, Self.phononBundleLanguages(at: folder)) }
             return nil
         }.value
-        guard let engine else {
+        guard let detected else {
             errorMessage = String(localized: "This folder is not a complete Kokoro or Phonon Core ML bundle. Choose the folder that contains the model packages and their manifest.")
             return
         }
-        guard let model = models.first(where: { $0.engine == engine }) else { return }
+        let engine = detected.engine
+        // A Phonon bundle says which languages its checkpoint speaks: Spanish
+        // goes to Phonon 40M Spanish, anything else to Phonon 31M English.
+        let modelID: String
+        switch engine {
+        case .kokoro: modelID = "kokoro-82m"
+        case .phonon: modelID = detected.languages == ["es"] ? Self.phonon40SpanishID : "phonon-31m-en"
+        }
+        guard let model = models.first(where: { $0.id == modelID }) else { return }
         guard model.isAvailable else {
-            errorMessage = "\(model.name) cannot run on this device, so its bundle was not installed."
+            errorMessage = String(localized: "\(model.name) cannot run on this device, so its bundle was not installed.")
             return
         }
         guard installTasks[model.id] == nil else { return }
 
-        let destination = engine == .kokoro ? Self.kokoroCacheDirectory : Self.phononDirectory
+        let destination = directory(for: model)
         engineLoadToken = UUID()
         switch engine {
         case .kokoro: kokoro = nil
@@ -528,7 +573,8 @@ final class ModelManager {
             case .kokoro:
                 kokoro = try await KokoroTTS.load(resources: KokoroResourceProvider.directory(destination))
             case .phonon:
-                phonon = try await Phonon.load(models: destination, language: .english)
+                phonon = try await Phonon.load(models: destination, language: model.phononLanguage)
+                phononModelID = model.id
             }
             states[model.id] = .installed
             publishVoices()
@@ -540,6 +586,20 @@ final class ModelManager {
             errorMessage = message
         }
         await refreshStorage()
+    }
+
+    /// The languages a Phonon bundle's checkpoint was trained for, from the
+    /// `config.json` the exporter copies next to the models (empty if absent).
+    nonisolated static func phononBundleLanguages(at folder: URL) -> [String] {
+        for name in ["config.json", "bundle.json"] {
+            guard let data = try? Data(contentsOf: folder.appendingPathComponent(name)),
+                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { continue }
+            if let languages = object["languages"] as? [String] { return languages }
+            if let config = object["config"] as? [String: Any], let languages = config["languages"] as? [String] {
+                return languages
+            }
+        }
+        return []
     }
 
     private func progressValue(for model: Model) -> Double {
@@ -568,6 +628,11 @@ final class ModelManager {
         case .phonon:
             beginSynthesis()
             defer { endSynthesis() }
+            // The loaded checkpoint must be the selected one (English 31M or
+            // Spanish 40M); a switch drops the other and loads this one.
+            if let selected = selectedModel, selected.engine == .phonon, phononModelID != selected.id {
+                phonon = nil
+            }
             if phonon == nil { await loadInstalledEnginesIfNeeded() }
             guard let phonon else { throw NeuralNarrationError.engineNotLoaded("Phonon") }
             let name = voiceID.hasPrefix("phonon:") ? String(voiceID.dropFirst("phonon:".count)) : voiceID
@@ -721,11 +786,12 @@ final class ModelManager {
             }
             #endif
         case .phonon:
-            guard phonon == nil else { return }
+            guard phonon == nil || phononModelID != model.id else { return }
             do {
-                let loaded = try await Phonon.load(models: Self.phononDirectory, language: .english)
+                let loaded = try await Phonon.load(models: directory(for: model), language: model.phononLanguage)
                 guard token == engineLoadToken, selectedModelID == model.id else { return }
                 phonon = loaded
+                phononModelID = model.id
                 states[model.id] = .installed
             } catch {
                 guard token == engineLoadToken, selectedModelID == model.id else { return }
@@ -900,6 +966,36 @@ final class ModelManager {
               (try? updated.write(to: manifestURL, options: .atomic)) != nil else { return false }
         return true
     }
+
+    /// Gradium's Spanish voice catalogue (gradium/phonon-voices, Apache-2.0),
+    /// exported into the converted Phonon 40M Spanish bundle under these names.
+    static let phonon40SpanishVoices: [Voice] = [
+        Voice(id: "phonon:Noa", name: "Noa", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Lucía-Sol", name: "Lucía-Sol", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Candela", name: "Candela", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Celia", name: "Celia", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Alba", name: "Alba", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Alicia", name: "Alicia", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Nerea", name: "Nerea", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Marcos", name: "Marcos", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Borja", name: "Borja", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Iker", name: "Iker", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Nuno", name: "Nuno", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Izan", name: "Izan", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Guillermo", name: "Guillermo", language: "es-ES", engine: .phonon),
+        Voice(id: "phonon:Rebeca", name: "Rebeca", language: "es-MX", engine: .phonon),
+        Voice(id: "phonon:Regina", name: "Regina", language: "es-MX", engine: .phonon),
+        Voice(id: "phonon:Danae", name: "Danae", language: "es-MX", engine: .phonon),
+        Voice(id: "phonon:Azucena", name: "Azucena", language: "es-MX", engine: .phonon),
+        Voice(id: "phonon:Jimena", name: "Jimena", language: "es-MX", engine: .phonon),
+        Voice(id: "phonon:Ximena", name: "Ximena", language: "es-MX", engine: .phonon),
+        Voice(id: "phonon:Lalo", name: "Lalo", language: "es-MX", engine: .phonon),
+        Voice(id: "phonon:Aldo", name: "Aldo", language: "es-MX", engine: .phonon),
+        Voice(id: "phonon:Yael", name: "Yael", language: "es-MX", engine: .phonon),
+        Voice(id: "phonon:Ulises", name: "Ulises", language: "es-MX", engine: .phonon),
+        Voice(id: "phonon:Leonel", name: "Leonel", language: "es-MX", engine: .phonon),
+        Voice(id: "phonon:Nico", name: "Nico", language: "es-MX", engine: .phonon)
+    ]
 
     private static let phononVoices: [Voice] = [
         Voice(id: "phonon:default", name: "Default", language: "en-US", engine: .phonon),

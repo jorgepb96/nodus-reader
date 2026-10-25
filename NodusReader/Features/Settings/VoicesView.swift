@@ -568,7 +568,7 @@ struct VoicesView: View {
                 }
             }
         case .notInstalled:
-            if model.isAvailable {
+            if model.isAvailable, model.downloadable {
                 Button {
                     models.install(model)
                 } label: {
@@ -577,6 +577,25 @@ struct VoicesView: View {
                 }
                 .buttonStyle(.bordered)
                 .tint(palette.accent)
+            } else if model.isAvailable {
+                // Not downloadable in the app: say how to get it, and offer
+                // the folder picker right here.
+                VStack(alignment: .leading, spacing: 8) {
+                    if let note = model.installNote {
+                        Text(note)
+                            .font(.caption)
+                            .foregroundStyle(palette.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Button {
+                        showBundleImporter = true
+                    } label: {
+                        Label("Install from file…", systemImage: "folder.badge.plus")
+                            .font(.footnote.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(palette.accent)
+                }
             }
         }
     }
@@ -753,11 +772,18 @@ struct VoicesView: View {
         ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 
+    /// The installed Phonon checkpoint whose voices are listed (English 31M
+    /// or Spanish 40M): the selected one.
+    private var phononModelName: String {
+        if let model = models.selectedModel, model.engine == .phonon { return model.name }
+        return "Phonon"
+    }
+
     private func engineLabel(for engine: String?) -> String {
         switch engine {
         case "system": String(localized: "System")
         case "kokoro": String(localized: "Kokoro 82M")
-        case "phonon": String(localized: "Phonon 31M")
+        case "phonon": phononModelName
         default: String(localized: "All")
         }
     }
@@ -785,7 +811,7 @@ struct VoicesView: View {
                 Button("Kokoro 82M") { engineFilter = "kokoro" }
             }
             if voices.voices.contains(where: { $0.engineRaw == "phonon" }) {
-                Button("Phonon 31M") { engineFilter = "phonon" }
+                Button(phononModelName) { engineFilter = "phonon" }
             }
         }
     }

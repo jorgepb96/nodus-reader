@@ -354,3 +354,9 @@ ES.update({
 "Phonon 40M Spanish": "Phonon 40M Español",
 "Phonon 40M Multilingual": "Phonon 40M Multilingüe",
 })
+ES.update({
+"Spanish narration with 25 voices from Spain and Mexico.": "Narración en español con 25 voces de España y México.",
+"Installed from a file": "Se instala desde un archivo",
+"Gradium publishes this model only for computers, so it cannot be downloaded here. Convert it to Core ML once on a Mac with Gradium's export tool, using a Hugging Face account that accepted its licence, put the folder in Files (for example in iCloud Drive) and choose Install from file. The licence is CC BY-NC 4.0: personal, non-commercial use, and the converted copy is not shared.": "Gradium publica este modelo solo para ordenador, así que no se puede descargar aquí. Conviértelo a Core ML una vez en un Mac con la herramienta de exportación de Gradium, usando una cuenta de Hugging Face que haya aceptado su licencia; deja la carpeta en Archivos (por ejemplo, en iCloud Drive) y elige Instalar desde un archivo. La licencia es CC BY-NC 4.0: uso personal y no comercial, y la copia convertida no se comparte.",
+"%@ cannot run on this device, so its bundle was not installed.": "%@ no puede funcionar en este dispositivo, así que no se ha instalado.",
+})

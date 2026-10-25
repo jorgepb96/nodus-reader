@@ -89,8 +89,10 @@ and Spanish through `NodusReader/Resources/Localizable.xcstrings`; see
 `tools/localization/README.md` before adding UI text.
 
 Kokoro is English-only and unavailable in the Simulator (MLX needs a Metal device).
-Phonon 31M is English; the CC BY-NC 40M Spanish/multilingual checkpoints are listed
-as unavailable because no Core ML bundle exists. Real-device iCloud and Share
+Phonon 31M is English and downloads in the app. Phonon 40M Spanish (CC BY-NC, gated)
+is never downloaded or shared by the app: a user converts it on a Mac with Gradium's
+exporter and installs the folder with Install from file (`docs/BUILD.md`); the
+multilingual checkpoint is listed as unavailable. Real-device iCloud and Share
 Extension validation, distribution and the final accessibility/licence audits remain.
 
 See `docs/ROADMAP.md`, `docs/ICLOUD.md` and `docs/NARRATION_SYNC.md`.

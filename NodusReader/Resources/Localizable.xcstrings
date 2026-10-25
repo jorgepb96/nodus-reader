@@ -22,6 +22,16 @@
         }
       }
     },
+    "%@ cannot run on this device, so its bundle was not installed.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ no puede funcionar en este dispositivo, así que no se ha instalado."
+          }
+        }
+      }
+    },
     "%@ is the default voice": {
       "localizations": {
         "es": {
@@ -1972,12 +1982,12 @@
         }
       }
     },
-    "Gradium publishes this checkpoint as gated CC BY-NC weights but has not published a Core ML bundle. Nodus Reader will not offer a download it cannot run.": {
+    "Gradium publishes this model only for computers, so it cannot be downloaded here. Convert it to Core ML once on a Mac with Gradium's export tool, using a Hugging Face account that accepted its licence, put the folder in Files (for example in iCloud Drive) and choose Install from file. The licence is CC BY-NC 4.0: personal, non-commercial use, and the converted copy is not shared.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gradium publica este modelo con acceso restringido y licencia CC BY-NC, pero no ha publicado una versión Core ML. Nodus Reader no ofrece descargas que no puede ejecutar."
+            "value": "Gradium publica este modelo solo para ordenador, así que no se puede descargar aquí. Conviértelo a Core ML una vez en un Mac con la herramienta de exportación de Gradium, usando una cuenta de Hugging Face que haya aceptado su licencia; deja la carpeta en Archivos (por ejemplo, en iCloud Drive) y elige Instalar desde un archivo. La licencia es CC BY-NC 4.0: uso personal y no comercial, y la copia convertida no se comparte."
           }
         }
       }
@@ -2408,6 +2418,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Instalado"
+          }
+        }
+      }
+    },
+    "Installed from a file": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se instala desde un archivo"
           }
         }
       }
@@ -3822,16 +3842,6 @@
         }
       }
     },
-    "Phonon 31M": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Phonon 31M"
-          }
-        }
-      }
-    },
     "Phonon 40M Multilingual": {
       "localizations": {
         "es": {
@@ -5002,12 +5012,12 @@
         }
       }
     },
-    "Spanish Phonon checkpoint.": {
+    "Spanish narration with 25 voices from Spain and Mexico.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Modelo de Phonon en español."
+            "value": "Narración en español con 25 voces de España y México."
           }
         }
       }
@@ -5608,16 +5618,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Esta versión no está firmada para el contenedor de iCloud de Nodus Reader. Configura el contenedor de CloudKit y los permisos antes de usar la sincronización."
-          }
-        }
-      }
-    },
-    "This checkpoint is gated and non-commercial, and there is no Core ML bundle for it. It is listed for transparency only.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este modelo tiene acceso restringido, es de uso no comercial y no existe una versión Core ML. Solo aparece por transparencia."
           }
         }
       }

@@ -43,9 +43,11 @@ The design source of truth is [`design/DESIGN.md`](design/DESIGN.md) and [`desig
   ships English Misaki phonemization, and its MLX phonemizer needs a Metal device.
   All 28 American and British English voices of the pinned bundle are installed
   (the starter voice plus 27 voice files verified by SHA-256).
-- **Phonon offers English 31M only.** The Spanish and multilingual 40M checkpoints are
-  gated CC BY-NC models without a published Core ML bundle, so they are listed as
-  unavailable and never downloaded. Spanish system voices remain available.
+- **Phonon downloads English 31M only.** Phonon 40M Spanish is a gated CC BY-NC model
+  with no published Core ML bundle: you can convert it on your own Mac and install it
+  with *Install from file* (see `docs/BUILD.md`); the app never downloads or shares it.
+  The multilingual checkpoint is listed as unavailable. Spanish system voices remain
+  available.
 - **iCloud requires signed entitlements.** Unsigned simulator builds report iCloud as
   unavailable by design; real-device two-device validation is still required.
 - DOCX, FB2, CBZ and other phase-2 formats; DRM-protected content is not supported.

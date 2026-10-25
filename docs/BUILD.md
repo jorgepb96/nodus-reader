@@ -226,3 +226,31 @@ Sandbox entitlement first (see below).
 - The first Kokoro/Phonon synthesis after install is slower because Core ML compiles
   the model packages; later sentences are much faster.
 - The app icon is assembled in `Assets.xcassets/AppIcon.appiconset` from `design/icon/` masters.
+
+## Phonon 40M Spanish (personal Core ML conversion)
+
+Gradium publishes Phonon 40M Spanish only as PyTorch/GGUF (gated, CC BY-NC 4.0), and
+the app's Phonon runtime loads Core ML bundles only. To use it, convert it once on a
+Mac with a Hugging Face account that accepted the model's access conditions
+(`hf auth login`), with Gradium's exporter at the runtime version the app ships:
+
+```bash
+git clone --depth 1 --branch v0.4.1 https://github.com/gradium-ai/xn-ptts.git
+cd xn-ptts && cargo build --release -p ptts --example export_coreml --features hub
+# The 25 Spanish voices of gradium/phonon-voices (Apache-2.0), named as in voices.jsonl.
+target/release/examples/export_coreml \
+  --model hf://gradium/phonon-40m-es@f0d2f39c9b58ad4c19a189e3ba989ee4df393cc5 \
+  --voices <folder of Spanish voice .safetensors> phonon-40m-es-coreml
+```
+
+The result (about 200 MB, `bundle.json` with `languages: ["es"]`) goes in Files, and
+Settings › Voices & Models › Phonon 40M Spanish › Install from file installs it into its
+own folder beside Phonon 31M. Keep the converted copy to your own devices: the licence
+is non-commercial and the model is gated. Opt-in check:
+
+```bash
+TEST_RUNNER_NODUS_PHONON40_ES_BUNDLE=<converted folder> TEST_RUNNER_CFFIXED_USER_HOME=<scratch home> \
+xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader -destination 'platform=macOS' \
+  -only-testing:'NodusReaderTests/convertedPhonon40SpanishBundleNarratesSpanish()' \
+  -derivedDataPath build/DerivedData-mac CODE_SIGNING_ALLOWED=NO
+```
