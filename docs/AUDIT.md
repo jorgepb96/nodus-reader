@@ -46,3 +46,4 @@ These are documented rather than silently ignored:
 - 20 unit/integration tests: pass (including new path, page-clipping, tombstone and suspension tests).
 - 9 UI tests: pass; the iPad-specific capture test is skipped on iPhone and was run separately on iPad: pass.
 - macOS clean QA bundle: main window plus a dedicated Reading window, no crash.
+- Visual audit (iPhone, iPad, Mac; Light, Sepia, Dark and High Contrast): complete; findings and remaining visual notes are in [`VISUAL_AUDIT.md`](VISUAL_AUDIT.md).

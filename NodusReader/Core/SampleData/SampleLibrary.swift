@@ -30,6 +30,9 @@ enum SampleLibrary {
     static func resetReadingState(library: LibraryService) {
         let books = library.allBooks()
         for book in books {
+            for bookmark in Array(book.bookmarks) {
+                library.deleteBookmark(bookmark)
+            }
             book.locator = ReadingLocator()
             book.progress = 0
             book.lastOpenedAt = nil

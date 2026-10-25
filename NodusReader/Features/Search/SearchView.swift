@@ -97,7 +97,7 @@ struct SearchView: View {
                 searchHint("text.book.closed", "Titles and authors")
                 searchHint("text.magnifyingglass", "Full text of imported documents")
                 searchHint("folder", "Collection names")
-                searchHint("note.text", "Notes and highlights will join with annotations")
+                searchHint("note.text", "Notes and highlighted passages")
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)

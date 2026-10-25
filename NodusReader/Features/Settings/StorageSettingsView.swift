@@ -268,7 +268,7 @@ struct StorageSettingsView: View {
                             .foregroundStyle(palette.muted)
                     }
                 }
-            } else if !sync.availabilityMessage.isEmpty {
+            } else if sync.isEnabled, !sync.availabilityMessage.isEmpty {
                 Text(sync.availabilityMessage)
                     .font(.caption)
                     .foregroundStyle(palette.muted)

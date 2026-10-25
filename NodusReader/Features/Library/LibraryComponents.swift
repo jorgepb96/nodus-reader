@@ -131,8 +131,8 @@ struct LibrarySortMenu: View {
             }
         } label: {
             HStack(spacing: 4) {
-                Text("Sort")
                 Image(systemName: "arrow.up.arrow.down")
+                Text("Sort")
             }
             .font(.footnote)
             .foregroundStyle(palette.muted)

@@ -240,6 +240,10 @@ public final class LibraryService {
                 || book.author.localizedCaseInsensitiveContains(trimmed)
                 || book.searchText.localizedCaseInsensitiveContains(trimmed)
                 || book.collectionNames.contains { $0.localizedCaseInsensitiveContains(trimmed) }
+                || book.annotations.contains {
+                    $0.note.localizedCaseInsensitiveContains(trimmed)
+                        || $0.quote.localizedCaseInsensitiveContains(trimmed)
+                }
         }
     }
 

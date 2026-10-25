@@ -224,18 +224,20 @@ struct PaginatedReaderContent: View {
         }
 
         if narrationChapterIndex == page.chapterIndex {
-            if let sentence = narrationSentenceRange, sentence.length > 0 {
+            if let sentence = narrationSentenceRange,
+               let trimmed = trimmedHighlightRange(sentence, chapterIndex: page.chapterIndex) {
                 spans.append(ReaderPageHighlightSpan(
-                    range: sentence,
+                    range: trimmed,
                     fill: PlatformColor(theme.narration),
                     underline: nil,
                     underlineWidth: 0,
                     rounded: true
                 ))
             }
-            if let word = narrationWordRange, word.length > 0 {
+            if let word = narrationWordRange,
+               let trimmed = trimmedHighlightRange(word, chapterIndex: page.chapterIndex) {
                 spans.append(ReaderPageHighlightSpan(
-                    range: word,
+                    range: trimmed,
                     fill: style.isDark
                         ? PlatformColor(hex: 0xC4B5FD, alpha: 0.55)
                         : PlatformColor(hex: 0x7C3AED, alpha: 0.38),
@@ -246,5 +248,28 @@ struct PaginatedReaderContent: View {
             }
         }
         return ReaderPageHighlights(spans: spans)
+    }
+
+    /// A highlight that ends in whitespace paints through the end of the line in
+    /// TextKit. Trim it so the sentence background stops at the last glyph.
+    private func trimmedHighlightRange(_ range: NSRange, chapterIndex: Int) -> NSRange? {
+        guard chapters.indices.contains(chapterIndex) else { return nil }
+        let text = chapters[chapterIndex].text as NSString
+        var start = min(max(range.location, 0), text.length)
+        var end = min(NSMaxRange(range), text.length)
+        while end > start, Self.isHighlightWhitespace(text.character(at: end - 1)) {
+            end -= 1
+        }
+        while start < end, Self.isHighlightWhitespace(text.character(at: start)) {
+            start += 1
+        }
+        guard end > start else { return nil }
+        return NSRange(location: start, length: end - start)
+    }
+
+    private static func isHighlightWhitespace(_ character: unichar) -> Bool {
+        character == 0x20 || character == 0x09 || character == 0x0A ||
+            character == 0x0D || character == 0xA0 || character == 0x2028 ||
+            character == 0x2029
     }
 }

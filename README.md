@@ -53,8 +53,9 @@ The design source of truth is [`design/DESIGN.md`](design/DESIGN.md) and [`desig
 - App Store/TestFlight distribution, notarisation and the final licence audit.
 - Real-device accessibility and large-library performance audits.
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full status and deviations, and
-[`docs/AUDIT.md`](docs/AUDIT.md) for the latest bug audit and remaining risks.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full status and deviations,
+[`docs/AUDIT.md`](docs/AUDIT.md) for the latest bug audit and remaining risks, and
+[`docs/VISUAL_AUDIT.md`](docs/VISUAL_AUDIT.md) for the 2026-10-25 visual pass.
 
 ## Build
 

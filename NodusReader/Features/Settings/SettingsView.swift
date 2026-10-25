@@ -107,6 +107,8 @@ struct SettingsView: View {
             .padding(.horizontal, 20)
             .padding(.top, 8)
             .padding(.bottom, 110)
+            .frame(maxWidth: 820, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .background(palette.background)
         .toolbar {

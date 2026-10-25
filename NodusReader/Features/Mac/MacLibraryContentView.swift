@@ -77,8 +77,19 @@ struct MacLibraryContentView: View {
                 Button {
                     imports.beginImport()
                 } label: {
-                    Label("Import", systemImage: "plus")
+                    HStack(spacing: 5) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("Import")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(palette.onAccent)
+                    .padding(.horizontal, 12)
+                    .frame(height: 30)
+                    .background(palette.accent, in: Capsule())
+                    .fixedSize()
                 }
+                .buttonStyle(.plain)
                 .help("Import documents (⇧⌘I)")
             }
             ToolbarItem(placement: .primaryAction) {
@@ -160,7 +171,7 @@ struct MacLibraryContentView: View {
             TableColumn("Title", value: \.title) { book in
                 HStack(spacing: 9) {
                     BookCoverView(book: book, showBadges: false)
-                        .frame(width: 26, height: 39)
+                        .frame(width: 34, height: 51)
                     Text(book.title)
                         .font(.system(size: 14, design: .serif))
                         .lineLimit(1)

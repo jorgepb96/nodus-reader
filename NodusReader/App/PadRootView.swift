@@ -70,6 +70,7 @@ struct PadRootView: View {
                     }
             }
             .preferredColorScheme(themeScheme)
+            .presentationSizing(.page)
         }
     }
 

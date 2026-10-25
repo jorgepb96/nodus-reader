@@ -143,7 +143,10 @@ public struct OutlinePillButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 44)
             .background(Color.clear, in: Capsule())
-            .overlay(Capsule().stroke(palette.accent.opacity(0.35), lineWidth: 1))
+            .overlay(
+                Capsule().stroke(palette.isHighContrast ? palette.text : palette.accent.opacity(0.35),
+                                 lineWidth: palette.isHighContrast ? 1.5 : 1)
+            )
         }
         .buttonStyle(.plain)
     }

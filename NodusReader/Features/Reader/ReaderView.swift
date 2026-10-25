@@ -263,7 +263,7 @@ struct ReaderView: View {
                 Image(systemName: "list.bullet")
                     .font(.system(size: 17))
                     .foregroundStyle(theme.text)
-                    .frame(width: 40, height: 44)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Contents, bookmarks and notes")
@@ -274,7 +274,7 @@ struct ReaderView: View {
                 Image(systemName: isCurrentPageBookmarked ? "bookmark.fill" : "bookmark")
                     .font(.system(size: 17))
                     .foregroundStyle(isCurrentPageBookmarked ? theme.accent : theme.text)
-                    .frame(width: 40, height: 44)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isCurrentPageBookmarked ? "Remove bookmark from this page" : "Bookmark this page")
@@ -285,7 +285,7 @@ struct ReaderView: View {
                 Text("Aa")
                     .font(.system(size: 18, design: .serif))
                     .foregroundStyle(theme.text)
-                    .frame(width: 40, height: 44)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Appearance and typography")
@@ -313,7 +313,7 @@ struct ReaderView: View {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(canGoPreviousPage ? theme.text : theme.muted.opacity(0.4))
-                                .frame(width: 44, height: 32)
+                                .frame(width: 44, height: 44)
                         }
                         .buttonStyle(.plain)
                         .disabled(!canGoPreviousPage)
@@ -336,7 +336,7 @@ struct ReaderView: View {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(canGoNextPage ? theme.text : theme.muted.opacity(0.4))
-                                .frame(width: 44, height: 32)
+                                .frame(width: 44, height: 44)
                         }
                         .buttonStyle(.plain)
                         .disabled(!canGoNextPage)

@@ -9,7 +9,7 @@ The interface follows `design/DESIGN.md` and `design/screens/`. This document re
 | `iPhone-ReadingNow.png` | `docs/screenshots/iPhone-01-Home.png` | Matches layout, typography, cover language, Continue card and Up next. Native toolbar/nav bar adds standard top spacing. |
 | `iPhone-Library.png` | `docs/screenshots/iPhone-02-Library.png` | 3-column grid, chips, sort, PDF badges, progress, toolbar. Filter chips overflow horizontally as in the design. |
 | `iPhone-Collections.png` | `docs/screenshots/iPhone-05-Collections.png`, `iPhone-06-Collection.png` | Root collections plus breadcrumb/detail, subcollection cards, multi-membership text, manual order sheet. |
-| `iPhone-Reader.png` | `docs/screenshots/iPhone-03-Reader.png`, `iPhone-13-ReadAndListen.png` | Light theme, chapter opener, justified serif, contents/Aa, progress, narration capsule, sentence + word highlight. Paginated with page curl; macOS uses a two-page spread. |
+| `iPhone-Reader.png` | `docs/screenshots/iPhone-03-Reader.png`, `iPhone-13-ReadAndListen.png` | Dark theme capture (the reader follows the App theme; Light, Sepia and High Contrast use the same layout), chapter opener, justified serif, contents/Aa, progress, narration capsule, sentence + word highlight. Paginated with page curl; macOS uses a two-page spread. |
 | `iPhone-NowPlaying.png` | `docs/screenshots/iPhone-12-Player.png`, `iPhone-18-NeuralNarration.png` | Cover, title, live 3-line context, scrubber, transport, speed/voice/sleep/mode grid, offline-audio card, “Voice generated on this iPhone”. Real system/Kokoro/Phonon voice names replace the illustrative catalogue. |
 | `iPhone-Settings.png` | `docs/screenshots/iPhone-07-Settings.png`, `iPhone-08-Typography.png` | App/Reader segmented control, 6 theme tiles with “Aa”, selected ring/check, custom themes, general rows. |
 | `iPhone-Voices.png` | `docs/screenshots/iPhone-09-Voices.png` | Real system voices plus installed Kokoro/Phonon voices, search, model/language/quality filters, samples, favorites and default badge. |
@@ -25,6 +25,8 @@ The interface follows `design/DESIGN.md` and `design/screens/`. This document re
 | `Icon-Options.png` | Asset catalog | Direction C “Pages” used for dark/light/tinted and macOS sizes. |
 
 The screenshots are real simulator/window captures of the app with a debug sample library; they are not HTML renders.
+
+The 2026-10-25 visual audit is recorded in [`VISUAL_AUDIT.md`](VISUAL_AUDIT.md). It covers the light, sepia, dark and High Contrast palettes, native menus, the full-screen reader, cover rendering, the tab-bar backdrop and the Reader/Player sheets; the fixes from that pass are reflected in the screenshots above.
 
 ## What follows the design
 
@@ -50,6 +52,8 @@ The screenshots are real simulator/window captures of the app with a debug sampl
 11. **Theme segmented control** is a custom capsule (App/Reader) rather than the native segmented control, to match the design on both iOS and macOS.
 12. **Sidebar search on iPad** is a visible native `TextField` styled as the design’s field; `.searchable(placement: .sidebar)` did not render a field in the split-view sidebar on the tested OS.
 13. **Neural word timing is estimated** from real PCM pause analysis rather than engine-provided timings; the sentence timing is exact and the word estimate degrades gracefully when pauses are ambiguous.
+14. **The iOS 26 tab bar is translucent.** The app draws an in-content gradient to the app background behind the floating bar so bright covers do not bleed through; the bar itself remains the system Liquid Glass control rather than an opaque custom bar.
+15. **iPad Settings uses a full page sheet** with a centered 820 pt content column instead of the default form sheet, which clipped General rows at the bottom.
 
 ## Accessibility
 
@@ -57,4 +61,5 @@ The screenshots are real simulator/window captures of the app with a debug sampl
 - Theme tiles expose selected state; switches are native toggles.
 - Reader and player controls are at least 44 × 44 pt; the transport play button is 76 pt.
 - Dynamic Type is used for interface text; display titles scale through `@ScaledMetric`. Reader typography is user-adjustable.
-- Remaining: full VoiceOver pass on every screen, Reduce Motion behaviour for page transitions, and contrast verification for every custom theme.
+- Contrast was manually reviewed in Light, Sepia, Dark and High Contrast; High Contrast outline controls now use full-strength borders.
+- Remaining: full VoiceOver traversal on every screen, Reduce Motion behaviour for page transitions, and user-supplied custom-theme contrast.

@@ -231,7 +231,10 @@ struct CollectionDetailView: View {
                     .foregroundStyle(palette.text)
                     .padding(.horizontal, 14)
                     .frame(height: 40)
-                    .overlay(Capsule().stroke(palette.accent.opacity(0.35), lineWidth: 1))
+                    .overlay(
+                        Capsule().stroke(palette.isHighContrast ? palette.text : palette.accent.opacity(0.35),
+                                         lineWidth: palette.isHighContrast ? 1.5 : 1)
+                    )
             }
             .buttonStyle(.plain)
 

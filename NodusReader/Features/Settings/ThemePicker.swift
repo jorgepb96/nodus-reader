@@ -87,7 +87,9 @@ struct ThemeGrid: View {
                         .padding(.horizontal, 14)
                         .overlay(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(palette.accent.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                                .stroke(palette.isHighContrast ? palette.text : palette.accent.opacity(0.35),
+                                        style: StrokeStyle(lineWidth: palette.isHighContrast ? 1.5 : 1,
+                                                           dash: [4, 3]))
                         )
                 }
                 .buttonStyle(.plain)
@@ -138,7 +140,7 @@ struct AppThemeTile: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(swatch.border ?? Color.clear, lineWidth: swatch.borderWidth)
+                .stroke(swatch.border ?? palette.line, lineWidth: swatch.borderWidth)
         )
         .overlay(selectionOverlay)
     }
@@ -194,7 +196,7 @@ struct ThemeSwatchTile: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(border ?? Color.white.opacity(0.12), lineWidth: border == nil ? 1 : 2)
+                        .stroke(border ?? palette.line, lineWidth: border == nil ? 1 : 2)
                 )
                 .overlay(selectionOverlay)
 

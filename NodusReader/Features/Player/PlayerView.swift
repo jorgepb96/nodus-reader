@@ -27,7 +27,7 @@ struct PlayerView: View {
             .frame(maxWidth: 520)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 16)
-            .padding(.bottom, 30)
+            .padding(.bottom, 56)
         }
         .scrollIndicators(.hidden)
         .background(playerBackground)

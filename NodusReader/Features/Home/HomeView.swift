@@ -104,13 +104,26 @@ struct HomeView: View {
 
     // MARK: Continue card
 
+    private var continueCoverSize: CGSize {
+        if DeviceInfo.isPad { return CGSize(width: 120, height: 180) }
+        #if os(macOS)
+        return CGSize(width: 112, height: 168)
+        #else
+        return CGSize(width: 96, height: 144)
+        #endif
+    }
+
+    private var wideButtonWidth: CGFloat? {
+        DeviceInfo.isPad ? 190 : nil
+    }
+
     private func continueCard(_ book: Book) -> some View {
         HStack(alignment: .top, spacing: 16) {
             Button {
                 open(book)
             } label: {
                 BookCoverView(book: book)
-                    .frame(width: 96, height: 144)
+                    .frame(width: continueCoverSize.width, height: continueCoverSize.height)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Read \(book.title)")
@@ -146,9 +159,12 @@ struct HomeView: View {
 
                 HStack(spacing: 8) {
                     PrimaryPillButton("Read") { open(book) }
+                        .frame(maxWidth: wideButtonWidth ?? .infinity)
                     OutlinePillButton("Listen", systemImage: "headphones") {
                         listen(to: book)
                     }
+                    .frame(maxWidth: wideButtonWidth ?? .infinity)
+                    if wideButtonWidth != nil { Spacer(minLength: 0) }
                 }
                 .padding(.top, 6)
             }
@@ -178,6 +194,19 @@ struct HomeView: View {
 
     // MARK: Up next
 
+    private var shelfCoverWidth: CGFloat {
+        if DeviceInfo.isPad { return 132 }
+        #if os(macOS)
+        return 120
+        #else
+        return 104
+        #endif
+    }
+
+    private var shelfSpacing: CGFloat {
+        DeviceInfo.isPad ? 16 : 14
+    }
+
     private var upNextSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
@@ -191,14 +220,14 @@ struct HomeView: View {
                 .accessibilityHint("Shows the whole library")
             }
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 14) {
+                HStack(alignment: .top, spacing: shelfSpacing) {
                     ForEach(upNext) { book in
                         Button {
                             open(book)
                         } label: {
                             VStack(alignment: .leading, spacing: 8) {
                                 BookCoverView(book: book)
-                                    .frame(width: 104, height: 156)
+                                    .frame(width: shelfCoverWidth, height: shelfCoverWidth * 1.5)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(book.title)
                                         .font(.footnote.weight(.medium))
@@ -210,7 +239,7 @@ struct HomeView: View {
                                         .lineLimit(1)
                                 }
                             }
-                            .frame(width: 104, alignment: .leading)
+                            .frame(width: shelfCoverWidth, alignment: .leading)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("\(book.title) by \(book.displayAuthor)")
@@ -242,7 +271,7 @@ struct HomeView: View {
 
     private func continueEyebrow(for book: Book) -> String? {
         let source = book.lastPositionDevice
-        guard !source.isEmpty, source != DeviceInfo.name else { return nil }
+        guard !source.isEmpty, source != DeviceInfo.name else { return "Continue" }
         let label: String
         if source.localizedCaseInsensitiveContains("mac") {
             label = "your Mac"

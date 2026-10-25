@@ -40,6 +40,7 @@ struct LibraryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 titleRow
+                searchField
                 LibraryFilterBar(selection: $filter)
                 sortRow
                 if filteredBooks.isEmpty {
@@ -55,7 +56,6 @@ struct LibraryView: View {
             .padding(.bottom, 110)
         }
         .background(palette.background)
-        .librarySearchable(text: $searchText, prompt: "Titles, authors, text and notes")
         .toolbar {
             ToolbarItem(placement: .nodusLeading) {
                 Button(selectionMode ? "Done" : "Select") {
@@ -145,6 +145,34 @@ struct LibraryView: View {
             Spacer()
             LibrarySortMenu(sort: $sort)
         }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 17))
+                .foregroundStyle(palette.muted)
+            TextField("Titles, authors, text and notes", text: $searchText)
+                .textFieldStyle(.plain)
+                .font(.subheadline)
+                .foregroundStyle(palette.text)
+                .accessibilityLabel("Search library")
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(palette.muted)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 44)
+        .background(palette.panel, in: Capsule())
+        .overlay(Capsule().stroke(palette.line, lineWidth: 1))
     }
 
     // MARK: Grid and list

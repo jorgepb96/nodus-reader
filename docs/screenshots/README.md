@@ -6,7 +6,7 @@ These are real captures from the app with a debug sample library, used for the R
 |---|---|
 | `iPhone-01-Home.png` | Home, Continue card, Up next |
 | `iPhone-02-Library.png` | Library grid, chips, sort |
-| `iPhone-03-Reader.png` | Reader, Light theme, chapter opener |
+| `iPhone-03-Reader.png` | Reader, Dark theme (follows the App theme), chapter opener |
 | `iPhone-04-Appearance.png` | Reader appearance and typography sheet |
 | `iPhone-05-Collections.png` | Collections root |
 | `iPhone-06-Collection.png` | Collection detail with subcollections and multi-membership |

@@ -393,8 +393,6 @@ struct PDFSourcePanel: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("Original page")
-                        .font(.system(.headline, design: .serif))
                     Spacer()
                     Text("\(pageIndex + 1) / \(document.totalPageCount)")
                         .font(.caption)
@@ -469,6 +467,7 @@ struct PDFSourcePanel: View {
                     .padding(.top, 4)
             }
             .padding(14)
+            .padding(.bottom, 28)
         }
         .background(uiBackground)
         .task(id: pageIndex) { await loadImage() }

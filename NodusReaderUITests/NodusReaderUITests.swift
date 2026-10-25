@@ -7,7 +7,7 @@ final class NodusReaderUITests: XCTestCase {
     }
 
     func testPhoneScreens() throws {
-        let app = launch()
+        let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60),
                       "The sample library did not finish importing")
 
@@ -215,10 +215,11 @@ final class NodusReaderUITests: XCTestCase {
         snap("iPhone-18-NeuralNarration")
 
         let progressed = app.staticTexts.matching(
-            NSPredicate(format: "label BEGINSWITH 'Sentence 2 '")
+            NSPredicate(format: "label BEGINSWITH 'Sentence 3 '")
         ).firstMatch
-        XCTAssertTrue(progressed.waitForExistence(timeout: 60),
-                      "Phonon audio never advanced past the first sentence")
+        XCTAssertTrue(progressed.waitForExistence(timeout: 90),
+                      "Phonon audio never advanced past the second sentence")
+        sleep(2)
         snap("iPhone-19-NeuralProgress")
     }
 

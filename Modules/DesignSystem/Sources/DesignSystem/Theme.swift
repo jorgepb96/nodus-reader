@@ -88,10 +88,12 @@ public struct NodusPalette {
     public var selection: Color
     public var shadow: Color
     public var isDark: Bool
+    public var isHighContrast: Bool
 
     public init(background: Color, panel: Color, panelRaised: Color, sidebar: Color, input: Color,
                 line: Color, text: Color, muted: Color, accent: Color, onAccent: Color,
-                violet: Color, destructive: Color, selection: Color, shadow: Color, isDark: Bool) {
+                violet: Color, destructive: Color, selection: Color, shadow: Color, isDark: Bool,
+                isHighContrast: Bool = false) {
         self.background = background
         self.panel = panel
         self.panelRaised = panelRaised
@@ -107,6 +109,7 @@ public struct NodusPalette {
         self.selection = selection
         self.shadow = shadow
         self.isDark = isDark
+        self.isHighContrast = isHighContrast
     }
 
     public static let dark = NodusPalette(
@@ -196,7 +199,8 @@ public struct NodusPalette {
         destructive: Color(hex: 0x8B0000),
         selection: Color(hex: 0xEDE9FE),
         shadow: Color.black.opacity(0.25),
-        isDark: false
+        isDark: false,
+        isHighContrast: true
     )
 
     public static func palette(for theme: NodusAppTheme, colorScheme: ColorScheme) -> NodusPalette {
