@@ -20,6 +20,7 @@ settings:
     CLANG_ENABLE_MODULES: YES
     SWIFT_EMIT_LOC_STRINGS: YES
     CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: 6RPLS9EA4X
 
 packages:
   DesignSystem:

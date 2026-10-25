@@ -168,6 +168,28 @@ The Mac build is not sandboxed, so these runs write to the real
 prefix the command with `CFFIXED_USER_HOME=/tmp/nodus-home` (create
 `/tmp/nodus-home/Library/Preferences` first).
 
+## TestFlight (iOS/iPadOS)
+
+The project signs automatically with team `6RPLS9EA4X`; `ITSAppUsesNonExemptEncryption`
+is `false` (the app only uses HTTPS), so uploads need no export-compliance answer.
+App Store Connect app: **Nodus Reader** (`ai.nodus.reader`, SKU `nodus-reader`).
+Internal TestFlight group **Internal** receives every Xcode build automatically.
+
+```bash
+# Bump CURRENT_PROJECT_VERSION in project.yml for every upload, then:
+xcodegen generate
+xcodebuild archive -project NodusReader.xcodeproj -scheme NodusReader -configuration Release \
+  -destination 'generic/platform=iOS' -archivePath build/NodusReader-iOS.xcarchive \
+  -derivedDataPath build/DerivedData-ios -allowProvisioningUpdates
+xcodebuild -exportArchive -archivePath build/NodusReader-iOS.xcarchive \
+  -exportOptionsPlist Config/ExportOptions-AppStore.plist -exportPath build/export \
+  -allowProvisioningUpdates
+```
+
+Use an existing `-derivedDataPath` with resolved packages: a fresh one may fail to
+clone package submodules. The Mac app is not on TestFlight yet; it needs the App
+Sandbox entitlement first (see below).
+
 ## Signing and distribution
 
 - Simulator and local Mac builds do not need a team when `CODE_SIGNING_ALLOWED=NO`.
