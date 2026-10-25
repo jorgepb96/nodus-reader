@@ -24,6 +24,28 @@ enum SampleLibrary {
         var chapters: [Chapter]
     }
 
+    /// Deterministic starting point for UI tests: the configured sample
+    /// progress usually moves as tests read, which would make a test that
+    /// expects a chapter opener depend on whatever ran before it.
+    static func resetReadingState(library: LibraryService) {
+        let books = library.allBooks()
+        for book in books {
+            book.locator = ReadingLocator()
+            book.progress = 0
+            book.lastOpenedAt = nil
+            book.lastPositionDevice = ""
+            book.lastPositionDate = nil
+            book.status = .toRead
+        }
+        if let moby = books.first(where: { $0.title == "Moby-Dick" }) {
+            moby.lastOpenedAt = Date()
+            moby.lastPositionDevice = DeviceInfo.name
+            moby.lastPositionDate = Date()
+            moby.status = .inProgress
+        }
+        library.save()
+    }
+
     static func seedIfNeeded(library: LibraryService) async {
         guard library.allBooks().isEmpty else { return }
 

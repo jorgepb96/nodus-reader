@@ -280,14 +280,39 @@ extension View {
     @ViewBuilder
     func readerCover(item: Binding<Book?>) -> some View {
         #if os(macOS)
-        sheet(item: item) { book in
-            ReaderView(book: book)
-                .frame(minWidth: 980, minHeight: 720)
-        }
+        modifier(MacReaderWindowPresenter(item: item))
         #else
         fullScreenCover(item: item) { book in
-            ReaderView(book: book)
+            ReaderCoverHost(book: book)
         }
         #endif
     }
 }
+
+#if !os(macOS)
+private struct ReaderCoverHost: View {
+    @Environment(\.dismiss) private var dismiss
+    let book: Book
+
+    var body: some View {
+        ReaderView(book: book) { dismiss() }
+    }
+}
+#endif
+
+#if os(macOS)
+/// On macOS the reader gets its own window (see `ReaderWindowHost`), which
+/// fills the window and can be zoomed or taken full screen natively.
+private struct MacReaderWindowPresenter: ViewModifier {
+    @Environment(\.openWindow) private var openWindow
+    @Binding var item: Book?
+
+    func body(content: Content) -> some View {
+        content.onChange(of: item?.id) { _, _ in
+            guard let book = item else { return }
+            item = nil
+            openWindow(id: "reader", value: book.id)
+        }
+    }
+}
+#endif

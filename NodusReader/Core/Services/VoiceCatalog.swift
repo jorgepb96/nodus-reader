@@ -169,6 +169,27 @@ public final class VoiceCatalog {
         voice(withID: defaultVoiceID) ?? voices.first
     }
 
+    /// A good installed system voice for the user's language, used when the
+    /// selected neural model is removed or the user switches back to System.
+    public var bestSystemVoice: Voice? {
+        let preferred = Locale.current.language.languageCode?.identifier ?? "en"
+        let candidates = voices.filter { $0.isSystem && $0.language.hasPrefix(preferred) }
+        return candidates.first { $0.quality == 3 }
+            ?? candidates.first { $0.quality == 2 }
+            ?? candidates.first
+            ?? voices.first { $0.isSystem }
+    }
+
+    public static func languageCode(_ code: String?) -> String? {
+        guard let code, !code.isEmpty else { return nil }
+        return String(code.prefix(2)).lowercased()
+    }
+
+    public func voices(matchingLanguage code: String?) -> [Voice] {
+        guard let normalized = Self.languageCode(code) else { return voices }
+        return voices.filter { $0.language.lowercased().hasPrefix(normalized) }
+    }
+
     public func setDefault(_ voice: Voice) {
         defaultVoiceID = voice.id
         defaults.set(voice.id, forKey: defaultKey)

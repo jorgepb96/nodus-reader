@@ -209,17 +209,26 @@ struct MacPageSpread: View {
     var onHighlight: (NSRange, AnnotationColor) -> Void
     var onNote: (NSRange) -> Void
 
+    private var firstVisibleIndex: Int {
+        // On an odd final page, pair it with the previous page so the spread
+        // never ends with an empty right-hand sheet.
+        if pageIndex == pages.count - 1, pageIndex > 0, pageIndex.isMultiple(of: 2) {
+            return pageIndex - 1
+        }
+        return pageIndex
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             ForEach(0..<2, id: \.self) { offset in
-                let index = pageIndex + offset
+                let index = firstVisibleIndex + offset
                 if pages.indices.contains(index) {
                     MacPageView(page: pages[index], style: style,
                                 highlights: highlightsProvider(pages[index]),
                                 onWordTap: onWordTap, onHighlight: onHighlight, onNote: onNote)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    Color(style.isDark ? NSColor(white: 0.06, alpha: 1) : NSColor(white: 0.98, alpha: 1))
+                    Color(nsColor: style.background)
                 }
                 if offset == 0 {
                     Rectangle()
@@ -228,7 +237,7 @@ struct MacPageSpread: View {
                 }
             }
         }
-        .background(Color(style.isDark ? NSColor(white: 0.06, alpha: 1) : NSColor(white: 0.98, alpha: 1)))
+        .background(Color(nsColor: style.background))
     }
 }
 #endif

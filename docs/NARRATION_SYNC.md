@@ -125,9 +125,15 @@ controls. No Nodus code was copied; the algorithm was reimplemented in Swift.
 
 - `wordAlignmentMatchesTextRangesAndMonotonicTimes`
 - `wordAlignmentHandlesOneWordAndSilence`
+- `voiceCatalogPrefersTheBookLanguage`
 - `testReaderWordTapStartsReadAndListen` (system voice)
 - `testNeuralVoiceNarration` (Phonon, asserts progress to sentence 2)
-- `testListenStartsNarration`, `testPageTurnAndBookmarks`
+- `testVoicePickerStartsWithBookLanguage` (Spanish book, system voice)
+- `testListenStartsNarration`, `testPagedReaderTurnsPagesAndBookmarks`
+
+The player and voice picker default to the book's detected language, fall back to
+the selected voice engine's language, and expose an explicit "All languages" menu so
+other installed voices remain reachable.
 
 ## Future work
 

@@ -58,6 +58,9 @@ struct RootView: View {
                 if ProcessInfo.processInfo.arguments.contains("-NodusSampleLibrary") {
                     await SampleLibrary.seedIfNeeded(library: library)
                 }
+                if ProcessInfo.processInfo.arguments.contains("-NodusResetReadingState") {
+                    SampleLibrary.resetReadingState(library: library)
+                }
                 #endif
                 await imports.consumeSharedInbox()
                 await sync.start()

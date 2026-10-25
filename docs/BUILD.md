@@ -68,7 +68,7 @@ The tests build real EPUB and PDF fixtures with the debug sample generator, impo
 them into an in-memory SwiftData store with a temporary `FileStore`, and assert
 metadata, chapters, duplicates, covers, collections, manual order, themes, utilities,
 pause-based word alignment and the durable sync outbox/tombstone rules. As of the last
-run: **14 tests pass**.
+run: **16 tests pass**.
 
 The DesignSystem package has its own test target:
 
@@ -86,13 +86,14 @@ xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader \
   -derivedDataPath build/DerivedData-ios CODE_SIGNING_ALLOWED=NO
 ```
 
-The tests launch with `-NodusSampleLibrary`, which creates real EPUB/PDF files using public-domain text and original placeholder prose, imports them through the production pipeline, and seeds collections and reading state. Debug-only.
+The tests launch with `-NodusSampleLibrary`, which creates real EPUB/PDF files using public-domain text and original placeholder prose, imports them through the production pipeline, and seeds collections and reading state. Reader-specific tests also pass `-NodusResetReadingState` so a previous test's page position cannot hide the chapter opener. Debug-only.
 
 Covered flows: Home, Library, Reader, Appearance, Collections, Collection detail,
 Settings, Voices, Models, Typography, Search, Player (system voice), tap-a-word
 Read & Listen, page turn/bookmarks, PDF Intelligent Reading and source panel, Phonon
-narration (behavioural: proves playback advances to sentence 2), and iCloud &
-Storage. The tests skip the iPad layout on iPhone and vice versa.
+narration (behavioural: proves playback advances to sentence 2), the Spanish
+book-language voice picker and iCloud & Storage. The tests skip the iPad layout on
+iPhone and vice versa.
 
 The Phonon test requires a Phonon bundle in the simulator app container. Install it
 from **Settings → Voices & Models → Models → Phonon 31M → Download**, or copy an
@@ -130,7 +131,7 @@ Use `manifest.json` to rename the exported files. `docs/screenshots/` contains t
 # Open the Settings scene
 ... -NodusSampleLibrary -NodusOpenSettings
 
-# Open the reader sheet on Moby-Dick
+# Open the full-window reader on Moby-Dick
 ... -NodusSampleLibrary -NodusOpenSampleReader
 
 # Start narration and show the Mac player bar

@@ -258,11 +258,12 @@ public final class PlaybackController {
     }
 
     public var activeVoice: VoiceCatalog.Voice? {
-        voices.voice(withID: activeBook?.preferredVoiceID) ?? voices.defaultVoice
+        guard let book = activeBook else { return voices.defaultVoice }
+        return voices.narrationVoice(preferredID: book.preferredVoiceID, language: book.language)
     }
 
     public var activeVoiceID: String? {
-        activeBook?.preferredVoiceID ?? voices.defaultVoiceID
+        activeVoice?.id ?? voices.defaultVoiceID
     }
 
     public var voiceLabel: String {
@@ -326,9 +327,10 @@ public final class PlaybackController {
         errorMessage = nil
 
         do {
-            if voices.voices.isEmpty {
-                await voices.loadIfNeeded()
-            }
+            // The neural catalogue is published at launch, so `voices` may not
+            // be empty while the system voice list has never been enumerated.
+            // Always ask; loadIfNeeded is a no-op once system voices exist.
+            await voices.loadIfNeeded()
             let loaded = try await BookTextLoader.loadChapters(for: book, fileStore: library.fileStore)
             guard !loaded.isEmpty else {
                 throw ImportError.emptyDocument(book.title)

@@ -53,10 +53,22 @@ struct PaginatedReaderContent: View {
         GeometryReader { proxy in
             let columnCount = max(1, columns)
             let separator: CGFloat = columnCount > 1 ? 1 : 0
-            let pageWidth = (proxy.size.width - separator) / CGFloat(columnCount) - style.margin * 2
+            let availableWidth = (proxy.size.width - separator) / CGFloat(columnCount)
+            // Keep a comfortable measure on iPad/Mac instead of stretching
+            // lines across the whole window. The page host uses the same
+            // margin, so selection and tap coordinates stay aligned.
+            let pageStyle: ReaderPageStyle = {
+                var adjusted = style
+                if columnCount == 1 {
+                    let readableWidth: CGFloat = 720
+                    adjusted.margin = max(style.margin, (availableWidth - readableWidth) / 2)
+                }
+                return adjusted
+            }()
+            let pageWidth = availableWidth - pageStyle.margin * 2
             let pageHeight = proxy.size.height - 16
             let size = CGSize(width: max(120, pageWidth), height: max(120, pageHeight))
-            let key = "\(buildKey)-\(Int(size.width))x\(Int(size.height))-\(columnCount)-\(chapters.count)"
+            let key = "\(buildKey)-\(Int(size.width))x\(Int(size.height))-\(Int(pageStyle.margin))-\(columnCount)-\(chapters.count)"
 
             ZStack {
                 if isBuilding || pages.isEmpty {
@@ -67,7 +79,7 @@ struct PaginatedReaderContent: View {
                     MacPageSpread(
                         pages: pages,
                         pageIndex: $pageIndex,
-                        style: style,
+                        style: pageStyle,
                         highlightsProvider: highlights(for:),
                         onWordTap: onWordTap,
                         onHighlight: onHighlight,
@@ -78,7 +90,7 @@ struct PaginatedReaderContent: View {
                         pages: pages,
                         pageIndex: $pageIndex,
                         generation: generation,
-                        style: style,
+                        style: pageStyle,
                         highlightsProvider: highlights(for:),
                         onWordTap: onWordTap,
                         onHighlight: onHighlight,
@@ -88,7 +100,7 @@ struct PaginatedReaderContent: View {
                 }
             }
             .task(id: key) {
-                await buildPages(size: size, key: key, columns: columnCount)
+                await buildPages(size: size, key: key, columns: columnCount, style: pageStyle)
             }
         }
         .onChange(of: pageIndex) { _, _ in
@@ -106,7 +118,8 @@ struct PaginatedReaderContent: View {
         }
     }
 
-    private func buildPages(size: CGSize, key: String, columns: Int) async {
+    private func buildPages(size: CGSize, key: String, columns: Int,
+                            style: ReaderPageStyle) async {
         guard key != builtKey || pages.isEmpty else { return }
         isBuilding = true
         // Let the progress indicator appear before TextKit does its work.

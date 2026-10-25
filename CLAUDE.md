@@ -76,6 +76,12 @@ iCloud Documents sync with a durable outbox; system-voice narration plus Kokoro 
 Phonon Core ML; word-level alignment; and a partial audio cache with prefetch and
 deletion.
 
+The reader follows the app theme by default, hides the status bar on iOS and opens
+in a dedicated full-window Reading window on macOS. A selected voice engine (System, Kokoro or Phonon) filters
+the voices exposed everywhere, and narration starts in the book's detected language
+unless the user has chosen a per-book voice. Book covers always draw a typographic
+fallback while the real cover loads.
+
 Kokoro is English-only and unavailable in the Simulator (MLX needs a Metal device).
 Phonon 31M is English; the CC BY-NC 40M Spanish/multilingual checkpoints are listed
 as unavailable because no Core ML bundle exists. Real-device iCloud and Share
@@ -85,12 +91,13 @@ See `docs/ROADMAP.md`, `docs/ICLOUD.md` and `docs/NARRATION_SYNC.md`.
 
 ## Verification
 
-- 14 unit/integration tests cover EPUB/PDF import, duplicate detection, collections,
-  themes, text utilities, pause-based word alignment and the durable sync outbox.
-- 8 UI tests cover the phone screens, reader, page turn, bookmarks, system
+- 16 unit/integration tests cover EPUB/PDF import, duplicate detection, collections,
+  themes (including reader-follows-app), text utilities, pause-based word alignment,
+  language-aware voice choice and the durable sync outbox.
+- 9 UI tests cover the phone screens, reader, page turn, bookmarks, system
   narration, tap-a-word, PDF Intelligent Reading, Phonon narration (behavioural:
-  progress past sentence 1) and iCloud settings. The iPad capture test is skipped on
-  an iPhone destination.
+  progress past sentence 1), iCloud settings and the Spanish book-language voice
+  filter. The iPad capture test is skipped on an iPhone destination and vice versa.
 - Screenshots are stored in `docs/screenshots/` and compared with `design/screens/`.
 - Unsigned simulator builds cannot exercise CloudKit or the App Group; those paths
   report unavailability explicitly and are documented as requiring signed

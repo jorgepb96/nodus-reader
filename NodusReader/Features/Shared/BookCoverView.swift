@@ -85,16 +85,18 @@ struct BookCoverView: View {
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
-            Group {
+            ZStack {
+                // The typographic cover is always present underneath, so a
+                // cover that is still loading (or failed to decode) never
+                // leaves a blank cell in the library, player or inspector.
+                CoverArtwork(
+                    author: book.displayAuthor,
+                    title: book.title,
+                    background: fallback.background,
+                    foreground: fallback.foreground
+                )
                 if let coverURL {
                     StoredCoverImage(url: coverURL)
-                } else {
-                    CoverArtwork(
-                        author: book.displayAuthor,
-                        title: book.title,
-                        background: fallback.background,
-                        foreground: fallback.foreground
-                    )
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)

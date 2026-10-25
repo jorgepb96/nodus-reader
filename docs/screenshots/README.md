@@ -30,7 +30,7 @@ These are real captures from the app with a debug sample library, used for the R
 | `iPad-04-Collection.png` | iPad collection detail |
 | `iPad-05-Settings.png` | iPad Settings sheet |
 | `Mac-01-Library.png` | Mac table, sidebar, inspector |
-| `Mac-02-Reader.png` | Mac reader sheet |
+| `Mac-02-Reader.png` | Full-window Mac reader with two-page spread |
 | `Mac-03-Settings.png` | Mac Settings window |
 | `Mac-04-Player.png` | Mac library with the bottom player bar and active narration |
 

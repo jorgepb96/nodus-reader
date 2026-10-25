@@ -143,15 +143,6 @@ struct MacLibraryContentView: View {
         }
         .onAppear { selectDefaultBookIfNeeded() }
         .onChange(of: shownBooks.count) { _, _ in selectDefaultBookIfNeeded() }
-        .task(id: shownBooks.count) {
-            #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("-NodusOpenSampleReader"),
-               readingBook == nil,
-               let book = books.first(where: { $0.title == "Moby-Dick" }) {
-                readingBook = book
-            }
-            #endif
-        }
     }
 
     private func selectDefaultBookIfNeeded() {

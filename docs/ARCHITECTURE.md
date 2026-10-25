@@ -174,7 +174,7 @@ that mutates the library.
 - `RootView` applies the resolved app palette, preferred colour scheme, tint, file importer, alerts, toast, Open URL and drop destination.
 - `PhoneRootView`: native `TabView` with Home/Library/Collections/Settings and a search-role tab; mini player via `safeAreaInset`; sheets for the player.
 - `PadRootView`: `NavigationSplitView` with brand, a visible search field, smart lists and a recursive collection outline; content `NavigationStack`; sheet for Settings.
-- `MacRootView`: inset sidebar, native table/grid, inspector, toolbar search/import/view controls, bottom player bar, Settings scene, menu commands and shortcuts.
+- `MacRootView`: inset sidebar, native table/grid, inspector, toolbar search/import/view controls, bottom player bar, Settings scene, menu commands and shortcuts. Opening a book opens a dedicated `ReaderWindowHost` window with `ReaderView`, which can be taken full screen with the standard macOS control.
 - `CollectionOutlineRow` is shared by iPad and Mac.
 
 ## Concurrency
@@ -200,13 +200,14 @@ that mutates the library.
 
 ## Testing
 
-- 14 unit/integration tests build real EPUB and PDF fixtures, import through the
+- 16 unit/integration tests build real EPUB and PDF fixtures, import through the
   production pipeline into in-memory SwiftData, and cover duplicates, collections,
-  ordering, themes, utilities, pause-based word alignment and the durable sync
-  outbox/tombstone behaviour.
-- 8 UI tests launch the app with the debug sample library and cover Home, Library,
+  ordering, themes, utilities, pause-based word alignment, language-aware voice
+  choice and the durable sync outbox/tombstone behaviour.
+- 9 UI tests launch the app with the debug sample library and cover Home, Library,
   Reader, Appearance, Collections, Settings, Voices/Models, Typography, Search,
   Player/Read & Listen, page turn/bookmarks, PDF Intelligent Reading, Phonon
-  narration advancing past the first sentence, and iCloud status/storage.
+  narration advancing past the first sentence, the Spanish book-language voice
+  filter and iCloud status/storage.
 - Unsigned simulator builds skip CloudKit and App Group operations by design.
 - Screenshots are stored in `docs/screenshots/` and compared with `design/screens/`.

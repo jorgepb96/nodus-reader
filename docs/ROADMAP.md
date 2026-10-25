@@ -65,9 +65,11 @@ limitations.
 
 ### Verification
 
-- [x] 14 unit/integration tests, including word alignment and the durable sync outbox.
-- [x] 8 UI tests covering the phone screens, reader, page turn, bookmarks, PDF
-      Intelligent Reading, system narration, neural narration and iCloud settings.
+- [x] 16 unit/integration tests, including word alignment, language-aware voice
+      selection and the durable sync outbox.
+- [x] 9 UI tests covering the phone screens, reader, page turn, bookmarks, PDF
+      Intelligent Reading, system/neural narration, the book-language voice filter and
+      iCloud settings.
 - [x] Screenshots captured from the simulator.
 
 ## Known limitations
@@ -101,5 +103,5 @@ limitations.
 | iPhone mini player | `tabViewBottomAccessory` on iOS 26 | Stable `safeAreaInset` above the tab bar | Revisit when a stable accessory API/invalidation pattern is available; the accessory branch reset tab state when playback started |
 | Voices/Models | Kokoro and Phonon catalogue with multiple model filters | Real system voices plus one Kokoro model and one Phonon model; unavailable entries are explicit | Add more hosted bundles and runtimes when published |
 | Phonon voices | Spanish and multilingual catalogue | English Phonon 31M only; Spanish system voices remain available | Add Core ML 40M bundles if the vendor publishes them |
-| Mac reader | Separate window with inspector | Reader detail in the main split view with contents/navigation sheet | Native close-enough implementation; revisit if the design's window model is required |
+| Mac reader | Separate window with inspector | Dedicated `Reading` window with a two-page spread; contents/bookmarks/notes are reached from the reader | The window can be taken full screen natively; add the inspector if required |
 | Sample content | Moby-Dick et al. | Real generated EPUB/PDF files, public-domain or original placeholder text | Debug-only |

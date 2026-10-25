@@ -18,7 +18,7 @@ The interface follows `design/DESIGN.md` and `design/screens/`. This document re
 | `iPad-Library.png` | `docs/screenshots/iPad-01-Library.png` | Sidebar brand/smart lists/collection tree/footer, breadcrumb, 44 pt title, chips, 5-column grid, native controls. Search field is a visible native field in the sidebar. |
 | `iPad-PDFReflow.png` | `docs/screenshots/iPhone-16-PDFReflow.png`, `iPhone-17-PDFSource.png` | Intelligent Reading reflow and original-page panel implemented; iPad captures retain the original PDF layout. |
 | `Mac-Library.png` | `docs/screenshots/Mac-01-Library.png` | Inset sidebar, brand, smart lists/tree, Table with sortable columns, inspector with metadata/collections/status/voice/file, native toolbar. |
-| `Mac-Reader.png` | `docs/screenshots/Mac-02-Reader.png` | Reader with native page text view and two-page spread; contents/bookmarks/notes are available from the reader. The standalone window/inspector treatment remains a deviation. |
+| `Mac-Reader.png` | `docs/screenshots/Mac-02-Reader.png` | Full-window reader with the native two-page spread; the library sidebar and toolbar are hidden while reading and restored on close. |
 | `Main.png` | App icon, `BrandToolbar`, palette, theme tiles | Tokens and marks match. |
 | iPhone mini player | `docs/screenshots/iPhone-14-MiniPlayer.png` | Capsule above the native tab bar, cover/title/chapter/voice/speed and play/pause. |
 | Mac player | `docs/screenshots/Mac-04-Player.png` | Bottom bar with transport, progress, speed, voice and Space hint. |
@@ -38,16 +38,18 @@ The screenshots are real simulator/window captures of the app with a debug sampl
 ## Accepted deviations
 
 1. **iPhone mini player** uses a stable `safeAreaInset` above the native tab bar rather than `tabViewBottomAccessory`. The iOS 26 accessory branch recreated the `TabView` when playback started and discarded the Home state (including the player sheet). The stable approach preserves state and still places the capsule above the tab bar.
-2. **Reader chrome stays visible** rather than auto-hiding; pagination and page curl are implemented, text selection menus create highlights/notes, and bookmarks/annotations are available. EPUB locators are chapter/page-based rather than CFI.
-3. **Mac reader is a detail view**, not a separate window with a persistent Contents/Bookmarks/Notes inspector; it does use a two-page spread and native page view.
+2. **Reader chrome stays visible** rather than auto-hiding; pagination and page curl are implemented, text selection menus create highlights/notes, and bookmarks/annotations are available. The iOS/iPadOS reader hides the status bar and fills the screen. EPUB locators are chapter/page-based rather than CFI.
+3. **Mac reader is a dedicated window**, not a persistent sidebar inspector layout; it uses a two-page spread and native page view, fills the window and can be taken full screen with the standard window control.
 4. **iPad reader uses a single page**, not a two-page spread.
-5. **Settings > iCloud Sync** is titled “iCloud & Storage”; it contains the real opt-in, CloudKit/iCloud Drive status, last sync, queue, storage and per-book download controls. Unsigned builds show an explicit unavailable message instead of claiming sync.
-6. **Voices & Models** shows the real system catalogue plus one Kokoro starter voice and nine Phonon English voices. Kokoro is English-only and unavailable in the Simulator; Phonon 40M Spanish/multilingual are displayed as unavailable with the reason, never as fake downloads.
-7. **Sample content** is generated at debug import time (public-domain prose or original placeholder prose). Titles/cover palettes are illustrative, as the design states.
-8. **Mac inspector** omits the extra Read/Read & Listen/Delete buttons that briefly existed; those actions are available by double-click/context menu, matching the design’s inspector. The inspector fills with the most recently read book when nothing is selected.
-9. **Theme segmented control** is a custom capsule (App/Reader) rather than the native segmented control, to match the design on both iOS and macOS.
-10. **Sidebar search on iPad** is a visible native `TextField` styled as the design’s field; `.searchable(placement: .sidebar)` did not render a field in the split-view sidebar on the tested OS.
-11. **Neural word timing is estimated** from real PCM pause analysis rather than engine-provided timings; the sentence timing is exact and the word estimate degrades gracefully when pauses are ambiguous.
+5. **The reader follows the App theme by default** (Dark app → Dark page, Sepia app → Sepia page); the Appearance sheet still allows an explicit reader theme or custom theme.
+6. **Settings > iCloud Sync** is titled “iCloud & Storage”; it contains the real opt-in, CloudKit/iCloud Drive status, last sync, queue, storage and per-book download controls. Unsigned builds show an explicit unavailable message instead of claiming sync.
+7. **Voices & Models** lets the user select one voice engine (System, Kokoro or Phonon); only that engine's voices appear in the reader/player lists. The voice picker starts with the book's detected language and offers an explicit All languages menu. Kokoro is English-only and unavailable in the Simulator; Phonon 40M Spanish/multilingual are displayed as unavailable with the reason, never as fake downloads.
+8. **Book covers** always render a deterministic typographic cover underneath the stored artwork, so a missing or still-loading file never leaves an empty cell.
+9. **Sample content** is generated at debug import time (public-domain prose or original placeholder prose). Titles/cover palettes are illustrative, as the design states.
+10. **Mac inspector** omits the extra Read/Read & Listen/Delete buttons that briefly existed; those actions are available by double-click/context menu, matching the design’s inspector. The inspector fills with the most recently read book when nothing is selected.
+11. **Theme segmented control** is a custom capsule (App/Reader) rather than the native segmented control, to match the design on both iOS and macOS.
+12. **Sidebar search on iPad** is a visible native `TextField` styled as the design’s field; `.searchable(placement: .sidebar)` did not render a field in the split-view sidebar on the tested OS.
+13. **Neural word timing is estimated** from real PCM pause analysis rather than engine-provided timings; the sentence timing is exact and the word estimate degrades gracefully when pauses are ambiguous.
 
 ## Accessibility
 

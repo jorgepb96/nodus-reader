@@ -67,6 +67,30 @@ struct NodusReaderApp: App {
         }
         #endif
         #if os(macOS)
+        WindowGroup("Reading", id: "reader", for: UUID.self) { $bookID in
+            Group {
+                if let bookID {
+                    ReaderWindowHost(bookID: bookID)
+                } else {
+                    ContentUnavailableView("No book selected", systemImage: "book.closed")
+                }
+            }
+            .environment(theme)
+            .environment(preferences)
+            .environment(navigation)
+            .environment(voices)
+            .environment(library)
+            .environment(imports)
+            .environment(playback)
+            .environment(sync)
+            .environment(models)
+            .modelContainer(container)
+        }
+        .defaultSize(width: 1180, height: 920)
+        .windowStyle(.hiddenTitleBar)
+        .defaultLaunchBehavior(.suppressed)
+        .restorationBehavior(.disabled)
+
         Settings {
             MacSettingsRoot()
             .environment(theme)

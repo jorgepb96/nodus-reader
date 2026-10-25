@@ -86,6 +86,7 @@ final class ModelManager {
 
     private(set) var states: [String: State] = [:]
     private(set) var storage = StorageSummary()
+    private(set) var selectedModelID: String
     private(set) var errorMessage: String?
 
     private let voices: VoiceCatalog
@@ -106,6 +107,8 @@ final class ModelManager {
 
     /// Pinned Hugging Face revision used for the public Phonon 31M Core ML bundle.
     /// The bundle's own `bundle.json` verifies the size and SHA-256 of every file.
+    static let systemModelID = "system"
+
     static let phononBundleBase = URL(string:
         "https://huggingface.co/mosiah/phonon-31m-en-coreml/resolve/0a2596e9154f0340005b6445514fdd57f7bc9ddb"
     )!
@@ -179,10 +182,58 @@ final class ModelManager {
         self.voices = voices
         self.audioCache = audioCache
         self.defaults = defaults
+        self.selectedModelID = defaults.string(forKey: "nodus.models.selected") ?? Self.systemModelID
         Self.excludeFromBackup(Self.kokoroCacheDirectory)
         Self.excludeFromBackup(Self.phononDirectory)
         refreshStates()
+        validateSelection()
         publishVoices()
+    }
+
+    var selectedModel: Model? {
+        models.first { $0.id == selectedModelID }
+    }
+
+    var isSystemSelected: Bool { selectedModelID == Self.systemModelID }
+
+    func isSelected(_ model: Model) -> Bool {
+        selectedModelID == model.id
+    }
+
+    /// Selects the engine whose voices are exposed to the rest of the app.
+    /// Selecting a model also makes its first voice the default; the system
+    /// option restores the best installed system voice.
+    func selectModel(_ id: String) {
+        if id == Self.systemModelID {
+            selectedModelID = id
+            defaults.set(id, forKey: "nodus.models.selected")
+            publishVoices()
+            if let system = voices.bestSystemVoice {
+                voices.setDefault(system)
+            }
+            return
+        }
+        guard let model = models.first(where: { $0.id == id }),
+              model.isAvailable,
+              isInstalled(model) else { return }
+        selectedModelID = id
+        defaults.set(id, forKey: "nodus.models.selected")
+        publishVoices()
+        if let first = voices.voice(withID: model.voices.first?.id) {
+            voices.setDefault(first)
+        }
+    }
+
+    func selectModel(_ model: Model) {
+        selectModel(model.id)
+    }
+
+    private func validateSelection() {
+        if selectedModelID != Self.systemModelID,
+           !(selectedModel.map { $0.isAvailable && isInstalled($0) } ?? false) {
+            selectedModelID = Self.systemModelID
+            defaults.set(selectedModelID, forKey: "nodus.models.selected")
+        }
     }
 
     var kokoroDirectory: URL { Self.kokoroCacheDirectory }
@@ -266,7 +317,12 @@ final class ModelManager {
             try? FileManager.default.removeItem(at: Self.phononDirectory)
         }
         states[model.id] = .notInstalled
+        validateSelection()
         publishVoices()
+        if selectedModelID == Self.systemModelID, let system = voices.bestSystemVoice,
+           voices.defaultVoice?.isSystem != true {
+            voices.setDefault(system)
+        }
         Task { await refreshStorage() }
     }
 
@@ -361,6 +417,7 @@ final class ModelManager {
                 )
             }
         }
+        validateSelection()
         publishVoices()
         await refreshStorage()
     }
@@ -371,32 +428,23 @@ final class ModelManager {
     }
 
     private func publishVoices() {
-        var neural: [VoiceCatalog.Voice] = []
-        if let kokoroModel = models.first(where: { $0.id == "kokoro-82m" }), isInstalled(kokoroModel) {
-            neural.append(contentsOf: kokoroModel.voices.map { voice in
-                VoiceCatalog.Voice(
-                    id: voice.id,
-                    name: voice.name,
-                    language: voice.language,
-                    languageName: Locale.current.localizedString(forLanguageCode: voice.language) ?? "English",
-                    quality: 3,
-                    gender: nil,
-                    engineRaw: voice.engine.rawValue
-                )
-            })
+        guard !isSystemSelected,
+              let model = selectedModel,
+              model.isAvailable,
+              isInstalled(model) else {
+            voices.setNeuralVoices([])
+            return
         }
-        if let phononModel = models.first(where: { $0.id == "phonon-31m-en" }), isInstalled(phononModel) {
-            neural.append(contentsOf: phononModel.voices.map { voice in
-                VoiceCatalog.Voice(
-                    id: voice.id,
-                    name: voice.name,
-                    language: voice.language,
-                    languageName: Locale.current.localizedString(forLanguageCode: voice.language) ?? "English",
-                    quality: 3,
-                    gender: nil,
-                    engineRaw: voice.engine.rawValue
-                )
-            })
+        let neural = model.voices.map { voice in
+            VoiceCatalog.Voice(
+                id: voice.id,
+                name: voice.name,
+                language: voice.language,
+                languageName: Locale.current.localizedString(forLanguageCode: voice.language) ?? "English",
+                quality: 3,
+                gender: nil,
+                engineRaw: voice.engine.rawValue
+            )
         }
         voices.setNeuralVoices(neural)
     }

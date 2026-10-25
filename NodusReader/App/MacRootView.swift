@@ -10,6 +10,7 @@ struct MacRootView: View {
     @Environment(PlaybackController.self) private var playback
     @Environment(\.nodusPalette) private var palette
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
 
     @Query(sort: \Book.addedAt, order: .reverse) private var books: [Book]
     @Query(sort: \LibraryCollection.sortIndex) private var collections: [LibraryCollection]
@@ -63,6 +64,10 @@ struct MacRootView: View {
             if ProcessInfo.processInfo.arguments.contains("-NodusStartSampleNarration"),
                let book = books.first(where: { $0.title == "Moby-Dick" }) {
                 await playback.start(book: book, mode: .listen)
+            }
+            if ProcessInfo.processInfo.arguments.contains("-NodusOpenSampleReader"),
+               let book = books.first(where: { $0.title == "Moby-Dick" }) {
+                openWindow(id: "reader", value: book.id)
             }
             #endif
         }

@@ -195,6 +195,23 @@ func themeManagerPersistsBuiltInAndCustomThemes() throws {
     #expect(persisted.readerTheme(colorScheme: .light).name == "Night Ink")
 }
 
+@Test @MainActor
+func readerThemeFollowsTheAppByDefault() throws {
+    let suite = "nodus.tests.theme.follow.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+
+    let manager = ThemeManager(defaults: defaults)
+    #expect(manager.readerFollowsApp)
+    manager.appTheme = .oled
+    #expect(manager.readerTheme(colorScheme: .light).isDark)
+    #expect(manager.readerTheme(colorScheme: .light).name == "OLED Black")
+
+    manager.selectReaderTheme(.light)
+    #expect(!manager.readerFollowsApp)
+    #expect(!manager.readerTheme(colorScheme: .dark).isDark)
+}
+
 // MARK: - Narration alignment
 
 @Test
@@ -263,6 +280,24 @@ func syncJournalBuildsDurableOutboxAndTombstones() throws {
     journal.recordDelete(.book, id: book.id)
     #expect(try fixture.container.mainContext.fetchCount(FetchDescriptor<SyncTombstone>()) == 1)
     #expect(journal.pendingCount() == 1)
+}
+
+@Test @MainActor
+func voiceCatalogPrefersTheBookLanguage() async throws {
+    let suite = "nodus.tests.voices.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+
+    let catalog = VoiceCatalog(defaults: defaults)
+    await catalog.loadIfNeeded()
+
+    let spanish = catalog.narrationVoice(preferredID: nil, language: "es")
+    #expect(spanish?.language.lowercased().hasPrefix("es") == true,
+            "A Spanish book should resolve a Spanish voice instead of the global default")
+    #expect(!catalog.voices(matchingLanguage: "es").isEmpty)
+
+    let missingPreferred = catalog.narrationVoice(preferredID: "not.installed.voice", language: "es")
+    #expect(missingPreferred?.language.lowercased().hasPrefix("es") == true)
 }
 
 // MARK: - Utilities

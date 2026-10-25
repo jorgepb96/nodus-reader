@@ -103,7 +103,7 @@ final class NodusReaderUITests: XCTestCase {
     }
 
     func testListenStartsNarration() throws {
-        let app = launch()
+        let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
         let width = app.windows.firstMatch.frame.width
         try XCTSkipIf(width >= 700, "This test runs on iPhone")
@@ -115,13 +115,16 @@ final class NodusReaderUITests: XCTestCase {
         snap("iPhone-12-Player")
 
         app.buttons["Close player"].tap()
-        XCTAssertTrue(app.buttons["Open player, Moby-Dick"].waitForExistence(timeout: 8))
+        let miniPlayer = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH 'Open player'")
+        ).firstMatch
+        XCTAssertTrue(miniPlayer.waitForExistence(timeout: 8))
         sleep(1)
         snap("iPhone-14-MiniPlayer")
     }
 
     func testReaderWordTapStartsReadAndListen() throws {
-        let app = launch()
+        let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
         let width = app.windows.firstMatch.frame.width
         try XCTSkipIf(width >= 700, "This test runs on iPhone")
@@ -131,7 +134,7 @@ final class NodusReaderUITests: XCTestCase {
 
         let body = app.textViews.firstMatch
         XCTAssertTrue(body.waitForExistence(timeout: 8))
-        body.tap()
+        body.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
 
         let capsule = app.staticTexts["READ & LISTEN"]
         XCTAssertTrue(capsule.waitForExistence(timeout: 25))
@@ -140,7 +143,7 @@ final class NodusReaderUITests: XCTestCase {
     }
 
     func testPagedReaderTurnsPagesAndBookmarks() throws {
-        let app = launch()
+        let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
         let width = app.windows.firstMatch.frame.width
         try XCTSkipIf(width >= 700, "This test runs on iPhone")
@@ -174,7 +177,7 @@ final class NodusReaderUITests: XCTestCase {
     }
 
     func testNeuralVoiceNarration() throws {
-        let app = launch()
+        let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
         let width = app.windows.firstMatch.frame.width
         try XCTSkipIf(width >= 700, "This test runs on iPhone")
@@ -185,11 +188,20 @@ final class NodusReaderUITests: XCTestCase {
         app.segmentedControls.buttons["Models"].firstMatch.tap()
         XCTAssertTrue(app.staticTexts["Kokoro 82M"].waitForExistence(timeout: 10))
 
-        let useVoices = app.buttons["Use voices"].firstMatch
-        guard useVoices.waitForExistence(timeout: 5) else {
-            throw XCTSkip("Kokoro is not installed in this simulator; install it from Models to run this test.")
+        let useModel = app.buttons["Use this model"].firstMatch
+        if useModel.waitForExistence(timeout: 5) {
+            useModel.tap()
+        } else if !app.staticTexts["Voice engine selected"].waitForExistence(timeout: 3) {
+            throw XCTSkip("No neural model is installed in this simulator; install Phonon from Models to run this test.")
         }
-        useVoices.tap()
+
+        app.segmentedControls.buttons["Voices"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Phonon 31M"].firstMatch.waitForExistence(timeout: 8))
+        let systemVoice = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS 'System · English'")
+        ).firstMatch
+        XCTAssertFalse(systemVoice.waitForExistence(timeout: 2),
+                       "The voice list still shows voices from a non-selected engine")
 
         tapTab("Home", in: app)
         let listen = app.buttons["Listen"].firstMatch
@@ -208,6 +220,46 @@ final class NodusReaderUITests: XCTestCase {
         XCTAssertTrue(progressed.waitForExistence(timeout: 60),
                       "Phonon audio never advanced past the first sentence")
         snap("iPhone-19-NeuralProgress")
+    }
+
+    func testVoicePickerStartsWithBookLanguage() throws {
+        let app = launch()
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let width = app.windows.firstMatch.frame.width
+        try XCTSkipIf(width >= 700, "This test runs on iPhone")
+
+        tapTab("Library", in: app)
+        let spanishBook = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH 'Don Quijote de la Mancha'")
+        ).firstMatch
+        XCTAssertTrue(spanishBook.waitForExistence(timeout: 10))
+        spanishBook.tap()
+
+        let page = app.textViews.firstMatch
+        XCTAssertTrue(page.waitForExistence(timeout: 20))
+        page.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap()
+
+        let openPlayer = app.buttons["Open player"].firstMatch
+        XCTAssertTrue(openPlayer.waitForExistence(timeout: 30))
+        openPlayer.tap()
+
+        XCTAssertTrue(app.staticTexts["System"].firstMatch.waitForExistence(timeout: 10),
+                      "A Spanish book should start with a Spanish system voice")
+        let voiceControl = app.buttons["Voice for this book"].firstMatch
+        XCTAssertTrue(voiceControl.waitForExistence(timeout: 10))
+        voiceControl.tap()
+
+        let spanishSection = app.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH 'Spanish'")
+        ).firstMatch
+        XCTAssertTrue(spanishSection.waitForExistence(timeout: 8),
+                      "The voice picker did not start on the book's language")
+
+        let englishNeural = app.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH 'Phonon'")
+        ).firstMatch
+        XCTAssertFalse(englishNeural.waitForExistence(timeout: 2),
+                       "English neural voices were shown before the Spanish book voices")
     }
 
     func testICloudAndStorage() throws {
@@ -252,9 +304,12 @@ final class NodusReaderUITests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func launch() -> XCUIApplication {
+    private func launch(resetReadingState: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-NodusSampleLibrary"]
+        if resetReadingState {
+            app.launchArguments.append("-NodusResetReadingState")
+        }
         app.launch()
         return app
     }

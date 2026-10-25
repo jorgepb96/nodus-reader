@@ -17,10 +17,10 @@ struct ReaderView: View {
     @Environment(ThemeManager.self) private var themeManager
     @Environment(PlaybackController.self) private var playback
     @Environment(CloudSyncService.self) private var sync
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
     let book: Book
+    private let onClose: () -> Void
 
     @State private var content: ReaderContent = .loading
     @State private var pdfPageIndex: Int
@@ -38,9 +38,14 @@ struct ReaderView: View {
     @State private var showPlayer = false
     @State private var annotationDraft: ReaderAnnotationDraft?
 
-    init(book: Book) {
+    init(book: Book, onClose: @escaping () -> Void) {
         self.book = book
+        self.onClose = onClose
         _pdfPageIndex = State(initialValue: max(book.locator.pageIndex ?? 0, 0))
+    }
+
+    private func closeReader() {
+        onClose()
     }
 
     private var readerTheme: ReaderTheme {
@@ -127,6 +132,9 @@ struct ReaderView: View {
         .sheet(item: $annotationDraft) { draft in
             AnnotationEditorSheet(book: book, draft: draft)
         }
+        #if os(iOS)
+        .statusBarHidden(true)
+        #endif
     }
 
     // MARK: Content
@@ -197,7 +205,7 @@ struct ReaderView: View {
                 .foregroundStyle(theme.muted)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 320)
-            Button("Close") { dismiss() }
+            Button("Close") { closeReader() }
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(theme.accent)
             Button("Try Again") {
@@ -216,7 +224,7 @@ struct ReaderView: View {
     private func topBar(_ theme: ReaderTheme) -> some View {
         HStack(spacing: 2) {
             Button {
-                dismiss()
+                closeReader()
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 19, weight: .medium))

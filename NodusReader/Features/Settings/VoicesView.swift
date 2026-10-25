@@ -27,7 +27,8 @@ struct VoicesView: View {
 
     private var filteredVoices: [VoiceCatalog.Voice] {
         voices.voices.filter { voice in
-            if let languageFilter, voice.language != languageFilter { return false }
+            if let languageFilter, let code = VoiceCatalog.languageCode(languageFilter),
+               !voice.language.lowercased().hasPrefix(code) { return false }
             if let qualityFilter, voice.quality != qualityFilter { return false }
             if let engineFilter, voice.engineRaw != engineFilter { return false }
             let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -49,7 +50,7 @@ struct VoicesView: View {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
                     DisplayTitle("Voices")
-                    Text("System voices installed on this \(DeviceInfo.platformName). Nothing is synced to iCloud.")
+                    Text("Voices available on this \(DeviceInfo.platformName). Only the selected voice engine is shown; nothing is synced to iCloud.")
                         .font(.footnote)
                         .foregroundStyle(palette.muted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -80,10 +81,46 @@ struct VoicesView: View {
         }
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)
+        .onChange(of: models.selectedModelID) { _, _ in
+            guard didSetInitialLanguage else { return }
+            if let model = models.selectedModel {
+                engineFilter = model.engine.rawValue
+                if let first = model.voices.first {
+                    languageFilter = first.language
+                }
+            } else {
+                engineFilter = "system"
+                if !voices.voices(matchingLanguage: languageFilter).contains(where: { $0.isSystem }),
+                   let system = voices.bestSystemVoice {
+                    languageFilter = system.language
+                }
+            }
+        }
         .task {
             await voices.loadIfNeeded()
             if !didSetInitialLanguage {
-                languageFilter = voices.defaultVoice?.language
+                let bookLanguage = VoiceCatalog.languageCode(playback.activeBook?.language)
+                let modelLanguage = VoiceCatalog.languageCode(models.selectedModel?.voices.first?.language)
+                let preferred = bookLanguage ?? modelLanguage
+                    ?? VoiceCatalog.languageCode(voices.defaultVoice?.language)
+                if let preferred,
+                   let match = voices.voices.first(where: { $0.language.lowercased().hasPrefix(preferred) }) {
+                    languageFilter = match.language
+                }
+                let code = VoiceCatalog.languageCode(languageFilter)
+                if let model = models.selectedModel {
+                    let modelSupportsLanguage = code.map { prefix in
+                        model.voices.contains { $0.language.lowercased().hasPrefix(prefix) }
+                    } ?? false
+                    let systemSupportsLanguage = code.map { prefix in
+                        voices.voices.contains { $0.isSystem && $0.language.lowercased().hasPrefix(prefix) }
+                    } ?? false
+                    engineFilter = modelSupportsLanguage || !systemSupportsLanguage
+                        ? model.engine.rawValue
+                        : "system"
+                } else {
+                    engineFilter = "system"
+                }
                 didSetInitialLanguage = true
             }
             hfToken = HuggingFaceTokenStore.load() ?? ""
@@ -122,55 +159,27 @@ struct VoicesView: View {
 
     @ViewBuilder
     private var voicesContent: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        ViewThatFits(in: .horizontal) {
             HStack(spacing: 8) {
-            filterMenu(title: "Model",
-                       value: engineLabel(for: engineFilter),
-                       isActive: engineFilter != nil) {
-                Button("All models") { engineFilter = nil }
-                Divider()
-                Button("System") { engineFilter = "system" }
-                if voices.voices.contains(where: { $0.engineRaw == "kokoro" }) {
-                    Button("Kokoro 82M") { engineFilter = "kokoro" }
-                }
-                if voices.voices.contains(where: { $0.engineRaw == "phonon" }) {
-                    Button("Phonon 31M") { engineFilter = "phonon" }
-                }
+                modelFilterMenu
+                languageFilterMenu
+                qualityFilterMenu
+                Spacer(minLength: 4)
+                clearFiltersButton
             }
-
-            filterMenu(title: "Language",
-                       value: languageFilter.map { voices.languageName(for: $0) } ?? "All",
-                       isActive: languageFilter != nil) {
-                Button("All languages") { languageFilter = nil }
-                Divider()
-                ForEach(voices.languages, id: \.self) { language in
-                    Button(voices.languageName(for: language)) { languageFilter = language }
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    modelFilterMenu
+                    Spacer(minLength: 4)
+                    clearFiltersButton
                 }
-            }
-
-            filterMenu(title: "Quality",
-                       value: qualityLabel(for: qualityFilter),
-                       isActive: qualityFilter != nil) {
-                Button("All qualities") { qualityFilter = nil }
-                Divider()
-                Button("Standard") { qualityFilter = 1 }
-                Button("Enhanced") { qualityFilter = 2 }
-                Button("Premium") { qualityFilter = 3 }
-            }
-
-            if hasFilters {
-                Button("Clear") {
-                    searchText = ""
-                    languageFilter = nil
-                    qualityFilter = nil
-                    engineFilter = nil
+                HStack(spacing: 8) {
+                    languageFilterMenu
+                    qualityFilterMenu
+                    Spacer(minLength: 0)
                 }
-                .font(.footnote)
-                .foregroundStyle(palette.accent)
-            }
             }
         }
-        .scrollClipDisabled()
 
         Text("\(filteredVoices.count) voices\(languageFilter.map { " · \(voices.languageName(for: $0))" } ?? "")")
             .font(.caption)
@@ -273,29 +282,13 @@ struct VoicesView: View {
 
     @ViewBuilder
     private var modelsContent: some View {
-        Eyebrow("Engines")
+        Eyebrow("Voice engine")
             .padding(.top, 2)
 
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("System voices")
-                        .font(.subheadline.weight(.medium))
-                    Text("\(voices.voices.filter(\.isSystem).count) voices · Provided by the operating system")
-                        .font(.caption)
-                        .foregroundStyle(palette.muted)
-                }
-                Spacer()
-                Label("Installed", systemImage: "checkmark.circle")
-                    .font(.caption)
-                    .foregroundStyle(palette.accent)
-            }
-            .padding(14)
-        }
-        .panelCard(radius: 18)
+        engineSelectionCard
 
         Eyebrow("Neural engines")
-            .padding(.top, 6)
+            .padding(.top, 8)
 
         ForEach(models.models) { model in
             modelCard(model)
@@ -321,6 +314,68 @@ struct VoicesView: View {
             .padding(.horizontal, 4)
     }
 
+    private var engineSelectionCard: some View {
+        VStack(spacing: 0) {
+            engineRow(id: ModelManager.systemModelID,
+                      title: "System voices",
+                      detail: "Voices provided by \(DeviceInfo.platformName)",
+                      systemImage: "waveform")
+
+            ForEach(models.models.filter { models.isInstalled($0) }) { model in
+                Divider().overlay(palette.line)
+                engineRow(id: model.id,
+                          title: model.name,
+                          detail: "\(model.voices.count) voices · \(model.language)",
+                          systemImage: "brain")
+            }
+
+            Divider().overlay(palette.line)
+
+            Text("Only the selected voice engine appears in the reader and player voice lists. System voices are always available as a fallback.")
+                .font(.caption2)
+                .foregroundStyle(palette.muted)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(14)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard(radius: 18)
+    }
+
+    private func engineRow(id: String, title: String, detail: String, systemImage: String) -> some View {
+        Button {
+            models.selectModel(id)
+            engineFilter = id == ModelManager.systemModelID ? "system" : models.selectedModel?.engine.rawValue
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(palette.accent)
+                    .frame(width: 32, height: 32)
+                    .background(palette.selection, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(palette.text)
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(palette.muted)
+                }
+                Spacer()
+                if models.selectedModelID == id {
+                    Label("Selected", systemImage: "checkmark.circle.fill")
+                        .labelStyle(.iconOnly)
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundStyle(palette.accent)
+                }
+            }
+            .padding(.horizontal, 14)
+            .frame(minHeight: 58)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title), \(models.selectedModelID == id ? "selected" : "not selected")")
+    }
+
     private func modelCard(_ model: ModelManager.Model) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 10) {
@@ -333,7 +388,13 @@ struct VoicesView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
-                stateBadge(for: model)
+                if models.isSelected(model) {
+                    Label("Selected", systemImage: "checkmark.circle.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(palette.accent)
+                } else {
+                    stateBadge(for: model)
+                }
             }
 
             HStack(spacing: 10) {
@@ -405,14 +466,19 @@ struct VoicesView: View {
         switch models.state(for: model) {
         case .installed:
             HStack(spacing: 14) {
-                Button("Use voices") {
-                    if let voice = voices.voice(withID: model.voices.first?.id) {
-                        voices.setDefault(voice)
+                if models.isSelected(model) {
+                    Label("Voice engine selected", systemImage: "checkmark")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(palette.accent)
+                } else {
+                    Button("Use this model") {
+                        models.selectModel(model)
+                        engineFilter = model.engine.rawValue
                     }
+                    .font(.footnote.weight(.semibold))
+                    .buttonStyle(.plain)
+                    .foregroundStyle(palette.accent)
                 }
-                .font(.footnote.weight(.semibold))
-                .buttonStyle(.plain)
-                .foregroundStyle(palette.accent)
 
                 Button("Delete", role: .destructive) {
                     models.delete(model)
@@ -580,6 +646,60 @@ struct VoicesView: View {
 
     // MARK: Helpers
 
+    private var modelFilterMenu: some View {
+        filterMenu(title: "Model",
+                   value: engineLabel(for: engineFilter),
+                   isActive: engineFilter != nil) {
+            Button("All models") { engineFilter = nil }
+            Divider()
+            Button("System") { engineFilter = "system" }
+            if voices.voices.contains(where: { $0.engineRaw == "kokoro" }) {
+                Button("Kokoro 82M") { engineFilter = "kokoro" }
+            }
+            if voices.voices.contains(where: { $0.engineRaw == "phonon" }) {
+                Button("Phonon 31M") { engineFilter = "phonon" }
+            }
+        }
+    }
+
+    private var languageFilterMenu: some View {
+        filterMenu(title: "Language",
+                   value: languageFilter.map { voices.languageName(for: $0) } ?? "All",
+                   isActive: languageFilter != nil) {
+            Button("All languages") { languageFilter = nil }
+            Divider()
+            ForEach(voices.languages, id: \.self) { language in
+                Button(voices.languageName(for: language)) { languageFilter = language }
+            }
+        }
+    }
+
+    private var qualityFilterMenu: some View {
+        filterMenu(title: "Quality",
+                   value: qualityLabel(for: qualityFilter),
+                   isActive: qualityFilter != nil) {
+            Button("All qualities") { qualityFilter = nil }
+            Divider()
+            Button("Standard") { qualityFilter = 1 }
+            Button("Enhanced") { qualityFilter = 2 }
+            Button("Premium") { qualityFilter = 3 }
+        }
+    }
+
+    @ViewBuilder
+    private var clearFiltersButton: some View {
+        if hasFilters {
+            Button("Clear") {
+                searchText = ""
+                languageFilter = nil
+                qualityFilter = nil
+                engineFilter = nil
+            }
+            .font(.footnote)
+            .foregroundStyle(palette.accent)
+        }
+    }
+
     private func filterMenu<Content: View>(title: String, value: String, isActive: Bool,
                                            @ViewBuilder content: () -> Content) -> some View {
         Menu {
@@ -592,6 +712,7 @@ struct VoicesView: View {
             }
             .font(.footnote)
             .foregroundStyle(isActive ? palette.onAccent : palette.text)
+            .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 12)
             .frame(height: 36)
             .background(isActive ? palette.accent : palette.panel, in: Capsule())
