@@ -15,7 +15,7 @@ the app.
 | Phonon 31M Core ML | [gradium/phonon-31m-en](https://huggingface.co/gradium/phonon-31m-en) weights, Core ML bundle [mosiah/phonon-31m-en-coreml](https://huggingface.co/mosiah/phonon-31m-en-coreml), runtime [gradium-ai/xn-ptts](https://github.com/gradium-ai/xn-ptts) v0.4.1 | Apache-2.0 (`ptts` also offers MIT) | Downloaded from a pinned Hugging Face revision; English, nine voices |
 | Phonon voices | [gradium/phonon-voices](https://huggingface.co/gradium/phonon-voices) | Apache-2.0 | Included in the Phonon bundle |
 | Phonon 40M Spanish | [gradium/phonon-40m-es](https://huggingface.co/gradium/phonon-40m-es) @ `f0d2f39` | CC BY-NC 4.0, gated | **Never hosted or shipped by Nodus Reader.** Each user signs in to Hugging Face with an account that accepted Gradium's conditions; the app downloads the checkpoint with that access (SHA-256 verified), converts it to Core ML on the device with Gradium's exporter (built into PhononCore, see `Modules/PhononTTS/engine/`) and deletes the downloaded weights. Runs with the 25 Spanish voices of `gradium/phonon-voices` @ `0ee1720`. Non-commercial use |
-| Phonon 40M Multilingual | [gradium/phonon-40m-multilingual](https://huggingface.co/gradium/phonon-40m-multilingual) | CC BY-NC 4.0, gated | Not usable in this version (no Core ML bundle); listed for transparency |
+| Phonon 40M Multilingual | [gradium/phonon-40m-multilingual](https://huggingface.co/gradium/phonon-40m-multilingual) @ `1537ce4` | CC BY-NC 4.0, gated | Same on-device path as Spanish: downloaded with the user's own access, verified, converted on the device; never hosted or shipped. Runs with all 102 voices of `gradium/phonon-voices` (English, Spanish, French, German, Portuguese), each normalizing text in its own language. Non-commercial use |
 
 ## Third-party runtime packages
 
@@ -52,8 +52,8 @@ Exact source, licence and attribution notices are in
 - Downloads are per device. A book's preferred voice ID may sync, but if the voice is
   absent the app falls back to an installed voice without breaking narration.
 - Kokoro Spanish voices are not advertised: the pinned SDK only performs English
-  raw-text phonemization. Phonon 40M Spanish runs only from a bundle the user converted
-  on their own Mac; the multilingual checkpoint is not usable (no Core ML bundle).
+  raw-text phonemization. Phonon 40M Spanish and Multilingual run only from bundles
+  converted on the user's device (or Mac) from the user's own download.
 - Re-check every upstream licence and model card before an App Store release. This
   file is not legal advice.
 

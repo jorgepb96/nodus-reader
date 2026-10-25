@@ -552,6 +552,16 @@
         }
       }
     },
+    "About 150 MB download": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga de unos 150 MB"
+          }
+        }
+      }
+    },
     "About 210 MB download": {
       "localizations": {
         "es": {
@@ -1862,6 +1872,16 @@
         }
       }
     },
+    "English, Spanish, French, German and Portuguese with 102 voices.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inglés, español, francés, alemán y portugués con 102 voces."
+          }
+        }
+      }
+    },
     "Enhanced": {
       "localizations": {
         "es": {
@@ -2962,16 +2982,6 @@
         }
       }
     },
-    "Multilingual Phonon checkpoint.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Modelo multilingüe de Phonon."
-          }
-        }
-      }
-    },
     "Name": {
       "localizations": {
         "es": {
@@ -3018,6 +3028,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más arriba). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 130 MB de descarga y 200 MB instalado. Licencia CC BY-NC 4.0: uso no comercial."
+          }
+        }
+      }
+    },
+    "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Licence CC BY-NC 4.0: non-commercial use.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más arriba). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 150 MB de descarga y 230 MB instalado. Cada voz lee en su propio idioma. Licencia CC BY-NC 4.0: uso no comercial."
           }
         }
       }
@@ -3418,16 +3438,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "El contenedor compartido de Nodus Reader no está disponible. Abre la app una vez y comprueba el permiso del grupo de apps."
-          }
-        }
-      }
-    },
-    "Not available": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No disponible"
           }
         }
       }
@@ -4908,16 +4918,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sesión cerrada. Para retirar del todo el acceso de Nodus Reader, quítalo en Connected Apps, en los ajustes de Hugging Face."
-          }
-        }
-      }
-    },
-    "Signing in to Hugging Face does not make this model downloadable yet. Gradium publishes it only in formats for computers (PyTorch and GGUF), and Nodus Reader runs voices with Core ML, Apple's on-device format. No Core ML version of this model exists, so it cannot run on iPhone, iPad or Mac in this version.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Iniciar sesión en Hugging Face todavía no permite descargar este modelo. Gradium solo lo publica en formatos para ordenador (PyTorch y GGUF), y Nodus Reader ejecuta las voces con Core ML, el formato de Apple para el dispositivo. No existe una versión Core ML de este modelo, así que en esta versión no puede funcionar en iPhone, iPad ni Mac."
           }
         }
       }

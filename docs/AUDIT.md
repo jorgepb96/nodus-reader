@@ -584,3 +584,28 @@ make it downloadable and why.
   model page. Opt-in test `phonon40SpanishConvertsOnDevice` passes on the Mac (23 s)
   and in the iPhone simulator (20 s), including Spanish synthesis; a real iPhone
   converts on its CPU and will take longer.
+
+## Phonon 40M Multilingual, lock screen state, icon-only Select (2026-10-26)
+
+- **Phonon 40M Multilingual** uses the same on-device path as Spanish
+  (`PhononOnDeviceConversion.Spec`, pinned revision `1537ce4`, SHA-256 checks) with
+  all 102 voices of `gradium/phonon-voices` (37 English including 12 character voices,
+  25 Spanish, 15 French, 13 German, 12 Portuguese). Before speaking, the engine is
+  switched to the selected voice's language, so numbers and abbreviations are read in
+  that language. A Phonon bundle from a file is routed by `bundle.json` languages: `es`
+  → Spanish 40M, several → Multilingual, otherwise 31M English.
+- **Accented voice names.** The file system stores names such as "Noémie" or
+  "Lucía-Sol" decomposed, while the app asked for them composed, so the engine (which
+  compares bytes) rejected them. Voices are now matched by Unicode equivalence and the
+  engine receives its own stored name. Caught by the opt-in conversion test.
+- **Lock screen showed "playing" while nothing played.** Pausing or stopping a neural
+  voice left the `AVAudioEngine` running (rendering silence), which iOS reports as
+  playing; several stop paths also left Now Playing at rate 1. The engine is now paused
+  with the player, Now Playing follows every play/pause change, and the audio session
+  is released when narration is closed or the book ends. The ±30 s lock-screen buttons
+  (which jumped chapters) are replaced by previous/next sentence.
+- **Select** in the Library toolbar is icon-only (check circle, filled while
+  selecting), labelled "Select"/"Done" for VoiceOver.
+- Opt-in test `phonon40ConvertsOnDevice` converts both checkpoints and speaks Spanish
+  (and, for Multilingual, French and English) on the Mac (79 s) and in the iPhone
+  simulator (72 s).

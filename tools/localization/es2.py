@@ -371,3 +371,9 @@ ES.update({
 "%@ did not match the expected file. Nothing was installed; retry the download.": "%@ no coincide con el archivo esperado. No se ha instalado nada; vuelve a descargarlo.",
 "Hugging Face returned HTTP %lld. Retry later.": "Hugging Face ha devuelto HTTP %lld. Inténtalo más tarde.",
 })
+ES.update({
+"English, Spanish, French, German and Portuguese with 102 voices.": "Inglés, español, francés, alemán y portugués con 102 voces.",
+"About 150 MB download": "Descarga de unos 150 MB",
+"Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Licence CC BY-NC 4.0: non-commercial use.": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más arriba). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 150 MB de descarga y 230 MB instalado. Cada voz lee en su propio idioma. Licencia CC BY-NC 4.0: uso no comercial.",
+"Select": "Seleccionar",
+})

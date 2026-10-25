@@ -1207,32 +1207,53 @@ func convertedPhonon40SpanishBundleNarratesSpanish() async throws {
     #expect(manager.loadedEngines == [.phonon])
 }
 
-/// The on-device path for Phonon 40M Spanish: download the gated checkpoint with a Hugging Face
-/// token (read from the file named by `NODUS_HF_TOKEN_FILE`, never printed), verify it, convert
-/// it to Core ML with PhononCore's exporter, then load it and speak Spanish. Opt in with
-/// `TEST_RUNNER_NODUS_HF_TOKEN_FILE=<path>`; downloads about 128 MB.
+/// The on-device path for the gated Phonon 40M checkpoints: download with a Hugging Face token
+/// (read from the file named by `NODUS_HF_TOKEN_FILE`, never printed), verify, convert to Core ML
+/// with PhononCore's exporter, then load and speak. Opt in with
+/// `TEST_RUNNER_NODUS_HF_TOKEN_FILE=<path>`; downloads about 130 MB per model.
 @Test(.enabled(if: ProcessInfo.processInfo.environment["NODUS_HF_TOKEN_FILE"] != nil),
-      .timeLimit(.minutes(20)))
-func phonon40SpanishConvertsOnDevice() async throws {
+      .timeLimit(.minutes(30)),
+      arguments: ["phonon-40m-es", "phonon-40m-multilingual"])
+func phonon40ConvertsOnDevice(modelID: String) async throws {
+    let spec = try #require(PhononOnDeviceConversion.spec(forModelID: modelID))
     let tokenFile = try #require(ProcessInfo.processInfo.environment["NODUS_HF_TOKEN_FILE"])
     let token = try String(contentsOfFile: tokenFile, encoding: .utf8)
         .trimmingCharacters(in: .whitespacesAndNewlines)
     let root = FileManager.default.temporaryDirectory.appendingPathComponent("phonon40-\(UUID().uuidString)")
     defer { try? FileManager.default.removeItem(at: root) }
-    let destination = root.appendingPathComponent("Phonon-40m-es")
+    let destination = root.appendingPathComponent(modelID)
     let work = root.appendingPathComponent("work")
 
-    try await PhononOnDeviceConversion.run(token: token, workDirectory: work, destination: destination) { _ in }
+    try await PhononOnDeviceConversion.run(spec, token: token, workDirectory: work, destination: destination) { _ in }
 
     #expect(!FileManager.default.fileExists(atPath: work.path), "downloaded weights are removed")
-    #expect(ModelManager.phononBundleLanguages(at: destination) == ["es"])
     #expect(PhononModels.isInstalled(at: destination))
+    let languages = ModelManager.phononBundleLanguages(at: destination)
     let phonon = try await Phonon.load(models: destination, language: .spanish)
-    #expect(phonon.voices.count == 25)
-    try await phonon.setVoice("Alba")
-    let samples = try await phonon.synthesize("Hola, esto es una prueba de lectura en voz alta.")
-    #expect(Double(samples.count) / Phonon.sampleRate > 1.5)
-    #expect(samples.contains { abs($0) > 0.01 })
+    #expect(phonon.voices.count == spec.voices.count)
+
+    // (voice, language, text): every language the bundle speaks gets a sentence.
+    var checks: [(String, PhononTTS.Language, String)] = [
+        ("Alba", .spanish, "Hola, esto es una prueba de lectura en voz alta.")
+    ]
+    if spec.voiceLanguages == nil {
+        #expect(Set(languages) == ["en", "es", "fr", "de", "pt"])
+        let french = try #require(spec.voices.first { $0.language.hasPrefix("fr") })
+        let english = try #require(spec.voices.first { $0.language.hasPrefix("en") })
+        checks.append((french.name, .french, "Bonjour, ceci est un essai de lecture à voix haute."))
+        checks.append((english.name, .english, "Hello, this is a read-aloud test."))
+    } else {
+        #expect(languages == ["es"])
+    }
+    for (voice, language, text) in checks {
+        // Accented names (Noémie, Lucía-Sol) may be stored decomposed by the file system.
+        let stored = try #require(phonon.voices.first { $0 == voice })
+        try await phonon.setVoice(stored)
+        try await phonon.setLanguage(language)
+        let samples = try await phonon.synthesize(text)
+        #expect(Double(samples.count) / Phonon.sampleRate > 1.2, "\(voice) produced too little audio")
+        #expect(samples.contains { abs($0) > 0.01 })
+    }
 }
 
 @Test

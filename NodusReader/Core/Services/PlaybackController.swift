@@ -120,7 +120,12 @@ public final class PlaybackController {
     public private(set) var currentIndex = 0
     public private(set) var chapterIndex = 0
     public private(set) var isPlaying = false {
-        didSet { updateEngineUse() }
+        didSet {
+            updateEngineUse()
+            // The lock screen and Dynamic Island follow every change, including
+            // stops from errors, chapter ends and sleep timers.
+            if oldValue != isPlaying { updateNowPlaying() }
+        }
     }
     public private(set) var isLoading = false
     public private(set) var isPlayingSample = false {
@@ -458,6 +463,9 @@ public final class PlaybackController {
         if isNeuralVoice {
             if audioPlayer.isPlaying {
                 audioPlayer.pause()
+                // A running engine renders silence, which iOS reports as
+                // playing on the lock screen; pause it with the player.
+                audioEngine.pause()
                 neuralPaused = true
                 neuralProgressTask?.cancel()
                 neuralProgressTask = nil
@@ -586,6 +594,7 @@ public final class PlaybackController {
             chapterIndex = 0
             mode = .listen
             updateNowPlaying()
+            deactivateAudioSession()
         }
     }
 
@@ -1210,6 +1219,7 @@ public final class PlaybackController {
         neuralProgressTask?.cancel()
         neuralProgressTask = nil
         audioPlayer.stop()
+        if audioEngine.isRunning { audioEngine.pause() }
         neuralPaused = false
         neuralWords = []
         neuralBufferDuration = 0
@@ -1332,6 +1342,15 @@ public final class PlaybackController {
         #endif
     }
 
+    /// Narration is over (book closed or finished): give the audio session
+    /// back so other apps resume and iOS stops showing Nodus as playing.
+    private func deactivateAudioSession() {
+        if audioEngine.isRunning { audioEngine.stop() }
+        #if os(iOS)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
+    }
+
     private func configureRemoteCommands() {
         #if canImport(MediaPlayer) && os(iOS)
         let center = MPRemoteCommandCenter.shared()
@@ -1340,10 +1359,10 @@ public final class PlaybackController {
         center.togglePlayPauseCommand.isEnabled = true
         center.nextTrackCommand.isEnabled = true
         center.previousTrackCommand.isEnabled = true
-        center.skipForwardCommand.isEnabled = true
-        center.skipBackwardCommand.isEnabled = true
-        center.skipForwardCommand.preferredIntervals = [30]
-        center.skipBackwardCommand.preferredIntervals = [30]
+        // The ±30 s skip buttons jumped whole chapters, which their icon does
+        // not suggest; the lock screen shows previous/next sentence instead.
+        center.skipForwardCommand.isEnabled = false
+        center.skipBackwardCommand.isEnabled = false
 
         center.playCommand.addTarget { [weak self] _ in
             Task { @MainActor in self?.resume() }

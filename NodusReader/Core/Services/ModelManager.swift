@@ -147,14 +147,24 @@ final class ModelManager {
         .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("NodusReader/Models/Phonon-40m-es", isDirectory: true)
 
+    nonisolated private static let phonon40MultilingualDirectory = FileManager.default
+        .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("NodusReader/Models/Phonon-40m-multilingual", isDirectory: true)
+
     static let phonon40SpanishID = "phonon-40m-es"
+    static let phonon40MultilingualID = "phonon-40m-multilingual"
 
     /// Each model keeps its own folder, so the English and Spanish Phonon
     /// checkpoints can both be installed.
     nonisolated static func directory(forModelID id: String, engine: Engine) -> URL {
         switch engine {
         case .kokoro: kokoroCacheDirectory
-        case .phonon: id == phonon40SpanishID ? phonon40SpanishDirectory : phononDirectory
+        case .phonon:
+            switch id {
+            case phonon40SpanishID: phonon40SpanishDirectory
+            case phonon40MultilingualID: phonon40MultilingualDirectory
+            default: phononDirectory
+            }
         }
     }
 
@@ -217,19 +227,19 @@ final class ModelManager {
             installNote: String(localized: "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Licence CC BY-NC 4.0: non-commercial use.")
         ),
         Model(
-            id: "phonon-40m-multilingual",
+            id: ModelManager.phonon40MultilingualID,
             engine: .phonon,
             name: String(localized: "Phonon 40M Multilingual"),
-            detail: String(localized: "Multilingual Phonon checkpoint."),
+            detail: String(localized: "English, Spanish, French, German and Portuguese with 102 voices."),
             language: String(localized: "Multilingual"),
-            sizeText: String(localized: "Not available"),
+            sizeText: String(localized: "About 150 MB download"),
             license: "CC BY-NC 4.0",
-            source: URL(string: "https://huggingface.co/gradium/phonon-40m-multilingual")!,
-            voices: [],
-            availability: .unavailable(
-                String(localized: "Signing in to Hugging Face does not make this model downloadable yet. Gradium publishes it only in formats for computers (PyTorch and GGUF), and Nodus Reader runs voices with Core ML, Apple's on-device format. No Core ML version of this model exists, so it cannot run on iPhone, iPad or Mac in this version.")
-            ),
-            requiresAcceptedLicense: true
+            source: PhononOnDeviceConversion.multilingual.page,
+            voices: PhononOnDeviceConversion.multilingual.voices.map(ModelManager.voice(from:)),
+            availability: .available,
+            requiresAcceptedLicense: true,
+            phononLanguage: .english,
+            installNote: String(localized: "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Licence CC BY-NC 4.0: non-commercial use.")
         )
     ]
 
@@ -243,6 +253,7 @@ final class ModelManager {
         Self.excludeFromBackup(Self.kokoroCacheDirectory)
         Self.excludeFromBackup(Self.phononDirectory)
         Self.excludeFromBackup(Self.phonon40SpanishDirectory)
+        Self.excludeFromBackup(Self.phonon40MultilingualDirectory)
         refreshStates()
         validateSelection()
         publishVoices()
@@ -369,7 +380,8 @@ final class ModelManager {
         var summary = StorageSummary()
         let sizes = await Task.detached(priority: .utility) {
             (Self.directorySize(Self.kokoroCacheDirectory),
-             Self.directorySize(Self.phononDirectory) + Self.directorySize(Self.phonon40SpanishDirectory))
+             Self.directorySize(Self.phononDirectory) + Self.directorySize(Self.phonon40SpanishDirectory)
+                + Self.directorySize(Self.phonon40MultilingualDirectory))
         }.value
         summary.kokoroBytes = sizes.0
         summary.phononBytes = sizes.1
@@ -476,7 +488,7 @@ final class ModelManager {
                 try Task.checkCancellation()
                 guard installTokens[model.id] == token else { return }
                 kokoro = loaded
-            case .phonon where model.id == Self.phonon40SpanishID:
+            case .phonon where PhononOnDeviceConversion.spec(forModelID: model.id) != nil:
                 // Gated checkpoint: the user's own access, converted here.
                 let accessToken: String
                 if let pasted = HuggingFaceTokenStore.load(), !pasted.isEmpty {
@@ -487,9 +499,10 @@ final class ModelManager {
                     throw PhononConversionError.notSignedIn
                 }
                 let destination = directory(for: model)
+                let spec = PhononOnDeviceConversion.spec(forModelID: model.id)!
                 let work = destination.deletingLastPathComponent()
-                    .appendingPathComponent(".phonon-40m-es-conversion", isDirectory: true)
-                try await PhononOnDeviceConversion.run(token: accessToken, workDirectory: work,
+                    .appendingPathComponent(".\(model.id)-conversion", isDirectory: true)
+                try await PhononOnDeviceConversion.run(spec, token: accessToken, workDirectory: work,
                                                        destination: destination) { [weak self] phase in
                     Task { @MainActor [weak self] in
                         guard let self, self.installTokens[model.id] == token else { return }
@@ -575,7 +588,9 @@ final class ModelManager {
         let modelID: String
         switch engine {
         case .kokoro: modelID = "kokoro-82m"
-        case .phonon: modelID = detected.languages == ["es"] ? Self.phonon40SpanishID : "phonon-31m-en"
+        case .phonon:
+            modelID = detected.languages == ["es"] ? Self.phonon40SpanishID
+                : detected.languages.count > 1 ? Self.phonon40MultilingualID : "phonon-31m-en"
         }
         guard let model = models.first(where: { $0.id == modelID }) else { return }
         guard model.isAvailable else {
@@ -669,8 +684,19 @@ final class ModelManager {
             if phonon == nil { await loadInstalledEnginesIfNeeded() }
             guard let phonon else { throw NeuralNarrationError.engineNotLoaded("Phonon") }
             let name = voiceID.hasPrefix("phonon:") ? String(voiceID.dropFirst("phonon:".count)) : voiceID
-            if phonon.voice != name, phonon.voices.contains(name) {
-                try await phonon.setVoice(name)
+            // Voice names come from the bundle's file names, which the file system
+            // may store decomposed ("e" + accent): match by Unicode equivalence
+            // and pass Phonon the exact name it knows.
+            if let stored = phonon.voices.first(where: { $0 == name }), phonon.voice != stored {
+                try await phonon.setVoice(stored)
+            }
+            // A multilingual checkpoint normalizes text in the voice's language
+            // (numbers, abbreviations): a French voice reads French.
+            if selectedModel?.id == Self.phonon40MultilingualID,
+               let voice = selectedModel?.voices.first(where: { $0.id == "phonon:\(name)" || $0.name == name }),
+               let language = PhononTTS.Language(rawValue: String(voice.language.prefix(2))),
+               phonon.language != language {
+                try await phonon.setLanguage(language)
             }
             return (try await phonon.synthesize(text), Phonon.sampleRate)
         }
@@ -1000,35 +1026,13 @@ final class ModelManager {
         return true
     }
 
-    /// Gradium's Spanish voice catalogue (gradium/phonon-voices, Apache-2.0),
-    /// exported into the converted Phonon 40M Spanish bundle under these names.
-    static let phonon40SpanishVoices: [Voice] = [
-        Voice(id: "phonon:Noa", name: "Noa", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Lucía-Sol", name: "Lucía-Sol", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Candela", name: "Candela", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Celia", name: "Celia", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Alba", name: "Alba", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Alicia", name: "Alicia", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Nerea", name: "Nerea", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Marcos", name: "Marcos", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Borja", name: "Borja", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Iker", name: "Iker", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Nuno", name: "Nuno", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Izan", name: "Izan", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Guillermo", name: "Guillermo", language: "es-ES", engine: .phonon),
-        Voice(id: "phonon:Rebeca", name: "Rebeca", language: "es-MX", engine: .phonon),
-        Voice(id: "phonon:Regina", name: "Regina", language: "es-MX", engine: .phonon),
-        Voice(id: "phonon:Danae", name: "Danae", language: "es-MX", engine: .phonon),
-        Voice(id: "phonon:Azucena", name: "Azucena", language: "es-MX", engine: .phonon),
-        Voice(id: "phonon:Jimena", name: "Jimena", language: "es-MX", engine: .phonon),
-        Voice(id: "phonon:Ximena", name: "Ximena", language: "es-MX", engine: .phonon),
-        Voice(id: "phonon:Lalo", name: "Lalo", language: "es-MX", engine: .phonon),
-        Voice(id: "phonon:Aldo", name: "Aldo", language: "es-MX", engine: .phonon),
-        Voice(id: "phonon:Yael", name: "Yael", language: "es-MX", engine: .phonon),
-        Voice(id: "phonon:Ulises", name: "Ulises", language: "es-MX", engine: .phonon),
-        Voice(id: "phonon:Leonel", name: "Leonel", language: "es-MX", engine: .phonon),
-        Voice(id: "phonon:Nico", name: "Nico", language: "es-MX", engine: .phonon)
-    ]
+    /// Gradium's Spanish voices (gradium/phonon-voices, Apache-2.0), as exported into the
+    /// converted Phonon 40M Spanish bundle under these names.
+    static let phonon40SpanishVoices: [Voice] = PhononOnDeviceConversion.spanish.voices.map(voice(from:))
+
+    nonisolated static func voice(from file: PhononVoiceFile) -> Voice {
+        Voice(id: "phonon:\(file.name)", name: file.name, language: file.language, engine: .phonon)
+    }
 
     private static let phononVoices: [Voice] = [
         Voice(id: "phonon:default", name: "Default", language: "en-US", engine: .phonon),

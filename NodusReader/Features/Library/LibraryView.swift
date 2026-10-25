@@ -72,12 +72,17 @@ struct LibraryView: View {
         }
         .toolbar {
             ToolbarItem(placement: .nodusLeading) {
-                Button(selectionMode ? "Done" : "Select") {
+                // Icon only, like the other toolbar buttons; VoiceOver reads
+                // "Select" / "Done".
+                Button {
                     selectionMode.toggle()
                     if !selectionMode { selectedIDs.removeAll() }
+                } label: {
+                    Image(systemName: selectionMode ? "checkmark.circle.fill" : "checkmark.circle")
+                        .font(.system(size: 17, weight: .medium))
                 }
-                .font(.subheadline)
-                .foregroundStyle(palette.text)
+                .foregroundStyle(selectionMode ? palette.accent : palette.text)
+                .accessibilityLabel(selectionMode ? "Done" : "Select")
             }
             ToolbarItem(placement: .principal) {
                 BrandToolbar()

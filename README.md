@@ -43,11 +43,10 @@ The design source of truth is [`design/DESIGN.md`](design/DESIGN.md) and [`desig
   ships English Misaki phonemization, and its MLX phonemizer needs a Metal device.
   All 28 American and British English voices of the pinned bundle are installed
   (the starter voice plus 27 voice files verified by SHA-256).
-- **Phonon 40M Spanish needs your Hugging Face access.** It is a gated CC BY-NC model
-  with no published Core ML bundle: after you sign in with an account that accepted
-  Gradium's conditions, the app downloads it (about 130 MB) and converts it on the
-  device. Nodus Reader never hosts or shares it. The multilingual checkpoint is listed
-  as unavailable.
+- **Phonon 40M Spanish and Multilingual need your Hugging Face access.** They are gated
+  CC BY-NC models with no published Core ML bundle: after you sign in with an account
+  that accepted Gradium's conditions, the app downloads one (130–150 MB) and converts it
+  on the device. Nodus Reader never hosts or shares them.
 - **iCloud requires signed entitlements.** Unsigned simulator builds report iCloud as
   unavailable by design; real-device two-device validation is still required.
 - DOCX, FB2, CBZ and other phase-2 formats; DRM-protected content is not supported.
