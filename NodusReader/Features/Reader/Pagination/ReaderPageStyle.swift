@@ -68,13 +68,73 @@ struct ReaderPageStyle: Equatable {
         return PlatformFont(descriptor: descriptor, size: fontSize) ?? base
     }
 
+    /// Book typesetting: paragraphs follow each other without extra space and
+    /// open with a first-line indent.
     var bodyParagraphStyle: NSParagraphStyle {
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = justified ? .justified : .natural
         paragraph.lineSpacing = lineSpacing
         paragraph.hyphenationFactor = 1
-        paragraph.paragraphSpacing = max(6, fontSize * 0.42)
+        paragraph.paragraphSpacing = 0
+        paragraph.firstLineHeadIndent = (fontSize * 1.5).rounded()
         return paragraph
+    }
+
+    /// A chapter's first paragraph, headings and the paragraph after a
+    /// heading start flush, as in printed books.
+    var flushParagraphStyle: NSParagraphStyle {
+        let paragraph = (bodyParagraphStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
+        paragraph.firstLineHeadIndent = 0
+        return paragraph
+    }
+
+    /// Extracted text separates paragraphs with a blank line ("\n\n"). The
+    /// second line break is kept, so chapter offsets (annotations, narration,
+    /// bookmarks) never move, but drawn with no height.
+    private var collapsedBreakAttributes: [NSAttributedString.Key: Any] {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.minimumLineHeight = 0.01
+        paragraph.maximumLineHeight = 0.01
+        paragraph.lineSpacing = 0
+        paragraph.paragraphSpacing = 0
+        return [
+            .font: PlatformFont.systemFont(ofSize: 0.01),
+            .foregroundColor: text,
+            .paragraphStyle: paragraph
+        ]
+    }
+
+    /// Chapter text with book paragraph layout: blank lines between
+    /// paragraphs collapsed, first-line indents, flush openings and headings.
+    func bodyText(_ text: String) -> NSAttributedString {
+        let body = NSMutableAttributedString(string: text, attributes: bodyAttributes)
+        let ns = text as NSString
+        guard ns.length > 1 else { return body }
+        let collapsed = collapsedBreakAttributes
+        for index in 1..<ns.length where ns.character(at: index) == 10 && ns.character(at: index - 1) == 10 {
+            body.setAttributes(collapsed, range: NSRange(location: index, length: 1))
+        }
+        let flush = flushParagraphStyle
+        var isFirst = true
+        var previousWasHeading = false
+        ns.enumerateSubstrings(in: NSRange(location: 0, length: ns.length), options: .byParagraphs) { paragraph, range, _, _ in
+            guard let paragraph, !paragraph.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+            let heading = Self.looksLikeHeading(paragraph)
+            if isFirst || heading || previousWasHeading {
+                body.addAttribute(.paragraphStyle, value: flush, range: range)
+            }
+            isFirst = false
+            previousWasHeading = heading
+        }
+        return body
+    }
+
+    /// A short line that does not end like a sentence ("Resumen", "PART ONE",
+    /// "II") is a heading inside the chapter text.
+    static func looksLikeHeading(_ paragraph: String) -> Bool {
+        let trimmed = paragraph.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, trimmed.count <= 80, let last = trimmed.last else { return false }
+        return !".,;:!?…\"”’»)—–".contains(last)
     }
 
     var bodyAttributes: [NSAttributedString.Key: Any] {

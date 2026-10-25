@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import Foundation
 import KokoroTTS
+import MLX
 import Observation
 import PhononTTS
 import Security
+#if os(iOS)
+import UIKit
+#endif
 
 extension Notification.Name {
     static let nodusVoiceEngineChanged = Notification.Name("nodus.voiceEngineChanged")
@@ -107,6 +111,16 @@ final class ModelManager {
     @ObservationIgnored private var kokoro: KokoroTTS?
     @ObservationIgnored private var phonon: Phonon?
 
+    // Memory: loaded engines hold hundreds of MB of Core ML models (and Kokoro
+    // MLX buffers). They are released when narration has not needed them for
+    // a while, when the app goes to the background without narrating, and on
+    // a memory warning; the next sentence loads them again.
+    static let idleUnloadDelay: Duration = .seconds(180)
+    @ObservationIgnored private var narrationInUse = false
+    @ObservationIgnored private var synthesesInFlight = 0
+    @ObservationIgnored private var idleUnloadTask: Task<Void, Never>?
+    @ObservationIgnored private var lifecycleObservers: [NSObjectProtocol] = []
+
     nonisolated private static let kokoroCacheDirectory = FileManager.default
         .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("NodusReader/Models/Kokoro", isDirectory: true)
@@ -198,6 +212,7 @@ final class ModelManager {
         refreshStates()
         validateSelection()
         publishVoices()
+        observeMemoryPressure()
     }
 
     var selectedModel: Model? {
@@ -218,6 +233,8 @@ final class ModelManager {
         engineLoadTask = nil
         engineLoadToken = UUID()
         if id == Self.systemModelID {
+            // No neural engine is selected: its models leave memory now.
+            releaseEngines(keeping: nil)
             selectedModelID = id
             defaults.set(id, forKey: "nodus.models.selected")
             publishVoices()
@@ -232,6 +249,8 @@ final class ModelManager {
               isInstalled(model) else { return }
         selectedModelID = id
         defaults.set(id, forKey: "nodus.models.selected")
+        // Only one neural engine stays in memory: the one just selected.
+        releaseEngines(keeping: model.engine)
         publishVoices()
         if let first = voices.voice(withID: model.voices.first?.id) {
             voices.setDefault(first)
@@ -539,12 +558,16 @@ final class ModelManager {
     func synthesize(_ text: String, voiceID: String, engine: Engine) async throws -> (samples: [Float], sampleRate: Double) {
         switch engine {
         case .kokoro:
+            beginSynthesis()
+            defer { endSynthesis() }
             if kokoro == nil { await loadInstalledEnginesIfNeeded() }
             guard let kokoro else { throw NeuralNarrationError.engineNotLoaded("Kokoro") }
             let raw = voiceID.hasPrefix("kokoro:") ? String(voiceID.dropFirst("kokoro:".count)) : voiceID
             let audio = try await kokoro.synthesize(text, voice: KokoroVoiceID(raw))
             return (audio.samples, Double(audio.sampleRate))
         case .phonon:
+            beginSynthesis()
+            defer { endSynthesis() }
             if phonon == nil { await loadInstalledEnginesIfNeeded() }
             guard let phonon else { throw NeuralNarrationError.engineNotLoaded("Phonon") }
             let name = voiceID.hasPrefix("phonon:") ? String(voiceID.dropFirst("phonon:".count)) : voiceID
@@ -556,6 +579,97 @@ final class ModelManager {
     }
 
     func phononEngine() -> Phonon? { phonon }
+
+    // MARK: Memory
+
+    /// The engines whose models are in memory now.
+    var loadedEngines: [Engine] {
+        [kokoro != nil ? Engine.kokoro : nil, phonon != nil ? Engine.phonon : nil].compactMap { $0 }
+    }
+
+    /// Narration (or a voice sample) is playing: keep the engine loaded so
+    /// the next sentence does not wait for a reload. When it stops, the
+    /// engine is released after `idleUnloadDelay`.
+    func setNarrationInUse(_ inUse: Bool) {
+        guard narrationInUse != inUse else { return }
+        narrationInUse = inUse
+        if inUse {
+            idleUnloadTask?.cancel()
+            idleUnloadTask = nil
+        } else {
+            scheduleIdleUnload()
+        }
+    }
+
+    /// Releases the loaded engines unless narration is using them, a sentence
+    /// is being generated or an engine is loading. Returns whether it did.
+    @discardableResult
+    func releaseEnginesIfIdle() -> Bool {
+        guard !narrationInUse, synthesesInFlight == 0, engineLoadTask == nil else { return false }
+        releaseEngines(keeping: nil)
+        return true
+    }
+
+    private func beginSynthesis() {
+        synthesesInFlight += 1
+        idleUnloadTask?.cancel()
+        idleUnloadTask = nil
+    }
+
+    private func endSynthesis() {
+        synthesesInFlight = max(0, synthesesInFlight - 1)
+        if synthesesInFlight == 0, !narrationInUse { scheduleIdleUnload() }
+    }
+
+    private func scheduleIdleUnload() {
+        idleUnloadTask?.cancel()
+        idleUnloadTask = Task { [weak self] in
+            try? await Task.sleep(for: Self.idleUnloadDelay)
+            guard !Task.isCancelled else { return }
+            self?.releaseEnginesIfIdle()
+        }
+    }
+
+    /// Drops the engines (all, or all but `keeping`) and MLX's buffer cache.
+    /// A sentence already being generated keeps its own reference until it
+    /// finishes; the next one loads the engine again.
+    private func releaseEngines(keeping engine: Engine?) {
+        if engine != .phonon { phonon = nil }
+        guard engine != .kokoro, kokoro != nil else { return }
+        kokoro = nil
+        // Only Kokoro's phonemizer uses MLX, so only releasing a loaded Kokoro
+        // clears its buffers. The call creates MLX's Metal device if it does
+        // not exist, which aborts where MLX cannot run (the Simulator).
+        #if !targetEnvironment(simulator)
+        MLX.Memory.clearCache()
+        #endif
+    }
+
+    private func observeMemoryPressure() {
+        #if os(iOS)
+        let center = NotificationCenter.default
+        lifecycleObservers.append(center.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                // Under pressure keep only what playing narration needs.
+                if !self.releaseEnginesIfIdle() {
+                    self.releaseEngines(keeping: self.selectedModel?.engine)
+                }
+            }
+        })
+        lifecycleObservers.append(center.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                // Background narration keeps its engine; otherwise free it
+                // now rather than in three minutes.
+                _ = self?.releaseEnginesIfIdle()
+            }
+        })
+        #endif
+    }
 
     /// Lazily loads an installed engine when the app starts after a previous
     /// install, so playback can use it without visiting the Models screen.

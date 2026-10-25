@@ -137,7 +137,7 @@ enum TextPaginator {
         let header = EditorialChapterHeader(eyebrow: String(localized: "CHAPTER \(index + 1)"),
                                             title: chapter.title, style: style)
         let full = NSMutableAttributedString(attributedString: header.attributed)
-        full.append(NSAttributedString(string: chapter.text, attributes: style.bodyAttributes))
+        full.append(style.bodyText(chapter.text))
         return (full, header.length)
     }
 

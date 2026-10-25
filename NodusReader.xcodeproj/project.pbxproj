@@ -54,6 +54,7 @@
 		9ACF1884B8FADD608B8AAB3C /* BookTextLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E20562AA22E60E323BDE92 /* BookTextLoader.swift */; };
 		9D72B6DB18718AEC79D7B994 /* ModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF11796AFA1C10FDA90101D /* ModelManager.swift */; };
 		9E2B9E5CFFC051B62F738CE3 /* ICloudDocumentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84215C3B2D70610707C931B2 /* ICloudDocumentStore.swift */; };
+		A1E0C1B33DEA8097C0739041 /* HuggingFaceOAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20AC74A66B19756F7ED348EF /* HuggingFaceOAuth.swift */; };
 		A618A81499D2E596D7C8AE8F /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1FCA4689FD81FCF3C0A3D93 /* SearchView.swift */; };
 		AF0DBD74F8D47484A0F92C14 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 886CDC450EFF2D9E2916008F /* ZIPFoundation */; };
 		B2D9C79E2BF4240F1B16B2B5 /* PaginatedReaderContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D593BBC908B5D057F4618106 /* PaginatedReaderContent.swift */; };
@@ -63,6 +64,7 @@
 		C13569691FA7A02D86024424 /* ImagePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CD993B1E77129C04C4EB63 /* ImagePipeline.swift */; };
 		C6AE3EF01BF6C2203D01DE43 /* ReaderContentsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390305E758451EF6E06B5D1A /* ReaderContentsSheet.swift */; };
 		CF5F0A39E4882E6C4AA6E75D /* NodusReaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CFF6B8EDA004F101CAF1458 /* NodusReaderApp.swift */; };
+		D02EFDFD40DDFDE3B10B2DFB /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 127F30309ABDCA01F50B7751 /* MLX */; };
 		D29D48D11AE77ACE6EF3453D /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FF7CBF9CFCF8E117C3191309 /* Localizable.xcstrings */; };
 		D45E6022A985F00EEA2F542E /* SearchResultsContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E62F2F972274F54CF57BEE33 /* SearchResultsContent.swift */; };
 		D4BB0B652DA9BA54E98A519B /* StorageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEA231B6036008AC4763DC43 /* StorageSettingsView.swift */; };
@@ -76,6 +78,7 @@
 		E2F3437CC4FD4D787583C9FF /* PDFKitReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55CE9F477E2E0E633DF9AFD5 /* PDFKitReader.swift */; };
 		E37E31D55CE8B373483E9141 /* VoicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7566082E0D91905F11E43B6 /* VoicesView.swift */; };
 		E645DD6D83D107365FBB786E /* SampleLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC240C445D333C9685E2A56 /* SampleLibrary.swift */; };
+		E6C6B661DB54BF0BCA6FFDE9 /* ReaderPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A709C376FA7E646561BBD03B /* ReaderPresentation.swift */; };
 		E6EAD3855323035240D9B71A /* DocumentExtraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF27C98D03CA7B77D5353E99 /* DocumentExtraction.swift */; };
 		E739A3298B8DE66AA6F6BF31 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44842233DC53215E5317E6AF /* PlayerView.swift */; };
 		E9CA7DC6B61AB9E6A4ACE8A3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B201867985D495B5C0CED08B /* SettingsView.swift */; };
@@ -141,6 +144,7 @@
 		0FF11796AFA1C10FDA90101D /* ModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelManager.swift; sourceTree = "<group>"; };
 		150C3748B82F040249E76B83 /* NodusReaderTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NodusReaderTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1EC240C445D333C9685E2A56 /* SampleLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleLibrary.swift; sourceTree = "<group>"; };
+		20AC74A66B19756F7ED348EF /* HuggingFaceOAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HuggingFaceOAuth.swift; sourceTree = "<group>"; };
 		2237C36CBBB7654F67C483B4 /* NodusReader.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = NodusReader.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		22F044BBF5B2AF672BF9CC1E /* CollectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsView.swift; sourceTree = "<group>"; };
 		23166CC694A61E49546292B8 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -184,6 +188,7 @@
 		96C2916DCF1FCAA262923B78 /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
 		9A134492B2262FE0AB703EA4 /* NarrationAudioCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationAudioCache.swift; sourceTree = "<group>"; };
 		A3AFA22A66FD5602FA6E23C9 /* NodusReaderUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodusReaderUITests.swift; sourceTree = "<group>"; };
+		A709C376FA7E646561BBD03B /* ReaderPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPresentation.swift; sourceTree = "<group>"; };
 		A7CE425F94CC0899C1055E4B /* LanguageDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageDetector.swift; sourceTree = "<group>"; };
 		ACBFFB317D2132D98EFDA315 /* ReaderAppearanceControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderAppearanceControls.swift; sourceTree = "<group>"; };
 		B201867985D495B5C0CED08B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -229,6 +234,7 @@
 				AF0DBD74F8D47484A0F92C14 /* ZIPFoundation in Frameworks */,
 				F64397C92F45624BF794B80C /* ptts in Frameworks */,
 				27F9823D7762B1767AC481D6 /* KokoroTTS in Frameworks */,
+				D02EFDFD40DDFDE3B10B2DFB /* MLX in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -268,6 +274,7 @@
 				B59B6977FE1E3E11D55CD470 /* ReaderAppearanceSheet.swift */,
 				390305E758451EF6E06B5D1A /* ReaderContentsSheet.swift */,
 				8374C8CF82EADFE4C61847B6 /* ReaderNavigationSheet.swift */,
+				A709C376FA7E646561BBD03B /* ReaderPresentation.swift */,
 				96C2916DCF1FCAA262923B78 /* ReaderView.swift */,
 			);
 			path = Reader;
@@ -326,6 +333,7 @@
 				3252C65DAC3AB8067A57173E /* EPUBParser.swift */,
 				54A1DAC5355DA2195645F962 /* FileStore.swift */,
 				8FC3CCAB5516F1CC4ED19C9F /* HTMLText.swift */,
+				20AC74A66B19756F7ED348EF /* HuggingFaceOAuth.swift */,
 				E9CD993B1E77129C04C4EB63 /* ImagePipeline.swift */,
 				656FC1AC67F05FB48653DA27 /* ImportCoordinator.swift */,
 				3B6D690834C5BF2B92AEAD2E /* ImportError.swift */,
@@ -600,6 +608,7 @@
 				886CDC450EFF2D9E2916008F /* ZIPFoundation */,
 				B6EAE7E2B49A93B0400912EF /* ptts */,
 				42019C581B56EBFC1C0EA303 /* KokoroTTS */,
+				127F30309ABDCA01F50B7751 /* MLX */,
 			);
 			productName = NodusReader;
 			productReference = 2237C36CBBB7654F67C483B4 /* NodusReader.app */;
@@ -682,6 +691,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				B1BF465A795185ED4E538F40 /* XCRemoteSwiftPackageReference "kokoro-coreml" */,
+				131C62EB0EFD6C2BE2AE4FF7 /* XCRemoteSwiftPackageReference "mlx-swift" */,
 				23322A66AB424A662400B1FF /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 				B0E29B6C3163D9BBDEF341A5 /* XCLocalSwiftPackageReference "Modules/DesignSystem" */,
 				A71418D70C53CE385985AC81 /* XCLocalSwiftPackageReference "Modules/PhononTTS" */,
@@ -738,6 +748,7 @@
 				67F386AD47DD382F646DF469 /* HTMLText.swift in Sources */,
 				E26147E7713A3800E8D13589 /* HomeView.swift in Sources */,
 				F5129BBA885EAA346F2DD97F /* HuggingFaceGuideView.swift in Sources */,
+				A1E0C1B33DEA8097C0739041 /* HuggingFaceOAuth.swift in Sources */,
 				9E2B9E5CFFC051B62F738CE3 /* ICloudDocumentStore.swift in Sources */,
 				2816587FB924F9E9459981FF /* IOSPageCurlReader.swift in Sources */,
 				16143A1BAB297801FB6E7E8B /* IOSReaderPageView.swift in Sources */,
@@ -778,6 +789,7 @@
 				3F5DA30572C36D7C92597579 /* ReaderPageHighlights.swift in Sources */,
 				760428D786B438C27B4A5133 /* ReaderPageStyle.swift in Sources */,
 				E03A749E4F409D53C8B138D3 /* ReaderPreferences.swift in Sources */,
+				E6C6B661DB54BF0BCA6FFDE9 /* ReaderPresentation.swift in Sources */,
 				F2385B3E6098B2265F0F7868 /* ReaderView.swift in Sources */,
 				2B5E038808D963791F8791A7 /* ReaderWindowHost.swift in Sources */,
 				974F446B03E4C8C7BE1B677E /* ReadingSettingsView.swift in Sources */,
@@ -902,7 +914,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -968,7 +980,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1232,6 +1244,14 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		131C62EB0EFD6C2BE2AE4FF7 /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift";
+			requirement = {
+				kind = exactVersion;
+				version = 0.31.4;
+			};
+		};
 		23322A66AB424A662400B1FF /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
@@ -1251,6 +1271,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		127F30309ABDCA01F50B7751 /* MLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 131C62EB0EFD6C2BE2AE4FF7 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLX;
+		};
 		42019C581B56EBFC1C0EA303 /* KokoroTTS */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B1BF465A795185ED4E538F40 /* XCRemoteSwiftPackageReference "kokoro-coreml" */;

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import AuthenticationServices
 import DesignSystem
 import SwiftUI
 
@@ -25,6 +26,9 @@ struct VoicesView: View {
     @State private var isVerifyingToken = false
     @State private var tokenSaved = false
     @State private var showTokenGuide = false
+    @State private var hfSession: HuggingFaceOAuth.Session?
+    @State private var isSigningIn = false
+    @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showBundleImporter = false
 
     private var filteredVoices: [VoiceCatalog.Voice] {
@@ -127,6 +131,7 @@ struct VoicesView: View {
             }
             hfToken = HuggingFaceTokenStore.load() ?? ""
             tokenSaved = !hfToken.isEmpty
+            hfSession = HuggingFaceSessionStore.load()
             await models.refreshStorage()
         }
     }
@@ -572,9 +577,9 @@ struct VoicesView: View {
 
     private var huggingFaceCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Optional access token")
+            Text("Hugging Face account (optional)")
                 .font(.subheadline.weight(.medium))
-            Text("The Kokoro and Phonon bundles used here are public, so no account is required. A token is kept in this device's Keychain only and is never written to iCloud, the library or logs.")
+            Text("The Kokoro and Phonon bundles used here are public, so no account is required. Sign-in details and tokens are kept in this device's Keychain only and are never written to iCloud, the library or logs.")
                 .font(.caption)
                 .foregroundStyle(palette.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -592,6 +597,11 @@ struct VoicesView: View {
             .sheet(isPresented: $showTokenGuide) {
                 HuggingFaceGuideView(gatedModels: models.models.filter(\.requiresAcceptedLicense))
             }
+            huggingFaceSignIn
+            Text("Or paste an access token")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(palette.muted)
+                .padding(.top, 4)
             SecureField("hf_…", text: $hfToken)
                 .textFieldStyle(.plain)
                 .font(.system(.footnote, design: .monospaced))
@@ -639,11 +649,80 @@ struct VoicesView: View {
         .panelCard(radius: 18)
     }
 
+    /// "Sign in with Hugging Face" (OAuth with PKCE) or, once signed in, the
+    /// account and a sign-out button.
+    @ViewBuilder
+    private var huggingFaceSignIn: some View {
+        if let hfSession {
+            HStack(spacing: 10) {
+                Image(systemName: "person.crop.circle.badge.checkmark")
+                    .foregroundStyle(palette.accent)
+                    .accessibilityHidden(true)
+                if let account = hfSession.account {
+                    Text("Signed in as \(account)")
+                        .font(.footnote.weight(.semibold))
+                } else {
+                    Text("Signed in to Hugging Face")
+                        .font(.footnote.weight(.semibold))
+                }
+                Spacer(minLength: 8)
+                Button("Sign Out") { signOutOfHuggingFace() }
+                    .font(.footnote)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(palette.accent)
+                    .frame(minHeight: 44)
+            }
+        } else {
+            PrimaryPillButton("Sign in with Hugging Face", systemImage: "person.crop.circle") {
+                signInWithHuggingFace()
+            }
+            .disabled(isSigningIn)
+            .overlay(alignment: .trailing) {
+                if isSigningIn {
+                    ProgressView().controlSize(.small).padding(.trailing, 16)
+                }
+            }
+        }
+    }
+
+    private func signInWithHuggingFace() {
+        isSigningIn = true
+        hfStatus = nil
+        let request = HuggingFaceOAuth.Request()
+        Task {
+            defer { isSigningIn = false }
+            do {
+                let callback = try await webAuthenticationSession.authenticate(
+                    using: request.authorizeURL,
+                    callback: .customScheme(HuggingFaceOAuth.callbackScheme),
+                    preferredBrowserSession: .shared,
+                    additionalHeaderFields: [:]
+                )
+                let code = try request.code(from: callback)
+                var session = try await HuggingFaceOAuth.exchange(code: code, for: request)
+                session.account = try? await HuggingFaceTokenStore.verify(session.accessToken)
+                try HuggingFaceSessionStore.save(session)
+                hfSession = session
+                hfStatus = nil
+            } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
+                // The person closed the sign-in sheet: nothing to report.
+            } catch {
+                hfStatus = error.localizedDescription
+            }
+        }
+    }
+
+    private func signOutOfHuggingFace() {
+        HuggingFaceSessionStore.delete()
+        hfSession = nil
+        hfStatus = String(localized: "Signed out. To revoke Nodus Reader's access completely, remove it under Connected Apps in your Hugging Face settings.")
+    }
+
     private func saveToken() {
         do {
             try HuggingFaceTokenStore.save(hfToken)
             tokenSaved = !hfToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            hfStatus = "Token saved in the Keychain."
+            hfStatus = String(localized: "Token saved in the Keychain.")
         } catch {
             hfStatus = error.localizedDescription
         }
@@ -656,7 +735,7 @@ struct VoicesView: View {
         Task {
             do {
                 let name = try await HuggingFaceTokenStore.verify(token)
-                hfStatus = "Signed in to Hugging Face as \(name)."
+                hfStatus = String(localized: "Signed in to Hugging Face as \(name).")
             } catch {
                 hfStatus = error.localizedDescription
             }

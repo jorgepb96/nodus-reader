@@ -14,7 +14,7 @@ settings:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: minimal
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "4"
+    CURRENT_PROJECT_VERSION: "5"
     # English is the base language and Spanish the one translation: a device
     # in Spanish shows Spanish, any other language shows English.
     SWIFT_EMIT_LOC_STRINGS: YES
@@ -37,6 +37,12 @@ packages:
   KokoroCoreML:
     url: https://github.com/mattmireles/kokoro-coreml.git
     revision: 43ef0237306c3c1ea0138098c9f92930ae4cf3f7
+  # Already part of Kokoro's English phonemizer (MisakiSwift). Linked directly,
+  # at the version Kokoro resolves, only to free MLX's GPU buffer cache when the
+  # voice engines are unloaded.
+  MLXSwift:
+    url: https://github.com/ml-explore/mlx-swift
+    exactVersion: 0.31.4
 
 targets:
   NodusReader:
@@ -59,6 +65,8 @@ targets:
         product: ptts
       - package: KokoroCoreML
         product: KokoroTTS
+      - package: MLXSwift
+        product: MLX
       - target: NodusReaderShare
         platformFilter: iOS
     settings:

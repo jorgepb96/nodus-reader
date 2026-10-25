@@ -26,7 +26,12 @@ struct HuggingFaceGuideView: View {
                         paragraph("Some models are \"gated\": the publisher asks you to sign in and accept their licence before you can download them. A token is how an app proves to Hugging Face that it is acting for your account.")
                     }
 
-                    section("How to get a token", systemImage: "key") {
+                    section("The simplest way: sign in", systemImage: "person.crop.circle") {
+                        paragraph("On the Voices & Models screen, select \"Sign in with Hugging Face\". A Hugging Face page opens. Sign in, read what Nodus Reader asks for (your public profile, and read access to gated models whose licence you have accepted) and select the button to allow it. You come back to the app signed in, without creating or copying a token.")
+                        paragraph("Nodus Reader never sees your password. To remove its access, open Connected Apps in your Hugging Face settings.")
+                    }
+
+                    section("Or: get a token yourself", systemImage: "key") {
                         step(1, "Create a free account, or sign in if you already have one.")
                         link("Create an account", url: "https://huggingface.co/join")
                         step(2, "Open the Access Tokens page in your account settings.")

@@ -398,8 +398,6 @@ struct ReaderAppearancePopover: View {
         // on iPhone the system limits it to the screen and the content scrolls.
         .frame(idealWidth: 340, maxWidth: 380, idealHeight: 860, maxHeight: 920)
         .background(palette.panelRaised)
-        .nodusPalette(palette)
-        .tint(palette.accent)
-        .environment(\.colorScheme, readerIsDark ? .dark : .light)
+        .readerPresentation(isDark: readerIsDark)
     }
 }

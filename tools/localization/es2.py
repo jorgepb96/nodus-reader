@@ -319,3 +319,31 @@ ES.update({
 ES.update({
 "Kokoro's English phonemizer uses MLX, which needs a Metal GPU. The Simulator does not provide one. Install Kokoro on an iPhone, iPad or Mac; Phonon and system voices work in the Simulator.": "El fonetizador inglés de Kokoro usa MLX, que necesita una GPU Metal. El Simulador no la tiene. Instala Kokoro en un iPhone, iPad o Mac; Phonon y las voces del sistema funcionan en el Simulador.",
 })
+# Hugging Face sign-in (OAuth).
+ES.update({
+"Hugging Face account (optional)": "Cuenta de Hugging Face (opcional)",
+"The Kokoro and Phonon bundles used here are public, so no account is required. Sign-in details and tokens are kept in this device's Keychain only and are never written to iCloud, the library or logs.": "Los paquetes de Kokoro y Phonon que se usan aquí son públicos, así que no hace falta cuenta. Los datos de inicio de sesión y los tokens se guardan solo en el llavero de este dispositivo y nunca se escriben en iCloud, en la biblioteca ni en registros.",
+"Or paste an access token": "O pega un token de acceso",
+"Signed in as %@": "Sesión iniciada como %@",
+"Signed in to Hugging Face": "Sesión iniciada en Hugging Face",
+"Sign Out": "Cerrar sesión",
+"Sign in with Hugging Face": "Iniciar sesión con Hugging Face",
+"Signed out. To revoke Nodus Reader's access completely, remove it under Connected Apps in your Hugging Face settings.": "Sesión cerrada. Para retirar del todo el acceso de Nodus Reader, quítalo en Connected Apps, en los ajustes de Hugging Face.",
+"Token saved in the Keychain.": "Token guardado en el llavero.",
+"Signed in to Hugging Face as %@.": "Sesión iniciada en Hugging Face como %@.",
+"Hugging Face did not authorise Nodus Reader: %@": "Hugging Face no ha autorizado a Nodus Reader: %@",
+"The sign-in response did not match this request. Try again.": "La respuesta del inicio de sesión no corresponde a esta solicitud. Inténtalo de nuevo.",
+"Your Hugging Face sign-in has expired. Sign in again.": "Tu sesión de Hugging Face ha caducado. Vuelve a iniciar sesión.",
+"The simplest way: sign in": "La forma más sencilla: iniciar sesión",
+"On the Voices & Models screen, select \"Sign in with Hugging Face\". A Hugging Face page opens. Sign in, read what Nodus Reader asks for (your public profile, and read access to gated models whose licence you have accepted) and select the button to allow it. You come back to the app signed in, without creating or copying a token.": "En la pantalla Voces y modelos, selecciona «Iniciar sesión con Hugging Face». Se abre una página de Hugging Face. Inicia sesión, lee lo que pide Nodus Reader (tu perfil público y acceso de lectura a los modelos restringidos cuya licencia has aceptado) y selecciona el botón para permitirlo. Vuelves a la app con la sesión iniciada, sin crear ni copiar ningún token.",
+"Nodus Reader never sees your password. To remove its access, open Connected Apps in your Hugging Face settings.": "Nodus Reader nunca ve tu contraseña. Para retirarle el acceso, abre Connected Apps en los ajustes de Hugging Face.",
+"Or: get a token yourself": "O bien: consigue tú un token",
+})
+# Short labels: three of them share one segmented control in the reader popover.
+ES.update({
+"Paged": "Páginas",
+"Scroll down": "Vertical",
+"Scroll across": "Horizontal",
+"Page curl": "Curva",
+"With Reduce Motion on, Page curl is shown as Slide.": "Con Reducir movimiento activado, «Curva» se muestra como «Deslizar».",
+})

@@ -112,32 +112,12 @@
         }
       }
     },
-    "%@, %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@, %2$@"
-          }
-        }
-      }
-    },
     "%@, by %@": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "%1$@, de %2$@"
-          }
-        }
-      }
-    },
-    "%@, collection, %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@, colección, %2$@"
           }
         }
       }
@@ -2142,16 +2122,6 @@
         }
       }
     },
-    "How to get a token": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cómo conseguir un token"
-          }
-        }
-      }
-    },
     "Hugging Face": {
       "localizations": {
         "es": {
@@ -2168,6 +2138,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hugging Face (huggingface.co) es una web donde empresas e investigadores publican modelos de IA. Nodus Reader descarga de ahí sus voces de narración."
+          }
+        }
+      }
+    },
+    "Hugging Face account (optional)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuenta de Hugging Face (opcional)"
+          }
+        }
+      }
+    },
+    "Hugging Face did not authorise Nodus Reader: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hugging Face no ha autorizado a Nodus Reader: %@"
           }
         }
       }
@@ -3332,6 +3322,16 @@
         }
       }
     },
+    "Nodus Reader never sees your password. To remove its access, open Connected Apps in your Hugging Face settings.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodus Reader nunca ve tu contraseña. Para retirarle el acceso, abre Connected Apps en los ajustes de Hugging Face."
+          }
+        }
+      }
+    },
     "Nodus Reader uses the voices already installed by the operating system. Neural Kokoro and Phonon voices are downloaded separately and also stay on this device.": {
       "localizations": {
         "es": {
@@ -3472,6 +3472,16 @@
         }
       }
     },
+    "On the Voices & Models screen, select \"Sign in with Hugging Face\". A Hugging Face page opens. Sign in, read what Nodus Reader asks for (your public profile, and read access to gated models whose licence you have accepted) and select the button to allow it. You come back to the app signed in, without creating or copying a token.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En la pantalla Voces y modelos, selecciona «Iniciar sesión con Hugging Face». Se abre una página de Hugging Face. Inicia sesión, lee lo que pide Nodus Reader (tu perfil público y acceso de lectura a los modelos restringidos cuya licencia has aceptado) y selecciona el botón para permitirlo. Vuelves a la app con la sesión iniciada, sin crear ni copiar ningún token."
+          }
+        }
+      }
+    },
     "On this %@": {
       "localizations": {
         "es": {
@@ -3592,12 +3602,22 @@
         }
       }
     },
-    "Optional access token": {
+    "Or paste an access token": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Token de acceso opcional"
+            "value": "O pega un token de acceso"
+          }
+        }
+      }
+    },
+    "Or: get a token yourself": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O bien: consigue tú un token"
           }
         }
       }
@@ -3707,7 +3727,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pasar página"
+            "value": "Curva"
           }
         }
       }
@@ -3737,7 +3757,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Por páginas"
+            "value": "Páginas"
           }
         }
       }
@@ -4387,7 +4407,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Desplazar en horizontal"
+            "value": "Horizontal"
           }
         }
       }
@@ -4397,7 +4417,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Desplazar en vertical"
+            "value": "Vertical"
           }
         }
       }
@@ -4712,6 +4732,16 @@
         }
       }
     },
+    "Sign Out": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar sesión"
+          }
+        }
+      }
+    },
     "Sign in to Hugging Face in your web browser, with the same account as your token.": {
       "localizations": {
         "es": {
@@ -4738,6 +4768,56 @@
           "stringUnit": {
             "state": "translated",
             "value": "Inicia sesión en iCloud en este dispositivo para sincronizar tu biblioteca."
+          }
+        }
+      }
+    },
+    "Sign in with Hugging Face": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sesión con Hugging Face"
+          }
+        }
+      }
+    },
+    "Signed in as %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesión iniciada como %@"
+          }
+        }
+      }
+    },
+    "Signed in to Hugging Face": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesión iniciada en Hugging Face"
+          }
+        }
+      }
+    },
+    "Signed in to Hugging Face as %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesión iniciada en Hugging Face como %@."
+          }
+        }
+      }
+    },
+    "Signed out. To revoke Nodus Reader's access completely, remove it under Connected Apps in your Hugging Face settings.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesión cerrada. Para retirar del todo el acceso de Nodus Reader, quítalo en Connected Apps, en los ajustes de Hugging Face."
           }
         }
       }
@@ -5152,12 +5232,12 @@
         }
       }
     },
-    "The Kokoro and Phonon bundles used here are public, so no account is required. A token is kept in this device's Keychain only and is never written to iCloud, the library or logs.": {
+    "The Kokoro and Phonon bundles used here are public, so no account is required. Sign-in details and tokens are kept in this device's Keychain only and are never written to iCloud, the library or logs.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los paquetes de Kokoro y Phonon que se usan aquí son públicos, así que no hace falta cuenta. El token se guarda solo en el llavero de este dispositivo y nunca se escribe en iCloud, en la biblioteca ni en registros."
+            "value": "Los paquetes de Kokoro y Phonon que se usan aquí son públicos, así que no hace falta cuenta. Los datos de inicio de sesión y los tokens se guardan solo en el llavero de este dispositivo y nunca se escriben en iCloud, en la biblioteca ni en registros."
           }
         }
       }
@@ -5308,6 +5388,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "El motor seleccionado no tiene voces instaladas para %@. Busca en todos los idiomas o elige otro modelo en Ajustes."
+          }
+        }
+      }
+    },
+    "The sign-in response did not match this request. Try again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La respuesta del inicio de sesión no corresponde a esta solicitud. Inténtalo de nuevo."
+          }
+        }
+      }
+    },
+    "The simplest way: sign in": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La forma más sencilla: iniciar sesión"
           }
         }
       }
@@ -5618,6 +5718,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hoy"
+          }
+        }
+      }
+    },
+    "Token saved in the Keychain.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token guardado en el llavero."
           }
         }
       }
@@ -5997,7 +6107,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Con Reducir movimiento activado, «Pasar página» se muestra como «Deslizar»."
+            "value": "Con Reducir movimiento activado, «Curva» se muestra como «Deslizar»."
           }
         }
       }
@@ -6038,6 +6148,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Puedes activar la sincronización cuando quieras. Al hacerlo, nunca se eliminan los datos locales."
+          }
+        }
+      }
+    },
+    "Your Hugging Face sign-in has expired. Sign in again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu sesión de Hugging Face ha caducado. Vuelve a iniciar sesión."
           }
         }
       }

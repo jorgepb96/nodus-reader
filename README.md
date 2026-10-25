@@ -22,7 +22,7 @@ Nodus Reader is part of the Nodus Research ecosystem. It is not a web wrapper: t
 - Sharing: iOS Share Extension with an App Group inbox and collection selection.
 - Languages: English and Spanish. The app follows the device language: Spanish on a device set to Spanish, English everywhere else (or per app in Settings › Nodus Reader › Language).
 - Settings: separate App/Reader themes, custom theme editor, reading typography, real voice and model management with downloads/licences/storage, iCloud status and privacy.
-- Tests: 42 unit/integration tests (plus an opt-in model download test) and 11 UI tests with screenshot capture (the Phonon narration test skips when no Phonon bundle is installed in the simulator).
+- Tests: 46 unit/integration tests (plus an opt-in model download test) and 11 UI tests with screenshot capture (the Phonon narration test skips when no Phonon bundle is installed in the simulator).
 
 ## Screenshots
 

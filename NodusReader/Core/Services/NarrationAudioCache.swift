@@ -203,24 +203,40 @@ enum AudioWordAligner {
         let pauseCandidates = detectPauses(samples: samples, sampleRate: sampleRate)
         let expected = expectedBoundaries(words: words, speechStart: pauseCandidates.speechStart,
                                           speechEnd: pauseCandidates.speechEnd)
+        // Pauses are matched by their centre, but the next word starts where
+        // the voice resumes: highlighting at the centre runs half a pause early
+        // and makes the highlight drift against the audio.
+        let onsets = Dictionary(zip(pauseCandidates.centers, pauseCandidates.onsets),
+                                uniquingKeysWith: { first, _ in first })
+        // Moving a boundary to the onset can carry it past the next one (an
+        // interpolated boundary inside that pause), so keep them increasing.
+        var lastBoundary: TimeInterval = 0
         let chosen = chooseBoundaries(expected: expected, candidates: pauseCandidates.centers)
+            .map { boundary -> TimeInterval in
+                let onset = onsets[boundary] ?? boundary
+                lastBoundary = min(max(onset, lastBoundary + 0.02), duration)
+                return lastBoundary
+            }
 
         var timings: [NarrationWordTiming] = []
         var previous: TimeInterval = 0
         for (index, word) in words.enumerated() {
             let start = index == 0 ? 0 : previous
             let end = index == words.count - 1 ? duration : chosen[index]
-            timings.append(NarrationWordTiming(location: word.range.location,
-                                               length: word.range.length,
-                                               start: start,
-                                               end: max(end, start + 0.02)))
-            previous = end
+            let timing = NarrationWordTiming(location: word.range.location,
+                                             length: word.range.length,
+                                             start: start,
+                                             end: max(end, start + 0.02))
+            timings.append(timing)
+            previous = timing.end
         }
         return timings
     }
 
     private struct Pauses {
         var centers: [TimeInterval]
+        /// Where speech resumes after each pause, parallel to `centers`.
+        var onsets: [TimeInterval] = []
         var speechStart: TimeInterval
         var speechEnd: TimeInterval
     }
@@ -248,30 +264,35 @@ enum AudioWordAligner {
         }
 
         var centers: [TimeInterval] = []
+        var onsets: [TimeInterval] = []
         var runStart: Int?
         for frameIndex in firstSpeech...lastSpeech {
             let silent = rms[frameIndex] <= threshold
             if silent, runStart == nil {
                 runStart = frameIndex
             } else if !silent, let start = runStart {
-                appendPause(start: start, end: frameIndex, frame: frame, sampleRate: sampleRate, to: &centers)
+                appendPause(start: start, end: frameIndex, frame: frame, sampleRate: sampleRate,
+                            centers: &centers, onsets: &onsets)
                 runStart = nil
             }
         }
         if let start = runStart {
-            appendPause(start: start, end: lastSpeech, frame: frame, sampleRate: sampleRate, to: &centers)
+            appendPause(start: start, end: lastSpeech, frame: frame, sampleRate: sampleRate,
+                        centers: &centers, onsets: &onsets)
         }
 
         return Pauses(centers: centers,
+                      onsets: onsets,
                       speechStart: Double(firstSpeech * frame) / sampleRate,
                       speechEnd: Double(min((lastSpeech + 1) * frame, samples.count)) / sampleRate)
     }
 
     private static func appendPause(start: Int, end: Int, frame: Int, sampleRate: Double,
-                                    to centers: inout [TimeInterval]) {
+                                    centers: inout [TimeInterval], onsets: inout [TimeInterval]) {
         let seconds = Double((end - start) * frame) / sampleRate
         guard seconds >= 0.035 else { return }
         centers.append(Double(((start + end) * frame) / 2) / sampleRate)
+        onsets.append(Double(end * frame) / sampleRate)
     }
 
     private static func expectedBoundaries(words: [Word], speechStart: TimeInterval,

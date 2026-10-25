@@ -119,9 +119,19 @@ public final class PlaybackController {
     public private(set) var sentences: [NarrationSentence] = []
     public private(set) var currentIndex = 0
     public private(set) var chapterIndex = 0
-    public private(set) var isPlaying = false
+    public private(set) var isPlaying = false {
+        didSet { updateEngineUse() }
+    }
     public private(set) var isLoading = false
-    public private(set) var isPlayingSample = false
+    public private(set) var isPlayingSample = false {
+        didSet { updateEngineUse() }
+    }
+
+    /// Tells the model manager whether narration needs the neural engine to
+    /// stay in memory (it is released a few minutes after playback stops).
+    private func updateEngineUse() {
+        models.setNarrationInUse(isPlaying || isPlayingSample)
+    }
     public private(set) var sampleVoiceID: String?
     public private(set) var currentWordRange: NSRange?
     public private(set) var currentWord: String?
@@ -1122,7 +1132,9 @@ public final class PlaybackController {
         neuralProgressTask?.cancel()
         neuralProgressTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(60))
+                // About one display frame: a 60 ms poll left the highlight up
+                // to 60 ms behind the voice.
+                try? await Task.sleep(for: .milliseconds(16))
                 guard !Task.isCancelled, let self else { return }
                 self.tickNeuralProgress()
             }
@@ -1133,11 +1145,29 @@ public final class PlaybackController {
         guard isPlaying, !neuralPaused,
               let nodeTime = audioPlayer.lastRenderTime,
               let playerTime = audioPlayer.playerTime(forNodeTime: nodeTime) else { return }
-        let elapsed = Double(playerTime.sampleTime) / max(playerTime.sampleRate, 1)
-        let absolute = neuralStartTime + elapsed
+        let rendered = Double(playerTime.sampleTime) / max(playerTime.sampleRate, 1)
+        // The player's clock counts audio handed to the hardware, which is
+        // heard `outputLatency` later (a few ms on the speaker, ~0.2 s over
+        // Bluetooth). The highlight itself reaches the screen a couple of
+        // frames after it is set, so it is set that much ahead.
+        let heard = rendered - outputLatency()
+        let absolute = neuralStartTime + heard + Self.highlightDisplayLead
         if let word = neuralWords.last(where: { $0.start <= absolute }) {
             setNeuralWord(word)
         }
+    }
+
+    /// Time from setting the word to it being drawn: the main-actor hop,
+    /// the SwiftUI update and the next display refresh.
+    private static let highlightDisplayLead: TimeInterval = 0.04
+
+    private func outputLatency() -> TimeInterval {
+        var latency = audioEngine.outputNode.presentationLatency
+        #if os(iOS)
+        let session = AVAudioSession.sharedInstance()
+        latency = max(latency, session.outputLatency + session.ioBufferDuration)
+        #endif
+        return max(0, min(latency, 0.5))
     }
 
     private func setNeuralWord(_ word: NarrationWordTiming) {

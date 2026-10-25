@@ -130,6 +130,7 @@ struct ReaderView: View {
         }
         .onChange(of: pdfPageIndex) { _, _ in saveProgress() }
         .sheet(isPresented: $showContents) {
+            Group {
             if book.format == .pdf {
                 ReaderContentsSheet(
                     bookTitle: book.title,
@@ -158,20 +159,20 @@ struct ReaderView: View {
                     onEditAnnotation: editAnnotation
                 )
             }
+            }
+            .readerPresentation(isDark: readerTheme.isDark)
         }
         .sheet(isPresented: $showAppearanceSheet) {
-            // Same rule as the popover: the palette follows the page's scheme.
-            let isDark = readerTheme.isDark
             ReaderAppearanceSheet(book: book)
-                .nodusPalette(isDark ? .dark : .light)
-                .tint((isDark ? NodusPalette.dark : NodusPalette.light).accent)
-                .environment(\.colorScheme, isDark ? .dark : .light)
+                .readerPresentation(isDark: readerTheme.isDark)
         }
         .sheet(isPresented: $showPlayer) {
             PlayerView().presentationDragIndicator(.hidden)
+                .readerPresentation(isDark: readerTheme.isDark)
         }
         .sheet(item: $annotationDraft) { draft in
             AnnotationEditorSheet(book: book, draft: draft)
+                .readerPresentation(isDark: readerTheme.isDark)
         }
         #if os(iOS)
         .statusBarHidden(true)
@@ -341,6 +342,7 @@ struct ReaderView: View {
                         showAppearanceSheet = true
                     }
                 }
+                .readerPresentation(isDark: theme.isDark)
                 #if os(iOS)
                 .presentationCompactAdaptation(.popover)
                 #endif

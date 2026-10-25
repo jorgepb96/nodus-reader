@@ -37,8 +37,18 @@ Both neural engines return mono Float PCM at 24 kHz.
 - A sentence is synthesized as a whole, then cached.
 - Starting from a tapped word schedules the cached sentence from that word's start
   time (a sliced PCM buffer), so no second synthesis is needed.
-- A 60 ms polling loop maps elapsed player sample time to the word timing and sets
-  `currentWordRange`/`currentWord`.
+- A per-frame (16 ms) loop maps the player's sample time to the word timing and sets
+  `currentWordRange`/`currentWord`. The player clock counts audio handed to the
+  hardware, which is heard `outputLatency` later (`AVAudioSession.outputLatency +
+  ioBufferDuration`, or the output node's presentation latency: a few ms on the
+  speaker, about 0.2 s over Bluetooth), so that is subtracted; the word is then set
+  40 ms ahead, the time a highlight takes to reach the screen (main-actor hop,
+  SwiftUI update, display refresh).
+- The neural engine's models leave memory when narration has not used them for
+  three minutes, at once when the app goes to the background without narrating or
+  on a memory warning, and the unselected engine is released when the engine
+  changes (Kokoro's MLX buffer cache is cleared too). The next sentence reloads the
+  engine.
 - At the end of a sentence, playback advances to the next sentence. Chapter changes,
   sleep-at-end-of-chapter and book completion use the same path as system voices.
 - Pause during synthesis cancels the synthesis; pause during playback pauses the
@@ -58,7 +68,10 @@ pure, unit-tested estimator:
 2. Split the PCM into 20 ms frames and compute RMS. Speech frames exceed
    `max(0.004, peak × 0.06)`.
 3. Collect silent runs of at least 35 ms between the first and last speech frame and
-   use their centres as pause candidates.
+   use their centres as pause candidates. A chosen pause places the next word's
+   start where the voice resumes (the pause's end), not at its centre, which used to
+   light the next word half a pause early and made the highlight drift; boundaries
+   are kept strictly increasing afterwards.
 4. Give each word a syllable weight (vowel groups) plus a punctuation bonus for
    clause/sentence endings, and interpolate expected boundaries over the speech span.
 5. Select the subset of pauses that best matches those expected boundaries with

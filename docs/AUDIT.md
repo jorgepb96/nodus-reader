@@ -491,3 +491,61 @@ check a **signed** build before uploading.
   UI 10 pass + 1 iPad-only skip; iPad UI 2 pass; macOS build succeeds.
 - Not translated: Info.plist document-type names, and names that come from data or
   the system (book titles, collection names, OS voice names such as "Default").
+
+## Read-along timing, model memory and Hugging Face sign-in (2026-10-25)
+
+- **Word highlight lagged the voice.** Causes found: the word clock was polled every
+  60 ms (up to 60 ms late); the player's sample time counts audio handed to the
+  hardware, not audio heard, and output latency was ignored (over Bluetooth the
+  highlight even ran early); the highlight reaches the screen a couple of frames
+  after it is set; and the aligner started each word in the middle of the preceding
+  pause. Now the clock ticks per frame, subtracts the output latency the system
+  reports, leads by 40 ms for drawing, and words start where the voice resumes.
+  The real-model test then showed that moving boundaries could break their order, so
+  they are kept increasing. Kokoro and Phonon do not expose word or phoneme timings
+  through their public APIs (Kokoro computes durations internally but its
+  `KokoroAudio` drops them), so timing remains an audio-based estimate.
+- **Models stayed in RAM for the whole session.** A loaded engine was only released on
+  uninstall or reinstall, and switching engines kept both. Now an engine is released
+  three minutes after narration stops, immediately when the app goes to the
+  background without narrating or on a memory warning (keeping only what playing
+  narration needs), and the unselected engine is released when the engine changes.
+  Kokoro's MLX buffer cache is cleared with it (MLX is linked directly, at the
+  version Kokoro resolves, for that call), only when a loaded Kokoro is released and
+  never in the Simulator: the UI tests caught that clearing the cache creates MLX's
+  Metal device, which aborts where MLX cannot run. Verified with real models on the Mac:
+  after synthesis, an idle release leaves no engine loaded and the next sentence
+  reloads it; unit test `voiceEnginesAreReleasedOnlyWhenNarrationIsIdle`.
+- **Sign in with Hugging Face** as an alternative to pasting a token: OAuth with PKCE
+  as a public client (no secret in the app), scopes `openid profile gated-repos`,
+  through the system authentication session; tokens and refresh tokens are kept in
+  the device Keychain and refreshed when they expire. The client id is a Client ID
+  Metadata Document in this repository (`oauth/huggingface-client.json`) served as
+  JSON by jsDelivr at the `hf-oauth-v1` tag, so no app is registered on anyone's
+  account; it must stay at that tag. Verified that Hugging Face accepts the client
+  (its sign-in page opens in the app) and that cancelling is silent; unit tests
+  cover PKCE (RFC 7636 vector), the callback checks and token decoding. The full
+  sign-in needs a real account and is left to TestFlight.
+
+## Reader sheets, popover labels and paragraph layout (2026-10-25)
+
+- **Mixed themes in sheets and the "Aa" popover.** The reader forces its own colour
+  scheme, but its sheets and popovers fell back to the app's. With a light app and a
+  dark reader (or the reverse), the contents sheet showed a dark header with a black
+  title over a white list with light text. Everything the reader presents (contents,
+  appearance sheet and popover, player, annotation editor, PDF original-page panel)
+  now goes through `readerPresentation(isDark:)`, which sets the palette, the SwiftUI
+  colour scheme and `preferredColorScheme` for the system chrome together; list rows
+  draw no background of their own. Checked on the simulator in Spanish with a light
+  app and a dark reader.
+- **Truncated reading-mode labels in Spanish.** Three segments share the popover's
+  width; "Por páginas / Desplazar en vertical / Desplazar en horizontal" became
+  "Páginas / Vertical / Horizontal", and the page-turn styles "Curva / Deslizar /
+  Vertical". VoiceOver keeps the full descriptions.
+- **Paragraph layout.** Paragraphs no longer have space between them and open with a
+  first-line indent (1.5 × the font size); a chapter's first paragraph, short
+  heading-like lines and the paragraph after them start flush. The extracted text
+  keeps its blank line between paragraphs (chapter offsets for annotations, narration
+  and bookmarks do not change), drawn with no height. PDF Intelligent Reading body
+  blocks are indented too; lists and quotes are not. Test
+  `readerParagraphsAreIndentedWithoutBlankLines`.

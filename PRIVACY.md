@@ -10,7 +10,7 @@ Nodus Reader is local-first. Nodus Research does not operate a server for books,
 - **Library metadata** — title, author, language, publication data, description, file hash, covers, collections, reading status, progress and per-book preferences.
 - **Reading data** — position, bookmarks, highlights, notes and annotations.
 - **Narration preferences** — voice identifiers and speed. Audio is generated locally and is not uploaded. Sentences you listen to may be cached as audio on this device.
-- **Optional Hugging Face token** — only if you choose to save one; stored in the device Keychain.
+- **Optional Hugging Face sign-in or token** — only if you choose to sign in or save a token; stored in the device Keychain.
 - **Custom covers** — an image you choose from Photos is copied into the app's cover directory.
 
 All of the above is stored locally by default. iCloud sync is optional and off by default. When you enable it, the app uses your personal iCloud account as described below.
@@ -48,7 +48,7 @@ The following will never be uploaded: neural model weights, voice embeddings, do
 
 ## Network access
 
-The app accesses the network only for explicit model downloads from pinned Hugging Face revisions, for an optional token verification you request, when you share a web link to Nodus Reader (the Share Extension downloads that page or file from its own site so it can be imported), and, when sync is enabled, Apple's CloudKit/iCloud services. It does not send documents, audio, reading data or telemetry to Nodus Research. The About/Privacy links open GitHub in the system browser.
+The app accesses the network only for explicit model downloads from pinned Hugging Face revisions, for an optional Hugging Face sign-in or token verification you request (sign-in opens Hugging Face's own page in the system sign-in sheet; Nodus Reader never sees your password and receives only an access token limited to your public profile and the gated models you accepted), when you share a web link to Nodus Reader (the Share Extension downloads that page or file from its own site so it can be imported), and, when sync is enabled, Apple's CloudKit/iCloud services. It does not send documents, audio, reading data or telemetry to Nodus Research. The About/Privacy links open GitHub in the system browser.
 
 ## Children and sensitive data
 

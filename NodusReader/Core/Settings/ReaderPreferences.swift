@@ -40,7 +40,7 @@ public enum ReadingFlow: String, CaseIterable, Codable, Identifiable, Sendable {
 
     public var accessibilityLabel: String {
         switch self {
-        case .paged: "Paged"
+        case .paged: String(localized: "Paged")
         case .scrollVertical: String(localized: "Continuous vertical scroll")
         case .scrollHorizontal: String(localized: "Continuous horizontal scroll")
         }

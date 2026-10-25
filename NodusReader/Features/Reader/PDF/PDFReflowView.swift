@@ -156,7 +156,7 @@ struct PDFReflowView: View {
                         }
                 }
             }
-            .preferredColorScheme(theme.isDark ? .dark : .light)
+            .readerPresentation(isDark: theme.isDark)
         }
     }
 
@@ -340,11 +340,11 @@ struct PDFReflowView: View {
             attributes[.paragraphStyle] = NSParagraphStyle.default
         case .quote:
             attributes[.foregroundColor] = PlatformColor(theme.muted)
-            let paragraph = (style.bodyParagraphStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
+            let paragraph = (style.flushParagraphStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
             paragraph.alignment = .natural
             attributes[.paragraphStyle] = paragraph
         case .list:
-            let paragraph = (style.bodyParagraphStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
+            let paragraph = (style.flushParagraphStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
             paragraph.alignment = .natural
             attributes[.paragraphStyle] = paragraph
         case .body, .figure, .tableImage:

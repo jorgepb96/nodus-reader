@@ -3,6 +3,11 @@ import DesignSystem
 import Foundation
 import SwiftData
 import Testing
+#if canImport(UIKit)
+import UIKit
+#else
+import AppKit
+#endif
 @testable import Nodus_Reader
 
 // MARK: - Fixtures
@@ -306,6 +311,11 @@ func wordAlignmentMatchesTextRangesAndMonotonicTimes() throws {
         #expect(timings[index].start >= timings[index - 1].start)
     }
     #expect(timings.allSatisfy { $0.end > $0.start })
+    // Each word starts where the voice resumes (20 ms analysis frames), not
+    // in the middle of the pause before it.
+    for (word, onset) in zip(timings.dropFirst(), [0.35, 0.65, 0.95]) {
+        #expect(abs(word.start - onset) <= 0.015)
+    }
 }
 
 @Test
@@ -989,6 +999,107 @@ func exportedPDFNotesNamePages() async throws {
     #expect(!export.contains("— Chapter"))
 }
 
+// MARK: - Reader paragraph layout
+
+@Test @MainActor
+func readerParagraphsAreIndentedWithoutBlankLines() throws {
+    let style = ReaderPageStyle(theme: ThemeManager().readerTheme(colorScheme: .light), typography: ReaderTypography())
+    let text = "Resumen\n\nThe first paragraph after a heading.\n\nA second paragraph, indented."
+    let body = style.bodyText(text)
+    let ns = text as NSString
+    // Offsets never move: annotations and narration use the chapter text.
+    #expect(body.string == text)
+
+    func paragraphStyle(at index: Int) -> NSParagraphStyle? {
+        body.attribute(.paragraphStyle, at: index, effectiveRange: nil) as? NSParagraphStyle
+    }
+    // The blank line between paragraphs is drawn with no height.
+    let blank = ns.range(of: "\n\n").location + 1
+    #expect(try #require(paragraphStyle(at: blank)).maximumLineHeight < 0.1)
+    // Heading and the paragraph after it start flush; the next one is indented.
+    #expect(try #require(paragraphStyle(at: 0)).firstLineHeadIndent == 0)
+    #expect(try #require(paragraphStyle(at: ns.range(of: "The first").location)).firstLineHeadIndent == 0)
+    #expect(try #require(paragraphStyle(at: ns.range(of: "A second").location)).firstLineHeadIndent > 0)
+    #expect(try #require(paragraphStyle(at: ns.range(of: "A second").location)).paragraphSpacing == 0)
+}
+
+// MARK: - Hugging Face sign-in
+
+@Test
+func huggingFaceOAuthUsesPKCEAndChecksTheCallback() throws {
+    // RFC 7636 appendix B test vector.
+    let request = HuggingFaceOAuth.Request(verifier: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk", state: "s123")
+    #expect(request.challenge == "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
+
+    let items = URLComponents(url: request.authorizeURL, resolvingAgainstBaseURL: false)?.queryItems ?? []
+    func value(_ name: String) -> String? { items.first { $0.name == name }?.value }
+    #expect(request.authorizeURL.host == "huggingface.co")
+    #expect(value("client_id") == HuggingFaceOAuth.clientID)
+    #expect(value("redirect_uri") == "nodusreader://oauth/huggingface")
+    #expect(value("code_challenge_method") == "S256")
+    #expect(value("code_challenge") == request.challenge)
+    #expect(value("state") == "s123")
+    #expect(value("scope") == "openid profile gated-repos")
+    #expect(value("client_secret") == nil)
+
+    let good = URL(string: "nodusreader://oauth/huggingface?code=abc&state=s123")!
+    #expect(try request.code(from: good) == "abc")
+    #expect(throws: HuggingFaceOAuthError.stateMismatch) {
+        try request.code(from: URL(string: "nodusreader://oauth/huggingface?code=abc&state=other")!)
+    }
+    #expect(throws: HuggingFaceOAuthError.denied("access_denied")) {
+        try request.code(from: URL(string: "nodusreader://oauth/huggingface?error=access_denied&state=s123")!)
+    }
+
+    // The token request carries the verifier and no secret.
+    let body = String(data: request.tokenRequest(code: "abc").httpBody ?? Data(), encoding: .utf8) ?? ""
+    #expect(body.contains("grant_type=authorization_code"))
+    #expect(body.contains("code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"))
+    #expect(!body.contains("secret"))
+}
+
+@Test
+func huggingFaceTokenResponseBecomesARefreshableSession() throws {
+    let now = Date(timeIntervalSince1970: 1_000_000)
+    let json = Data(#"{"access_token":"hf_oauth_x","refresh_token":"r1","expires_in":3600,"token_type":"bearer"}"#.utf8)
+    let session = try HuggingFaceOAuth.session(fromTokenResponse: json, now: now)
+    #expect(session.accessToken == "hf_oauth_x")
+    #expect(session.refreshToken == "r1")
+    #expect(!session.isExpired(now: now))
+    #expect(session.isExpired(now: now.addingTimeInterval(3_590)))
+
+    // A refresh response without a new refresh token keeps the old one.
+    let refreshed = try HuggingFaceOAuth.session(
+        fromTokenResponse: Data(#"{"access_token":"hf_oauth_y","expires_in":3600}"#.utf8),
+        previous: HuggingFaceOAuth.Session(accessToken: "hf_oauth_x", refreshToken: "r1", expiresAt: now, account: "ada"),
+        now: now
+    )
+    #expect(refreshed.refreshToken == "r1")
+    #expect(refreshed.account == "ada")
+    #expect(throws: HuggingFaceOAuthError.invalidResponse) {
+        try HuggingFaceOAuth.session(fromTokenResponse: Data("{}".utf8))
+    }
+}
+
+// MARK: - Voice engine memory
+
+@Test @MainActor
+func voiceEnginesAreReleasedOnlyWhenNarrationIsIdle() throws {
+    let suite = "nodus.tests.engine-memory.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+
+    // Playing narration keeps its engine in memory.
+    manager.setNarrationInUse(true)
+    #expect(!manager.releaseEnginesIfIdle())
+    // Once it stops, nothing holds the engine; it can be released.
+    manager.setNarrationInUse(false)
+    #expect(manager.releaseEnginesIfIdle())
+    #expect(manager.loadedEngines.isEmpty)
+    #expect(ModelManager.idleUnloadDelay <= .seconds(300))
+}
+
 // MARK: - Model downloads (opt-in: downloads about 500 MB)
 
 /// End-to-end check of every downloadable engine on this machine: the same
@@ -1052,6 +1163,15 @@ func modelDownloadsSynthesizeAndAlignWithText() async throws {
         #expect(timings.first.map { $0.start >= 0 } == true)
         #expect(timings.last.map { abs($0.end - duration) < 0.05 } == true)
         }
+
+        // Memory: idle narration releases the engine, and the next sentence
+        // loads it again without user action.
+        #expect(manager.loadedEngines.contains(model.engine))
+        #expect(manager.releaseEnginesIfIdle())
+        #expect(manager.loadedEngines.isEmpty)
+        let reloaded = try await manager.synthesize(sentence, voiceID: voice.id, engine: model.engine)
+        #expect(reloaded.samples.count > 0)
+        #expect(manager.loadedEngines == [model.engine])
     }
 }
 

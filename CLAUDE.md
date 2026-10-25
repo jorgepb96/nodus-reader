@@ -25,7 +25,11 @@ Non-negotiable principles:
 - `Modules/PhononTTS` vendors the Apache-2.0/MIT `ptts` 0.4.1 Swift package; its
   `PhononCore` binary target is downloaded from the pinned GitHub release.
 - Swift packages: ZIPFoundation (MIT), KokoroTTS (Apache-2.0, pinned revision),
-  MisakiSwift/MLX (Apache-2.0/MIT) and NemoTextProcessing (Apache-2.0 binary).
+  MisakiSwift/MLX (Apache-2.0/MIT) and NemoTextProcessing (Apache-2.0 binary). MLX is
+  also linked directly (same version) only to clear its cache when engines unload.
+- Hugging Face sign-in is OAuth with PKCE; its client id is the metadata document
+  `oauth/huggingface-client.json` served by jsDelivr at tag `hf-oauth-v1`. Do not move
+  or edit it without publishing a new tag and updating `HuggingFaceOAuth.clientID`.
 
 ## Commands
 
@@ -93,7 +97,7 @@ See `docs/ROADMAP.md`, `docs/ICLOUD.md` and `docs/NARRATION_SYNC.md`.
 
 ## Verification
 
-- 42 unit/integration tests cover EPUB/PDF import (chapter splitting at contents
+- 46 unit/integration tests cover EPUB/PDF import (chapter splitting at contents
   anchors, paragraph joining, folder packages, DRM detection), duplicate detection, collections,
   themes (including reader-follows-app), text utilities, pause-based word alignment,
   page-boundary highlight clipping, path-traversal defenses, language-aware voice

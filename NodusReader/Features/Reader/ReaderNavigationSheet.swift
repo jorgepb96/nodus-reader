@@ -226,6 +226,7 @@ struct ReaderNavigationSheet: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .listRowBackground(Color.clear)
             }
         }
         .listStyle(.plain)
@@ -270,6 +271,7 @@ struct ReaderNavigationSheet: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .listRowBackground(Color.clear)
                         .swipeActions {
                             Button("Delete", role: .destructive) {
                                 library.deleteBookmark(bookmark)
@@ -330,6 +332,7 @@ struct ReaderNavigationSheet: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .listRowBackground(Color.clear)
                         .swipeActions {
                             Button("Delete", role: .destructive) {
                                 library.deleteAnnotation(annotation)
