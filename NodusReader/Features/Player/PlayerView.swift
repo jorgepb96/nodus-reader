@@ -563,19 +563,16 @@ struct VoicePickerSheet: View {
     }
 
     private var availableLanguages: [String] {
-        Array(Set(voices.voices.map(\.language))).sorted {
-            voices.languageName(for: $0).localizedStandardCompare(voices.languageName(for: $1)) == .orderedAscending
-        }
+        VoiceCatalog.baseLanguages(of: voices.voices)
     }
 
     private var languageLabel: String {
         languageFilter.map { voices.languageName(for: $0) } ?? "All languages"
     }
 
+    /// One section per language; regional variants are shown on each row.
     private var groupedLanguages: [String] {
-        Array(Set(filtered.map(\.language))).sorted {
-            voices.languageName(for: $0).localizedStandardCompare(voices.languageName(for: $1)) == .orderedAscending
-        }
+        VoiceCatalog.baseLanguages(of: filtered)
     }
 
     var body: some View {
@@ -621,7 +618,7 @@ struct VoicePickerSheet: View {
 
                 ForEach(groupedLanguages, id: \.self) { language in
                     Section(voices.languageName(for: language)) {
-                        ForEach(filtered.filter { $0.language == language }) { voice in
+                        ForEach(filtered.filter { VoiceCatalog.languageCode($0.language) == language }) { voice in
                             Button {
                                 playback.setVoice(voice)
                                 dismiss()
@@ -630,7 +627,7 @@ struct VoicePickerSheet: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(voice.name)
                                             .foregroundStyle(palette.text)
-                                        Text("\(voice.engineLabel) · \(voice.qualityLabel)")
+                                        Text("\(voice.engineLabel) · \(VoiceCatalog.variantName(for: voice.language)) · \(voice.qualityLabel)")
                                             .font(.caption)
                                             .foregroundStyle(palette.muted)
                                     }

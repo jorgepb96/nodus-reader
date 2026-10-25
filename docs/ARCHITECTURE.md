@@ -172,7 +172,7 @@ that mutates the library.
 ## Platform roots
 
 - `RootView` applies the resolved app palette, preferred colour scheme, tint, file importer, alerts, toast, Open URL and drop destination.
-- `PhoneRootView`: native `TabView` with Home/Library/Collections/Settings and a search-role tab; mini player via `safeAreaInset`; sheets for the player.
+- `PhoneRootView`: native `TabView` with Home, Library and Settings (gear, last). Library shows collections as folders above all books, and both Library and each collection have their own search field; mini player via `safeAreaInset`; sheets for the player.
 - `PadRootView`: `NavigationSplitView` with brand, a visible search field, smart lists and a recursive collection outline; content `NavigationStack`; sheet for Settings.
 - `MacRootView`: inset sidebar, native table/grid, inspector, toolbar search/import/view controls, bottom player bar, Settings scene, menu commands and shortcuts. Opening a book opens a dedicated `ReaderWindowHost` window with `ReaderView`, which can be taken full screen with the standard macOS control.
 - `CollectionOutlineRow` is shared by iPad and Mac.

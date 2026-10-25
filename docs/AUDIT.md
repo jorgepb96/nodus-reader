@@ -394,3 +394,21 @@ the store with `cloudKitDatabase: .none` and `groupContainer: .none` (sync is
 `localStoreNeverUsesSwiftDataCloudKitOrTheAppGroup`; verified by relaunching the
 signed Release build; shipped as build 0.1.0 (2). Lesson recorded in `docs/BUILD.md`:
 check a **signed** build before uploading.
+
+## Feedback from the first TestFlight build (2026-10-25)
+
+- **Kokoro showed one voice.** The hosted starter bundle installs only `af_heart`;
+  the pinned repository publishes 28 American/British English voices. They are now
+  downloaded from the same pinned revision, each checked against its published
+  SHA-256, added to the local runtime manifest (the SDK only accepts listed voices)
+  and published as installed voices. Existing installs add them once. Verified on the
+  Mac: 28 voices installed and synthesis with `bm_george` aligns with the text. Phonon
+  already exposed all 9 voices it publishes.
+- **System voices repeated languages.** Language menus were built from full codes
+  (`en-US`, `en-GB`, …), each shown as "English". They now list base languages once;
+  each voice row shows its variant ("English (United Kingdom)").
+- **Overlapping toolbar buttons.** Hand-drawn circles inside the iOS 26 glass toolbar
+  capsule; buttons are now plain icons and the system draws the capsule.
+- **Tabs and Library.** iPhone tabs are Home, Library, Settings (gear, last); Library
+  shows collections as folders above the books; Library and collections each have a
+  search field. See `docs/DESIGN_FIDELITY.md`.

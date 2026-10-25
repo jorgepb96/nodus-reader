@@ -33,12 +33,16 @@ final class NodusReaderUITests: XCTestCase {
         dismissPopover(in: app)
         app.buttons["Back to library"].tap()
 
-        tapTab("Collections", in: app)
+        // Collections live in Library as folders.
         XCTAssertTrue(app.staticTexts["Collections"].firstMatch.waitForExistence(timeout: 10))
         snap("iPhone-05-Collections")
-        app.staticTexts["History"].firstMatch.tap()
+        let history = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'History'")).firstMatch
+        XCTAssertTrue(history.waitForExistence(timeout: 8))
+        history.tap()
         XCTAssertTrue(app.staticTexts["In History"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.textFields["Search this collection"].firstMatch.exists)
         snap("iPhone-06-Collection")
+        app.navigationBars.buttons.firstMatch.tap()
 
         tapTab("Settings", in: app)
         XCTAssertTrue(app.staticTexts["Settings"].firstMatch.waitForExistence(timeout: 10))
@@ -62,13 +66,16 @@ final class NodusReaderUITests: XCTestCase {
         sleep(1)
         snap("iPhone-10-Models")
 
-        tapTab("Search", in: app)
-        let field = app.searchFields.firstMatch
+        // Search lives in Library (no separate Search tab).
+        tapTab("Library", in: app)
+        let field = app.textFields["Search library"].firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 8))
         field.tap()
         field.typeText("Ishmael")
-        sleep(1)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 8))
         snap("iPhone-11-Search")
+        XCTAssertFalse(app.tabBars.buttons["Collections"].exists)
+        XCTAssertFalse(app.tabBars.buttons["Search"].exists)
     }
 
     func testPadScreens() throws {

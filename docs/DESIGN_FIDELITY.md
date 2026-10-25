@@ -68,6 +68,18 @@ presents (popover, sheets) takes the light or dark palette that matches the page
 system controls are never drawn dark-on-dark or light-on-light. Interface labels use
 words and SF Symbols only, never emoji.
 
+## iPhone navigation and toolbar (requested change, 2026-10-25)
+
+At the product owner's request the iPhone tab bar is **Home, Library, Settings**
+(Settings uses a gear and is last). There is no Collections tab and no search tab:
+Library shows collections as **folders** above all books (folder tiles in grid view,
+rows in list view; tap to open, with breadcrumbs and unlimited depth) and has a
+search field that also matches collection names; each collection has its own search
+field. The grid/list switch moved next to Sort so the wordmark fits. iPad and Mac
+keep the sidebar layout from `design/`. Toolbar buttons no longer draw their own
+circle: on iOS 26 the system glass capsule already surrounds them, and the hand-drawn
+circle produced the overlapping look. `design/` was not modified.
+
 ## Accessibility
 
 - Icon-only controls have labels (`Import documents`, `Appearance and typography`, `Contents`, `Previous/Next sentence`, etc.).

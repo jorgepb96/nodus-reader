@@ -511,3 +511,70 @@ extension View {
         #endif
     }
 }
+
+// MARK: - Search field
+
+/// The capsule search field used by the Library and by each collection.
+struct LibrarySearchField: View {
+    @Environment(\.nodusPalette) private var palette
+    @Binding var text: String
+    var prompt: String
+    var accessibilityLabel: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 17))
+                .foregroundStyle(palette.muted)
+            TextField(prompt, text: $text)
+                .textFieldStyle(.plain)
+                .font(.subheadline)
+                .foregroundStyle(palette.text)
+                .accessibilityLabel(accessibilityLabel)
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(palette.muted)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 44)
+        .background(palette.panel, in: Capsule())
+        .overlay(Capsule().stroke(palette.line, lineWidth: 1))
+    }
+}
+
+// MARK: - Collection folders
+
+/// A collection shown as a folder tile in grid layouts.
+struct CollectionFolderTile: View {
+    @Environment(\.nodusPalette) private var palette
+    let collection: LibraryCollection
+    let bookCount: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: "folder.fill")
+                .font(.system(size: 30))
+                .foregroundStyle(palette.accent)
+                .frame(maxWidth: .infinity, minHeight: 64)
+                .background(palette.selection, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            Text(collection.name)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(palette.text)
+                .lineLimit(2)
+            Text(bookCount == 1 ? "1 book" : "\(bookCount) books")
+                .font(.caption2)
+                .foregroundStyle(palette.muted)
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(collection.name), collection, \(bookCount == 1 ? "1 book" : "\(bookCount) books")")
+    }
+}

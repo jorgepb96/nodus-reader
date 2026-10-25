@@ -70,9 +70,7 @@ struct HomeView: View {
                     Image(systemName: "plus")
                         .font(.system(size: 17, weight: .medium))
                         .foregroundStyle(palette.text)
-                        .frame(width: 44, height: 44)
-                        .background(palette.panel, in: Circle())
-                        .overlay(Circle().stroke(palette.line, lineWidth: 1))
+                        .frame(minWidth: 44, minHeight: 44)
                 }
                 .accessibilityLabel("Import documents")
             }

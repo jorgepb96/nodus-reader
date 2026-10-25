@@ -14,7 +14,7 @@ limitations.
 
 - [x] One multiplatform target for iOS/iPadOS/macOS.
 - [x] `DesignSystem` package with tokens, themes, typography, marks and shared controls.
-- [x] Adaptive navigation: `TabView` + search role on iPhone, `NavigationSplitView` on iPad and Mac.
+- [x] Adaptive navigation: `TabView` (Home, Library with collection folders, Settings) on iPhone, `NavigationSplitView` on iPad and Mac.
 - [x] Home, Library, Collections, Search and Settings.
 - [x] EPUB, PDF, TXT, Markdown, HTML and RTF import; duplicate detection; covers; custom covers.
 - [x] Hierarchical collections, multiple memberships and manual order.
@@ -43,7 +43,7 @@ limitations.
 
 - [x] System voices through `AVSpeechSynthesizer` with native word ranges.
 - [x] Kokoro 82M Core ML through the pinned `mattmireles/kokoro-coreml` SDK
-      (English, starter voice `af_heart`).
+      (American and British English, 28 voices from the pinned repository).
 - [x] Phonon 31M Core ML through the pinned `ptts` 0.4.1 Swift package and the
       `mosiah/phonon-31m-en-coreml` Apache-2.0 bundle (English, nine voices).
 - [x] Sentence and word highlighting for neural engines using pause detection and
@@ -84,7 +84,6 @@ limitations.
 |---|---|---|
 | Kokoro languages | English raw text only | The pinned `KokoroTTS` SDK ships English Misaki phonemization in V1; Spanish voice embeddings exist but are rejected |
 | Kokoro in Simulator | Not offered | The SDK's phonemizer uses MLX, which requires a Metal device; the Simulator aborts in MLX |
-| Kokoro bundle | One voice (`af_heart`) | The pinned hosted starter bundle contains one voice; a full multi-voice bundle needs a separate hosted manifest |
 | Phonon Spanish/Multilingual | Listed as unavailable, no download | The CC BY-NC 40M checkpoints are gated and no Core ML bundle is published; Nodus Reader does not offer downloads it cannot run |
 | iCloud live validation | Build must be signed with the `iCloud.ai.nodus.reader` container | Unsigned builds deliberately report iCloud unavailable instead of crashing |
 | iCloud conflict UI | Scalar last-writer-wins with timestamps; concurrent annotation edits keep the newer record | A recoverable side-by-side conflict UI is still future work |

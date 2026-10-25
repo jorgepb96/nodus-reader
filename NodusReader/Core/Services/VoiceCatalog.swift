@@ -160,8 +160,14 @@ public final class VoiceCatalog {
         return fallbackVoice()
     }
 
+    /// One entry per language (`en`, `es`, `zh`…), not per regional variant:
+    /// `en-US`, `en-GB` and `en-AU` would otherwise all appear as "English".
     public var languages: [String] {
-        Array(Set(voices.map(\.language))).sorted {
+        Self.baseLanguages(of: voices)
+    }
+
+    public static func baseLanguages(of voices: [Voice]) -> [String] {
+        Array(Set(voices.compactMap { languageCode($0.language) })).sorted {
             (Locale.current.localizedString(forLanguageCode: $0) ?? $0)
                 .localizedStandardCompare(Locale.current.localizedString(forLanguageCode: $1) ?? $1) == .orderedAscending
         }
@@ -169,6 +175,15 @@ public final class VoiceCatalog {
 
     public func languageName(for code: String) -> String {
         Locale.current.localizedString(forLanguageCode: code) ?? code
+    }
+
+    /// "English (United Kingdom)" for `en-GB`; the plain language name when
+    /// the code has no region.
+    public static func variantName(for code: String) -> String {
+        let identifier = code.replacingOccurrences(of: "-", with: "_")
+        return Locale.current.localizedString(forIdentifier: identifier)
+            ?? Locale.current.localizedString(forLanguageCode: code)
+            ?? code
     }
 
     public var defaultVoice: Voice? {
@@ -186,9 +201,12 @@ public final class VoiceCatalog {
             ?? voices.first { $0.isSystem }
     }
 
+    /// The base language of a BCP-47 or POSIX code: `en` for `en-US`/`en_GB`,
+    /// `yue` for `yue-HK`.
     public static func languageCode(_ code: String?) -> String? {
-        guard let code, !code.isEmpty else { return nil }
-        return String(code.prefix(2)).lowercased()
+        guard let code, !code.isEmpty,
+              let base = code.split(whereSeparator: { $0 == "-" || $0 == "_" }).first else { return nil }
+        return base.lowercased()
     }
 
     public func voices(matchingLanguage code: String?) -> [Voice] {

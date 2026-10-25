@@ -254,7 +254,7 @@ struct VoicesView: View {
                                 .background(palette.selection, in: RoundedRectangle(cornerRadius: 5))
                         }
                     }
-                    Text("\(voice.engineLabel) · \(voice.languageName) · \(voice.qualityLabel)")
+                    Text("\(voice.engineLabel) · \(VoiceCatalog.variantName(for: voice.language)) · \(voice.qualityLabel)")
                         .font(.caption)
                         .foregroundStyle(palette.muted)
                         .lineLimit(1)

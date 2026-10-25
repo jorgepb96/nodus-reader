@@ -40,7 +40,8 @@ The design source of truth is [`design/DESIGN.md`](design/DESIGN.md) and [`desig
 
 - **Kokoro is English-only and Simulator-unavailable.** The pinned `KokoroTTS` SDK
   ships English Misaki phonemization, and its MLX phonemizer needs a Metal device.
-  The hosted starter bundle contains one voice (`af_heart`).
+  All 28 American and British English voices of the pinned bundle are installed
+  (the starter voice plus 27 voice files verified by SHA-256).
 - **Phonon offers English 31M only.** The Spanish and multilingual 40M checkpoints are
   gated CC BY-NC models without a published Core ML bundle, so they are listed as
   unavailable and never downloaded. Spanish system voices remain available.

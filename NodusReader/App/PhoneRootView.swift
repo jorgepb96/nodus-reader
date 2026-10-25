@@ -33,21 +33,14 @@ struct PhoneRootView: View {
             Tab("Home", systemImage: "house", value: AppTab.home) {
                 tabScreen { HomeView() }
             }
-            Tab("Library", systemImage: "square.grid.2x2", value: AppTab.library) {
+            // Library holds both books and collections (as folders), each
+            // with its own search field, so there is no separate Collections
+            // or Search tab on iPhone.
+            Tab("Library", systemImage: "books.vertical", value: AppTab.library) {
                 tabScreen { LibraryView() }
             }
-            Tab("Collections", systemImage: "folder", value: AppTab.collections) {
-                tabScreen { CollectionsView() }
-            }
-            Tab("Settings", systemImage: "slider.horizontal.3", value: AppTab.settings) {
+            Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
                 tabScreen { SettingsView() }
-            }
-            Tab(value: AppTab.search, role: .search) {
-                NavigationStack {
-                    SearchView()
-                }
-            } label: {
-                Label("Search", systemImage: "magnifyingglass")
             }
         }
     }

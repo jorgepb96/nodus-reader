@@ -125,14 +125,12 @@ final class ModelManager {
             id: "kokoro-82m",
             engine: .kokoro,
             name: "Kokoro 82M",
-            detail: "Expressive English narration on the Neural Engine, GPU and CPU.",
+            detail: "Expressive American and British English narration with 28 voices.",
             language: "English",
             sizeText: "About 210 MB download",
             license: "Apache-2.0",
             source: URL(string: "https://huggingface.co/mattmireles/kokoro-coreml")!,
-            voices: [
-                Voice(id: "kokoro:af_heart", name: "Heart", language: "en-US", engine: .kokoro)
-            ],
+            voices: ModelManager.kokoroVoices,
             availability: {
                 #if targetEnvironment(simulator)
                 .unavailable("Kokoro's English phonemizer uses MLX, which needs a Metal GPU. The Simulator does not provide one. Install Kokoro on an iPhone, iPad or Mac; Phonon and system voices work in the Simulator.")
@@ -407,6 +405,8 @@ final class ModelManager {
                     }
                 }
                 try Task.checkCancellation()
+                _ = await Self.installMissingKokoroVoices()
+                try Task.checkCancellation()
                 Self.excludeFromBackup(Self.kokoroCacheDirectory)
                 states[model.id] = .loading
                 let loaded = try await KokoroTTS.load(resources: resources)
@@ -580,6 +580,11 @@ final class ModelManager {
         case .kokoro:
             #if !targetEnvironment(simulator)
             guard kokoro == nil else { return }
+            // Bundles installed before the full voice catalogue: add the
+            // missing voices once (offline, this just finds nothing to add).
+            if Self.installedKokoroVoiceIDs().count < Self.kokoroVoiceCatalog.count {
+                _ = await Self.installMissingKokoroVoices()
+            }
             do {
                 // Load the already-verified local bundle. The hosted provider
                 // would fetch HostedManifest.json on every launch, breaking
@@ -628,12 +633,16 @@ final class ModelManager {
             voices.setNeuralVoices([])
             return
         }
-        let neural = model.voices.map { voice in
+        let installedKokoro = model.engine == .kokoro ? Self.installedKokoroVoiceIDs() : []
+        let available = model.engine == .kokoro
+            ? model.voices.filter { installedKokoro.contains(String($0.id.dropFirst("kokoro:".count))) }
+            : model.voices
+        let neural = available.map { voice in
             VoiceCatalog.Voice(
                 id: voice.id,
                 name: voice.name,
                 language: voice.language,
-                languageName: Locale.current.localizedString(forLanguageCode: voice.language) ?? "English",
+                languageName: VoiceCatalog.variantName(for: voice.language),
                 quality: 3,
                 gender: nil,
                 engineRaw: voice.engine.rawValue
@@ -662,6 +671,115 @@ final class ModelManager {
             total += Int64(values.fileSize ?? 0)
         }
         return total
+    }
+
+    // MARK: Kokoro voices
+
+    /// Every English voice embedding in the pinned Kokoro repository, with the
+    /// SHA-256 Hugging Face publishes for it (its LFS object id). The hosted
+    /// starter bundle installs only `af_heart`; the others are fetched from the
+    /// same pinned revision, verified and added to the local runtime manifest.
+    /// `a`/`b` = American/British, `f`/`m` = female/male voice.
+    nonisolated static let kokoroVoiceCatalog: [(id: String, sha256: String)] = [
+        ("af_alloy", "c4a6b876047fd7fb472edf4ebd63cfac7c3b958a7cae7c106e8f038ca6308c45"),
+        ("af_aoede", "4a004c33430762e2461eedb2013fad808ef4ab3121f5300f554476caf58d8361"),
+        ("af_bella", "f69d836209b78eb8c66e75e3cda491e26ea838a3674257e9d4e5703cbaf55c8b"),
+        ("af_heart", "d583ccff3cdca2f7fae535cb998ac07e9fcb90f09737b9a41fa2734ec44a8f0b"),
+        ("af_jessica", "a240a5e3c15b43563d6e923bdca8ef5613a23471d9b77653694012435df23bd8"),
+        ("af_kore", "9be5221b6a941c04b561959b8ff0b06e809444dcc4ab7e75a7b23606f691819e"),
+        ("af_nicole", "cd2191ab31b914ed7b318416b0e4440fdf392ddad9106a060819aa600a64f59a"),
+        ("af_nova", "18778272caa0d0eebaea251c35fd635f038434f9eee5e691d02a174bd328414f"),
+        ("af_river", "00a2bcf82b1d86e8f19902ede58c65ccf6c0e43b44b7d74fad54e5d8933c9c30"),
+        ("af_sarah", "4409fbc125afabacc615d94db5398d847006a737b0247d6892b7a9a0007a2f0a"),
+        ("af_sky", "4435255c9744f3f31659e0d714ab7689bf65d9e77ec1cce060f083912614f0b9"),
+        ("am_adam", "162b035ed91cfc48b6046982184c645f72edcdd1b82843347f605d7bf7b15716"),
+        ("am_echo", "3968b92c3c4cd1c4416dbded36c13eaa388a90d5788d02a13e4d781f5f8cf3c3"),
+        ("am_eric", "e8b5be17edd1e3636901ce7598baafe2dc8dd8ff707a0c23bf9e461add7e2832"),
+        ("am_fenrir", "c27989f741f7ee34d273a39d8a595cc0837d35f5ced9a29b7cc162614616df43"),
+        ("am_liam", "52403be32fd047c6a44517cb0bcd6b134f2a18baa73e70ef41651e0eab921ade"),
+        ("am_michael", "1d1f21dd8da39c30705cd4c75d039d265e9bc4a2a93ed09bc9e1b1225eb95ba1"),
+        ("am_onyx", "da5d135b424164916d75a68ffb4c2abce3d7d5ccc82dd1ee6cf447ce286145e6"),
+        ("am_puck", "fcf73c989033e9233e0b98713eca600c8c74dcc1614b37009d5450ff4a2274a0"),
+        ("am_santa", "61150cf726ab6c5ed7a99f90a304f91f5a72c00c592e89ec94e5df11c319227a"),
+        ("bf_alice", "08afa6ba24da61ea5e8efa139e5aadc938d83f0a6da5a900adaf763ac1da5573"),
+        ("bf_emma", "669fe0647f9dd04fcab92f1439a40eeb4c8b4ab1f82e4996fe3d918ce4a63b73"),
+        ("bf_isabella", "3754352c4aaa46d17f27654ab7518d65b62ad6163a0f55a5f4330c2da2c4e94f"),
+        ("bf_lily", "5e0ee32ebe64a467124976b14e69590746f1c4ce41a12b587a50c862edfea335"),
+        ("bm_daniel", "6b3194bbceffb746733cbc22c8f593dd44e401a71d53895a2dca891bc595a1e8"),
+        ("bm_fable", "f889083196807b4adb15e9204252165f503b8d33d3982e681c52443c49d798f1"),
+        ("bm_george", "c4b235a4c1f2cd3b939fed08b899ce9385638b763f7b73a59616c4fc9bd6c9bc"),
+        ("bm_lewis", "b8f671cef828c30e66fdf0b0756a76bba58f6bb3398cbbf27058642acbcedb97"),
+
+    ]
+
+    nonisolated static let kokoroVoiceBase = URL(string:
+        "https://huggingface.co/mattmireles/kokoro-coreml/resolve/034f7741bf938fd6b4b9c75c22bc72cd795f908a/voices/"
+    )!
+
+    private static let kokoroVoices: [Voice] = kokoroVoiceCatalog.map { entry in
+        let name = entry.id.split(separator: "_").last.map { $0.prefix(1).uppercased() + $0.dropFirst() } ?? entry.id
+        return Voice(id: "kokoro:\(entry.id)", name: name,
+                     language: entry.id.hasPrefix("b") ? "en-GB" : "en-US", engine: .kokoro)
+    }
+
+    /// Voice files listed in the installed Kokoro runtime manifest.
+    nonisolated private static func installedKokoroVoiceIDs() -> Set<String> {
+        let manifestURL = kokoroCacheDirectory.appendingPathComponent("KokoroRuntimeManifest.json")
+        guard let data = try? Data(contentsOf: manifestURL),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let voices = object["voices"] as? [[String: Any]] else { return [] }
+        return Set(voices.compactMap { entry in
+            (entry["path"] as? String).map { (($0 as NSString).lastPathComponent as NSString).deletingPathExtension }
+        }.filter { id in
+            FileManager.default.fileExists(atPath: kokoroCacheDirectory
+                .appendingPathComponent("voices/\(id).bin").path)
+        })
+    }
+
+    /// Downloads the catalogue voices the installed bundle lacks, checks each
+    /// file's SHA-256 against the pinned value and lists it in the runtime
+    /// manifest so the SDK accepts it. Returns true when voices were added (the
+    /// engine must then be reloaded). A voice that fails to download or verify
+    /// is skipped; the rest still install.
+    nonisolated static func installMissingKokoroVoices() async -> Bool {
+        let manifestURL = kokoroCacheDirectory.appendingPathComponent("KokoroRuntimeManifest.json")
+        guard let data = try? Data(contentsOf: manifestURL),
+              var manifest = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return false }
+        var entries = manifest["voices"] as? [[String: Any]] ?? []
+        let listed = Set(entries.compactMap { $0["path"] as? String })
+        let voicesDirectory = kokoroCacheDirectory.appendingPathComponent("voices", isDirectory: true)
+        try? FileManager.default.createDirectory(at: voicesDirectory, withIntermediateDirectories: true)
+
+        var added = false
+        for voice in kokoroVoiceCatalog where !listed.contains("voices/\(voice.id).bin") {
+            if Task.isCancelled { break }
+            let destination = voicesDirectory.appendingPathComponent("\(voice.id).bin")
+            if !FileManager.default.fileExists(atPath: destination.path) {
+                guard let (temporary, response) = try? await URLSession.shared.download(
+                        from: kokoroVoiceBase.appendingPathComponent("\(voice.id).bin")),
+                      (response as? HTTPURLResponse)?.statusCode == 200 else { continue }
+                guard (try? ContentHash.sha256(of: temporary)) == voice.sha256 else {
+                    try? FileManager.default.removeItem(at: temporary)
+                    continue
+                }
+                try? FileManager.default.removeItem(at: destination)
+                guard (try? FileManager.default.moveItem(at: temporary, to: destination)) != nil else { continue }
+            } else if (try? ContentHash.sha256(of: destination)) != voice.sha256 {
+                try? FileManager.default.removeItem(at: destination)
+                continue
+            }
+            entries.append([
+                "path": "voices/\(voice.id).bin",
+                "bytes": Int(FileStore.fileSize(at: destination)),
+                "sha256": voice.sha256
+            ])
+            added = true
+        }
+        guard added else { return false }
+        manifest["voices"] = entries
+        guard let updated = try? JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys]),
+              (try? updated.write(to: manifestURL, options: .atomic)) != nil else { return false }
+        return true
     }
 
     private static let phononVoices: [Voice] = [

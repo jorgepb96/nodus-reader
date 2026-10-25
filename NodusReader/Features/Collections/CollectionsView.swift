@@ -75,9 +75,7 @@ struct CollectionsView: View {
                     showNewCollection = true
                 } label: {
                     Image(systemName: "plus")
-                        .frame(width: 44, height: 44)
-                        .background(palette.panel, in: Circle())
-                        .overlay(Circle().stroke(palette.line, lineWidth: 1))
+                        .frame(minWidth: 44, minHeight: 44)
                 }
                 .accessibilityLabel("New collection")
             }

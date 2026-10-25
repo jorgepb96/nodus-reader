@@ -897,7 +897,14 @@ func modelDownloadsSynthesizeAndAlignWithText() async throws {
         guard manager.isInstalled(model), let voice = model.voices.first else { continue }
 
         manager.selectModel(model)
-        let audio = try await manager.synthesize(sentence, voiceID: voice.id, engine: model.engine)
+        var voiceIDs = [voice.id]
+        if model.engine == .kokoro {
+            // The full catalogue, not only the starter voice: a British male
+            // voice that is not in the hosted starter bundle.
+            voiceIDs.append("kokoro:bm_george")
+        }
+        for voiceID in voiceIDs {
+        let audio = try await manager.synthesize(sentence, voiceID: voiceID, engine: model.engine)
         let duration = Double(audio.samples.count) / audio.sampleRate
         #expect(duration > 1.5, "\(model.name) produced \(duration) s of audio")
         #expect(audio.samples.contains { abs($0) > 0.01 }, "\(model.name) produced silence")
@@ -909,6 +916,7 @@ func modelDownloadsSynthesizeAndAlignWithText() async throws {
         #expect(zip(timings, timings.dropFirst()).allSatisfy { $0.start <= $1.start && $0.end <= $1.end })
         #expect(timings.first.map { $0.start >= 0 } == true)
         #expect(timings.last.map { abs($0.end - duration) < 0.05 } == true)
+        }
     }
 }
 

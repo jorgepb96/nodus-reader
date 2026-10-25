@@ -29,6 +29,11 @@ struct CollectionDetailView: View {
     @State private var showManualOrder = false
     @State private var showAddBooks = false
     @State private var textFieldValue = ""
+    @State private var searchText = ""
+
+    private var query: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     private var collection: LibraryCollection? {
         collections.first { $0.id == collectionID }
@@ -37,6 +42,7 @@ struct CollectionDetailView: View {
     private var children: [LibraryCollection] {
         collections
             .filter { $0.parentID == collectionID }
+            .filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
             .sorted {
                 $0.sortIndex == $1.sortIndex
                     ? $0.name.localizedStandardCompare($1.name) == .orderedAscending
@@ -51,7 +57,8 @@ struct CollectionDetailView: View {
     }
 
     private var books: [Book] {
-        collectionMemberships.compactMap(\.book)
+        let all = collectionMemberships.compactMap(\.book)
+        return query.isEmpty ? all : library.search(query, among: all)
     }
 
     private var path: [LibraryCollection] {
@@ -111,9 +118,7 @@ struct CollectionDetailView: View {
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 17, weight: .medium))
-                        .frame(width: 44, height: 44)
-                        .background(palette.panel, in: Circle())
-                        .overlay(Circle().stroke(palette.line, lineWidth: 1))
+                        .frame(minWidth: 44, minHeight: 44)
                 }
                 .accessibilityLabel("Collection actions")
             }
@@ -185,6 +190,8 @@ struct CollectionDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header(collection)
+                LibrarySearchField(text: $searchText, prompt: "Search in \(collection.name)",
+                                   accessibilityLabel: "Search this collection")
                 if !children.isEmpty {
                     subcollectionCard
                 }
