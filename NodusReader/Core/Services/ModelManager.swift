@@ -171,7 +171,7 @@ final class ModelManager {
         Model(
             id: "phonon-40m-es",
             engine: .phonon,
-            name: "Phonon 40M Spanish",
+            name: String(localized: "Phonon 40M Spanish"),
             detail: String(localized: "Spanish Phonon checkpoint."),
             language: String(localized: "Spanish"),
             sizeText: String(localized: "Not available"),
@@ -179,14 +179,14 @@ final class ModelManager {
             source: URL(string: "https://huggingface.co/gradium/phonon-40m-es")!,
             voices: [],
             availability: .unavailable(
-                String(localized: "Gradium publishes this checkpoint as gated CC BY-NC weights but has not published a Core ML bundle. Nodus Reader will not offer a download it cannot run.")
+                String(localized: "Signing in to Hugging Face does not make this model downloadable yet. Gradium publishes it only in formats for computers (PyTorch and GGUF), and Nodus Reader runs voices with Core ML, Apple's on-device format. No Core ML version of this model exists, so it cannot run on iPhone, iPad or Mac in this version.")
             ),
             requiresAcceptedLicense: true
         ),
         Model(
             id: "phonon-40m-multilingual",
             engine: .phonon,
-            name: "Phonon 40M Multilingual",
+            name: String(localized: "Phonon 40M Multilingual"),
             detail: String(localized: "Multilingual Phonon checkpoint."),
             language: String(localized: "Multilingual"),
             sizeText: String(localized: "Not available"),
@@ -194,7 +194,7 @@ final class ModelManager {
             source: URL(string: "https://huggingface.co/gradium/phonon-40m-multilingual")!,
             voices: [],
             availability: .unavailable(
-                String(localized: "This checkpoint is gated and non-commercial, and there is no Core ML bundle for it. It is listed for transparency only.")
+                String(localized: "Signing in to Hugging Face does not make this model downloadable yet. Gradium publishes it only in formats for computers (PyTorch and GGUF), and Nodus Reader runs voices with Core ML, Apple's on-device format. No Core ML version of this model exists, so it cannot run on iPhone, iPad or Mac in this version.")
             ),
             requiresAcceptedLicense: true
         )

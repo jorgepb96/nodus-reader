@@ -549,3 +549,16 @@ check a **signed** build before uploading.
   and bookmarks do not change), drawn with no height. PDF Intelligent Reading body
   blocks are indented too; lists and quotes are not. Test
   `readerParagraphsAreIndentedWithoutBlankLines`.
+
+## Gated Phonon models after signing in (2026-10-25)
+
+Signing in to Hugging Face did not make Phonon 40M Spanish or Multilingual
+downloadable, and could not: Gradium publishes them only as PyTorch/Transformers
+weights and GGUF, while the app's Phonon runtime (`PhononCore`, ptts 0.4.x) loads only
+Core ML bundles and exposes no export function. No Core ML conversion of any 40M model
+exists on Hugging Face, and the latest xn-ptts release (v0.4.2) ships only Phonon 31M
+English as Core ML. Gradium's `export_coreml` tool can build one on a Mac with a token
+for the gated repository; the result is not ours to republish (gated, CC BY-NC 4.0).
+The Voices & Models screen now lists the public models first, then the Hugging Face
+account section, then the gated models, each saying plainly that signing in does not
+make it downloadable and why.

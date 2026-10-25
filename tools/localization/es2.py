@@ -347,3 +347,10 @@ ES.update({
 "Page curl": "Curva",
 "With Reduce Motion on, Page curl is shown as Slide.": "Con Reducir movimiento activado, «Curva» se muestra como «Deslizar».",
 })
+ES.update({
+"Signing in to Hugging Face does not make this model downloadable yet. Gradium publishes it only in formats for computers (PyTorch and GGUF), and Nodus Reader runs voices with Core ML, Apple's on-device format. No Core ML version of this model exists, so it cannot run on iPhone, iPad or Mac in this version.": "Iniciar sesión en Hugging Face todavía no permite descargar este modelo. Gradium solo lo publica en formatos para ordenador (PyTorch y GGUF), y Nodus Reader ejecuta las voces con Core ML, el formato de Apple para el dispositivo. No existe una versión Core ML de este modelo, así que en esta versión no puede funcionar en iPhone, iPad ni Mac.",
+})
+ES.update({
+"Phonon 40M Spanish": "Phonon 40M Español",
+"Phonon 40M Multilingual": "Phonon 40M Multilingüe",
+})

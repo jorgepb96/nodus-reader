@@ -3832,6 +3832,26 @@
         }
       }
     },
+    "Phonon 40M Multilingual": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phonon 40M Multilingüe"
+          }
+        }
+      }
+    },
+    "Phonon 40M Spanish": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phonon 40M Español"
+          }
+        }
+      }
+    },
     "Pick up where you left off, on any device.": {
       "localizations": {
         "es": {
@@ -4818,6 +4838,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sesión cerrada. Para retirar del todo el acceso de Nodus Reader, quítalo en Connected Apps, en los ajustes de Hugging Face."
+          }
+        }
+      }
+    },
+    "Signing in to Hugging Face does not make this model downloadable yet. Gradium publishes it only in formats for computers (PyTorch and GGUF), and Nodus Reader runs voices with Core ML, Apple's on-device format. No Core ML version of this model exists, so it cannot run on iPhone, iPad or Mac in this version.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sesión en Hugging Face todavía no permite descargar este modelo. Gradium solo lo publica en formatos para ordenador (PyTorch y GGUF), y Nodus Reader ejecuta las voces con Core ML, el formato de Apple para el dispositivo. No existe una versión Core ML de este modelo, así que en esta versión no puede funcionar en iPhone, iPad ni Mac."
           }
         }
       }

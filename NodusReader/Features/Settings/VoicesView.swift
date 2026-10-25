@@ -292,14 +292,20 @@ struct VoicesView: View {
         Eyebrow("Neural engines")
             .padding(.top, 8)
 
-        ForEach(models.models) { model in
+        ForEach(models.models.filter { !$0.requiresAcceptedLicense }) { model in
             modelCard(model)
         }
 
+        // The account section sits right above the models whose licence must
+        // be accepted on Hugging Face.
         Eyebrow("Hugging Face")
             .padding(.top, 6)
 
         huggingFaceCard
+
+        ForEach(models.models.filter(\.requiresAcceptedLicense)) { model in
+            modelCard(model)
+        }
 
         Button {
             showBundleImporter = true
