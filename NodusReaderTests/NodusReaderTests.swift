@@ -2,6 +2,7 @@
 import DesignSystem
 import Foundation
 import SwiftData
+import PhononTTS
 import Testing
 #if canImport(UIKit)
 import UIKit
@@ -1204,6 +1205,34 @@ func convertedPhonon40SpanishBundleNarratesSpanish() async throws {
     #expect(timings.count == 15)
     #expect(zip(timings, timings.dropFirst()).allSatisfy { $0.start <= $1.start })
     #expect(manager.loadedEngines == [.phonon])
+}
+
+/// The on-device path for Phonon 40M Spanish: download the gated checkpoint with a Hugging Face
+/// token (read from the file named by `NODUS_HF_TOKEN_FILE`, never printed), verify it, convert
+/// it to Core ML with PhononCore's exporter, then load it and speak Spanish. Opt in with
+/// `TEST_RUNNER_NODUS_HF_TOKEN_FILE=<path>`; downloads about 128 MB.
+@Test(.enabled(if: ProcessInfo.processInfo.environment["NODUS_HF_TOKEN_FILE"] != nil),
+      .timeLimit(.minutes(20)))
+func phonon40SpanishConvertsOnDevice() async throws {
+    let tokenFile = try #require(ProcessInfo.processInfo.environment["NODUS_HF_TOKEN_FILE"])
+    let token = try String(contentsOfFile: tokenFile, encoding: .utf8)
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent("phonon40-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: root) }
+    let destination = root.appendingPathComponent("Phonon-40m-es")
+    let work = root.appendingPathComponent("work")
+
+    try await PhononOnDeviceConversion.run(token: token, workDirectory: work, destination: destination) { _ in }
+
+    #expect(!FileManager.default.fileExists(atPath: work.path), "downloaded weights are removed")
+    #expect(ModelManager.phononBundleLanguages(at: destination) == ["es"])
+    #expect(PhononModels.isInstalled(at: destination))
+    let phonon = try await Phonon.load(models: destination, language: .spanish)
+    #expect(phonon.voices.count == 25)
+    try await phonon.setVoice("Alba")
+    let samples = try await phonon.synthesize("Hola, esto es una prueba de lectura en voz alta.")
+    #expect(Double(samples.count) / Phonon.sampleRate > 1.5)
+    #expect(samples.contains { abs($0) > 0.01 })
 }
 
 @Test

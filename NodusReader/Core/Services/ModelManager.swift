@@ -84,13 +84,15 @@ final class ModelManager {
         case downloading(Double)
         case paused(Double)
         case loading
+        /// Building the Core ML bundle on this device (Phonon 40M Spanish).
+        case converting
         case installed
         case failed(String)
 
         var isInstalled: Bool { self == .installed }
         var isBusy: Bool {
             switch self {
-            case .downloading, .loading: true
+            case .downloading, .loading, .converting: true
             default: false
             }
         }
@@ -205,15 +207,14 @@ final class ModelManager {
             name: String(localized: "Phonon 40M Spanish"),
             detail: String(localized: "Spanish narration with 25 voices from Spain and Mexico."),
             language: String(localized: "Spanish"),
-            sizeText: String(localized: "Installed from a file"),
+            sizeText: String(localized: "About 130 MB download"),
             license: "CC BY-NC 4.0",
             source: URL(string: "https://huggingface.co/gradium/phonon-40m-es")!,
             voices: ModelManager.phonon40SpanishVoices,
             availability: .available,
             requiresAcceptedLicense: true,
-            downloadable: false,
             phononLanguage: .spanish,
-            installNote: String(localized: "Gradium publishes this model only for computers, so it cannot be downloaded here. Convert it to Core ML once on a Mac with Gradium's export tool, using a Hugging Face account that accepted its licence, put the folder in Files (for example in iCloud Drive) and choose Install from file. The licence is CC BY-NC 4.0: personal, non-commercial use, and the converted copy is not shared.")
+            installNote: String(localized: "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Licence CC BY-NC 4.0: non-commercial use.")
         ),
         Model(
             id: "phonon-40m-multilingual",
@@ -475,6 +476,38 @@ final class ModelManager {
                 try Task.checkCancellation()
                 guard installTokens[model.id] == token else { return }
                 kokoro = loaded
+            case .phonon where model.id == Self.phonon40SpanishID:
+                // Gated checkpoint: the user's own access, converted here.
+                let accessToken: String
+                if let pasted = HuggingFaceTokenStore.load(), !pasted.isEmpty {
+                    accessToken = pasted
+                } else if let signedIn = try await HuggingFaceSessionStore.validAccessToken() {
+                    accessToken = signedIn
+                } else {
+                    throw PhononConversionError.notSignedIn
+                }
+                let destination = directory(for: model)
+                let work = destination.deletingLastPathComponent()
+                    .appendingPathComponent(".phonon-40m-es-conversion", isDirectory: true)
+                try await PhononOnDeviceConversion.run(token: accessToken, workDirectory: work,
+                                                       destination: destination) { [weak self] phase in
+                    Task { @MainActor [weak self] in
+                        guard let self, self.installTokens[model.id] == token else { return }
+                        switch phase {
+                        case .downloading(let fraction): self.states[model.id] = .downloading(fraction)
+                        case .converting: self.states[model.id] = .converting
+                        }
+                    }
+                }
+                try Task.checkCancellation()
+                guard installTokens[model.id] == token else { return }
+                Self.excludeFromBackup(destination)
+                states[model.id] = .loading
+                let loaded = try await Phonon.load(models: destination, language: model.phononLanguage)
+                try Task.checkCancellation()
+                guard installTokens[model.id] == token else { return }
+                phonon = loaded
+                phononModelID = model.id
             case .phonon:
                 let directory = try await PhononModels.download(
                     from: Self.phononBundleBase,

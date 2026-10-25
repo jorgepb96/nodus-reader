@@ -10,11 +10,8 @@ let package = Package(
         .library(name: "ptts", targets: ["PhononTTS"]),
     ],
     targets: [
-        .binaryTarget(
-            name: "PhononCore",
-            url: "https://github.com/gradium-ai/xn-ptts/releases/download/v0.4.1/PhononCore.xcframework.zip",
-            checksum: "2b544125ab573d73a8a189008ddd182daf3934dedfe74b52af0832169e0857d2"
-        ),
+        // DEV: local build with ptts_export_coreml; replaced by the release URL before commit.
+        .binaryTarget(name: "PhononCore", path: "PhononCore.xcframework"),
         .target(
             name: "PhononTTS",
             dependencies: ["PhononCore"],

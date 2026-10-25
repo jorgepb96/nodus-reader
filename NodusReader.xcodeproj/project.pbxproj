@@ -40,6 +40,7 @@
 		6BAF600273BDA0BF69E66AB3 /* ReaderNavigationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8374C8CF82EADFE4C61847B6 /* ReaderNavigationSheet.swift */; };
 		6DC4D3ED190B8EA6E4E6A49A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FF7CBF9CFCF8E117C3191309 /* Localizable.xcstrings */; };
 		760428D786B438C27B4A5133 /* ReaderPageStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECD64B338813C089B0F2DEE /* ReaderPageStyle.swift */; };
+		764F7473F965A4952F883894 /* PhononOnDeviceConversion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09340C49F00362F5D266FA01 /* PhononOnDeviceConversion.swift */; };
 		76B09484C08564F659686167 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 482C91BD01D7902D6B10D7D4 /* RootView.swift */; };
 		7811592388EAB8C07E8E48AC /* MacRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 638DEE4E57C7085D36B92FB0 /* MacRootView.swift */; };
 		7F83A170CA5A4BCA946CFC5E /* CollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F044BBF5B2AF672BF9CC1E /* CollectionsView.swift */; };
@@ -138,6 +139,7 @@
 
 /* Begin PBXFileReference section */
 		0299B9EB01C2108D51F868EC /* SharedImportInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedImportInbox.swift; sourceTree = "<group>"; };
+		09340C49F00362F5D266FA01 /* PhononOnDeviceConversion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhononOnDeviceConversion.swift; sourceTree = "<group>"; };
 		099184BADB5FD68A4939C524 /* BookCoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCoverView.swift; sourceTree = "<group>"; };
 		09B5BF31B62E405F87474BFF /* CollectionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDetailView.swift; sourceTree = "<group>"; };
 		0A0012A1A328E18FC1540EBC /* MiniPlayerBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerBar.swift; sourceTree = "<group>"; };
@@ -341,6 +343,7 @@
 				57311E698E2CF61276C51600 /* LibraryService.swift */,
 				0FF11796AFA1C10FDA90101D /* ModelManager.swift */,
 				9A134492B2262FE0AB703EA4 /* NarrationAudioCache.swift */,
+				09340C49F00362F5D266FA01 /* PhononOnDeviceConversion.swift */,
 				F9D8968A724911866F8AC36D /* PlaybackController.swift */,
 				F9B64BBE71DDC847CBDFB58A /* VoiceCatalog.swift */,
 			);
@@ -778,6 +781,7 @@
 				B2D9C79E2BF4240F1B16B2B5 /* PaginatedReaderContent.swift in Sources */,
 				3CBED80F01AA6A6D46B6A7D5 /* Persistence.swift in Sources */,
 				E22356B661EA1D727DDE25F8 /* PhoneRootView.swift in Sources */,
+				764F7473F965A4952F883894 /* PhononOnDeviceConversion.swift in Sources */,
 				D500B03C89B854345292E938 /* PlaybackController.swift in Sources */,
 				E739A3298B8DE66AA6F6BF31 /* PlayerView.swift in Sources */,
 				B441BB46C3BA8F5060EDAB1B /* ReaderAppearance.swift in Sources */,
@@ -914,7 +918,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -980,7 +984,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;

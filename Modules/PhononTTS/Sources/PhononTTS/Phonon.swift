@@ -148,6 +148,28 @@ public final class Phonon: @unchecked Sendable {
         return Phonon(handle: h.p, queue: queue, language: language)
     }
 
+    /// Export a checkpoint folder (`config.json`, `model.safetensors`, `tokenizer.json`) as a
+    /// Core ML bundle in `out`, with the voice `.safetensors` files in `voices` (the checkpoint's
+    /// own when nil). `load(models:)` then loads `out`. Nodus Reader addition: the app builds a
+    /// bundle on the device for a checkpoint that has no published Core ML release.
+    public static func exportCoreML(checkpoint: URL, voices: URL?, to out: URL) async throws {
+        let queue = DispatchQueue(label: "phonon-export", qos: .userInitiated)
+        let checkpointPath = checkpoint.path
+        let voicesPath = voices?.path
+        let outPath = out.path
+        try await run(on: queue) {
+            let ok = checkpointPath.withCString { c in
+                outPath.withCString { o in
+                    if let voicesPath {
+                        return voicesPath.withCString { v in ptts_export_coreml(c, v, o) }
+                    }
+                    return ptts_export_coreml(c, nil, o)
+                }
+            }
+            guard ok else { throw lastError(nil) }
+        }
+    }
+
     /// Switch to another of `voices`. This conditions the model on it, up to about 0.6 s on
     /// a phone, so the next utterance does not have to.
     public func setVoice(_ name: String) async throws {

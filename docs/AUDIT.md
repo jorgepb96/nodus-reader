@@ -573,3 +573,14 @@ make it downloadable and why.
   checkpoints when the selected model changes. Verified with the opt-in test
   `convertedPhonon40SpanishBundleNarratesSpanish` on the Mac (install through Install
   from file, selection, Spanish synthesis with Lucía-Sol, word timings).
+- **Follow-up: Phonon 40M Spanish converted on the device.** Instead of a Mac step,
+  PhononCore is rebuilt with `ptts_export_coreml` (Gradium's exporter moved into
+  `ptts-ffi`; patch and script in `Modules/PhononTTS/engine/`). Download → convert →
+  install in Settings: the app takes the user's pasted token or OAuth sign-in, downloads
+  `config.json`, `tokenizer.json` and `model.safetensors` from the pinned revision and
+  the 25 Spanish voices from `gradium/phonon-voices`, verifies sizes and SHA-256,
+  exports the Core ML bundle, deletes the weights and loads it. No token: a plain
+  "sign in first" message; gate not accepted (HTTP 403): a message pointing to the
+  model page. Opt-in test `phonon40SpanishConvertsOnDevice` passes on the Mac (23 s)
+  and in the iPhone simulator (20 s), including Spanish synthesis; a real iPhone
+  converts on its CPU and will take longer.

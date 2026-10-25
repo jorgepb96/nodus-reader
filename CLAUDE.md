@@ -89,17 +89,18 @@ and Spanish through `NodusReader/Resources/Localizable.xcstrings`; see
 `tools/localization/README.md` before adding UI text.
 
 Kokoro is English-only and unavailable in the Simulator (MLX needs a Metal device).
-Phonon 31M is English and downloads in the app. Phonon 40M Spanish (CC BY-NC, gated)
-is never downloaded or shared by the app: a user converts it on a Mac with Gradium's
-exporter and installs the folder with Install from file (`docs/BUILD.md`); the
-multilingual checkpoint is listed as unavailable. Real-device iCloud and Share
+Phonon 31M is English and downloads in the app. Phonon 40M Spanish (CC BY-NC, gated) is
+never hosted or shipped: the app downloads it with the user's own Hugging Face access and
+converts it to Core ML on the device (`PhononOnDeviceConversion`, PhononCore rebuilt with
+`ptts_export_coreml`, see `Modules/PhononTTS/engine/`). The multilingual checkpoint is
+listed as unavailable. Real-device iCloud and Share
 Extension validation, distribution and the final accessibility/licence audits remain.
 
 See `docs/ROADMAP.md`, `docs/ICLOUD.md` and `docs/NARRATION_SYNC.md`.
 
 ## Verification
 
-- 46 unit/integration tests cover EPUB/PDF import (chapter splitting at contents
+- 46 unit/integration tests (plus three opt-in model tests) cover EPUB/PDF import (chapter splitting at contents
   anchors, paragraph joining, folder packages, DRM detection), duplicate detection, collections,
   themes (including reader-follows-app), text utilities, pause-based word alignment,
   page-boundary highlight clipping, path-traversal defenses, language-aware voice

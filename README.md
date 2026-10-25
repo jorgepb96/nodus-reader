@@ -22,7 +22,7 @@ Nodus Reader is part of the Nodus Research ecosystem. It is not a web wrapper: t
 - Sharing: iOS Share Extension with an App Group inbox and collection selection.
 - Languages: English and Spanish. The app follows the device language: Spanish on a device set to Spanish, English everywhere else (or per app in Settings › Nodus Reader › Language).
 - Settings: separate App/Reader themes, custom theme editor, reading typography, real voice and model management with downloads/licences/storage, iCloud status and privacy.
-- Tests: 46 unit/integration tests (plus an opt-in model download test) and 11 UI tests with screenshot capture (the Phonon narration test skips when no Phonon bundle is installed in the simulator).
+- Tests: 46 unit/integration tests (plus three opt-in model tests) and 11 UI tests with screenshot capture (the Phonon narration test skips when no Phonon bundle is installed in the simulator).
 
 ## Screenshots
 
@@ -43,11 +43,11 @@ The design source of truth is [`design/DESIGN.md`](design/DESIGN.md) and [`desig
   ships English Misaki phonemization, and its MLX phonemizer needs a Metal device.
   All 28 American and British English voices of the pinned bundle are installed
   (the starter voice plus 27 voice files verified by SHA-256).
-- **Phonon downloads English 31M only.** Phonon 40M Spanish is a gated CC BY-NC model
-  with no published Core ML bundle: you can convert it on your own Mac and install it
-  with *Install from file* (see `docs/BUILD.md`); the app never downloads or shares it.
-  The multilingual checkpoint is listed as unavailable. Spanish system voices remain
-  available.
+- **Phonon 40M Spanish needs your Hugging Face access.** It is a gated CC BY-NC model
+  with no published Core ML bundle: after you sign in with an account that accepted
+  Gradium's conditions, the app downloads it (about 130 MB) and converts it on the
+  device. Nodus Reader never hosts or shares it. The multilingual checkpoint is listed
+  as unavailable.
 - **iCloud requires signed entitlements.** Unsigned simulator builds report iCloud as
   unavailable by design; real-device two-device validation is still required.
 - DOCX, FB2, CBZ and other phase-2 formats; DRM-protected content is not supported.

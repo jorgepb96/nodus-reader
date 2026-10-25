@@ -227,10 +227,24 @@ Sandbox entitlement first (see below).
   the model packages; later sentences are much faster.
 - The app icon is assembled in `Assets.xcassets/AppIcon.appiconset` from `design/icon/` masters.
 
-## Phonon 40M Spanish (personal Core ML conversion)
+## Phonon 40M Spanish
 
-Gradium publishes Phonon 40M Spanish only as PyTorch/GGUF (gated, CC BY-NC 4.0), and
-the app's Phonon runtime loads Core ML bundles only. To use it, convert it once on a
+Gradium publishes Phonon 40M Spanish only as PyTorch/GGUF (gated, CC BY-NC 4.0). The app
+converts it on the device: Settings › Voices & Models › Phonon 40M Spanish › Download,
+after signing in to Hugging Face with an account that accepted the model's conditions.
+That needs the PhononCore build with `ptts_export_coreml` (`Modules/PhononTTS/engine/`).
+Opt-in end-to-end check (downloads about 128 MB with the token in the given file):
+
+```bash
+TEST_RUNNER_NODUS_HF_TOKEN_FILE=$HOME/.cache/huggingface/token \
+xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -only-testing:'NodusReaderTests/phonon40SpanishConvertsOnDevice()'
+```
+
+### Alternative: convert on a Mac and install from file
+
+To prepare the bundle elsewhere, convert it once on a
 Mac with a Hugging Face account that accepted the model's access conditions
 (`hf auth login`), with Gradium's exporter at the runtime version the app ships:
 

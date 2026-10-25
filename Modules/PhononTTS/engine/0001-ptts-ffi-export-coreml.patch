@@ -1,0 +1,337 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index fdcf34c..7571405 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -2862,7 +2862,10 @@ version = "0.4.1"
+ dependencies = [
+  "ptts",
+  "ptts-coreml",
++ "safetensors",
+  "serde_json",
++ "sha2 0.10.9",
++ "xn",
+ ]
+ 
+ [[package]]
+diff --git a/ptts-ffi/Cargo.toml b/ptts-ffi/Cargo.toml
+index d03d34a..054a056 100644
+--- a/ptts-ffi/Cargo.toml
++++ b/ptts-ffi/Cargo.toml
+@@ -18,3 +18,7 @@ serde_json = { workspace = true }
+ 
+ [target.'cfg(target_vendor = "apple")'.dependencies]
+ ptts-coreml = { path = "../ptts-coreml" }
++# On-device Core ML export (Nodus Reader addition): the exporter's own dependencies.
++safetensors = { workspace = true }
++sha2 = { workspace = true }
++xn = { workspace = true }
+diff --git a/ptts-ffi/include/ptts.h b/ptts-ffi/include/ptts.h
+index 49e4f0e..fd193c1 100644
+--- a/ptts-ffi/include/ptts.h
++++ b/ptts-ffi/include/ptts.h
+@@ -40,7 +40,12 @@ bool ptts_set_voice(PttsHandle *h, const char *name);
+ bool ptts_set_language(PttsHandle *h, const char *lang);
+ /// The languages the model was trained for, NUL-separated like ptts_voices. Borrowed.
+ const char *ptts_languages(const PttsHandle *h);
+-/// The last error on `h`, or the last ptts_new failure on this thread when `h` is NULL.
++/// Export a checkpoint folder (config.json, model.safetensors, tokenizer.json) as a Core ML
++/// bundle in `out`, with the voice .safetensors files in `voices` (or the checkpoint's own when
++/// NULL). Apple only. False on failure; then ptts_last_error(NULL), on the same thread, says why.
++bool ptts_export_coreml(const char *checkpoint, const char *voices, const char *out);
++/// The last error on `h`, or the last ptts_new or ptts_export_coreml failure on this thread
++/// when `h` is NULL.
+ const char *ptts_last_error(const PttsHandle *h);
+ void ptts_free(PttsHandle *h);
+ 
+diff --git a/ptts-ffi/src/export.rs b/ptts-ffi/src/export.rs
+new file mode 100644
+index 0000000..629a090
+--- /dev/null
++++ b/ptts-ffi/src/export.rs
+@@ -0,0 +1,230 @@
++//! Core ML export on the device (Nodus Reader addition to ptts-ffi).
++//!
++//! The same steps as `ptts/examples/export_coreml.rs`, from a local checkpoint folder
++//! (`config.json`, `model.safetensors`, `tokenizer.json`) and a folder of voice
++//! `.safetensors` files, so an app can build a bundle for a checkpoint that has no published
++//! Core ML release: it downloads the checkpoint with the user's own access, exports it here,
++//! and loads the result with `ptts_new`. Safetensors only; no network.
++
++use ptts_coreml::Weights;
++use ptts_coreml::package::write_mlpackage_with_weights;
++use ptts_coreml::phonon::{flow_lm as fl, mimi};
++use safetensors::tensor::{Dtype, TensorView};
++use std::collections::HashMap;
++use std::path::Path;
++
++type Result<T> = std::result::Result<T, String>;
++
++fn err<E: std::fmt::Display>(e: E) -> String {
++    e.to_string()
++}
++
++fn write(out: &Path, name: &str, built: fl::Built) -> Result<()> {
++    let (model, blob) = built;
++    write_mlpackage_with_weights(&out.join(format!("{name}.mlpackage")), &model, blob)
++        .map_err(|e| format!("writing {name}: {e}"))
++}
++
++/// Export `checkpoint` (a folder) as a Core ML bundle in `out`, with the voices in `voices`
++/// (a folder of `.safetensors`, or the checkpoint's own when `None`).
++pub fn export(
++    checkpoint: &Path,
++    voices_dir: Option<&Path>,
++    out: &Path,
++    max_tokens: usize,
++    temperature: f32,
++) -> Result<()> {
++    let options = ptts::checkpoint::ResolveOptions {
++        quant: "f32".parse().map_err(err)?,
++        weights: None,
++    };
++    let source = checkpoint.to_str().ok_or("the checkpoint path is not UTF-8")?;
++    let ck = ptts::checkpoint::Checkpoint::locate(source, options).map_err(err)?;
++    let cfg = &ck.config;
++    let f = &cfg.flow_lm;
++    let dims = fl::Dims {
++        d: f.d_model,
++        heads: f.num_heads,
++        layers: f.num_layers,
++        ff: f.dim_feedforward,
++        ldim: f.ldim,
++        flow_d: f.flow_dim,
++        flow_blocks: f.flow_depth,
++    };
++    if cfg.lsd_decode_steps != 1 {
++        return Err(format!(
++            "the Core ML graph takes one flow step; this checkpoint wants {}",
++            cfg.lsd_decode_steps
++        ));
++    }
++    let time_norm = match f.time_rms_norm {
++        ptts::flow_lm::TimeRmsNorm::Rms => fl::TimeNorm::Rms,
++        ptts::flow_lm::TimeRmsNorm::RmsVar => fl::TimeNorm::RmsVar,
++    };
++    let m = &cfg.mimi;
++    if (m.transformer_d_model, m.transformer_num_heads) != (mimi::DIM, mimi::HEADS) {
++        return Err(format!(
++            "the Core ML Mimi graph is built for a {}-wide, {}-head decoder transformer",
++            mimi::DIM,
++            mimi::HEADS
++        ));
++    }
++    let window = m.transformer_context;
++    if ck.weights.extension().is_some_and(|e| e == "gguf") {
++        return Err("on-device export reads safetensors weights only".into());
++    }
++    let wt = Weights::open(&ck.weights).map_err(err)?.renamed(ptts::loader::remap_key);
++    let vb = ptts::loader::load_weights::<xn::Unquantized<f32, xn::CpuDevice>>(
++        &ck.weights,
++        &xn::CpuDevice,
++    )
++    .map_err(err)?;
++    let speaker_proj = ptts::loader::load_speaker_proj(&vb, cfg).map_err(err)?;
++    let embeddings_ext = cfg.embeddings_ext.as_deref();
++
++    let given: HashMap<String, String> = HashMap::new();
++    let conditions = |values: &HashMap<String, String>| -> Result<Vec<f32>> {
++        Ok(match ptts::loader::load_conditions::<f32, _>(&vb, cfg, values).map_err(err)? {
++            Some(sum) => sum.to_vec().map_err(err)?,
++            None => vec![0f32; dims.d],
++        })
++    };
++
++    let mut voices = Vec::new();
++    if cfg.voices.is_empty() {
++        let files = match voices_dir {
++            Some(dir) => ptts::loader::voices_in(dir),
++            None => ck.voices.clone(),
++        };
++        for (name, path) in files {
++            let emb = ptts::loader::load_voice_emb(
++                &path,
++                embeddings_ext,
++                speaker_proj.as_ref(),
++                &xn::CpuDevice,
++            )
++            .map_err(|e| format!("voice {name}: {e}"))?;
++            voices.push((name, emb, None));
++        }
++    } else {
++        if voices_dir.is_some() {
++            return Err("this checkpoint has baked-in voices and supports no other voice".into());
++        }
++        let baked =
++            ptts::loader::load_config_voices(&vb, cfg, speaker_proj.as_ref()).map_err(err)?;
++        for (voice, (name, emb)) in cfg.voices.iter().zip(baked) {
++            let mut values = given.clone();
++            values.extend(voice.conditions.clone());
++            voices.push((name, emb, Some(conditions(&values)?)));
++        }
++    }
++    if voices.is_empty() {
++        return Err("no voices".into());
++    }
++    std::fs::create_dir_all(out.join("voices")).map_err(err)?;
++    let mut vlen = 0;
++    for (name, emb, voice_conditions) in &voices {
++        let shape = emb.dims().to_vec();
++        if shape[2] != dims.d {
++            return Err(format!("voice {name} is {shape:?}, the model is {}-wide", dims.d));
++        }
++        vlen = vlen.max(shape[1]);
++        let bytes: Vec<u8> =
++            emb.to_vec().map_err(err)?.iter().flat_map(|v| v.to_le_bytes()).collect();
++        let mut views = vec![("emb", TensorView::new(Dtype::F32, shape, &bytes).map_err(err)?)];
++        let cond_bytes: Vec<u8> =
++            voice_conditions.iter().flatten().flat_map(|v| v.to_le_bytes()).collect();
++        if voice_conditions.is_some() {
++            views.push((
++                "conditions",
++                TensorView::new(Dtype::F32, vec![dims.d], &cond_bytes).map_err(err)?,
++            ));
++        }
++        safetensors::serialize_to_file(views, None, &out.join(format!("voices/{name}.safetensors")))
++            .map_err(err)?;
++    }
++
++    let max_frames = ptts::plan::frame_budget(max_tokens, m.frame_rate);
++    let ctx = vlen + max_tokens + max_frames + 16;
++    write(out, &fl::package_name(ctx, 1), fl::build(&wt, &dims, ctx, 1, time_norm)?)?;
++    let prefill = fl::build(&wt, &dims, ctx, max_tokens, time_norm)?;
++    write(out, &fl::package_name(ctx, max_tokens), prefill)?;
++    write(out, &mimi::package_name(window), mimi::build(&wt, mimi::cache_len(window))?)?;
++
++    let get = |n: &str| wt.get(n);
++    let mut defaults = given.clone();
++    for (name, value) in cfg.voices.first().map(|v| &v.conditions).into_iter().flatten() {
++        defaults.entry(name.clone()).or_insert_with(|| value.clone());
++    }
++    let mut host: Vec<(&str, Vec<usize>, Vec<u8>)> = Vec::new();
++    for n in ["flow_lm.conditioner.embed.weight", "flow_lm.input_linear.weight", "flow_lm.bos_emb"]
++    {
++        let (shape, data) = get(n)?;
++        host.push((n, shape.to_vec(), data.iter().flat_map(|v| v.to_le_bytes()).collect()));
++    }
++    host.push((
++        "flow_lm.conditions",
++        vec![dims.d],
++        conditions(&defaults)?.iter().flat_map(|v| v.to_le_bytes()).collect(),
++    ));
++    let mut views: HashMap<&str, TensorView> = HashMap::new();
++    for (n, s, b) in &host {
++        views.insert(*n, TensorView::new(Dtype::F32, s.clone(), b).map_err(err)?);
++    }
++    safetensors::serialize_to_file(&views, None, &out.join("host.safetensors")).map_err(err)?;
++
++    let tokenizer = ck.tokenizer.clone().ok_or("the checkpoint has no tokenizer.json")?;
++    std::fs::copy(&tokenizer, out.join("tokenizer.json")).map_err(err)?;
++
++    let mut files = Vec::new();
++    list_files(out, out, &mut files)?;
++    files.sort_by(|a: &serde_json::Value, b| a["path"].as_str().cmp(&b["path"].as_str()));
++    let built = std::time::SystemTime::now()
++        .duration_since(std::time::UNIX_EPOCH)
++        .map_err(err)?
++        .as_secs();
++    let meta = serde_json::json!({
++        "built": built,
++        "ctx": ctx,
++        "prefill_len": max_tokens,
++        "max_frames": max_frames,
++        "mimi_window": window,
++        "eos_threshold": cfg.eos_threshold,
++        "temperature": temperature,
++        "dims": {
++            "d": dims.d, "heads": dims.heads, "layers": dims.layers, "ff": dims.ff,
++            "ldim": dims.ldim, "flow_d": dims.flow_d, "flow_blocks": dims.flow_blocks,
++        },
++        "voices": voices.iter().map(|(n, _, _)| n).collect::<Vec<_>>(),
++        "languages": cfg.languages,
++        "conditions": given,
++        "files": files,
++    });
++    std::fs::write(out.join("bundle.json"), serde_json::to_vec_pretty(&meta).map_err(err)?)
++        .map_err(err)?;
++    Ok(())
++}
++
++fn list_files(root: &Path, dir: &Path, out: &mut Vec<serde_json::Value>) -> Result<()> {
++    use sha2::Digest;
++    for e in std::fs::read_dir(dir).map_err(err)? {
++        let p = e.map_err(err)?.path();
++        if p.is_dir() {
++            list_files(root, &p, out)?;
++        } else if p.file_name().is_some_and(|n| n != "bundle.json") {
++            let bytes = std::fs::read(&p).map_err(err)?;
++            let rel: Vec<String> = p
++                .strip_prefix(root)
++                .map_err(err)?
++                .components()
++                .map(|c| c.as_os_str().to_string_lossy().into())
++                .collect();
++            out.push(serde_json::json!({
++                "path": rel.join("/"),
++                "size": bytes.len(),
++                "sha256": format!("{:x}", sha2::Sha256::digest(&bytes)),
++            }));
++        }
++    }
++    Ok(())
++}
+diff --git a/ptts-ffi/src/lib.rs b/ptts-ffi/src/lib.rs
+index 0cd692a..db29240 100644
+--- a/ptts-ffi/src/lib.rs
++++ b/ptts-ffi/src/lib.rs
+@@ -19,6 +19,8 @@ use std::path::Path;
+ #[cfg(target_vendor = "apple")]
+ mod coreml;
+ #[cfg(target_vendor = "apple")]
++mod export;
++#[cfg(target_vendor = "apple")]
+ use coreml::Engine;
+ #[cfg(not(target_vendor = "apple"))]
+ mod cpu;
+@@ -121,6 +123,42 @@ pub unsafe extern "C" fn ptts_new(
+     }
+ }
+ 
++/// Export the checkpoint folder `checkpoint` (`config.json`, `model.safetensors`,
++/// `tokenizer.json`) as a Core ML bundle in `out`, which `ptts_new` then loads. `voices` is a
++/// folder of voice `.safetensors` files, or NULL for the checkpoint's own. Returns false on
++/// failure; then `ptts_last_error(NULL)`, on the same thread, says why. Nodus Reader addition.
++///
++/// # Safety
++/// `checkpoint` and `out` must be NUL-terminated UTF-8; `voices` too, or NULL.
++#[cfg(target_vendor = "apple")]
++#[unsafe(no_mangle)]
++pub unsafe extern "C" fn ptts_export_coreml(
++    checkpoint: *const c_char,
++    voices: *const c_char,
++    out: *const c_char,
++) -> bool {
++    let checkpoint = unsafe { CStr::from_ptr(checkpoint) }.to_string_lossy().to_string();
++    let out = unsafe { CStr::from_ptr(out) }.to_string_lossy().to_string();
++    let voices = (!voices.is_null())
++        .then(|| unsafe { CStr::from_ptr(voices) }.to_string_lossy().to_string());
++    let result = guarded(|| {
++        export::export(
++            Path::new(&checkpoint),
++            voices.as_deref().map(Path::new),
++            Path::new(&out),
++            48,
++            0.3,
++        )
++    });
++    match result {
++        Ok(()) => true,
++        Err(e) => {
++            LAST_ERROR.with(|l| *l.borrow_mut() = Some(c_string(&e)));
++            false
++        }
++    }
++}
++
+ /// Speak `text`, calling `cb(pcm, n, user)` with each frame's audio as soon as it is decoded.
+ /// `out` then describes the whole utterance. Returns false on failure; see `ptts_last_error`.
+ ///

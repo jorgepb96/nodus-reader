@@ -474,6 +474,10 @@ struct VoicesView: View {
             Label("Preparing", systemImage: "gearshape.2")
                 .font(.caption)
                 .foregroundStyle(palette.muted)
+        case .converting:
+            Label("Converting", systemImage: "gearshape.2")
+                .font(.caption)
+                .foregroundStyle(palette.muted)
         case .failed:
             Label("Failed", systemImage: "exclamationmark.triangle")
                 .font(.caption)
@@ -543,6 +547,14 @@ struct VoicesView: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(palette.muted)
             }
+        case .converting:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Converting the model for this device. This can take a few minutes; keep Nodus Reader open.")
+                    .font(.caption2)
+                    .foregroundStyle(palette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         case .loading:
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small)
@@ -569,6 +581,12 @@ struct VoicesView: View {
             }
         case .notInstalled:
             if model.isAvailable, model.downloadable {
+                if let note = model.installNote {
+                    Text(note)
+                        .font(.caption)
+                        .foregroundStyle(palette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Button {
                     models.install(model)
                 } label: {

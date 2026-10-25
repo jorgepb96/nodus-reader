@@ -360,3 +360,14 @@ ES.update({
 "Gradium publishes this model only for computers, so it cannot be downloaded here. Convert it to Core ML once on a Mac with Gradium's export tool, using a Hugging Face account that accepted its licence, put the folder in Files (for example in iCloud Drive) and choose Install from file. The licence is CC BY-NC 4.0: personal, non-commercial use, and the converted copy is not shared.": "Gradium publica este modelo solo para ordenador, así que no se puede descargar aquí. Conviértelo a Core ML una vez en un Mac con la herramienta de exportación de Gradium, usando una cuenta de Hugging Face que haya aceptado su licencia; deja la carpeta en Archivos (por ejemplo, en iCloud Drive) y elige Instalar desde un archivo. La licencia es CC BY-NC 4.0: uso personal y no comercial, y la copia convertida no se comparte.",
 "%@ cannot run on this device, so its bundle was not installed.": "%@ no puede funcionar en este dispositivo, así que no se ha instalado.",
 })
+ES.update({
+"About 130 MB download": "Descarga de unos 130 MB",
+"Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Licence CC BY-NC 4.0: non-commercial use.": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más arriba). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 130 MB de descarga y 200 MB instalado. Licencia CC BY-NC 4.0: uso no comercial.",
+"Converting": "Convirtiendo",
+"Converting the model for this device. This can take a few minutes; keep Nodus Reader open.": "Convirtiendo el modelo para este dispositivo. Puede tardar unos minutos; mantén Nodus Reader abierto.",
+"Sign in to Hugging Face first (Hugging Face section above), with an account that has accepted this model's conditions.": "Primero inicia sesión en Hugging Face (sección Hugging Face, más arriba) con una cuenta que haya aceptado las condiciones de este modelo.",
+"Hugging Face did not accept your sign-in. Sign in again and retry.": "Hugging Face no ha aceptado tu sesión. Vuelve a iniciar sesión e inténtalo de nuevo.",
+"Your Hugging Face account has not accepted this model's conditions yet. Open the model page, accept them, and retry.": "Tu cuenta de Hugging Face aún no ha aceptado las condiciones de este modelo. Abre la página del modelo, acéptalas e inténtalo de nuevo.",
+"%@ did not match the expected file. Nothing was installed; retry the download.": "%@ no coincide con el archivo esperado. No se ha instalado nada; vuelve a descargarlo.",
+"Hugging Face returned HTTP %lld. Retry later.": "Hugging Face ha devuelto HTTP %lld. Inténtalo más tarde.",
+})
