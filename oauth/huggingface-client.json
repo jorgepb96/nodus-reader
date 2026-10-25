@@ -1,5 +1,5 @@
 {
-  "client_id": "https://raw.githubusercontent.com/jorgepb96/nodus-reader-mobile/main/oauth/huggingface-client.json",
+  "client_id": "https://cdn.jsdelivr.net/gh/jorgepb96/nodus-reader-mobile@main/oauth/huggingface-client.json",
   "client_name": "Nodus Reader",
   "client_uri": "https://github.com/jorgepb96/nodus-reader-mobile",
   "redirect_uris": ["nodusreader://oauth/huggingface"],
