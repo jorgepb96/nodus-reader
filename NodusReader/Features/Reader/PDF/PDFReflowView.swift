@@ -57,13 +57,19 @@ struct PDFReaderContainer: View {
                     .ignoresSafeArea(edges: .bottom)
             case .intelligent:
                 PDFReflowView(book: book, url: url, theme: theme,
-                              pdfPageIndex: $pdfPageIndex)
+                              pdfPageIndex: $pdfPageIndex, jumpToPage: $jumpToPage)
             }
         }
     }
 }
 
 // MARK: - Reflow
+
+/// Scrolls the reflow to the last analysed page at or before `page`.
+private func scroll(_ proxy: ScrollViewProxy, to page: Int, in document: PDFReflowDocument) {
+    guard let target = document.pages.last(where: { $0.pageIndex <= page }) ?? document.pages.first else { return }
+    proxy.scrollTo(target.pageIndex, anchor: .top)
+}
 
 struct PDFReflowView: View {
     @Environment(LibraryService.self) private var library
@@ -73,6 +79,8 @@ struct PDFReflowView: View {
     let url: URL
     let theme: ReaderTheme
     @Binding var pdfPageIndex: Int
+    /// Contents, bookmarks and "go to page" requests from the reader chrome.
+    @Binding var jumpToPage: Int?
 
     @State private var job = PDFReflowJob()
     @State private var showImages = true
@@ -209,9 +217,23 @@ struct PDFReflowView: View {
                     let scrollable = max(geometry.contentSize.height - geometry.containerSize.height, 1)
                     return min(max(geometry.contentOffset.y / scrollable, 0), 1)
                 } action: { _, fraction in
-                    let page = min(document.pageCount - 1,
-                                   Int(fraction * Double(max(document.pageCount, 1))))
-                    if page != pdfPageIndex { pdfPageIndex = max(0, page) }
+                    // Map to the original page id: pages without text are not
+                    // in the reflow, so an array index is not a page number.
+                    guard !document.pages.isEmpty else { return }
+                    let index = min(document.pages.count - 1,
+                                    Int(fraction * Double(document.pages.count)))
+                    let page = document.pages[max(0, index)].pageIndex
+                    if page != pdfPageIndex { pdfPageIndex = page }
+                }
+                .onAppear {
+                    // Switching from Original keeps the reading position.
+                    scroll(proxy, to: pdfPageIndex, in: document)
+                }
+                .onChange(of: jumpToPage) { _, target in
+                    guard let target else { return }
+                    scroll(proxy, to: target, in: document)
+                    pdfPageIndex = target
+                    jumpToPage = nil
                 }
             }
         } else {
@@ -452,10 +474,10 @@ struct PDFSourcePanel: View {
 
                 if let page {
                     VStack(alignment: .leading, spacing: 6) {
-                        legend(Color(hex: 0xC4B5FD), "Text")
-                        legend(Color(hex: 0x7C3AED), "Heading")
-                        legend(Color(hex: 0x6E8CD8), "Table")
-                        legend(Color(hex: 0x7FB89A), "Image")
+                        legend(NodusColors.lavender, "Text")
+                        legend(NodusColors.violet, "Heading")
+                        legend(NodusColors.slateBlue, "Table")
+                        legend(NodusColors.sage, "Image")
                         legend(Color.gray.opacity(0.6), "Header / footer")
                     }
                     .padding(.top, 4)
@@ -505,12 +527,12 @@ struct PDFSourcePanel: View {
                           width: region.rect.width * fittedRect.width,
                           height: region.rect.height * fittedRect.height)
         let color: Color = switch region.kind {
-        case .text: Color(hex: 0xC4B5FD)
-        case .heading: Color(hex: 0x7C3AED)
-        case .table: Color(hex: 0x6E8CD8)
-        case .figure: Color(hex: 0x7FB89A)
+        case .text: NodusColors.lavender
+        case .heading: NodusColors.violet
+        case .table: NodusColors.slateBlue
+        case .figure: NodusColors.sage
         case .headerFooter: Color.gray.opacity(0.6)
-        case .narrating: Color(hex: 0xE9C46A)
+        case .narrating: NodusColors.gold
         }
         return Rectangle()
             .stroke(color, lineWidth: 1)
@@ -573,15 +595,21 @@ struct ReflowImage: View {
         .task(id: url) {
             failed = false
             image = nil
-            let data = await Task.detached(priority: .userInitiated, operation: {
-                try? Data(contentsOf: url)
+            let decoded = await Task.detached(priority: .userInitiated, operation: { () -> PlatformImage? in
+                guard let data = try? Data(contentsOf: url),
+                      let platform = PlatformImage(data: data) else { return nil }
+                #if os(iOS)
+                return platform.preparingForDisplay() ?? platform
+                #else
+                return platform
+                #endif
             }).value
             guard !Task.isCancelled else { return }
-            guard let data, let platform = PlatformImage(data: data) else {
+            guard let decoded else {
                 failed = true
                 return
             }
-            image = platform
+            image = decoded
         }
     }
 }

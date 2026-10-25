@@ -75,6 +75,21 @@ struct ReadingSettingsView: View {
                 Text("These settings apply to the reader. Theme colours are selected in Settings › Theme.")
             }
 
+            #if os(iOS)
+            Section {
+                Picker("Page turn", selection: $preferences.pageTurn) {
+                    ForEach(PageTurnStyle.allCases) { style in
+                        Text(style.label).tag(style)
+                    }
+                }
+                .pickerStyle(.segmented)
+            } header: {
+                sectionLabel("Page turn")
+            } footer: {
+                Text("Slide and Vertical turn pages without the curl animation. With Reduce Motion on, Page curl is shown as Slide.")
+            }
+            #endif
+
             Section {
                 Button("Reset reading preferences") {
                     preferences.reset()

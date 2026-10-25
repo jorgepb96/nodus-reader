@@ -8,6 +8,7 @@ import UIKit
 
 /// Paginates chapter text with TextKit. The same attributed string is sliced into
 /// pages, so selection, word offsets and annotations map back to the chapter text.
+/// Safe to call off the main thread: every call creates its own TextKit objects.
 enum TextPaginator {
     static func paginate(chapters: [ExtractedChapter], style: ReaderPageStyle,
                          pageSize: CGSize) -> PaginatedBook {
@@ -16,6 +17,7 @@ enum TextPaginator {
         var firstPageByChapter: [Int: Int] = [:]
 
         for (chapterIndex, chapter) in chapters.enumerated() {
+            if Task.isCancelled { return .empty }
             let header = EditorialChapterHeader(eyebrow: "CHAPTER \(chapterIndex + 1)",
                                                 title: chapter.title, style: style)
             let full = NSMutableAttributedString(attributedString: header.attributed)

@@ -62,6 +62,7 @@
 		D4BB0B652DA9BA54E98A519B /* StorageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEA231B6036008AC4763DC43 /* StorageSettingsView.swift */; };
 		D500B03C89B854345292E938 /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9D8968A724911866F8AC36D /* PlaybackController.swift */; };
 		DD5DDDD25FAB30062669DFBA /* BookCoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 099184BADB5FD68A4939C524 /* BookCoverView.swift */; };
+		DE3C74A0A0088D2D8ED24673 /* SyncedPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5766A5530202F6E711E0850B /* SyncedPreferences.swift */; };
 		E03A749E4F409D53C8B138D3 /* ReaderPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8407DC14C3175CA38B9D21D /* ReaderPreferences.swift */; };
 		E22356B661EA1D727DDE25F8 /* PhoneRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70D5A0ACAF87A9110D217753 /* PhoneRootView.swift */; };
 		E26147E7713A3800E8D13589 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA6A9321D00C04DCC4ED7A53 /* HomeView.swift */; };
@@ -157,6 +158,7 @@
 		55883FB2D564AC59F46D7083 /* PhononTTS */ = {isa = PBXFileReference; lastKnownFileType = folder; name = PhononTTS; path = Modules/PhononTTS; sourceTree = SOURCE_ROOT; };
 		55CE9F477E2E0E633DF9AFD5 /* PDFKitReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFKitReader.swift; sourceTree = "<group>"; };
 		57311E698E2CF61276C51600 /* LibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryService.swift; sourceTree = "<group>"; };
+		5766A5530202F6E711E0850B /* SyncedPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncedPreferences.swift; sourceTree = "<group>"; };
 		5CFF6B8EDA004F101CAF1458 /* NodusReaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodusReaderApp.swift; sourceTree = "<group>"; };
 		5FC7158911830A319D83B1AE /* IOSReaderPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSReaderPageView.swift; sourceTree = "<group>"; };
 		638DEE4E57C7085D36B92FB0 /* MacRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacRootView.swift; sourceTree = "<group>"; };
@@ -495,6 +497,7 @@
 			children = (
 				8538AACCC8B86BBCBB64F210 /* CloudSyncService.swift */,
 				84215C3B2D70610707C931B2 /* ICloudDocumentStore.swift */,
+				5766A5530202F6E711E0850B /* SyncedPreferences.swift */,
 				2DC6390B2B754114ECA06791 /* SyncJournal.swift */,
 			);
 			path = Sync;
@@ -749,6 +752,7 @@
 				22136E4536823900286B418B /* SidebarComponents.swift in Sources */,
 				D4BB0B652DA9BA54E98A519B /* StorageSettingsView.swift in Sources */,
 				BB4314423E68948DDF1B8D99 /* SyncJournal.swift in Sources */,
+				DE3C74A0A0088D2D8ED24673 /* SyncedPreferences.swift in Sources */,
 				07A5245681E1BD9A675CF23E /* TextPaginator.swift in Sources */,
 				99D2734F6F871C9CA3EABA92 /* ThemePicker.swift in Sources */,
 				68BC4B6B98AE208B59C91A2B /* VoiceCatalog.swift in Sources */,

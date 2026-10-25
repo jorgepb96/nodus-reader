@@ -1,64 +1,110 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import Foundation
 
+/// The values of a `Book` the file layer needs. Captured on the main actor so
+/// iCloud file work never touches SwiftData models off the main thread.
+struct RemoteBookFile: Sendable {
+    let id: UUID
+    let fileName: String
+    let coverFileName: String?
+    let fileSize: Int64
+
+    @MainActor
+    init(_ book: Book) {
+        id = book.id
+        fileName = book.fileName
+        coverFileName = book.coverFileName
+        fileSize = book.fileSize
+    }
+}
+
 /// Files live in the user's iCloud Documents container; metadata lives in
 /// CloudKit. A file may arrive after its metadata, so every operation is
 /// best-effort and the Book's download state is the source of truth in the UI.
-@MainActor
-final class ICloudDocumentStore {
+///
+/// Every filesystem call here can block on iCloud Drive (container lookup,
+/// whole-file copies, coordinated reads), so it all runs on a background task.
+/// Apple documents `url(forUbiquityContainerIdentifier:)` as unsafe to call
+/// on the main thread.
+final class ICloudDocumentStore: @unchecked Sendable {
     static let containerIdentifier = "iCloud.ai.nodus.reader"
 
-    private let fileManager: FileManager
     private let fileStore: FileStore
+    private let lock = NSLock()
+    private var cachedContainerURL: URL?
+    private var resolvedContainer = false
 
-    init(fileStore: FileStore = .shared, fileManager: FileManager = .default) {
+    init(fileStore: FileStore = .shared) {
         self.fileStore = fileStore
-        self.fileManager = fileManager
     }
 
+    /// Last known availability; refreshed by `refreshAvailability()`.
     var isAvailable: Bool {
-        fileManager.ubiquityIdentityToken != nil && containerURL != nil
+        lock.withLock { cachedContainerURL != nil }
+            && FileManager.default.ubiquityIdentityToken != nil
     }
 
-    private var containerURL: URL? {
-        fileManager.url(forUbiquityContainerIdentifier: Self.containerIdentifier)
+    @discardableResult
+    func refreshAvailability() async -> Bool {
+        let url = await Task.detached(priority: .utility) {
+            FileManager.default.url(forUbiquityContainerIdentifier: Self.containerIdentifier)
+        }.value
+        lock.withLock {
+            cachedContainerURL = url
+            resolvedContainer = true
+        }
+        return isAvailable
     }
 
-    private var documentsRoot: URL? {
-        containerURL?.appendingPathComponent("Documents/NodusReader", isDirectory: true)
+    private func documentsRoot() async -> URL? {
+        if !lock.withLock({ resolvedContainer }) {
+            await refreshAvailability()
+        }
+        return lock.withLock { cachedContainerURL }?
+            .appendingPathComponent("Documents/NodusReader", isDirectory: true)
     }
 
-    func remoteFileURL(for book: Book) -> URL? {
-        documentsRoot?
-            .appendingPathComponent("Books", isDirectory: true)
+    private static func remoteFileURL(root: URL, book: RemoteBookFile) -> URL {
+        root.appendingPathComponent("Books", isDirectory: true)
             .appendingPathComponent(book.id.uuidString, isDirectory: true)
-            .appendingPathComponent(book.fileName)
+            .appendingPathComponent(FileStore.sanitizedFileName(book.fileName))
     }
 
-    func remoteCoverURL(for bookID: UUID) -> URL? {
-        documentsRoot?
-            .appendingPathComponent("Covers", isDirectory: true)
+    private static func remoteCoverURL(root: URL, bookID: UUID) -> URL {
+        root.appendingPathComponent("Covers", isDirectory: true)
             .appendingPathComponent("\(bookID.uuidString).jpg")
     }
 
-    func hasRemoteFile(for book: Book) -> Bool {
-        guard let url = remoteFileURL(for: book) else { return false }
-        guard fileManager.fileExists(atPath: url.path) else { return false }
-        return true
+    func hasRemoteFile(for book: RemoteBookFile) async -> Bool {
+        guard let root = await documentsRoot() else { return false }
+        let url = Self.remoteFileURL(root: root, book: book)
+        return await Task.detached(priority: .utility) {
+            FileManager.default.fileExists(atPath: url.path)
+        }.value
     }
 
     /// iCloud may represent a not-yet-downloaded file only as a hidden
     /// placeholder, so a metadata query is the reliable way to know whether the
     /// copy exists in the user's iCloud Drive.
-    func hasRemoteCopy(for book: Book) async -> Bool {
+    func hasRemoteCopy(for book: RemoteBookFile) async -> Bool {
         await locateRemoteItem(for: book) != nil
     }
 
-    private func locateRemoteItem(for book: Book) async -> URL? {
-        guard let remote = remoteFileURL(for: book), let root = documentsRoot else { return nil }
-        if fileManager.fileExists(atPath: remote.path) { return remote }
+    private func locateRemoteItem(for book: RemoteBookFile) async -> URL? {
+        guard let root = await documentsRoot() else { return nil }
+        let remote = Self.remoteFileURL(root: root, book: book)
+        let exists = await Task.detached(priority: .utility) {
+            FileManager.default.fileExists(atPath: remote.path)
+        }.value
+        if exists { return remote }
+        return await Self.metadataQuery(root: root, remote: remote)
+    }
 
-        let fileName = book.fileName
+    /// `NSMetadataQuery` needs a run loop; it is started on the main actor but
+    /// only waits asynchronously for its results.
+    @MainActor
+    private static func metadataQuery(root: URL, remote: URL) async -> URL? {
+        let fileName = remote.lastPathComponent
         let expectedDirectory = remote.deletingLastPathComponent().standardizedFileURL.path
         let query = NSMetadataQuery()
         query.searchScopes = [root]
@@ -102,110 +148,128 @@ final class ICloudDocumentStore {
 
     /// Copies the local document and cover into iCloud Documents. iCloud Drive
     /// handles the upload; this call only needs the local bytes.
-    func upload(_ book: Book) {
-        guard isAvailable, let remote = remoteFileURL(for: book) else { return }
-        let local = fileStore.documentURL(for: book)
-        guard fileManager.fileExists(atPath: local.path) else { return }
-        do {
-            try fileManager.createDirectory(at: remote.deletingLastPathComponent(),
-                                            withIntermediateDirectories: true)
-            if fileManager.fileExists(atPath: remote.path) {
-                try fileManager.removeItem(at: remote)
+    func upload(_ book: RemoteBookFile) async {
+        guard let root = await documentsRoot() else { return }
+        let local = fileStore.documentURL(bookID: book.id, fileName: book.fileName)
+        let cover = fileStore.coverURL(for: book.coverFileName)
+        let remote = Self.remoteFileURL(root: root, book: book)
+        let remoteCover = Self.remoteCoverURL(root: root, bookID: book.id)
+        await Task.detached(priority: .utility) {
+            let fileManager = FileManager.default
+            if fileManager.fileExists(atPath: local.path) {
+                do {
+                    try fileManager.createDirectory(at: remote.deletingLastPathComponent(),
+                                                    withIntermediateDirectories: true)
+                    if fileManager.fileExists(atPath: remote.path) {
+                        try fileManager.removeItem(at: remote)
+                    }
+                    try fileManager.copyItem(at: local, to: remote)
+                } catch {
+                    // Metadata sync remains useful even when the file cannot be copied.
+                }
             }
-            try fileManager.copyItem(at: local, to: remote)
-        } catch {
-            // Metadata sync remains useful even when the file cannot be copied.
-        }
-
-        if let cover = fileStore.coverURL(for: book.coverFileName),
-           let remoteCover = remoteCoverURL(for: book.id),
-           fileManager.fileExists(atPath: cover.path) {
-            try? fileManager.createDirectory(at: remoteCover.deletingLastPathComponent(),
-                                             withIntermediateDirectories: true)
-            if fileManager.fileExists(atPath: remoteCover.path) {
-                try? fileManager.removeItem(at: remoteCover)
+            if let cover, fileManager.fileExists(atPath: cover.path) {
+                try? fileManager.createDirectory(at: remoteCover.deletingLastPathComponent(),
+                                                 withIntermediateDirectories: true)
+                if fileManager.fileExists(atPath: remoteCover.path) {
+                    try? fileManager.removeItem(at: remoteCover)
+                }
+                try? fileManager.copyItem(at: cover, to: remoteCover)
             }
-            try? fileManager.copyItem(at: cover, to: remoteCover)
-        }
+        }.value
     }
 
-    func download(_ book: Book) async throws {
+    /// Downloads the document into the app container. Returns the new local
+    /// cover file name when an iCloud cover was copied too.
+    func download(_ book: RemoteBookFile) async throws -> String? {
         guard let remote = await locateRemoteItem(for: book) else {
             throw SyncFileError.notInICloud
         }
-
-        var values = try remote.resourceValues(forKeys: [
-            .isUbiquitousItemKey,
-            .ubiquitousItemDownloadingStatusKey
-        ])
-        if values.isUbiquitousItem == true,
-           values.ubiquitousItemDownloadingStatus != .current {
-            try fileManager.startDownloadingUbiquitousItem(at: remote)
-            var ready = false
-            for _ in 0..<120 {
-                try Task.checkCancellation()
-                try await Task.sleep(for: .seconds(1))
-                values = try remote.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey])
-                if values.ubiquitousItemDownloadingStatus == .current {
-                    ready = true
-                    break
+        let local = fileStore.documentURL(bookID: book.id, fileName: book.fileName)
+        let root = await documentsRoot()
+        let fileStore = fileStore
+        return try await Task.detached(priority: .userInitiated) {
+            let fileManager = FileManager.default
+            var values = try remote.resourceValues(forKeys: [
+                .isUbiquitousItemKey,
+                .ubiquitousItemDownloadingStatusKey
+            ])
+            if values.isUbiquitousItem == true,
+               values.ubiquitousItemDownloadingStatus != .current {
+                try fileManager.startDownloadingUbiquitousItem(at: remote)
+                var ready = false
+                for _ in 0..<120 {
+                    try Task.checkCancellation()
+                    try await Task.sleep(for: .seconds(1))
+                    values = try remote.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey])
+                    if values.ubiquitousItemDownloadingStatus == .current {
+                        ready = true
+                        break
+                    }
                 }
+                guard ready else { throw SyncFileError.downloadTimedOut }
             }
-            guard ready else { throw SyncFileError.downloadTimedOut }
-        }
 
-        let local = fileStore.documentURL(for: book)
-        try fileManager.createDirectory(at: local.deletingLastPathComponent(),
-                                        withIntermediateDirectories: true)
-        if fileManager.fileExists(atPath: local.path) {
-            try fileManager.removeItem(at: local)
-        }
-        try fileManager.copyItem(at: remote, to: local)
-        let copiedSize = FileStore.fileSize(at: local)
-        if book.fileSize > 0, copiedSize != book.fileSize {
-            try? fileManager.removeItem(at: local)
-            throw SyncFileError.sizeMismatch
-        }
-
-        if let remoteCover = remoteCoverURL(for: book.id),
-           fileManager.fileExists(atPath: remoteCover.path) {
-            let data = try? Data(contentsOf: remoteCover)
-            if let data, let name = try? fileStore.writeCover(data, bookID: book.id) {
-                book.coverFileName = name
+            try fileManager.createDirectory(at: local.deletingLastPathComponent(),
+                                            withIntermediateDirectories: true)
+            if fileManager.fileExists(atPath: local.path) {
+                try fileManager.removeItem(at: local)
             }
-        }
+            try fileManager.copyItem(at: remote, to: local)
+            let copiedSize = FileStore.fileSize(at: local)
+            if book.fileSize > 0, copiedSize != book.fileSize {
+                try? fileManager.removeItem(at: local)
+                throw SyncFileError.sizeMismatch
+            }
+
+            guard let root else { return nil }
+            let remoteCover = Self.remoteCoverURL(root: root, bookID: book.id)
+            guard fileManager.fileExists(atPath: remoteCover.path),
+                  let data = try? Data(contentsOf: remoteCover) else { return nil }
+            return try? fileStore.writeCover(data, bookID: book.id)
+        }.value
     }
 
-    func downloadCover(for book: Book) {
-        guard let remote = remoteCoverURL(for: book.id),
-              fileManager.fileExists(atPath: remote.path),
-              let data = try? Data(contentsOf: remote),
-              let name = try? fileStore.writeCover(data, bookID: book.id) else { return }
-        book.coverFileName = name
+    /// Copies the iCloud cover for a book, if there is one. Returns its new
+    /// local file name.
+    func downloadCover(bookID: UUID) async -> String? {
+        guard let root = await documentsRoot() else { return nil }
+        let remote = Self.remoteCoverURL(root: root, bookID: bookID)
+        let fileStore = fileStore
+        return await Task.detached(priority: .utility) {
+            guard FileManager.default.fileExists(atPath: remote.path),
+                  let data = try? Data(contentsOf: remote) else { return nil }
+            return try? fileStore.writeCover(data, bookID: bookID)
+        }.value
     }
 
-    func deleteRemoteFiles(for book: Book) {
-        deleteRemoteFiles(bookID: book.id, fileName: book.fileName)
-    }
-
-    func deleteRemoteFiles(bookID: UUID, fileName: String) {
-        guard let root = documentsRoot else { return }
-        let remote = root
+    func deleteRemoteFiles(bookID: UUID, fileName: String) async {
+        guard let root = await documentsRoot() else { return }
+        let folder = root
             .appendingPathComponent("Books", isDirectory: true)
             .appendingPathComponent(bookID.uuidString, isDirectory: true)
-        try? fileManager.removeItem(at: remote)
-        if let cover = remoteCoverURL(for: bookID) {
-            try? fileManager.removeItem(at: cover)
-        }
+        let cover = Self.remoteCoverURL(root: root, bookID: bookID)
+        await Task.detached(priority: .utility) {
+            try? FileManager.default.removeItem(at: folder)
+            try? FileManager.default.removeItem(at: cover)
+        }.value
     }
 
-    func removeLocalDownload(for book: Book) throws {
-        try fileStore.removeDocument(book)
+    /// Used when the user cleared a custom cover: otherwise a device that
+    /// pulls the book later would restore the old cover from iCloud Drive.
+    func deleteRemoteCover(bookID: UUID) async {
+        guard let root = await documentsRoot() else { return }
+        let cover = Self.remoteCoverURL(root: root, bookID: bookID)
+        await Task.detached(priority: .utility) {
+            try? FileManager.default.removeItem(at: cover)
+        }.value
     }
 
-    func size(of book: Book) -> Int64 {
-        guard let remote = remoteFileURL(for: book) else { return 0 }
-        return FileStore.fileSize(at: remote)
+    func removeLocalDownload(for book: RemoteBookFile) async throws {
+        let fileStore = fileStore
+        try await Task.detached(priority: .utility) {
+            try fileStore.removeDocument(bookID: book.id)
+        }.value
     }
 }
 

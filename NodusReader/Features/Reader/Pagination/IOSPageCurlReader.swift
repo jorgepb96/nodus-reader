@@ -18,18 +18,19 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
     private(set) var currentIndex = 0
     private var transitioning = false
 
-    /// Reduce Motion replaces the page curl with a plain horizontal slide that
-    /// follows the finger; programmatic page changes are never animated.
+    /// Slide and Vertical use a plain scroll transition that follows the
+    /// finger; Reduce Motion turns the curl into a slide. Programmatic page
+    /// changes are never animated.
     init(style: ReaderPageStyle,
-         reduceMotion: Bool,
+         turn: PageTurnStyle,
          highlightsProvider: @escaping (ReaderPage) -> ReaderPageHighlights) {
         self.style = style
         self.highlightsProvider = highlightsProvider
-        super.init(transitionStyle: reduceMotion ? .scroll : .pageCurl,
-                   navigationOrientation: .horizontal,
-                   options: reduceMotion
-                       ? [.interPageSpacing: 0]
-                       : [.spineLocation: UIPageViewController.SpineLocation.min.rawValue])
+        super.init(transitionStyle: turn == .curl ? .pageCurl : .scroll,
+                   navigationOrientation: turn == .vertical ? .vertical : .horizontal,
+                   options: turn == .curl
+                       ? [.spineLocation: UIPageViewController.SpineLocation.min.rawValue]
+                       : [.interPageSpacing: 0])
         dataSource = self
         delegate = self
         isDoubleSided = false
@@ -95,7 +96,17 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
         let direction: UIPageViewController.NavigationDirection = target > currentIndex ? .forward : .reverse
         currentIndex = target
         setViewControllers([targetHost], direction: direction, animated: animated)
+        trimHosts()
         refreshHighlights()
+    }
+
+    /// Each host keeps a TextKit stack; keep only the pages around the current
+    /// one so a long reading session does not grow memory without bound.
+    private func trimHosts() {
+        let visible = Set((viewControllers ?? []).compactMap { ($0 as? ReaderPageHostController)?.page.id })
+        hosts = hosts.filter { index, host in
+            abs(index - currentIndex) <= 2 || visible.contains(host.page.id)
+        }
     }
 
     func refreshHighlights() {
@@ -152,6 +163,7 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
               let host = pageViewController.viewControllers?.first as? ReaderPageHostController,
               let index = pages.firstIndex(where: { $0.id == host.page.id }) else { return }
         currentIndex = index
+        trimHosts()
         refreshHighlights()
         onPageChanged?(index)
     }
@@ -166,10 +178,10 @@ struct PageCurlReader: UIViewControllerRepresentable {
     var onWordTap: (Int, Int) -> Void
     var onHighlight: (Int, NSRange, AnnotationColor) -> Void
     var onNote: (Int, NSRange) -> Void
-    var reduceMotion = false
+    var turn: PageTurnStyle = .curl
 
     func makeUIViewController(context: Context) -> ReaderPageCurlController {
-        ReaderPageCurlController(style: style, reduceMotion: reduceMotion,
+        ReaderPageCurlController(style: style, turn: turn,
                                  highlightsProvider: highlightsProvider)
     }
 

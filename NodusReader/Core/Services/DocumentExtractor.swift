@@ -5,13 +5,17 @@ import PDFKit
 /// Extracts import-time metadata and searchable text. Rendering is handled by
 /// the readers; this type is safe to run off the main thread.
 public enum DocumentExtractor {
-    public static func extract(url: URL, format: BookFormat) throws -> DocumentExtraction {
+    /// - Parameter completeText: import only needs a bounded sample for
+    ///   metadata and search, but narration needs every page. Without it a
+    ///   long PDF stopped after page 80 and was then marked Finished.
+    public static func extract(url: URL, format: BookFormat,
+                               completeText: Bool = false) throws -> DocumentExtraction {
         let fallbackTitle = fallbackTitle(for: url)
         switch format {
         case .epub:
             return try EPUBParser.parse(url: url, fallbackTitle: fallbackTitle)
         case .pdf:
-            return try extractPDF(url: url, fallbackTitle: fallbackTitle)
+            return try extractPDF(url: url, fallbackTitle: fallbackTitle, completeText: completeText)
         case .txt, .markdown:
             return try extractText(url: url, format: format, fallbackTitle: fallbackTitle)
         case .html:
@@ -30,7 +34,8 @@ public enum DocumentExtractor {
 
     // MARK: - PDF
 
-    private static func extractPDF(url: URL, fallbackTitle: String) throws -> DocumentExtraction {
+    private static func extractPDF(url: URL, fallbackTitle: String,
+                                   completeText: Bool) throws -> DocumentExtraction {
         guard let document = PDFDocument(url: url) else {
             throw ImportError.unreadableDocument(url.lastPathComponent)
         }
@@ -52,14 +57,15 @@ public enum DocumentExtractor {
 
         var chapters: [ExtractedChapter] = []
         var extractedCharacters = 0
-        let pageLimit = min(document.pageCount, 80)
+        let pageLimit = completeText ? document.pageCount : min(document.pageCount, 80)
         for index in 0..<pageLimit {
+            if completeText, Task.isCancelled { break }
             guard let page = document.page(at: index), let text = page.string else { continue }
             let cleaned = HTMLText.normalize(text)
             guard !cleaned.isEmpty else { continue }
             chapters.append(ExtractedChapter(id: index, title: "Page \(index + 1)", text: cleaned))
             extractedCharacters += cleaned.count
-            if extractedCharacters > 500_000 { break }
+            if !completeText, extractedCharacters > 500_000 { break }
         }
 
         let searchText = chapters.map(\.text).joined(separator: "\n\n")

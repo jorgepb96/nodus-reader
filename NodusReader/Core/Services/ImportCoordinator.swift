@@ -161,17 +161,17 @@ public final class ImportCoordinator {
             imported += result.imported.count
             duplicates += result.duplicates.count
             failures.append(contentsOf: result.failures)
-            // Keep a failed payload for a day so the user can retry; then drop
-            // it instead of alerting forever and growing the shared container.
-            if result.failures.isEmpty || item.createdAt < Date().addingTimeInterval(-86_400) {
-                SharedImportInbox.remove(item, root: root)
-            }
+            // Each payload is attempted and reported once. Keeping a failed
+            // one re-ran the import and re-presented the same alert on every
+            // app activation for a day, taking over the screen each time.
+            SharedImportInbox.remove(item, root: root)
         }
 
         if !failures.isEmpty {
             alert = LibraryAlert(
                 title: imported > 0 ? "Shared documents imported with errors" : "Shared documents could not be imported",
                 message: failures.map { "\($0.fileName): \($0.message)" }.joined(separator: "\n")
+                    + "\n\nShare the document again to retry."
             )
         } else if imported > 0 {
             let count = imported == 1 ? "1 shared document imported" : "\(imported) shared documents imported"

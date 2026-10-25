@@ -24,6 +24,7 @@ struct VoicesView: View {
     @State private var hfStatus: String?
     @State private var isVerifyingToken = false
     @State private var tokenSaved = false
+    @State private var showBundleImporter = false
 
     private var filteredVoices: [VoiceCatalog.Voice] {
         voices.voices.filter { voice in
@@ -302,6 +303,28 @@ struct VoicesView: View {
             .padding(.top, 6)
 
         huggingFaceCard
+
+        Button {
+            showBundleImporter = true
+        } label: {
+            Label("Install from file…", systemImage: "folder.badge.plus")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(.bordered)
+        .accessibilityHint("Installs a Kokoro or Phonon Core ML bundle folder that is already on this device")
+        .fileImporter(isPresented: $showBundleImporter, allowedContentTypes: [.folder]) { result in
+            if case .success(let folder) = result {
+                Task { await models.installFromFolder(folder) }
+            }
+        }
+        if let message = models.errorMessage {
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(palette.destructive)
+                .padding(.horizontal, 4)
+                .fixedSize(horizontal: false, vertical: true)
+        }
 
         HStack {
             Text("Models and audio on this \(DeviceInfo.platformName)")

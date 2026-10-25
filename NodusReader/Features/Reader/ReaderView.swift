@@ -32,6 +32,10 @@ struct ReaderView: View {
     @State private var firstPageByChapter: [Int: Int] = [:]
     @State private var readerPages: [ReaderPage] = []
     @State private var pageStep = 1
+    /// False until the reader moves away from the restored page. Restoring a
+    /// position is not reading: it must not rewrite progress, and a document
+    /// that fits on the first page must not become Finished just by opening.
+    @State private var hasTurnedPage = false
     @State private var chromeVisible = true
     @State private var showContents = false
     @State private var showAppearance = false
@@ -101,8 +105,15 @@ struct ReaderView: View {
         .animation(.easeInOut(duration: 0.2), value: chromeVisible)
         .task { await load() }
         .onDisappear { saveProgress() }
-        .onChange(of: pageInfo.pageIndex) { _, _ in saveProgress() }
-        .onChange(of: pageInfo.chapterIndex) { _, _ in saveProgress() }
+        .onChange(of: pageInfo) { old, new in
+            // Same pagination, different page: the reader turned a page (or
+            // Read & Listen followed the narration). A new page count is a
+            // repagination after a font, theme or window change.
+            if old.pageCount > 0, old.pageCount == new.pageCount, old.pageIndex != new.pageIndex {
+                hasTurnedPage = true
+            }
+            saveProgress()
+        }
         .onChange(of: pdfPageIndex) { _, _ in saveProgress() }
         .sheet(isPresented: $showContents) {
             if book.format == .pdf {
@@ -403,11 +414,14 @@ struct ReaderView: View {
     private func saveProgress() {
         switch content {
         case .chapters(let chapters):
-            guard pageInfo.pageCount > 0, !chapters.isEmpty else { return }
+            guard hasTurnedPage, pageInfo.pageCount > 0, !chapters.isEmpty else { return }
             let chapterFraction = pageInfo.pagesInChapter > 1
                 ? Double(pageInfo.pageIndexInChapter) / Double(pageInfo.pagesInChapter - 1)
                 : 0
-            let overall = min(1, Double(pageInfo.pageIndex + 1) / Double(pageInfo.pageCount))
+            // Count every visible page: on the Mac spread the right-hand page
+            // is read too, so the last spread reaches 100 %.
+            let lastVisible = min(pageInfo.pageIndex + max(pageStep, 1), pageInfo.pageCount)
+            let overall = min(1, Double(lastVisible) / Double(pageInfo.pageCount))
             library.updateProgress(
                 book,
                 locator: ReadingLocator(chapterIndex: pageInfo.chapterIndex,
@@ -590,7 +604,7 @@ struct ReaderNarrationCapsule: View {
     var onOpenPlayer: () -> Void
 
     private var playForeground: Color {
-        theme.isDark ? Color(hex: 0x16121F) : .white
+        theme.isDark ? NodusColors.onAccent : .white
     }
 
     var body: some View {

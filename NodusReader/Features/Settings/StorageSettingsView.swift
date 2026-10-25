@@ -171,10 +171,10 @@ struct StorageSettingsView: View {
             await sync.refreshAvailability()
             await sync.syncNow()
             await models.refreshStorage()
-            refreshStorage()
+            await refreshStorage()
         }
         .task {
-            refreshStorage()
+            await refreshStorage()
             await models.refreshStorage()
             await sync.refreshAvailability()
         }
@@ -384,9 +384,15 @@ struct StorageSettingsView: View {
         }
     }
 
-    private func refreshStorage() {
-        booksBytes = library.localLibraryBytes
-        coversBytes = library.localCoversBytes
+    /// Walking the library and cover folders is filesystem work; keep it off
+    /// the main thread so opening this screen never stalls.
+    private func refreshStorage() async {
+        let store = library.fileStore
+        let sizes = await Task.detached(priority: .utility) {
+            (store.librarySize(), store.coversSize())
+        }.value
+        booksBytes = sizes.0
+        coversBytes = sizes.1
     }
 
     private var storageBar: some View {
@@ -506,7 +512,7 @@ struct AboutView: View {
         ScrollView {
             VStack(spacing: 18) {
                 ZStack {
-                    LinearGradient(colors: [Color(hex: 0x1D1929), Color(hex: 0x110F18)],
+                    LinearGradient(colors: [NodusColors.iconBackgroundTop, NodusColors.iconBackgroundBottom],
                                    startPoint: .top, endPoint: .bottom)
                     ReaderMark()
                         .padding(18)
@@ -515,7 +521,7 @@ struct AboutView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 26, style: .continuous)
-                        .stroke(Color(hex: 0xC4B5FD, opacity: 0.18), lineWidth: 1)
+                        .stroke(NodusColors.iconHairline, lineWidth: 1)
                 )
                 .shadow(color: .black.opacity(0.4), radius: 22, y: 12)
 

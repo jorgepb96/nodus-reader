@@ -54,12 +54,20 @@ struct StoredCoverImage: View {
             image = cached
             return
         }
-        let data = await Task.detached(priority: .userInitiated) {
-            try? Data(contentsOf: url)
+        // Read and decode off the main thread; decoding dozens of JPEG covers
+        // while a grid scrolls would otherwise stall the UI.
+        let decoded = await Task.detached(priority: .userInitiated) { () -> PlatformImage? in
+            guard let data = try? Data(contentsOf: url),
+                  let platform = PlatformImage(data: data) else { return nil }
+            #if os(iOS)
+            return platform.preparingForDisplay() ?? platform
+            #else
+            return platform
+            #endif
         }.value
-        guard let data, let platform = PlatformImage(data: data) else { return }
-        CoverImageCache.shared.store(platform, for: url)
-        image = platform
+        guard !Task.isCancelled, let decoded else { return }
+        CoverImageCache.shared.store(decoded, for: url)
+        image = decoded
     }
 }
 
@@ -114,10 +122,10 @@ struct BookCoverView: View {
                     Text("PDF")
                         .font(.system(size: max(7, width * 0.045), weight: .semibold))
                         .tracking(0.5)
-                        .foregroundStyle(Color(hex: 0xF2EFE8))
+                        .foregroundStyle(NodusColors.coverBadgeText)
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
-                        .background(Color(hex: 0x0E0D14, opacity: 0.82),
+                        .background(NodusColors.coverBadgeFill,
                                     in: RoundedRectangle(cornerRadius: 4))
                         .padding(max(5, width * 0.05))
                 }
@@ -126,9 +134,18 @@ struct BookCoverView: View {
                 if showBadges, book.downloadState == .cloudOnly {
                     Image(systemName: "icloud.and.arrow.down")
                         .font(.system(size: max(9, width * 0.06), weight: .medium))
-                        .foregroundStyle(Color(hex: 0xF2EFE8))
+                        .foregroundStyle(NodusColors.coverBadgeText)
                         .frame(width: max(20, width * 0.16), height: max(20, width * 0.16))
-                        .background(Color(hex: 0x0E0D14, opacity: 0.82), in: Circle())
+                        .background(NodusColors.coverBadgeFill, in: Circle())
+                        .padding(max(5, width * 0.05))
+                } else if showBadges, book.downloadState == .downloading {
+                    // iCloud does not report byte progress for this copy, so the
+                    // badge is an indeterminate spinner rather than a fake bar.
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(NodusColors.coverBadgeText)
+                        .frame(width: max(20, width * 0.16), height: max(20, width * 0.16))
+                        .background(NodusColors.coverBadgeFill, in: Circle())
                         .padding(max(5, width * 0.05))
                 }
             }

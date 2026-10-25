@@ -91,7 +91,7 @@ See `docs/ROADMAP.md`, `docs/ICLOUD.md` and `docs/NARRATION_SYNC.md`.
 
 ## Verification
 
-- 27 unit/integration tests cover EPUB/PDF import, duplicate detection, collections,
+- 31 unit/integration tests cover EPUB/PDF import, duplicate detection, collections,
   themes (including reader-follows-app), text utilities, pause-based word alignment,
   page-boundary highlight clipping, path-traversal defenses, language-aware voice
   choice and the durable sync outbox, including suspended remote saves.

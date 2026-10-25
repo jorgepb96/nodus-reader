@@ -68,10 +68,13 @@ public final class FileStore: @unchecked Sendable {
     /// data, so the live URL is derived from the stable ID and sanitized file
     /// name instead of trusting the stored path.
     public func documentURL(for book: Book) -> URL {
-        let name = Self.sanitizedFileName(book.fileName)
-        return libraryDirectory
-            .appendingPathComponent(book.id.uuidString, isDirectory: true)
-            .appendingPathComponent(name)
+        documentURL(bookID: book.id, fileName: book.fileName)
+    }
+
+    public func documentURL(bookID: UUID, fileName: String) -> URL {
+        libraryDirectory
+            .appendingPathComponent(bookID.uuidString, isDirectory: true)
+            .appendingPathComponent(Self.sanitizedFileName(fileName))
     }
 
     public func coverURL(for fileName: String?) -> URL? {
@@ -134,8 +137,12 @@ public final class FileStore: @unchecked Sendable {
     /// Removes only the document copy (the "Remove Download" path once iCloud
     /// sync exists). Metadata and annotations stay in the local database.
     public func removeDocument(_ book: Book) throws {
-        let folder = libraryDirectory.appendingPathComponent(book.id.uuidString, isDirectory: true)
-        guard folder.lastPathComponent == book.id.uuidString,
+        try removeDocument(bookID: book.id)
+    }
+
+    public func removeDocument(bookID: UUID) throws {
+        let folder = libraryDirectory.appendingPathComponent(bookID.uuidString, isDirectory: true)
+        guard folder.lastPathComponent == bookID.uuidString,
               fileManager.fileExists(atPath: folder.path) else { return }
         try fileManager.removeItem(at: folder)
     }
@@ -207,6 +214,9 @@ public final class FileStore: @unchecked Sendable {
 // MARK: - Security-scoped access
 
 public enum FileAccess {
+    /// Documents above this size are rejected before any byte is copied.
+    public static let maximumImportBytes: Int64 = 250 * 1024 * 1024
+
     /// Copies an externally supplied URL into the app's staging area using
     /// coordinated access. The original file is never modified.
     public static func stageCopy(from source: URL, suggestedName: String? = nil,
@@ -222,6 +232,11 @@ public enum FileAccess {
 
         NSFileCoordinator().coordinate(readingItemAt: source, options: [], error: &coordinationError) { readURL in
             do {
+                // Check the size first: copying a multi-gigabyte file only to
+                // reject it wastes minutes and disk space.
+                if FileStore.fileSize(at: readURL) > maximumImportBytes {
+                    throw ImportError.fileTooLarge(source.lastPathComponent)
+                }
                 if FileManager.default.fileExists(atPath: staged.path) {
                     try FileManager.default.removeItem(at: staged)
                 }

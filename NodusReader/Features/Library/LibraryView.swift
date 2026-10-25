@@ -25,11 +25,13 @@ struct LibraryView: View {
     @State private var showCollectionSheet = false
     @State private var pendingDeletion: [Book] = []
     @State private var showDeleteConfirmation = false
+    @State private var searchMatches: Set<UUID>?
 
     private var filteredBooks: [Book] {
-        let filtered = books.filter { LibraryFilter.matches($0, kind: filter) }
-        let searched = library.search(searchText, among: filtered)
-        return sorted(searched)
+        let filtered = books.filter {
+            LibraryFilter.matches($0, kind: filter) && (searchMatches?.contains($0.id) ?? true)
+        }
+        return sorted(filtered)
     }
 
     private var selectedBooks: [Book] {
@@ -56,6 +58,11 @@ struct LibraryView: View {
             .padding(.bottom, 110)
         }
         .background(palette.background)
+        .task(id: SearchKey(query: searchText, count: books.count)) {
+            let matches = await SearchKey.debouncedMatches(searchText, books: books, library: library)
+            guard !Task.isCancelled else { return }
+            searchMatches = matches
+        }
         .toolbar {
             ToolbarItem(placement: .nodusLeading) {
                 Button(selectionMode ? "Done" : "Select") {

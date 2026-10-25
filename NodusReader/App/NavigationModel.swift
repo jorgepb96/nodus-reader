@@ -53,3 +53,8 @@ public final class NavigationModel {
         sidebarSelection = .allBooks
     }
 }
+
+extension FocusedValues {
+    /// The navigation of the focused library window, for menu commands.
+    @Entry var nodusNavigation: NavigationModel?
+}

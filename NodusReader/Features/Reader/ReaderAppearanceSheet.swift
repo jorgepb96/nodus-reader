@@ -94,6 +94,15 @@ struct ReaderAppearanceSheet: View {
                         .pickerStyle(.segmented)
                         Toggle("Justify text", isOn: $preferences.justify)
                             .font(.footnote)
+                        #if os(iOS)
+                        Picker("Page turn", selection: $preferences.pageTurn) {
+                            ForEach(PageTurnStyle.allCases) { style in
+                                Text(style.label).tag(style)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .accessibilityLabel("Page turn")
+                        #endif
                     }
                     .padding(14)
                     .panelCard(radius: 18)

@@ -49,6 +49,11 @@ struct PaginatedReaderContent: View {
     @State private var builtKey = ""
     @State private var isBuilding = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(ReaderPreferences.self) private var preferences
+
+    private var pageTurn: PageTurnStyle {
+        reduceMotion && preferences.pageTurn == .curl ? .slide : preferences.pageTurn
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -96,11 +101,12 @@ struct PaginatedReaderContent: View {
                         onWordTap: onWordTap,
                         onHighlight: onHighlight,
                         onNote: onNote,
-                        reduceMotion: reduceMotion
+                        turn: pageTurn
                     )
                     // The transition style is fixed when the page controller
-                    // is created, so a Reduce Motion change rebuilds it.
-                    .id(reduceMotion)
+                    // is created, so a page-turn or Reduce Motion change
+                    // rebuilds it.
+                    .id(pageTurn)
                     #endif
                 }
             }
@@ -144,7 +150,20 @@ struct PaginatedReaderContent: View {
             ? Double(previousPageInChapter) / Double(previousPagesInChapter - 1)
             : 0
 
-        let paginated = TextPaginator.paginate(chapters: chapters, style: style, pageSize: size)
+        // TextKit layout of a whole book takes seconds on long books; it runs
+        // off the main actor (each pass owns its own text storage and layout
+        // manager) so the window stays responsive. A newer size, font or theme
+        // cancels this pass through `.task(id:)`.
+        let chapters = self.chapters
+        let job = Task.detached(priority: .userInitiated) {
+            TextPaginator.paginate(chapters: chapters, style: style, pageSize: size)
+        }
+        let paginated = await withTaskCancellationHandler {
+            await job.value
+        } onCancel: {
+            job.cancel()
+        }
+        guard !Task.isCancelled else { return }
         guard !paginated.pages.isEmpty else {
             pages = []
             isBuilding = false
@@ -250,9 +269,9 @@ struct PaginatedReaderContent: View {
                 spans.append(ReaderPageHighlightSpan(
                     range: trimmed,
                     fill: style.isDark
-                        ? PlatformColor(hex: 0xC4B5FD, alpha: 0.55)
-                        : PlatformColor(hex: 0x7C3AED, alpha: 0.38),
-                    underline: style.isDark ? PlatformColor(hex: 0xC4B5FD) : PlatformColor(hex: 0x7C3AED),
+                        ? PlatformColor(hex: NodusHex.lavender, alpha: 0.55)
+                        : PlatformColor(hex: NodusHex.violet, alpha: 0.38),
+                    underline: style.isDark ? PlatformColor(hex: NodusHex.lavender) : PlatformColor(hex: NodusHex.violet),
                     underlineWidth: 2,
                     rounded: true
                 ))

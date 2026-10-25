@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import CloudKit
+import DesignSystem
 import Foundation
 import Observation
 import SwiftData
@@ -53,6 +54,10 @@ final class CloudSyncService {
         static let lastSync = "nodus.sync.last"
         static let changeToken = "nodus.sync.changeToken"
         static let initialPush = "nodus.sync.initialPush"
+        static let prefsObserved = "nodus.sync.prefs.observed"
+        static let prefsSynced = "nodus.sync.prefs.synced"
+        static let prefsUpdatedAt = "nodus.sync.prefs.updatedAt"
+        static let deferredChildren = "nodus.sync.deferredChildren"
     }
 
     static let zoneName = "NodusReader"
@@ -82,6 +87,9 @@ final class CloudSyncService {
     private var zoneReady = false
     private var started = false
     private var activeSyncGeneration = UUID()
+    @ObservationIgnored private var pendingCoverDownloads: Set<UUID> = []
+    @ObservationIgnored private var preferenceSources: (theme: ThemeManager, reading: ReaderPreferences)?
+    nonisolated(unsafe) private var preferencesObserver: NSObjectProtocol?
 
     init(context: ModelContext, library: LibraryService, journal: SyncJournal,
          fileStore: FileStore = .shared, defaults: UserDefaults = .standard) {
@@ -109,6 +117,78 @@ final class CloudSyncService {
 
     deinit {
         if let outboxObserver { NotificationCenter.default.removeObserver(outboxObserver) }
+        if let preferencesObserver { NotificationCenter.default.removeObserver(preferencesObserver) }
+    }
+
+    // MARK: Preferences
+
+    /// Themes and reading preferences live in `UserDefaults`, not SwiftData, so
+    /// they are synced as one `Preference` record. Local edits are detected by
+    /// comparing snapshots whenever defaults change.
+    func attachPreferences(theme: ThemeManager, reading: ReaderPreferences) {
+        preferenceSources = (theme, reading)
+        if defaults.data(forKey: Key.prefsObserved) == nil {
+            // A fresh install must not overwrite the user's synced choices with
+            // this device's defaults: its snapshot starts older than anything.
+            defaults.set(SyncedPreferences(theme: theme, reading: reading).encoded, forKey: Key.prefsObserved)
+            defaults.set(Date.distantPast, forKey: Key.prefsUpdatedAt)
+        }
+        preferencesObserver = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.noteLocalPreferenceChange() }
+        }
+    }
+
+    private func noteLocalPreferenceChange() {
+        guard let sources = preferenceSources else { return }
+        let snapshot = SyncedPreferences(theme: sources.theme, reading: sources.reading).encoded
+        guard snapshot != defaults.data(forKey: Key.prefsObserved) else { return }
+        defaults.set(snapshot, forKey: Key.prefsObserved)
+        defaults.set(Date(), forKey: Key.prefsUpdatedAt)
+        scheduleSync()
+    }
+
+    private var preferencesRecordID: CKRecord.ID {
+        CKRecord.ID(recordName: "preference-settings", zoneID: zoneID)
+    }
+
+    private func pushPreferencesIfNeeded() async throws {
+        guard let sources = preferenceSources, let database else { return }
+        let current = SyncedPreferences(theme: sources.theme, reading: sources.reading).encoded
+        guard current != defaults.data(forKey: Key.prefsSynced) else { return }
+        let localDate = defaults.object(forKey: Key.prefsUpdatedAt) as? Date ?? .distantPast
+        if let remote = try? await database.record(for: preferencesRecordID),
+           let remoteDate = remote["updatedAt"] as? Date, remoteDate > localDate {
+            applyRemotePreferences(remote)
+            return
+        }
+        let record = CKRecord(recordType: "Preference", recordID: preferencesRecordID)
+        record["payload"] = String(data: current, encoding: .utf8)
+        record["updatedAt"] = localDate == .distantPast ? Date() : localDate
+        _ = try await database.modifyRecords(saving: [record], deleting: [],
+                                             savePolicy: .allKeys, atomically: false)
+        defaults.set(current, forKey: Key.prefsSynced)
+    }
+
+    private func applyRemotePreferences(_ record: CKRecord) {
+        guard let sources = preferenceSources,
+              let remoteDate = record["updatedAt"] as? Date,
+              let payload = (record["payload"] as? String)?.data(using: .utf8),
+              let remote = SyncedPreferences.decode(payload) else { return }
+        let localDate = defaults.object(forKey: Key.prefsUpdatedAt) as? Date ?? .distantPast
+        guard remoteDate > localDate else { return }
+        // Record the incoming snapshot first so the defaults writes below are
+        // not mistaken for a local edit and pushed straight back.
+        defaults.set(remote.encoded, forKey: Key.prefsObserved)
+        defaults.set(remote.encoded, forKey: Key.prefsSynced)
+        defaults.set(remoteDate, forKey: Key.prefsUpdatedAt)
+        remote.apply(theme: sources.theme, reading: sources.reading)
+        let applied = SyncedPreferences(theme: sources.theme, reading: sources.reading).encoded
+        defaults.set(applied, forKey: Key.prefsObserved)
+        defaults.set(applied, forKey: Key.prefsSynced)
     }
 
     var lastSyncText: String {
@@ -139,7 +219,7 @@ final class CloudSyncService {
     func refreshAvailability() async {
         pendingCount = journal.pendingCount()
         reconcileDownloadStates()
-        fileSyncAvailable = documents.isAvailable
+        fileSyncAvailable = await documents.refreshAvailability()
         guard FileManager.default.ubiquityIdentityToken != nil,
               Self.hasCloudKitContainerEntitlement() else {
             isAvailable = false
@@ -239,6 +319,11 @@ final class CloudSyncService {
                 try await pushOutbox()
             } catch {
                 pushError = error
+            }
+            do {
+                try await pushPreferencesIfNeeded()
+            } catch {
+                pushError = pushError ?? error
             }
             guard isEnabled, generation == activeSyncGeneration else { return }
             try await pullChanges()
@@ -359,9 +444,14 @@ final class CloudSyncService {
             savePolicy: .allKeys,
             atomically: false
         )
-        if entry.entityType == .book, let book = fetchBook(id: entry.entityID),
-           !documents.hasRemoteFile(for: book) {
-            documents.upload(book)
+        if entry.entityType == .book, let book = fetchBook(id: entry.entityID) {
+            let file = RemoteBookFile(book)
+            if !(await documents.hasRemoteFile(for: file)) {
+                await documents.upload(file)
+            }
+            if file.coverFileName == nil {
+                await documents.deleteRemoteCover(bookID: file.id)
+            }
         }
     }
 
@@ -401,7 +491,7 @@ final class CloudSyncService {
            let data = entry.payloadJSON.data(using: .utf8),
            let payload = try? JSONSerialization.jsonObject(with: data) as? [String: String],
            let fileName = payload["fileName"] {
-            documents.deleteRemoteFiles(bookID: entry.entityID, fileName: fileName)
+            await documents.deleteRemoteFiles(bookID: entry.entityID, fileName: fileName)
         }
     }
 
@@ -428,11 +518,14 @@ final class CloudSyncService {
                     for deletion in changes.deletions {
                         applyRemoteDeletion(deletion.recordID, recordType: deletion.recordType)
                     }
+                    retryDeferredChildren()
                     try context.save()
                 }
                 token = changes.changeToken
+                persistDeferredChildren()
                 saveChangeToken(changes.changeToken)
                 moreComing = changes.moreComing
+                await downloadPendingCovers()
             } catch let error as CKError where error.code == .changeTokenExpired {
                 token = nil
                 clearChangeToken()
@@ -533,10 +626,11 @@ final class CloudSyncService {
         switch record.recordType {
         case "Book": applyRemoteBook(record)
         case "Collection": applyRemoteCollection(record)
-        case "Membership": applyRemoteMembership(record)
-        case "Bookmark": applyRemoteBookmark(record)
-        case "Annotation": applyRemoteAnnotation(record)
+        case "Membership": if !applyRemoteMembership(record) { deferChild(record) }
+        case "Bookmark": if !applyRemoteBookmark(record) { deferChild(record) }
+        case "Annotation": if !applyRemoteAnnotation(record) { deferChild(record) }
         case "Tombstone": applyRemoteTombstone(record)
+        case "Preference": applyRemotePreferences(record)
         default: break
         }
     }
@@ -585,7 +679,15 @@ final class CloudSyncService {
         book.locatorJSON = record["locatorJSON"] as? String ?? book.locatorJSON
         book.statusRaw = record["status"] as? String ?? book.statusRaw
         book.isFavorite = (integer(record, "isFavorite") ?? 0) == 1
-        if let coverName = record["coverFileName"] as? String, !coverName.isEmpty {
+        if let coverName = record["coverFileName"] as? String, coverName.isEmpty,
+           let localCover = book.coverFileName {
+            // The cover was cleared on another device: fall back to the
+            // typographic cover here as well.
+            if let url = library.fileStore.coverURL(for: localCover) {
+                try? FileManager.default.removeItem(at: url)
+            }
+            book.coverFileName = nil
+        } else if let coverName = record["coverFileName"] as? String, !coverName.isEmpty {
             let safeCover = FileStore.sanitizedFileName(coverName)
             let localCover = library.fileStore.coverURL(for: safeCover)
             let hasLocalCover = localCover.map { FileManager.default.fileExists(atPath: $0.path) } ?? false
@@ -604,8 +706,24 @@ final class CloudSyncService {
         if !downloadingBookIDs.contains(book.id) {
             book.downloadState = localExists ? .downloaded : .cloudOnly
         }
-        if !localExists || book.coverFileName == nil {
-            documents.downloadCover(for: book)
+        let remoteHasCover = !((record["coverFileName"] as? String) ?? "").isEmpty
+        if remoteHasCover, !localExists || book.coverFileName == nil {
+            pendingCoverDownloads.insert(book.id)
+        }
+    }
+
+    /// Covers are copied from iCloud Drive after a pull page is applied, off
+    /// the main thread, then attached without re-enqueueing the book.
+    private func downloadPendingCovers() async {
+        let ids = pendingCoverDownloads
+        pendingCoverDownloads.removeAll()
+        for id in ids {
+            guard let name = await documents.downloadCover(bookID: id),
+                  let book = fetchBook(id: id) else { continue }
+            journal.withSuspendedRecording {
+                book.coverFileName = name
+                try? context.save()
+            }
         }
     }
 
@@ -631,17 +749,21 @@ final class CloudSyncService {
         collection.updatedAt = remoteDate
     }
 
-    private func applyRemoteMembership(_ record: CKRecord) {
+    /// Returns false when a parent has not arrived yet, so the record is kept
+    /// and retried after later pages instead of being lost.
+    private func applyRemoteMembership(_ record: CKRecord) -> Bool {
         guard let id = uuid(from: record.recordID),
               let bookIDString = record["bookID"] as? String,
               let collectionIDString = record["collectionID"] as? String,
               let bookID = UUID(uuidString: bookIDString),
-              let collectionID = UUID(uuidString: collectionIDString),
-              let book = fetchBook(id: bookID),
-              let collection = fetchCollection(id: collectionID) else { return }
+              let collectionID = UUID(uuidString: collectionIDString) else { return true }
+        if fetchTombstone(type: .book, id: bookID) != nil
+            || fetchTombstone(type: .collection, id: collectionID) != nil { return true }
+        guard let book = fetchBook(id: bookID),
+              let collection = fetchCollection(id: collectionID) else { return false }
         let remoteDate = record["updatedAt"] as? Date ?? .distantPast
-        if remoteIsSupersededByLocalDeletion(.membership, id: id, remoteDate: remoteDate) { return }
-        if let local = fetchMembership(id: id), local.updatedAt > remoteDate { return }
+        if remoteIsSupersededByLocalDeletion(.membership, id: id, remoteDate: remoteDate) { return true }
+        if let local = fetchMembership(id: id), local.updatedAt > remoteDate { return true }
         let membership: CollectionMembership
         if let existing = fetchMembership(id: id) {
             membership = existing
@@ -654,16 +776,18 @@ final class CloudSyncService {
         membership.sortIndex = Int(integer(record, "sortIndex") ?? Int64(membership.sortIndex))
         membership.addedAt = record["addedAt"] as? Date ?? membership.addedAt
         membership.updatedAt = remoteDate
+        return true
     }
 
-    private func applyRemoteBookmark(_ record: CKRecord) {
+    private func applyRemoteBookmark(_ record: CKRecord) -> Bool {
         guard let id = uuid(from: record.recordID),
               let bookIDString = record["bookID"] as? String,
               let bookID = UUID(uuidString: bookIDString),
-              let book = fetchBook(id: bookID),
-              let remoteDate = record["updatedAt"] as? Date else { return }
-        if remoteIsSupersededByLocalDeletion(.bookmark, id: id, remoteDate: remoteDate) { return }
-        if let local = fetchBookmark(id: id), local.updatedAt > remoteDate { return }
+              let remoteDate = record["updatedAt"] as? Date else { return true }
+        if fetchTombstone(type: .book, id: bookID) != nil { return true }
+        guard let book = fetchBook(id: bookID) else { return false }
+        if remoteIsSupersededByLocalDeletion(.bookmark, id: id, remoteDate: remoteDate) { return true }
+        if let local = fetchBookmark(id: id), local.updatedAt > remoteDate { return true }
         let bookmark: Bookmark
         if let local = fetchBookmark(id: id) {
             bookmark = local
@@ -677,16 +801,18 @@ final class CloudSyncService {
         bookmark.locatorJSON = record["locatorJSON"] as? String ?? bookmark.locatorJSON
         bookmark.createdAt = record["createdAt"] as? Date ?? bookmark.createdAt
         bookmark.updatedAt = remoteDate
+        return true
     }
 
-    private func applyRemoteAnnotation(_ record: CKRecord) {
+    private func applyRemoteAnnotation(_ record: CKRecord) -> Bool {
         guard let id = uuid(from: record.recordID),
               let bookIDString = record["bookID"] as? String,
               let bookID = UUID(uuidString: bookIDString),
-              let book = fetchBook(id: bookID),
-              let remoteDate = record["updatedAt"] as? Date else { return }
-        if remoteIsSupersededByLocalDeletion(.annotation, id: id, remoteDate: remoteDate) { return }
-        if let local = fetchAnnotation(id: id), local.updatedAt > remoteDate { return }
+              let remoteDate = record["updatedAt"] as? Date else { return true }
+        if fetchTombstone(type: .book, id: bookID) != nil { return true }
+        guard let book = fetchBook(id: bookID) else { return false }
+        if remoteIsSupersededByLocalDeletion(.annotation, id: id, remoteDate: remoteDate) { return true }
+        if let local = fetchAnnotation(id: id), local.updatedAt > remoteDate { return true }
         let annotation: Annotation
         if let local = fetchAnnotation(id: id) {
             annotation = local
@@ -710,6 +836,41 @@ final class CloudSyncService {
         annotation.colorRaw = record["color"] as? String ?? annotation.colorRaw
         annotation.createdAt = record["createdAt"] as? Date ?? annotation.createdAt
         annotation.updatedAt = remoteDate
+        return true
+    }
+
+    // MARK: Deferred children
+
+    /// Children whose book or collection is in a later pull page (or whose
+    /// parent push failed on the other device). Persisted, because the change
+    /// token has already moved past them.
+    @ObservationIgnored private lazy var deferredChildren: [CKRecord] = {
+        guard let data = defaults.data(forKey: Key.deferredChildren) else { return [] }
+        return (try? NSKeyedUnarchiver.unarchivedArrayOfObjects(ofClass: CKRecord.self, from: data)) ?? []
+    }()
+
+    private func deferChild(_ record: CKRecord) {
+        deferredChildren.removeAll { $0.recordID == record.recordID }
+        deferredChildren.append(record)
+        if deferredChildren.count > 2_000 {
+            deferredChildren.removeFirst(deferredChildren.count - 2_000)
+        }
+    }
+
+    private func retryDeferredChildren() {
+        guard !deferredChildren.isEmpty else { return }
+        let pending = deferredChildren
+        deferredChildren = []
+        for record in pending { applyRemote(record) }
+    }
+
+    private func persistDeferredChildren() {
+        if deferredChildren.isEmpty {
+            defaults.removeObject(forKey: Key.deferredChildren)
+        } else if let data = try? NSKeyedArchiver.archivedData(withRootObject: deferredChildren,
+                                                               requiringSecureCoding: true) {
+            defaults.set(data, forKey: Key.deferredChildren)
+        }
     }
 
     /// A local tombstone that is newer than the incoming record must win even
@@ -799,9 +960,11 @@ final class CloudSyncService {
     }
 
     private func removeOutbox(type: SyncEntityType, id: UUID) {
-        let descriptor = FetchDescriptor<SyncOutboxEntry>()
-        let entries = (try? context.fetch(descriptor)) ?? []
-        for entry in entries where entry.entityType == type && entry.entityID == id {
+        let raw = type.rawValue
+        let descriptor = FetchDescriptor<SyncOutboxEntry>(
+            predicate: #Predicate { $0.entityID == id && $0.entityTypeRaw == raw }
+        )
+        for entry in (try? context.fetch(descriptor)) ?? [] {
             context.delete(entry)
         }
     }
@@ -831,7 +994,7 @@ final class CloudSyncService {
         book.downloadState = .downloading
         library.save()
         do {
-            try await documents.download(book)
+            let coverName = try await documents.download(RemoteBookFile(book))
             // A remote tombstone or a local delete can land during the wait.
             // Do not resurrect files for a book that no longer exists.
             guard fetchBook(id: bookID) != nil else {
@@ -839,6 +1002,7 @@ final class CloudSyncService {
                     at: library.fileStore.libraryDirectory.appendingPathComponent(bookID.uuidString, isDirectory: true))
                 return
             }
+            if let coverName { book.coverFileName = coverName }
             book.downloadState = .downloaded
             library.save()
             await library.refreshExtractedTextIfNeeded(book)
@@ -860,12 +1024,14 @@ final class CloudSyncService {
     func removeLocalDownload(_ book: Book) async {
         guard isEnabled, isAvailable else { return }
         downloadError = nil
-        guard await documents.hasRemoteCopy(for: book) else {
+        let file = RemoteBookFile(book)
+        guard await documents.hasRemoteCopy(for: file) else {
             downloadError = "This book has no iCloud copy yet."
             return
         }
         do {
-            try documents.removeLocalDownload(for: book)
+            try await documents.removeLocalDownload(for: file)
+            guard fetchBook(id: file.id) != nil else { return }
             book.downloadState = .cloudOnly
             library.save()
             downloadError = nil
@@ -976,10 +1142,12 @@ final class CloudSyncService {
     }
 
     private func fetchTombstone(type: SyncEntityType, id: UUID) -> SyncTombstone? {
-        let descriptor = FetchDescriptor<SyncTombstone>()
-        return (try? context.fetch(descriptor))?.first {
-            $0.entityType == type && $0.entityID == id
-        }
+        let raw = type.rawValue
+        var descriptor = FetchDescriptor<SyncTombstone>(
+            predicate: #Predicate { $0.entityID == id && $0.entityTypeRaw == raw }
+        )
+        descriptor.fetchLimit = 1
+        return (try? context.fetch(descriptor))?.first
     }
 
     private func fetchAnnotation(id: UUID) -> Annotation? {

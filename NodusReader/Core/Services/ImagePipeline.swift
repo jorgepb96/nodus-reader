@@ -37,7 +37,8 @@ public enum ImagePipeline {
         return data as Data
     }
 
-    @MainActor
+    /// PDFKit thumbnails are thread-safe for a document owned by the caller;
+    /// import calls this from a background task.
     public static func jpegData(fromPDFAt url: URL, maxPixel: CGFloat = 1400) -> Data? {
         guard let document = PDFDocument(url: url), let page = document.page(at: 0) else { return nil }
         let bounds = page.bounds(for: .cropBox)
@@ -48,7 +49,6 @@ public enum ImagePipeline {
         return encodeJPEG(image, quality: 0.88)
     }
 
-    @MainActor
     public static func cgImage(from platformImage: PlatformImage) -> CGImage? {
         #if os(macOS)
         var rect = CGRect(origin: .zero, size: platformImage.size)

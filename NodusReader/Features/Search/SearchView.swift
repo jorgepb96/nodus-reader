@@ -19,11 +19,25 @@ struct SearchView: View {
     @State private var pendingDeletion: [Book] = []
     @State private var showDeleteConfirmation = false
 
+    @State private var searchMatches: Set<UUID>?
+
     private var results: [Book] {
-        library.search(searchText, among: books)
+        guard let searchMatches else {
+            return searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? books : []
+        }
+        return books.filter { searchMatches.contains($0.id) }
     }
 
     var body: some View {
+        content
+            .task(id: SearchKey(query: searchText, count: books.count)) {
+                let matches = await SearchKey.debouncedMatches(searchText, books: books, library: library)
+                guard !Task.isCancelled else { return }
+                searchMatches = matches
+            }
+    }
+
+    private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

@@ -16,12 +16,12 @@ extension SmartList {
 
     var dotColor: Color {
         switch self {
-        case .home: Color(hex: 0xC4B5FD)
-        case .allBooks: Color(hex: 0xA8A3B5)
-        case .favorites: Color(hex: 0xE9C46A)
-        case .toRead: Color(hex: 0x6E8CD8)
-        case .finished: Color(hex: 0x7FB89A)
-        case .inbox: Color(hex: 0xE3A39D)
+        case .home: NodusColors.lavender
+        case .allBooks: NodusColors.mutedGrey
+        case .favorites: NodusColors.gold
+        case .toRead: NodusColors.slateBlue
+        case .finished: NodusColors.sage
+        case .inbox: NodusColors.rose
         }
     }
 }

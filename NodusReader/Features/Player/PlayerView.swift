@@ -109,7 +109,7 @@ struct PlayerView: View {
             }
         }
         .padding(12)
-        .background(Color(hex: 0x1A1724), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(NodusColors.playerTile, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(palette.line, lineWidth: 1)
@@ -118,7 +118,7 @@ struct PlayerView: View {
     }
 
     private var playerBackground: some View {
-        LinearGradient(colors: [Color(hex: 0x16131F), Color(hex: 0x110F18)],
+        LinearGradient(colors: [NodusColors.playerBackgroundTop, NodusColors.playerBackgroundBottom],
                        startPoint: .top, endPoint: .bottom)
             .ignoresSafeArea()
     }
@@ -223,16 +223,16 @@ struct PlayerView: View {
         var attributed = AttributedString()
         if let previous = playback.previousSentenceText {
             var part = AttributedString("…\(previous.suffix(48)) ")
-            part.foregroundColor = Color(hex: 0x7F7A8C)
+            part.foregroundColor = NodusColors.playerContextText
             attributed.append(part)
         }
         var current = AttributedString(playback.currentSentence)
-        current.foregroundColor = Color(hex: 0xF2EFE8)
+        current.foregroundColor = NodusColors.playerCurrentText
         current.font = .system(size: 17, design: .serif).weight(.medium)
         attributed.append(current)
         if let next = playback.nextSentenceText {
             var part = AttributedString(" \(next.prefix(48))…")
-            part.foregroundColor = Color(hex: 0x7F7A8C)
+            part.foregroundColor = NodusColors.playerContextText
             attributed.append(part)
         }
         return Text(attributed)
@@ -405,7 +405,7 @@ struct PlayerView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 56)
-        .background(highlighted ? palette.selection : Color(hex: 0x1A1724),
+        .background(highlighted ? palette.selection : NodusColors.playerTile,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -429,7 +429,7 @@ struct PlayerView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 56)
-        .background(highlighted ? palette.selection : Color(hex: 0x1A1724),
+        .background(highlighted ? palette.selection : NodusColors.playerTile,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -499,7 +499,7 @@ struct NarrationScrubber: View {
                 Capsule().fill(palette.accent)
                     .frame(width: max(0, width * fraction), height: 6)
                 Circle()
-                    .fill(Color(hex: 0xF2EFE8))
+                    .fill(NodusColors.playerCurrentText)
                     .frame(width: thumbSize, height: thumbSize)
                     .offset(x: max(0, min(width - thumbSize, width * fraction - thumbSize / 2)))
             }

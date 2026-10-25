@@ -419,6 +419,12 @@ public final class ThemeManager {
         }
     }
 
+    /// Replaces the custom themes with the copy synced from another device.
+    public func replaceCustomThemes(_ themes: [CustomReaderTheme]) {
+        guard themes != customThemes else { return }
+        customThemes = themes
+    }
+
     public static func matchingReaderTheme(for appTheme: NodusAppTheme) -> ReaderThemeID {
         switch appTheme {
         case .system: .system

@@ -40,11 +40,13 @@ struct NodusReaderApp: App {
         _playback = State(initialValue: PlaybackController(library: library, voices: voices,
                                                            models: models))
         _models = State(initialValue: models)
-        _sync = State(initialValue: CloudSyncService(context: container.mainContext,
-                                                     library: library,
-                                                     journal: journal))
-        _theme = State(initialValue: ThemeManager())
-        _preferences = State(initialValue: ReaderPreferences())
+        let sync = CloudSyncService(context: container.mainContext, library: library, journal: journal)
+        let theme = ThemeManager()
+        let preferences = ReaderPreferences()
+        sync.attachPreferences(theme: theme, reading: preferences)
+        _sync = State(initialValue: sync)
+        _theme = State(initialValue: theme)
+        _preferences = State(initialValue: preferences)
         _navigation = State(initialValue: NavigationModel())
     }
 
@@ -133,6 +135,8 @@ struct NodusCommands: Commands {
     let navigation: NavigationModel
     let imports: ImportCoordinator
     let playback: PlaybackController
+    /// The library window in front; each window has its own navigation.
+    @FocusedValue(\.nodusNavigation) private var focusedNavigation: NavigationModel?
 
     var body: some Commands {
         SidebarCommands()
@@ -143,18 +147,21 @@ struct NodusCommands: Commands {
             .keyboardShortcut("i", modifiers: [.command, .shift])
         }
         CommandMenu("Library") {
-            Button("Home") { navigation.sidebarSelection = .home }
-                .keyboardShortcut("1", modifiers: .command)
-            Button("All Books") { navigation.sidebarSelection = .allBooks }
-                .keyboardShortcut("2", modifiers: .command)
-            Button("Favorites") { navigation.sidebarSelection = .favorites }
-                .keyboardShortcut("3", modifiers: .command)
-            Button("To Read") { navigation.sidebarSelection = .toRead }
-                .keyboardShortcut("4", modifiers: .command)
-            Button("Finished") { navigation.sidebarSelection = .finished }
-                .keyboardShortcut("5", modifiers: .command)
-            Button("Inbox") { navigation.sidebarSelection = .inbox }
-                .keyboardShortcut("6", modifiers: .command)
+            Group {
+                Button("Home") { focusedNavigation?.sidebarSelection = .home }
+                    .keyboardShortcut("1", modifiers: .command)
+                Button("All Books") { focusedNavigation?.sidebarSelection = .allBooks }
+                    .keyboardShortcut("2", modifiers: .command)
+                Button("Favorites") { focusedNavigation?.sidebarSelection = .favorites }
+                    .keyboardShortcut("3", modifiers: .command)
+                Button("To Read") { focusedNavigation?.sidebarSelection = .toRead }
+                    .keyboardShortcut("4", modifiers: .command)
+                Button("Finished") { focusedNavigation?.sidebarSelection = .finished }
+                    .keyboardShortcut("5", modifiers: .command)
+                Button("Inbox") { focusedNavigation?.sidebarSelection = .inbox }
+                    .keyboardShortcut("6", modifiers: .command)
+            }
+            .disabled(focusedNavigation == nil)
         }
         CommandMenu("Player") {
             Button(playback.isPlaying ? "Pause" : "Play") {

@@ -104,11 +104,11 @@ final class ModelManager {
     @ObservationIgnored private var kokoro: KokoroTTS?
     @ObservationIgnored private var phonon: Phonon?
 
-    private static let kokoroCacheDirectory = FileManager.default
+    nonisolated private static let kokoroCacheDirectory = FileManager.default
         .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("NodusReader/Models/Kokoro", isDirectory: true)
 
-    private static let phononDirectory = FileManager.default
+    nonisolated private static let phononDirectory = FileManager.default
         .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("NodusReader/Models/Phonon", isDirectory: true)
 
@@ -271,7 +271,7 @@ final class ModelManager {
     /// The manifest is only useful when every asset it lists actually exists.
     /// Checking just the manifest lets a cancelled download look installed and
     /// leaves the model selected but unable to load.
-    private static func kokoroBundleIsComplete(at directory: URL) -> Bool {
+    nonisolated private static func kokoroBundleIsComplete(at directory: URL) -> Bool {
         let manifestURL = directory.appendingPathComponent("KokoroRuntimeManifest.json")
         guard let data = try? Data(contentsOf: manifestURL),
               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
@@ -309,8 +309,11 @@ final class ModelManager {
 
     func refreshStorage() async {
         var summary = StorageSummary()
-        summary.kokoroBytes = Self.directorySize(Self.kokoroCacheDirectory)
-        summary.phononBytes = Self.directorySize(Self.phononDirectory)
+        let sizes = await Task.detached(priority: .utility) {
+            (Self.directorySize(Self.kokoroCacheDirectory), Self.directorySize(Self.phononDirectory))
+        }.value
+        summary.kokoroBytes = sizes.0
+        summary.phononBytes = sizes.1
         summary.narrationCacheBytes = await audioCache.totalBytes()
         storage = summary
     }
@@ -352,9 +355,23 @@ final class ModelManager {
         engineLoadTask?.cancel()
         engineLoadTask = nil
         engineLoadToken = UUID()
-        installTasks[model.id]?.cancel()
+        let cancelledInstall = installTasks[model.id]
+        cancelledInstall?.cancel()
         installTasks[model.id] = nil
         installTokens[model.id] = nil
+        if let cancelledInstall {
+            // A cancelled download can still finish moving files into place
+            // after this delete; remove them again once it has stopped, unless
+            // the user has started a new install meanwhile.
+            let directory = model.engine == .kokoro ? Self.kokoroCacheDirectory : Self.phononDirectory
+            Task { [weak self] in
+                await cancelledInstall.value
+                guard let self, self.installTasks[model.id] == nil,
+                      self.states[model.id] == .notInstalled else { return }
+                try? FileManager.default.removeItem(at: directory)
+                await self.refreshStorage()
+            }
+        }
         switch model.engine {
         case .kokoro:
             kokoro = nil
@@ -437,6 +454,68 @@ final class ModelManager {
             installTokens[model.id] = nil
             await refreshStorage()
         }
+    }
+
+    // MARK: Install from file
+
+    /// Installs a model bundle the user already has on disk (for example one
+    /// downloaded on another computer). Only complete bundles for engines this
+    /// build can run are accepted; nothing is converted or fetched.
+    func installFromFolder(_ folder: URL) async {
+        errorMessage = nil
+        let accessed = folder.startAccessingSecurityScopedResource()
+        defer { if accessed { folder.stopAccessingSecurityScopedResource() } }
+
+        let engine: Engine? = await Task.detached(priority: .userInitiated) {
+            if Self.kokoroBundleIsComplete(at: folder) { return .kokoro }
+            if PhononModels.isInstalled(at: folder) { return .phonon }
+            return nil
+        }.value
+        guard let engine else {
+            errorMessage = "This folder is not a complete Kokoro or Phonon Core ML bundle. Choose the folder that contains the model packages and their manifest."
+            return
+        }
+        guard let model = models.first(where: { $0.engine == engine }) else { return }
+        guard model.isAvailable else {
+            errorMessage = "\(model.name) cannot run on this device, so its bundle was not installed."
+            return
+        }
+        guard installTasks[model.id] == nil else { return }
+
+        let destination = engine == .kokoro ? Self.kokoroCacheDirectory : Self.phononDirectory
+        engineLoadToken = UUID()
+        switch engine {
+        case .kokoro: kokoro = nil
+        case .phonon: phonon = nil
+        }
+        states[model.id] = .loading
+        do {
+            try await Task.detached(priority: .userInitiated) {
+                let fileManager = FileManager.default
+                if fileManager.fileExists(atPath: destination.path) {
+                    try fileManager.removeItem(at: destination)
+                }
+                try fileManager.createDirectory(at: destination.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+                try fileManager.copyItem(at: folder, to: destination)
+            }.value
+            Self.excludeFromBackup(destination)
+            switch engine {
+            case .kokoro:
+                kokoro = try await KokoroTTS.load(resources: KokoroResourceProvider.directory(destination))
+            case .phonon:
+                phonon = try await Phonon.load(models: destination, language: .english)
+            }
+            states[model.id] = .installed
+            publishVoices()
+            NotificationCenter.default.post(name: .nodusVoiceEngineChanged, object: nil)
+        } catch {
+            try? FileManager.default.removeItem(at: destination)
+            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            states[model.id] = .failed(message)
+            errorMessage = message
+        }
+        await refreshStorage()
     }
 
     private func progressValue(for model: Model) -> Double {
@@ -550,7 +629,7 @@ final class ModelManager {
         try? mutable.setResourceValues(values)
     }
 
-    private static func directorySize(_ directory: URL) -> Int64 {
+    nonisolated private static func directorySize(_ directory: URL) -> Int64 {
         guard let enumerator = FileManager.default.enumerator(
             at: directory,
             includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey]

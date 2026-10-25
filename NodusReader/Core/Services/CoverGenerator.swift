@@ -5,13 +5,22 @@ import SwiftUI
 /// Produces the persisted cover JPEG for a newly imported document:
 /// embedded EPUB artwork, a PDF first-page thumbnail, or the typographic cover
 /// language from design/.
-@MainActor
 public enum CoverGenerator {
+    @MainActor
     public static func coverData(extraction: DocumentExtraction,
                                  documentURL: URL,
                                  format: BookFormat,
                                  title: String,
                                  author: String) -> Data? {
+        artworkCover(extraction: extraction, documentURL: documentURL, format: format)
+            ?? typographicCover(title: title, author: author)
+    }
+
+    /// Embedded EPUB artwork or a PDF first-page thumbnail. ImageIO and PDFKit
+    /// only: safe (and meant) to run off the main thread during import.
+    public static func artworkCover(extraction: DocumentExtraction,
+                                    documentURL: URL,
+                                    format: BookFormat) -> Data? {
         if let embedded = extraction.coverData,
            let jpeg = ImagePipeline.jpegData(fromImageData: embedded) {
             return jpeg
@@ -19,9 +28,11 @@ public enum CoverGenerator {
         if format == .pdf, let jpeg = ImagePipeline.jpegData(fromPDFAt: documentURL) {
             return jpeg
         }
-        return typographicCover(title: title, author: author)
+        return nil
     }
 
+    /// `ImageRenderer` requires the main actor.
+    @MainActor
     public static func typographicCover(title: String, author: String,
                                         size: CGSize = CGSize(width: 600, height: 900)) -> Data? {
         let palette = CoverPalette.pair(for: title + author)

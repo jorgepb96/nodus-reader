@@ -3,6 +3,24 @@ import Foundation
 import Observation
 import SwiftUI
 
+/// How the iOS/iPadOS reader moves between pages. The Mac uses a two-page
+/// spread and is not affected.
+public enum PageTurnStyle: String, CaseIterable, Identifiable, Sendable {
+    case curl
+    case slide
+    case vertical
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .curl: "Page curl"
+        case .slide: "Slide"
+        case .vertical: "Vertical"
+        }
+    }
+}
+
 /// Typography and reading preferences. Hardware-specific settings (brightness,
 /// audio route) are intentionally not stored here.
 @Observable
@@ -14,6 +32,7 @@ public final class ReaderPreferences {
         static let justify = "nodus.reader.justify"
         static let serif = "nodus.reader.serif"
         static let weight = "nodus.reader.weight"
+        static let pageTurn = "nodus.reader.pageTurn"
     }
 
     private let defaults: UserDefaults
@@ -37,6 +56,10 @@ public final class ReaderPreferences {
     public var weightIndex: Int {
         didSet { defaults.set(weightIndex, forKey: Key.weight) }
     }
+    /// Reduce Motion always replaces the curl with a slide.
+    public var pageTurn: PageTurnStyle {
+        didSet { defaults.set(pageTurn.rawValue, forKey: Key.pageTurn) }
+    }
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -46,6 +69,7 @@ public final class ReaderPreferences {
         self.justify = defaults.object(forKey: Key.justify) as? Bool ?? true
         self.useSerif = defaults.object(forKey: Key.serif) as? Bool ?? true
         self.weightIndex = defaults.object(forKey: Key.weight) as? Int ?? 0
+        self.pageTurn = (defaults.string(forKey: Key.pageTurn)).flatMap(PageTurnStyle.init(rawValue:)) ?? .curl
     }
 
     public var baseFontSize: CGFloat {
@@ -72,6 +96,7 @@ public final class ReaderPreferences {
         justify = true
         useSerif = true
         weightIndex = 0
+        pageTurn = .curl
     }
 
     public var summary: String {

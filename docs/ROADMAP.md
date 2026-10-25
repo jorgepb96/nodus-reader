@@ -65,7 +65,7 @@ limitations.
 
 ### Verification
 
-- [x] 27 unit/integration tests, including word alignment, language-aware voice
+- [x] 31 unit/integration tests, including word alignment, language-aware voice
       selection and the durable sync outbox.
 - [x] 9 UI tests covering the phone screens, reader, page turn, bookmarks, PDF
       Intelligent Reading, system/neural narration, the book-language voice filter and
@@ -85,9 +85,9 @@ limitations.
 | PDF tap-to-play | Original PDF page does not map taps to narration | Intelligent Reading reflow does; original-page mapping is future work |
 | EPUB locators | Chapter + page/fraction locator, not CFI | Stable chapter offsets survive re-parses; CFI is future work |
 | Translation | Interface is English | Strings are localization-ready |
-| Theme/typography sync | Custom themes and reading preferences stay on the device | Plan §11–§12 item not implemented; see `docs/AUDIT.md` (independent audit) |
-| Reader modes | Paginated only (page curl, or a slide with Reduce Motion); no vertical scroll or animation switch | Plan §8 item not implemented |
-| Models | No “Install from file…” | Design `iPhone-Models` item not implemented |
+| Per-book typography | Themes and typography sync, but are global; no per-document overrides | Needs a designed UI (plan §11 asks for per-document preferences) |
+| Reader modes | Page curl, Slide or Vertical (iOS/iPadOS); the Mac uses the two-page spread | A continuous (non-paged) scroll mode is not implemented |
+| PDF Intelligent Reading | Follows page jumps and keeps the position; no text highlights or notes in the reflow | Highlights are created in paginated text and Original PDF only |
 
 ## Not started or not validated
 

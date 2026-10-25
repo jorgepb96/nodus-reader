@@ -241,3 +241,95 @@ UI run. Note: two booted simulators are both named “iPhone 17 Pro” (iOS 26.2
 
 No screenshots in `docs/screenshots/` were replaced in this pass; result bundles are
 `build/UITests-Audit-iPhone.xcresult` and `build/UITests-Audit-iPad.xcresult`.
+
+## Follow-up pass — main thread, focus and remaining items (2026-10-25)
+
+Goal: close what the section above left open and make sure no work takes over
+the main thread or the foreground.
+
+### Main thread: work moved off it
+
+| Before | Now |
+|---|---|
+| `TextPaginator` laid out the whole book with TextKit on the main actor, at open and after every font, theme or window change | Runs in a detached task (each pass owns its TextKit objects), cancelled by a newer pass; test `paginationRunsOffTheMainThread` |
+| Full-text search scanned every book's `searchText` (up to 500 KB each) on the main thread on every re-render of Library/Search, not just per keystroke | Debounced (180 ms) and computed off the main actor from a snapshot; test `backgroundSearchMatchesTheSameBooksAsSearch` |
+| `ICloudDocumentStore` was `@MainActor`: `url(forUbiquityContainerIdentifier:)` (documented as unsafe on the main thread) on every activation, whole-file copies, cover reads | All file work in background tasks; only the `NSMetadataQuery` starts on the main run loop |
+| Cover JPEG decode on the main thread while grids scroll; same for PDF reflow images | Read and decoded (and pre-rendered on iOS) off the main thread |
+| Import generated EPUB/PDF cover artwork on the main actor | Artwork in the background import task; only the typographic fallback (`ImageRenderer`) stays on main |
+| Library, cover and model folder sizes walked on the main thread | Background tasks |
+| `SyncJournal.enqueue`, tombstone and outbox lookups fetched every row per changed object | Predicate fetches with `fetchLimit` |
+
+Narration synthesis was already off the main thread (Phonon on its own queue,
+Kokoro is an actor, word alignment detached); unchanged.
+
+### Foreground: nothing takes over the screen uninvited
+
+- The Share Extension inbox kept a failed payload for 24 h and re-imported it,
+  re-presenting the same alert **on every app activation**. Each payload is now
+  attempted and reported once (“Share the document again to retry”).
+- No code calls `NSApp.activate`, `orderFrontRegardless` or opens windows on its
+  own; the Reading window opens only on an explicit open (or the DEBUG
+  `-NodusOpenSampleReader` flag).
+- Navigation is now per window/scene (`RootView` owns its `NavigationModel`; the
+  Library menu acts on the focused window via `focusedSceneValue`), so two Mac or
+  iPad windows no longer mirror each other.
+- Failed saves no longer pass silently in release builds: the change is rolled
+  back and one alert explains it (previously `assertionFailure` only).
+
+### Remaining items fixed
+
+- **Themes and reading preferences sync** (plan §11–§12) through one CloudKit
+  `Preference` record; a fresh device adopts them instead of overwriting them.
+  Test `syncedPreferencesRoundTripBetweenDevices`.
+- **Page turn** setting: Page curl, Slide, Vertical (plan §8); Reduce Motion
+  turns the curl into a slide.
+- **Models → Install from file…** (design `iPhone-Models`): installs a complete
+  local Kokoro/Phonon Core ML bundle folder; anything else is rejected with an
+  explanation, nothing is converted or downloaded.
+- **Downloading badge** on covers; **no hex literals** left in feature views
+  (`DesignSystem/Tokens.swift`).
+- **Progress:** restoring a position no longer rewrites progress; a one-page
+  document is not Finished just by opening it; the Mac spread counts the
+  right-hand page, so short documents can reach Finished there.
+- **Cloud-only duplicate:** importing a file whose book exists only in iCloud
+  attaches the local copy. Test `importingACloudOnlyBookAttachesTheLocalCopy`.
+- **Import size limit** is checked before the coordinated copy.
+- **Earlier open items closed:** child records across CloudKit pages (persisted
+  deferred queue, retried every page); remote custom-cover cleanup; PDF narration
+  and reading load every page (the 80-page cap now applies only to the import
+  sample); PDF Intelligent Reading follows contents/bookmark jumps, keeps the
+  position when switching from Original and maps scroll to real page numbers;
+  the iOS page-host cache keeps only nearby pages; a cancelled model download
+  that finishes after *Delete* is removed again.
+
+### Still open (decision or validation needed)
+
+1. **Per-document typography** (plan §11) needs a designed UI; preferences are
+   global and now synced.
+2. A **continuous (non-paged) scroll** reader mode is not implemented; Vertical
+   is vertical paging.
+3. **Highlights and notes inside PDF Intelligent Reading** (no selectable text
+   layer in the reflow); bookmarks work by page in both modes.
+4. **In-flight sync on disable** finishes its current CloudKit request; generation
+   checks keep it from writing state.
+5. **Signed validation** of CloudKit (including the new `Preference` record type,
+   which must be deployed to production), iCloud Drive and the App Group, and a
+   device VoiceOver pass.
+
+### Verification for this pass
+
+Same commands as the table above:
+
+- macOS and iOS (iPhone 17 Pro, iOS 26.5) builds: **succeeded**.
+- Unit tests (macOS): **31/31 pass**.
+- UI tests iPhone: **8 pass, 1 skipped** (the iPad-only test), including the
+  Phonon narration test.
+- UI test iPad (`testPadScreens`): **1/1 pass**.
+- DesignSystem package: **1/1 pass**.
+- macOS app from a fresh isolated home with `-NodusSampleLibrary`, plus
+  `-NodusOpenSampleReader`, `-NodusStartSampleNarration` and `-NodusOpenSettings`:
+  running in all four cases.
+
+Result bundles: `build/UITests-Audit2-iPhone.xcresult` and
+`build/UITests-Audit2-iPad.xcresult`. No screenshots were replaced. Time spent in
+the main thread was checked by code path (above), not with Instruments.

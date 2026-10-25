@@ -617,3 +617,93 @@ func syncJournalRecordsInsertsAndEditsFromSaves() async throws {
     #expect(Set(entries.map(\.entityType)) == [.book, .collection, .membership, .bookmark])
     #expect(entries.allSatisfy { $0.operation == .upsert })
 }
+
+// MARK: - Second independent pass
+
+@Test @MainActor
+func syncedPreferencesRoundTripBetweenDevices() throws {
+    let suiteA = "nodus.tests.prefsA.\(UUID().uuidString)"
+    let suiteB = "nodus.tests.prefsB.\(UUID().uuidString)"
+    let defaultsA = try #require(UserDefaults(suiteName: suiteA))
+    let defaultsB = try #require(UserDefaults(suiteName: suiteB))
+    defer {
+        defaultsA.removePersistentDomain(forName: suiteA)
+        defaultsB.removePersistentDomain(forName: suiteB)
+    }
+
+    let themeA = ThemeManager(defaults: defaultsA)
+    let readingA = ReaderPreferences(defaults: defaultsA)
+    themeA.appTheme = .sepia
+    themeA.addCustomTheme(name: "Night paper", backgroundHex: 0x101010, textHex: 0xEEEEEE,
+                          accentHex: 0x7C3AED, isDark: true)
+    readingA.fontScale = 1.3
+    readingA.pageTurn = .vertical
+
+    let payload = SyncedPreferences(theme: themeA, reading: readingA).encoded
+    let decoded = try #require(SyncedPreferences.decode(payload))
+
+    let themeB = ThemeManager(defaults: defaultsB)
+    let readingB = ReaderPreferences(defaults: defaultsB)
+    decoded.apply(theme: themeB, reading: readingB)
+
+    #expect(SyncedPreferences(theme: themeB, reading: readingB).encoded == payload)
+    #expect(themeB.customThemes.map(\.name) == ["Night paper"])
+    #expect(readingB.pageTurn == .vertical)
+    // Persisted on the receiving device, not only in memory.
+    #expect(ReaderPreferences(defaults: defaultsB).fontScale == 1.3)
+}
+
+@Test @MainActor
+func importingACloudOnlyBookAttachesTheLocalCopy() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+
+    let url = try SampleLibrary.makeEPUB(sampleSpec())
+    defer { try? FileManager.default.removeItem(at: url) }
+    let book = try #require(await fixture.service.importFiles([url]) { _ in }.imported.first)
+
+    // Simulate a book that arrived from iCloud without its document.
+    try fixture.fileStore.removeDocument(book)
+    book.downloadState = .cloudOnly
+    fixture.service.save()
+
+    let result = await fixture.service.importFiles([url]) { _ in }
+    #expect(result.duplicates.isEmpty)
+    #expect(result.imported.first?.id == book.id)
+    #expect(fixture.service.allBooks().count == 1)
+    #expect(book.downloadState == .downloaded)
+    #expect(FileManager.default.fileExists(atPath: fixture.fileStore.documentURL(for: book).path))
+}
+
+@Test @MainActor
+func backgroundSearchMatchesTheSameBooksAsSearch() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let url = try SampleLibrary.makeEPUB(sampleSpec())
+    defer { try? FileManager.default.removeItem(at: url) }
+    _ = await fixture.service.importFiles([url]) { _ in }
+    let books = fixture.service.allBooks()
+
+    #expect(await fixture.service.matchingBookIDs("  ", among: books) == nil)
+    for query in ["semicolon", "lovelace", "nothing-like-this"] {
+        let expected = Set(fixture.service.search(query, among: books).map(\.id))
+        #expect(await fixture.service.matchingBookIDs(query, among: books) == expected)
+    }
+}
+
+@Test @MainActor
+func paginationRunsOffTheMainThread() async throws {
+    let style = ReaderPageStyle(theme: ReaderTheme.resolve(.light, colorScheme: .light),
+                                preferences: ReaderPreferences(defaults: UserDefaults(suiteName: "nodus.tests.pages.\(UUID().uuidString)")!))
+    let chapters = (0..<3).map {
+        ExtractedChapter(id: $0, title: "Chapter \($0 + 1)",
+                         text: String(repeating: "A sentence that fills the page. ", count: 400))
+    }
+    let paginated = await Task.detached {
+        #expect(!Thread.isMainThread)
+        return TextPaginator.paginate(chapters: chapters, style: style,
+                                      pageSize: CGSize(width: 340, height: 600))
+    }.value
+    #expect(paginated.pages.count > 3)
+    #expect(Set(paginated.firstPageByChapter.keys) == [0, 1, 2])
+}

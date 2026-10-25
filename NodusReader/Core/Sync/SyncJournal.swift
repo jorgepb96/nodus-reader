@@ -49,9 +49,12 @@ final class SyncJournal {
 
     func recordDelete(_ type: SyncEntityType, id: UUID, payloadJSON: String = "") {
         enqueue(type: type, id: id, operation: .delete, payloadJSON: payloadJSON)
-        let descriptors = FetchDescriptor<SyncTombstone>()
-        let tombstones = (try? context.fetch(descriptors)) ?? []
-        if let existing = tombstones.first(where: { $0.entityType == type && $0.entityID == id }) {
+        let raw = type.rawValue
+        var descriptor = FetchDescriptor<SyncTombstone>(
+            predicate: #Predicate { $0.entityID == id && $0.entityTypeRaw == raw }
+        )
+        descriptor.fetchLimit = 1
+        if let existing = (try? context.fetch(descriptor))?.first {
             existing.deletedAt = Date()
             existing.isPushed = false
         } else {
@@ -127,9 +130,14 @@ final class SyncJournal {
 
     private func enqueue(type: SyncEntityType, id: UUID, operation: SyncOperationKind,
                          payloadJSON: String = "") {
-        let descriptor = FetchDescriptor<SyncOutboxEntry>()
-        let existing = (try? context.fetch(descriptor)) ?? []
-        if let entry = existing.first(where: { $0.entityType == type && $0.entityID == id }) {
+        // An indexed lookup: this runs for every changed object on every save,
+        // so scanning the whole outbox would grow with the library.
+        let raw = type.rawValue
+        var descriptor = FetchDescriptor<SyncOutboxEntry>(
+            predicate: #Predicate { $0.entityID == id && $0.entityTypeRaw == raw }
+        )
+        descriptor.fetchLimit = 1
+        if let entry = (try? context.fetch(descriptor))?.first {
             entry.operationRaw = operation.rawValue
             entry.createdAt = Date()
             entry.nextAttemptAt = Date()

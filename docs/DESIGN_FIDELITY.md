@@ -69,4 +69,4 @@ The 2026-10-25 visual audit is recorded in [`VISUAL_AUDIT.md`](VISUAL_AUDIT.md).
 ## Independent audit additions (2026-10-25)
 
 - **Install voice** (DESIGN.md §4): when a book's synced voice is not installed on this device, the player's voice tile reads “Install voice” and the voice picker explains the fallback and links to Voices & Models.
-- Open deviations found in that pass, not yet changed: no *downloading* badge/progress on covers (only cloud-only), no Models → “Install from file…”, 36 hex literals still in feature views. Details in `docs/AUDIT.md`.
+- Follow-up pass: covers show a *downloading* badge (an indeterminate spinner, because iCloud reports no byte progress for this copy); Models has **Install from file…** for a local Kokoro/Phonon bundle folder; feature views no longer contain hex literals (named colours live in `DesignSystem/Tokens.swift`); Reading & Typography has a **Page turn** control (Page curl, Slide, Vertical).

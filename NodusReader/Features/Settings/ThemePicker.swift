@@ -245,9 +245,9 @@ struct CustomThemeEditor: View {
     init(existing: CustomReaderTheme?) {
         self.existing = existing
         _name = State(initialValue: existing?.name ?? "")
-        _background = State(initialValue: Color(hex: existing?.backgroundHex ?? 0xFBF8F1))
-        _text = State(initialValue: Color(hex: existing?.textHex ?? 0x1D1B22))
-        _accent = State(initialValue: Color(hex: existing?.accentHex ?? 0x6D28D9))
+        _background = State(initialValue: Color(hex: existing?.backgroundHex ?? NodusHex.lightPaper))
+        _text = State(initialValue: Color(hex: existing?.textHex ?? NodusHex.lightInk))
+        _accent = State(initialValue: Color(hex: existing?.accentHex ?? NodusHex.deepViolet))
     }
 
     var body: some View {

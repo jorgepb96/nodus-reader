@@ -74,5 +74,6 @@ search fields, covers, sheet sizing, spacing, touch targets and transitions.
    (independent audit, 2026-10-25).
 5. Independent audit, 2026-10-25: the Mac app crashed on first launch with a
    populated library (cover cell environment lookup in the `Table`); fixed. No
-   screenshots were re-captured in that pass. Covers still lack a *downloading*
-   badge, and feature views still contain hex literals; see `docs/AUDIT.md`.
+   screenshots were re-captured in that pass. The follow-up pass added the
+   *downloading* cover badge and moved the remaining feature-view hex values
+   into DesignSystem tokens; see `docs/AUDIT.md`.

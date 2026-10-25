@@ -11,6 +11,9 @@ struct RootView: View {
     @Environment(ModelManager.self) private var models
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
+    /// Per window (Mac) or scene (iPad multitasking): two library windows no
+    /// longer mirror each other's sidebar selection and navigation.
+    @State private var navigation = NavigationModel()
 
     private var palette: NodusPalette {
         theme.palette(colorScheme: colorScheme)
@@ -20,6 +23,8 @@ struct RootView: View {
         @Bindable var imports = imports
 
         platformRoot
+            .environment(navigation)
+            .focusedSceneValue(\.nodusNavigation, navigation)
             .nodusPalette(palette)
             .tint(palette.accent)
             .preferredColorScheme(theme.appTheme.preferredColorScheme)
@@ -46,6 +51,14 @@ struct RootView: View {
             }
             .alert(item: $imports.alert) { alert in
                 Alert(title: Text(alert.title), message: Text(alert.message), dismissButton: .default(Text("OK")))
+            }
+            .alert("Change not saved", isPresented: Binding(
+                get: { library.saveError != nil },
+                set: { if !$0 { library.saveError = nil } }
+            )) {
+                Button("OK", role: .cancel) { library.saveError = nil }
+            } message: {
+                Text(library.saveError ?? "")
             }
             .overlay(alignment: .top) {
                 if let toast = imports.toast {

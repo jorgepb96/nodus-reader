@@ -120,12 +120,14 @@ public final class LibraryService {
             let staged = try FileAccess.stageCopy(from: url, suggestedName: originalName, store: fileStore)
             do {
                 let size = FileStore.fileSize(at: staged)
-                guard size <= 250 * 1024 * 1024 else {
+                guard size <= FileAccess.maximumImportBytes else {
                     throw ImportError.fileTooLarge(originalName)
                 }
                 let hash = try ContentHash.sha256(of: staged)
                 let extraction = try DocumentExtractor.extract(url: staged, format: format)
-                return (staged: staged, size: size, hash: hash, extraction: extraction)
+                let artwork = CoverGenerator.artworkCover(extraction: extraction, documentURL: staged,
+                                                          format: format)
+                return (staged: staged, size: size, hash: hash, extraction: extraction, artwork: artwork)
             } catch {
                 try? FileManager.default.removeItem(at: staged.deletingLastPathComponent())
                 throw error
@@ -140,18 +142,25 @@ public final class LibraryService {
         }
 
         if let existing = try existingBook(withHash: prepared.hash) {
+            // The same document already synced from another device but not
+            // downloaded here: importing it is the user's local copy, so
+            // attach it instead of reporting a duplicate.
+            let localURL = fileStore.documentURL(for: existing)
+            if existing.downloadState != .downloaded || !FileManager.default.fileExists(atPath: localURL.path) {
+                _ = try fileStore.commit(temporaryURL: staged, bookID: existing.id, fileName: existing.fileName)
+                moved = true
+                existing.downloadState = .downloaded
+                save()
+                await refreshExtractedTextIfNeeded(existing)
+                return .imported(existing)
+            }
             return .duplicate(existing.title)
         }
 
         let extraction = prepared.extraction
         let bookID = UUID()
-        let coverData = CoverGenerator.coverData(
-            extraction: extraction,
-            documentURL: staged,
-            format: format,
-            title: extraction.title,
-            author: extraction.author
-        )
+        let coverData = prepared.artwork
+            ?? CoverGenerator.typographicCover(title: extraction.title, author: extraction.author)
 
         let committed = try fileStore.commit(temporaryURL: staged, bookID: bookID, fileName: originalName)
         moved = true
@@ -276,6 +285,34 @@ public final class LibraryService {
                         || $0.quote.localizedCaseInsensitiveContains(trimmed)
                 }
         }
+    }
+
+    /// The same match as `search`, computed off the main actor. A book's
+    /// `searchText` can be hundreds of kilobytes, so scanning a whole library
+    /// on the main thread at every keystroke (or every re-render) stalls the
+    /// UI. Returns `nil` for an empty query, meaning "no filtering".
+    public func matchingBookIDs(_ query: String, among books: [Book]) async -> Set<UUID>? {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let haystacks: [(id: UUID, fields: [String])] = books.map { book in
+            var fields = [book.title, book.author, book.searchText]
+            fields.append(contentsOf: book.collectionNames)
+            for annotation in book.annotations {
+                fields.append(annotation.note)
+                fields.append(annotation.quote)
+            }
+            return (book.id, fields)
+        }
+        return await Task.detached(priority: .userInitiated) {
+            var result = Set<UUID>()
+            for haystack in haystacks {
+                if Task.isCancelled { break }
+                if haystack.fields.contains(where: { $0.localizedCaseInsensitiveContains(trimmed) }) {
+                    result.insert(haystack.id)
+                }
+            }
+            return result
+        }.value
     }
 
     public func continueBook() -> Book? {
@@ -738,12 +775,17 @@ public final class LibraryService {
 
     // MARK: Save
 
+    /// Set when a save fails (disk full, corrupt store). The root view shows
+    /// it once; the unsaved change is rolled back so memory matches disk.
+    public var saveError: String?
+
     public func save() {
         do {
             try context.save()
             publishSharedCollectionsIfNeeded()
         } catch {
-            assertionFailure("SwiftData save failed: \(error)")
+            context.rollback()
+            saveError = "Your last change could not be saved and was undone. Free some storage space and try again.\n\n\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)"
         }
     }
 
@@ -758,5 +800,21 @@ public final class LibraryService {
         SharedImportInbox.publishCollections(flat.map {
             SharedCollection(id: $0.collection.id, name: $0.collection.name, depth: $0.depth)
         })
+    }
+}
+
+/// Identity of a library search: a new query or a change in the number of
+/// books restarts the (debounced, background) match.
+struct SearchKey: Equatable {
+    var query: String
+    var count: Int
+
+    @MainActor
+    static func debouncedMatches(_ query: String, books: [Book],
+                                 library: LibraryService) async -> Set<UUID>? {
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        try? await Task.sleep(for: .milliseconds(180))
+        guard !Task.isCancelled else { return nil }
+        return await library.matchingBookIDs(query, among: books)
     }
 }

@@ -85,11 +85,23 @@ SwiftData.
 7. Retries use exponential backoff (5 s doubling to 300 s) and store the last error
    on the outbox entry.
 
-Not synced yet: custom themes and reading/typography preferences (global
-`UserDefaults`; there are no per-book typography settings). The `theme`,
-`preference` and `readingPosition` entity types are reserved but unused. A book's
-full-text search index and chapter titles are not uploaded either; they are rebuilt
+Themes and reading preferences (app theme, reader theme, custom themes, typography,
+page turn) sync as one `Preference` record (`preference-settings`), last writer
+wins by its `updatedAt`. They live in `UserDefaults`; a local edit is detected by
+comparing snapshots when defaults change. A fresh install starts with a snapshot
+dated `distantPast`, so it adopts the synced choices instead of overwriting them
+with its defaults. There are no per-book typography settings yet. A book's
+full-text search index and chapter titles are not uploaded; they are rebuilt
 locally once the document has been downloaded.
+
+Children (memberships, bookmarks, annotations) whose book or collection has not
+arrived yet are kept in a persisted deferred queue and retried after every pull
+page, instead of being dropped while the change token moves on. Clearing a custom
+cover also removes the iCloud cover, and other devices fall back to the
+typographic cover.
+
+All iCloud Drive file work (container lookup, copies, cover reads) runs off the
+main thread; only the `NSMetadataQuery` is started on the main run loop.
 
 Scalar conflicts are last-writer-wins by `updatedAt`. Memberships, bookmarks and
 annotations are individual records, so an edit on one device does not erase

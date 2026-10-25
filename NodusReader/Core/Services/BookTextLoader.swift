@@ -11,7 +11,7 @@ public enum BookTextLoader {
         }
         let format = book.format
         return try await Task.detached(priority: .userInitiated) {
-            try DocumentExtractor.extract(url: url, format: format).chapters
+            try DocumentExtractor.extract(url: url, format: format, completeText: true).chapters
         }.value
     }
 
