@@ -707,3 +707,207 @@ func paginationRunsOffTheMainThread() async throws {
     #expect(paginated.pages.count > 3)
     #expect(Set(paginated.firstPageByChapter.keys) == [0, 1, 2])
 }
+
+// MARK: - Reader appearance, continuous scroll and PDF notes
+
+@Test @MainActor
+func bookAppearanceOverridesTheGlobalOneAndSyncs() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let suite = "nodus.tests.appearance.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let theme = ThemeManager(defaults: defaults)
+    let preferences = ReaderPreferences(defaults: defaults)
+    let journal = SyncJournal(context: fixture.container.mainContext)
+    fixture.service.syncJournal = journal
+
+    let url = try SampleLibrary.makeEPUB(sampleSpec())
+    defer { try? FileManager.default.removeItem(at: url) }
+    let book = try #require(await fixture.service.importFiles([url]) { _ in }.imported.first)
+
+    // No override: the global typography and theme apply.
+    preferences.fontScale = 1.2
+    #expect(ReaderAppearanceResolver.typography(for: book, preferences: preferences).fontScale == 1.2)
+
+    // "This book only" starts from what is shown, then diverges.
+    var own = ReaderAppearanceResolver.snapshot(themeManager: theme, preferences: preferences)
+    own.typography?.fontScale = 1.5
+    own.typography?.flow = .scrollVertical
+    own.readerThemeSelection = ReaderThemeID.sepia.rawValue
+    fixture.service.setAppearance(own, for: book)
+
+    #expect(ReaderAppearanceResolver.typography(for: book, preferences: preferences).fontScale == 1.5)
+    #expect(ReaderAppearanceResolver.typography(for: book, preferences: preferences).flow == .scrollVertical)
+    #expect(ReaderAppearanceResolver.themeSelection(for: book, themeManager: theme) == "sepia")
+    #expect(preferences.fontScale == 1.2, "A book's own settings never change the global ones")
+
+    // It is a user edit: the book is queued for sync with its appearance.
+    let entries = try fixture.container.mainContext.fetch(FetchDescriptor<SyncOutboxEntry>())
+    #expect(entries.contains { $0.entityType == .book && $0.entityID == book.id })
+    #expect(book.appearanceJSON.contains("scrollVertical"))
+
+    // Back to the general settings.
+    fixture.service.setAppearance(nil, for: book)
+    #expect(book.appearanceJSON.isEmpty)
+    #expect(ReaderAppearanceResolver.typography(for: book, preferences: preferences).fontScale == 1.2)
+}
+
+@Test @MainActor
+func readerTypographyDecodesOlderPayloadsAndSyncsFlow() throws {
+    // A payload written before `flow` existed keeps the defaults for it.
+    let legacy = Data(#"{"fontScale":1.4,"justify":false}"#.utf8)
+    let decoded = try JSONDecoder().decode(ReaderTypography.self, from: legacy)
+    #expect(decoded.fontScale == 1.4)
+    #expect(decoded.justify == false)
+    #expect(decoded.flow == .paged)
+
+    let suite = "nodus.tests.flow.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let reading = ReaderPreferences(defaults: defaults)
+    reading.flow = .scrollHorizontal
+    let payload = SyncedPreferences(theme: ThemeManager(defaults: defaults), reading: reading).encoded
+    let otherSuite = "nodus.tests.flowB.\(UUID().uuidString)"
+    let other = try #require(UserDefaults(suiteName: otherSuite))
+    defer { other.removePersistentDomain(forName: otherSuite) }
+    let otherReading = ReaderPreferences(defaults: other)
+    try #require(SyncedPreferences.decode(payload)).apply(theme: ThemeManager(defaults: other), reading: otherReading)
+    #expect(otherReading.flow == .scrollHorizontal)
+}
+
+@Test @MainActor
+func continuousSlicesCoverEveryChapterWithoutGaps() async throws {
+    let style = ReaderPageStyle(
+        theme: ReaderTheme.resolve(.light, colorScheme: .light),
+        typography: ReaderTypography()
+    )
+    let chapters = (0..<2).map {
+        ExtractedChapter(id: $0, title: "Chapter \($0 + 1)",
+                         text: String(repeating: "Words follow words down the column. ", count: 300))
+    }
+    let paginated = TextPaginator.paginate(chapters: chapters, style: style,
+                                           pageSize: CGSize(width: 320, height: 560))
+    for chapter in chapters.indices {
+        let slices = paginated.pages.filter { $0.chapterIndex == chapter }
+        #expect(!slices.isEmpty)
+        // Each slice starts where the previous one ended (only a leading
+        // newline may be skipped), so stacking them reads continuously.
+        for (previous, next) in zip(slices, slices.dropFirst()) {
+            #expect(next.fullRange.location - NSMaxRange(previous.fullRange) <= 1)
+        }
+        let chapterLength = (chapters[chapter].text as NSString).length
+        #expect(slices.last.map { $0.chapterEndOffset } == chapterLength)
+        // The shared mapping turns slice-local indexes into chapter offsets.
+        let mapping = ReaderTextMapping.page(slices[0])
+        #expect(mapping.anchorOffset(slices[0].prefixLength) == 0)
+    }
+}
+
+@Test
+func reflowHighlightsAnchorToCanonicalPageText() {
+    func block(_ kind: PDFReflowBlock.Kind, _ text: String, header: Bool = false) -> PDFReflowBlock {
+        PDFReflowBlock(id: UUID(), kind: kind, text: text, rect: .zero, pageIndex: 4,
+                       imageFileName: nil, isHeaderFooter: header, usedOCR: false)
+    }
+    let header = block(.body, "Journal of Tests · 12", header: true)
+    let title = block(.heading1, "Results")
+    let figure = block(.figure, "")
+    let body = block(.body, "The yield rose sharply after the second trial.")
+    let page = PDFReflowPage(pageIndex: 4, width: 600, height: 800,
+                             blocks: [header, title, figure, body], regions: [])
+    let layout = page.canonicalLayout
+
+    // Headers count even when hidden; figures do not take text space.
+    #expect(layout.text == "Journal of Tests · 12\n\nResults\n\nThe yield rose sharply after the second trial.")
+    let bodyBase = try! #require(layout.bases[body.id])
+    #expect(layout.bases[figure.id] == nil)
+
+    // A selection of "rose sharply" in the body block maps into page space.
+    let local = ("The yield rose sharply after the second trial." as NSString).range(of: "rose sharply")
+    let mapping = ReaderTextMapping.block(base: bodyBase, length: (body.text as NSString).length)
+    let anchored = try! #require(mapping.anchorRange(for: local))
+    #expect((layout.text as NSString).substring(with: anchored) == "rose sharply")
+    #expect(mapping.localRange(anchored) == local)
+
+    // Stored offsets still valid: used as is.
+    #expect(ReflowAnnotationAnchor.resolve(start: anchored.location, end: NSMaxRange(anchored),
+                                           quote: "rose sharply", in: layout.text) == anchored)
+    // Shifted by a rebuilt cache: found again by its quote.
+    let moved = ReflowAnnotationAnchor.resolve(start: 3, end: 15, quote: "rose sharply", in: layout.text)
+    #expect(moved == anchored)
+    // Gone from the page: not drawn.
+    #expect(ReflowAnnotationAnchor.resolve(start: 0, end: 5, quote: "absent words", in: layout.text) == nil)
+}
+
+@Test @MainActor
+func exportedPDFNotesNamePages() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let url = try SampleLibrary.makePDF(sampleSpec(asPDF: true))
+    defer { try? FileManager.default.removeItem(at: url) }
+    let book = try #require(await fixture.service.importFiles([url]) { _ in }.imported.first)
+    fixture.service.addAnnotation(book, chapterIndex: 2, startOffset: 0, endOffset: 5,
+                                  quote: "First", note: "Check this")
+    let export = fixture.service.exportNotes(for: book)
+    #expect(export.contains("— Page 3"))
+    #expect(!export.contains("— Chapter"))
+}
+
+// MARK: - Model downloads (opt-in: downloads about 500 MB)
+
+/// End-to-end check of every downloadable engine on this machine: the same
+/// install path as Settings › Voices & Models (Hugging Face download, hash
+/// checks by the SDKs, Core ML load), then a real synthesis and the word
+/// alignment that drives the read-along highlight. Opt in with
+/// `TEST_RUNNER_NODUS_MODEL_DOWNLOAD_TESTS=1` (and preferably
+/// `TEST_RUNNER_CFFIXED_USER_HOME=<scratch>` so models land outside the real
+/// app container).
+@Test(.enabled(if: ProcessInfo.processInfo.environment["NODUS_MODEL_DOWNLOAD_TESTS"] == "1"),
+      .timeLimit(.minutes(40)))
+@MainActor
+func modelDownloadsSynthesizeAndAlignWithText() async throws {
+    let suite = "nodus.tests.models.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+
+    let sentence = "Call me Ishmael, and listen closely to every single word."
+    var words: [NSRange] = []
+    (sentence as NSString).enumerateSubstrings(in: NSRange(location: 0, length: (sentence as NSString).length),
+                                               options: .byWords) { _, range, _, _ in words.append(range) }
+
+    let downloadable = manager.models.filter(\.isAvailable)
+    #expect(!downloadable.isEmpty)
+    for model in downloadable {
+        if !manager.isInstalled(model) {
+            manager.install(model)
+            let deadline = Date().addingTimeInterval(30 * 60)
+            while Date() < deadline {
+                let state = manager.state(for: model)
+                if state == .installed { break }
+                if case .failed(let message) = state {
+                    Issue.record("\(model.name) failed to install: \(message)")
+                    break
+                }
+                try await Task.sleep(for: .seconds(2))
+            }
+        }
+        #expect(manager.isInstalled(model), "\(model.name) should be installed")
+        guard manager.isInstalled(model), let voice = model.voices.first else { continue }
+
+        manager.selectModel(model)
+        let audio = try await manager.synthesize(sentence, voiceID: voice.id, engine: model.engine)
+        let duration = Double(audio.samples.count) / audio.sampleRate
+        #expect(duration > 1.5, "\(model.name) produced \(duration) s of audio")
+        #expect(audio.samples.contains { abs($0) > 0.01 }, "\(model.name) produced silence")
+
+        // The read-along highlight: one timing per word, in text order and in
+        // time order, covering the generated audio.
+        let timings = AudioWordAligner.align(text: sentence, samples: audio.samples, sampleRate: audio.sampleRate)
+        #expect(timings.map { NSRange(location: $0.location, length: $0.length) } == words)
+        #expect(zip(timings, timings.dropFirst()).allSatisfy { $0.start <= $1.start && $0.end <= $1.end })
+        #expect(timings.first.map { $0.start >= 0 } == true)
+        #expect(timings.last.map { abs($0.end - duration) < 0.05 } == true)
+    }
+}

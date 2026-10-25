@@ -14,6 +14,9 @@ struct ReaderContentsSheet: View {
     let pageCount: Int
     @Binding var currentPage: Int
     @Binding var jumpToPage: Int?
+    var annotations: [Annotation] = []
+    var onOpenAnnotation: (Annotation) -> Void = { _ in }
+    var onEditAnnotation: (Annotation) -> Void = { _ in }
 
     @State private var draftPage = 1
 
@@ -124,6 +127,46 @@ struct ReaderContentsSheet: View {
                         }
                     }
                     .buttonStyle(.plain)
+                }
+            }
+        }
+
+        if !annotations.isEmpty {
+            Section("Highlights and notes") {
+                ForEach(annotations) { annotation in
+                    Button {
+                        onOpenAnnotation(annotation)
+                        dismiss()
+                    } label: {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("“\(annotation.quote)”")
+                                .font(.system(.subheadline, design: .serif))
+                                .italic()
+                                .foregroundStyle(palette.text)
+                                .lineLimit(3)
+                            if annotation.isNote {
+                                Text(annotation.note)
+                                    .font(.caption)
+                                    .foregroundStyle(palette.muted)
+                                    .lineLimit(3)
+                            }
+                            Text("Page \(annotation.chapterIndex + 1)")
+                                .font(.caption2)
+                                .foregroundStyle(palette.muted)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .swipeActions {
+                        Button("Edit") { onEditAnnotation(annotation) }
+                            .tint(palette.accent)
+                    }
+                    .contextMenu {
+                        Button {
+                            onEditAnnotation(annotation)
+                        } label: {
+                            Label("Edit…", systemImage: "pencil")
+                        }
+                    }
                 }
             }
         }

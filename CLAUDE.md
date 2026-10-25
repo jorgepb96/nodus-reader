@@ -91,11 +91,12 @@ See `docs/ROADMAP.md`, `docs/ICLOUD.md` and `docs/NARRATION_SYNC.md`.
 
 ## Verification
 
-- 31 unit/integration tests cover EPUB/PDF import, duplicate detection, collections,
+- 36 unit/integration tests cover EPUB/PDF import, duplicate detection, collections,
   themes (including reader-follows-app), text utilities, pause-based word alignment,
   page-boundary highlight clipping, path-traversal defenses, language-aware voice
   choice and the durable sync outbox, including suspended remote saves.
-- 9 UI tests cover the phone screens, reader, page turn, bookmarks, system
+- 11 UI tests cover the phone screens, the reader appearance popover with continuous
+  scrolling, PDF Intelligent Reading highlights and notes, reader, page turn, bookmarks, system
   narration, tap-a-word, PDF Intelligent Reading, Phonon narration (behavioural:
   progress past sentence 1), iCloud settings and the Spanish book-language voice
   filter. The iPad capture test is skipped on an iPhone destination and vice versa.

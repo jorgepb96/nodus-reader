@@ -3,31 +3,26 @@
 import SwiftUI
 import UIKit
 
-/// A page rendered by UIKit so text selection, the edit menu, word taps and
-/// highlight overlays all use the same TextKit layout as pagination.
-final class ReaderPageHostController: UIViewController, UITextViewDelegate {
-    let page: ReaderPage
-    private let style: ReaderPageStyle
-    private var highlights: ReaderPageHighlights
-    private let textView = UITextView()
+/// Read-only text with the reader's selection menu (Highlight, Add Note), word
+/// taps and highlight overlays. Used by paginated pages, continuous-scroll
+/// slices and PDF Intelligent Reading blocks; `mapping` translates local
+/// indexes to the anchor space each one uses.
+final class ReaderSelectableTextView: UIView, UITextViewDelegate {
+    let textView = UITextView()
     private let overlay = ReaderHighlightOverlayView()
 
+    var mapping: ReaderTextMapping
+    var contentInsets: UIEdgeInsets = .zero {
+        didSet { setNeedsLayout() }
+    }
     var onWordTap: ((Int) -> Void)?
     var onHighlight: ((NSRange, AnnotationColor) -> Void)?
     var onNote: ((NSRange) -> Void)?
 
-    init(page: ReaderPage, style: ReaderPageStyle, highlights: ReaderPageHighlights) {
-        self.page = page
-        self.style = style
-        self.highlights = highlights
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = style.background
+    init(mapping: ReaderTextMapping) {
+        self.mapping = mapping
+        super.init(frame: .zero)
+        backgroundColor = .clear
         textView.backgroundColor = .clear
         textView.isEditable = false
         textView.isSelectable = true
@@ -37,10 +32,8 @@ final class ReaderPageHostController: UIViewController, UITextViewDelegate {
         textView.textContainer.lineFragmentPadding = 0
         textView.dataDetectorTypes = []
         textView.adjustsFontForContentSizeCategory = false
-        textView.attributedText = page.attributed
         textView.delegate = self
-        textView.accessibilityLabel = "\(page.chapterTitle), page \(page.pageIndexInChapter + 1) of \(max(page.pagesInChapter, 1))"
-        view.addSubview(textView)
+        addSubview(textView)
 
         overlay.textView = textView
         overlay.backgroundColor = .clear
@@ -50,59 +43,55 @@ final class ReaderPageHostController: UIViewController, UITextViewDelegate {
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         tap.cancelsTouchesInView = false
         textView.addGestureRecognizer(tap)
-        applyHighlights()
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        let insets = UIEdgeInsets(top: 8, left: style.margin, bottom: 8, right: style.margin)
-        textView.frame = view.bounds.inset(by: insets)
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        textView.frame = bounds.inset(by: contentInsets)
         overlay.frame = textView.bounds
         overlay.setNeedsDisplay()
     }
 
-    func updateHighlights(_ highlights: ReaderPageHighlights) {
-        self.highlights = highlights
-        applyHighlights()
-    }
-
-    private func applyHighlights() {
-        overlay.spans = highlights.spans.compactMap { span in
-            guard let local = page.localRange(forChapterRange: span.range) else { return nil }
-            return ReaderHighlightOverlayView.Span(
-                range: local,
-                fill: span.fill,
-                underline: span.underline,
-                underlineWidth: span.underlineWidth,
-                rounded: span.rounded
-            )
-        }
+    func setText(_ text: NSAttributedString) {
+        guard !textView.attributedText.isEqual(to: text) else { return }
+        textView.attributedText = text
         overlay.setNeedsDisplay()
     }
 
-    private func chapterRange(for localRange: NSRange) -> NSRange? {
-        guard localRange.length > 0,
-              let start = page.chapterOffset(forLocalIndex: localRange.location) else { return nil }
-        let last = NSMaxRange(localRange) - 1
-        guard let end = page.chapterOffset(forLocalIndex: last) else { return nil }
-        return NSRange(location: start, length: max(1, end - start + 1))
+    func setHighlights(_ highlights: ReaderPageHighlights) {
+        overlay.spans = highlights.spans.compactMap { span in
+            guard let local = mapping.localRange(span.range) else { return nil }
+            return ReaderHighlightOverlayView.Span(range: local, fill: span.fill,
+                                                   underline: span.underline,
+                                                   underlineWidth: span.underlineWidth,
+                                                   rounded: span.rounded)
+        }
+    }
+
+    /// Height needed to show all the text at `width`, insets included.
+    func fittingHeight(width: CGFloat) -> CGFloat {
+        let textWidth = max(1, width - contentInsets.left - contentInsets.right)
+        let size = textView.sizeThatFits(CGSize(width: textWidth, height: .greatestFiniteMagnitude))
+        return ceil(size.height) + contentInsets.top + contentInsets.bottom
     }
 
     // MARK: Selection menu
 
     func textView(_ textView: UITextView, editMenuForTextIn range: NSRange,
                   suggestedActions: [UIMenuElement]) -> UIMenu? {
-        guard let chapterRange = chapterRange(for: range) else {
+        guard let anchorRange = mapping.anchorRange(for: range) else {
             return UIMenu(children: suggestedActions)
         }
         let colors = AnnotationColor.allCases.map { color in
             UIAction(title: color.title) { [weak self] _ in
-                self?.onHighlight?(chapterRange, color)
+                self?.onHighlight?(anchorRange, color)
             }
         }
         let highlight = UIMenu(title: "Highlight", image: UIImage(systemName: "highlighter"), children: colors)
         let note = UIAction(title: "Add Note…", image: UIImage(systemName: "note.text")) { [weak self] _ in
-            self?.onNote?(chapterRange)
+            self?.onNote?(anchorRange)
         }
         return UIMenu(children: [highlight, note] + suggestedActions)
     }
@@ -113,9 +102,61 @@ final class ReaderPageHostController: UIViewController, UITextViewDelegate {
         let point = gesture.location(in: textView)
         guard let position = textView.closestPosition(to: point) else { return }
         let index = textView.offset(from: textView.beginningOfDocument, to: position)
-        if let chapterOffset = page.chapterOffset(forLocalIndex: index) {
-            onWordTap?(chapterOffset)
+        if let offset = mapping.anchorOffset(index) {
+            onWordTap?(offset)
         }
+    }
+}
+
+/// A page rendered by UIKit so text selection, the edit menu, word taps and
+/// highlight overlays all use the same TextKit layout as pagination.
+final class ReaderPageHostController: UIViewController {
+    let page: ReaderPage
+    private let style: ReaderPageStyle
+    private var highlights: ReaderPageHighlights
+    private let content: ReaderSelectableTextView
+
+    var onWordTap: ((Int) -> Void)? {
+        get { content.onWordTap }
+        set { content.onWordTap = newValue }
+    }
+    var onHighlight: ((NSRange, AnnotationColor) -> Void)? {
+        get { content.onHighlight }
+        set { content.onHighlight = newValue }
+    }
+    var onNote: ((NSRange) -> Void)? {
+        get { content.onNote }
+        set { content.onNote = newValue }
+    }
+
+    init(page: ReaderPage, style: ReaderPageStyle, highlights: ReaderPageHighlights) {
+        self.page = page
+        self.style = style
+        self.highlights = highlights
+        self.content = ReaderSelectableTextView(mapping: .page(page))
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = style.background
+        content.setText(page.attributed)
+        content.textView.accessibilityLabel = "\(page.chapterTitle), page \(page.pageIndexInChapter + 1) of \(max(page.pagesInChapter, 1))"
+        content.contentInsets = UIEdgeInsets(top: 8, left: style.margin, bottom: 8, right: style.margin)
+        view.addSubview(content)
+        content.setHighlights(highlights)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        content.frame = view.bounds
+    }
+
+    func updateHighlights(_ highlights: ReaderPageHighlights) {
+        self.highlights = highlights
+        content.setHighlights(highlights)
     }
 }
 

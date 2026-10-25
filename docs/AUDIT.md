@@ -333,3 +333,49 @@ Same commands as the table above:
 Result bundles: `build/UITests-Audit2-iPhone.xcresult` and
 `build/UITests-Audit2-iPad.xcresult`. No screenshots were replaced. Time spent in
 the main thread was checked by code path (above), not with Instruments.
+
+## Reader appearance, continuous reading and PDF notes (2026-10-25)
+
+Implemented after the follow-up pass, at the product owner's request:
+
+- **Appearance popover.** "Aa" opens a popover (also on iPhone) with theme,
+  typography, reading mode and **This book only**. Global changes sync as
+  preferences; a book's own appearance is stored in `Book.appearanceJSON` and syncs
+  with the book. Settings › Reading & Typography uses the same component.
+  Popovers and sheets presented from the reader take the palette matching the
+  page's light/dark scheme: a light (Sepia) page previously produced dark labels on
+  a dark panel. No interface string uses emoji (a "↕" label rendered as an emoji and
+  was replaced by words; an error message arrow was replaced by "›").
+- **Continuous reading** on iPhone, iPad and Mac: a vertical column and a horizontal
+  strip of columns, both built from the same page-sized TextKit slices as paged
+  mode, so page numbers, progress, bookmarks, contents jumps, narration follow,
+  word taps and highlights behave the same. Reaching the end of the content counts
+  as the last page. Known limit: a selection cannot cross a slice boundary.
+- **PDF Intelligent Reading highlights and notes.** Text blocks are selectable with
+  the reader's Highlight / Add Note menu. Notes are anchored to the original page
+  and an offset into a canonical page text (independent of the image/header
+  switches); if the reflow cache changes, they are found again by their quote. They
+  are listed by page in the PDF contents sheet, open in Intelligent Reading and
+  export as "Page n".
+- **Models.** Synthesis moved into `ModelManager.synthesize` (used by playback), and
+  an opt-in integration test downloads every model the machine can run, synthesizes
+  and checks word alignment against the text (see `docs/BUILD.md`).
+
+Verification for this change:
+
+- macOS and iOS builds: **succeeded**.
+- Unit tests (macOS): **36 pass**, plus the opt-in model test skipped by default.
+- **Model downloads (opt-in test, real network, isolated home):** Phonon 31M
+  (302 MB) and Kokoro 82M (364 MB) downloaded from Hugging Face through the same
+  install path as the Models screen, loaded, synthesized a sentence each (non-silent,
+  > 1.5 s) and the word alignment returned one timing per word, in text and time
+  order, ending at the audio duration: **pass** (58 s). Kokoro cannot run in the
+  Simulator (MLX needs Metal); it was verified on the Mac.
+- UI tests iPhone 17 Pro (iOS 26.5): **10 pass, 1 skipped** (iPad-only), including
+  the Phonon narration test (playback advances and the sentence highlight follows),
+  the appearance popover with continuous vertical and horizontal scrolling, and PDF
+  Intelligent Reading highlight + note.
+- UI tests iPad Pro 13-inch (M5): `testPadScreens` and the popover/continuous test
+  **pass**.
+- DesignSystem package: **1/1 pass**. macOS app (fresh home): main window, Reading
+  window and narration launch paths keep running.

@@ -29,8 +29,10 @@ struct PDFReaderContainer: View {
     @Binding var pdfPageIndex: Int
     @Binding var pdfPageCount: Int
     @Binding var jumpToPage: Int?
-
-    @State private var mode: PDFReadingMode = .original
+    /// Owned by the reader so opening a PDF note can switch to Intelligent
+    /// Reading, where notes are shown.
+    @Binding var mode: PDFReadingMode
+    var onAnnotate: (Int, NSRange, String, AnnotationColor) -> Void = { _, _, _, _ in }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -57,7 +59,8 @@ struct PDFReaderContainer: View {
                     .ignoresSafeArea(edges: .bottom)
             case .intelligent:
                 PDFReflowView(book: book, url: url, theme: theme,
-                              pdfPageIndex: $pdfPageIndex, jumpToPage: $jumpToPage)
+                              pdfPageIndex: $pdfPageIndex, jumpToPage: $jumpToPage,
+                              onAnnotate: onAnnotate)
             }
         }
     }
@@ -81,11 +84,18 @@ struct PDFReflowView: View {
     @Binding var pdfPageIndex: Int
     /// Contents, bookmarks and "go to page" requests from the reader chrome.
     @Binding var jumpToPage: Int?
+    /// A highlight or note on (original page, canonical range, quote, colour).
+    var onAnnotate: (Int, NSRange, String, AnnotationColor) -> Void = { _, _, _, _ in }
 
     @State private var job = PDFReflowJob()
     @State private var showImages = true
     @State private var skipHeaders = true
     @State private var showSourceSheet = false
+
+    /// The book's own typography when it has one, the global one otherwise.
+    private var typography: ReaderTypography {
+        ReaderAppearanceResolver.typography(for: book, preferences: preferences)
+    }
 
     private var store: PDFReflowStore {
         PDFReflowStore(fileStore: library.fileStore)
@@ -208,7 +218,7 @@ struct PDFReflowView: View {
                     }
                     .frame(maxWidth: 620)
                     .frame(maxWidth: .infinity)
-                    .padding(.horizontal, max(20, preferences.margin))
+                    .padding(.horizontal, max(20, typography.margin))
                     .padding(.top, 20)
                     .padding(.bottom, 60)
                 }
@@ -257,56 +267,119 @@ struct PDFReflowView: View {
                 }
                 .buttonStyle(.plain)
 
+                let layout = page.canonicalLayout
+                let highlights = pageHighlights(page: page.pageIndex, text: layout.text)
                 ForEach(blocks) { block in
-                    blockView(block)
+                    blockView(block, base: layout.bases[block.id], highlights: highlights)
                 }
             }
             .padding(.bottom, 6)
         }
     }
 
-    @ViewBuilder
-    private func blockView(_ block: PDFReflowBlock) -> some View {
+    /// Saved highlights for one original page, located in its canonical text.
+    private func pageHighlights(page: Int, text: String) -> ReaderPageHighlights {
+        let isDark = theme.isDark
+        let spans = book.annotations.filter { $0.chapterIndex == page }.compactMap { annotation -> ReaderPageHighlightSpan? in
+            guard let range = ReflowAnnotationAnchor.resolve(start: annotation.startOffset,
+                                                             end: annotation.endOffset,
+                                                             quote: annotation.quote,
+                                                             in: text) else { return nil }
+            return ReaderPageHighlightSpan(
+                range: range,
+                fill: PlatformColor(hex: annotation.color.fillHex, alpha: isDark ? 0.45 : 0.65),
+                underline: PlatformColor(hex: annotation.color.underlineHex),
+                underlineWidth: 1.5,
+                rounded: true
+            )
+        }
+        return ReaderPageHighlights(spans: spans)
+    }
+
+    /// Selectable text for one block: Highlight / Add Note in the selection
+    /// menu, anchored at `base` in the page's canonical text.
+    private func selectableText(_ block: PDFReflowBlock, base: Int?,
+                                highlights: ReaderPageHighlights) -> some View {
+        let pageIndex = block.pageIndex
+        let length = (block.text as NSString).length
+        let pageText = pageCanonicalText(pageIndex)
+        return SelectableReaderText(
+            text: attributedText(for: block),
+            mapping: base.map { .block(base: $0, length: length) }
+                ?? ReaderTextMapping(anchorOffset: { _ in nil }, localRange: { _ in nil }),
+            highlights: highlights,
+            accessibilityLabel: nil,
+            onHighlight: { range, color in
+                onAnnotate(pageIndex, range, quote(range, in: pageText), color)
+            },
+            onNote: { range in
+                onAnnotate(pageIndex, range, quote(range, in: pageText), .yellow)
+            }
+        )
+    }
+
+    private func pageCanonicalText(_ pageIndex: Int) -> String {
+        job.document?.pages.first { $0.pageIndex == pageIndex }?.canonicalLayout.text ?? ""
+    }
+
+    private func quote(_ range: NSRange, in text: String) -> String {
+        let ns = text as NSString
+        guard range.location >= 0, NSMaxRange(range) <= ns.length else { return "" }
+        return ns.substring(with: range).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func attributedText(for block: PDFReflowBlock) -> NSAttributedString {
+        let style = ReaderPageStyle(theme: theme, typography: typography)
+        var attributes = style.bodyAttributes
         switch block.kind {
         case .heading1:
-            Text(block.text)
-                .font(.system(size: 27, weight: .regular, design: .serif))
-                .foregroundStyle(theme.text)
+            attributes[.font] = Self.serifFont(size: 27, weight: .regular)
+            attributes[.paragraphStyle] = NSParagraphStyle.default
+        case .heading2:
+            attributes[.font] = Self.serifFont(size: 21, weight: .medium)
+            attributes[.paragraphStyle] = NSParagraphStyle.default
+        case .quote:
+            attributes[.foregroundColor] = PlatformColor(theme.muted)
+            let paragraph = (style.bodyParagraphStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
+            paragraph.alignment = .natural
+            attributes[.paragraphStyle] = paragraph
+        case .list:
+            let paragraph = (style.bodyParagraphStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
+            paragraph.alignment = .natural
+            attributes[.paragraphStyle] = paragraph
+        case .body, .figure, .tableImage:
+            break
+        }
+        return NSAttributedString(string: block.text, attributes: attributes)
+    }
+
+    private static func serifFont(size: CGFloat, weight: PlatformFont.Weight) -> PlatformFont {
+        let base = PlatformFont.systemFont(ofSize: size, weight: weight)
+        guard let descriptor = base.fontDescriptor.withDesign(.serif) else { return base }
+        return PlatformFont(descriptor: descriptor, size: size) ?? base
+    }
+
+    @ViewBuilder
+    private func blockView(_ block: PDFReflowBlock, base: Int?,
+                           highlights: ReaderPageHighlights) -> some View {
+        switch block.kind {
+        case .heading1:
+            selectableText(block, base: base, highlights: highlights)
                 .padding(.top, 8)
         case .heading2:
-            Text(block.text)
-                .font(.system(size: 21, weight: .medium, design: .serif))
-                .foregroundStyle(theme.text)
+            selectableText(block, base: base, highlights: highlights)
                 .padding(.top, 4)
         case .body:
-            JustifiedText(
-                text: block.text,
-                size: preferences.baseFontSize,
-                weight: weight,
-                useSerif: preferences.useSerif,
-                color: theme.text,
-                lineSpacing: preferences.lineSpacing,
-                justified: preferences.justify
-            )
+            selectableText(block, base: base, highlights: highlights)
         case .quote:
             HStack(alignment: .top, spacing: 10) {
                 Rectangle().fill(theme.accent).frame(width: 2)
-                JustifiedText(
-                    text: block.text,
-                    size: preferences.baseFontSize,
-                    weight: .regular,
-                    useSerif: true,
-                    color: theme.muted,
-                    lineSpacing: preferences.lineSpacing,
-                    justified: false
-                )
+                selectableText(block, base: base, highlights: highlights)
             }
         case .list:
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text("•").foregroundStyle(theme.accent)
-                Text(block.text)
-                    .font(.system(size: preferences.baseFontSize, design: preferences.useSerif ? .serif : .default))
-                    .foregroundStyle(theme.text)
+                selectableText(block, base: base, highlights: highlights)
             }
         case .figure, .tableImage:
             if let name = block.imageFileName, showImages {
@@ -341,14 +414,6 @@ struct PDFReflowView: View {
         #else
         DeviceInfo.isPad
         #endif
-    }
-
-    private var weight: JustifiedText.Weight {
-        switch preferences.weightIndex {
-        case 2: .semibold
-        case 1: .medium
-        default: .regular
-        }
     }
 
     private func loadReflow(force: Bool = false) async {

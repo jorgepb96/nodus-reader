@@ -27,6 +27,7 @@ struct ReaderView: View {
     @State private var pdfPageCount = 0
     @State private var pdfJumpPage: Int?
     @State private var pdfChapterSelection = 0
+    @State private var pdfMode: PDFReadingMode = .original
     @State private var pageIndex = 0
     @State private var pageInfo = ReaderPageInfo()
     @State private var firstPageByChapter: [Int: Int] = [:]
@@ -39,6 +40,7 @@ struct ReaderView: View {
     @State private var chromeVisible = true
     @State private var showContents = false
     @State private var showAppearance = false
+    @State private var showAppearanceSheet = false
     @State private var showPlayer = false
     @State private var annotationDraft: ReaderAnnotationDraft?
 
@@ -53,7 +55,12 @@ struct ReaderView: View {
     }
 
     private var readerTheme: ReaderTheme {
-        themeManager.readerTheme(colorScheme: colorScheme)
+        ReaderAppearanceResolver.theme(for: book, themeManager: themeManager, colorScheme: colorScheme)
+    }
+
+    /// The book's own typography when it has one, the global one otherwise.
+    private var typography: ReaderTypography {
+        ReaderAppearanceResolver.typography(for: book, preferences: preferences)
     }
 
     private var chapters: [ExtractedChapter] {
@@ -79,10 +86,12 @@ struct ReaderView: View {
     }
 
     private var pageBuildKey: String {
-        let custom = themeManager.selectedCustomTheme.map {
-            "\($0.id.uuidString)-\($0.backgroundHex)-\($0.textHex)-\($0.accentHex)-\($0.isDark)"
+        let selection = ReaderAppearanceResolver.themeSelection(for: book, themeManager: themeManager)
+        let custom = themeManager.customThemes.first { "custom:\($0.id.uuidString)" == selection }.map {
+            "\($0.backgroundHex)-\($0.textHex)-\($0.accentHex)-\($0.isDark)"
         } ?? ""
-        return "\(book.id.uuidString)-\(themeManager.readerThemeSelection)-\(custom)-\(colorScheme.hashValue)-\(preferences.fontScale)-\(preferences.lineSpacing)-\(preferences.margin)-\(preferences.justify)-\(preferences.useSerif)-\(preferences.weightIndex)"
+        let type = typography
+        return "\(book.id.uuidString)-\(selection)-\(custom)-\(colorScheme.hashValue)-\(type.fontScale)-\(type.lineSpacing)-\(type.margin)-\(type.justify)-\(type.useSerif)-\(type.weightIndex)-\(type.flow.rawValue)"
     }
 
     var body: some View {
@@ -102,6 +111,11 @@ struct ReaderView: View {
             }
         }
         .preferredColorScheme(theme.isDark ? .dark : .light)
+        // Sheets and popovers presented from the reader use its colour scheme,
+        // so they take the matching palette: never dark labels on a dark
+        // panel, or light labels on a light list.
+        .nodusPalette(theme.isDark ? .dark : .light)
+        .tint((theme.isDark ? NodusPalette.dark : NodusPalette.light).accent)
         .animation(.easeInOut(duration: 0.2), value: chromeVisible)
         .task { await load() }
         .onDisappear { saveProgress() }
@@ -124,7 +138,15 @@ struct ReaderView: View {
                     pdfURL: pdfURL,
                     pageCount: pdfPageCount,
                     currentPage: $pdfPageIndex,
-                    jumpToPage: $pdfJumpPage
+                    jumpToPage: $pdfJumpPage,
+                    annotations: library.annotations(for: book),
+                    onOpenAnnotation: { annotation in
+                        // Notes are shown in Intelligent Reading.
+                        pdfMode = .intelligent
+                        pdfJumpPage = annotation.chapterIndex
+                        pdfPageIndex = annotation.chapterIndex
+                    },
+                    onEditAnnotation: editAnnotation
                 )
             } else {
                 ReaderNavigationSheet(
@@ -137,8 +159,13 @@ struct ReaderView: View {
                 )
             }
         }
-        .sheet(isPresented: $showAppearance) {
-            ReaderAppearanceSheet()
+        .sheet(isPresented: $showAppearanceSheet) {
+            // Same rule as the popover: the palette follows the page's scheme.
+            let isDark = readerTheme.isDark
+            ReaderAppearanceSheet(book: book)
+                .nodusPalette(isDark ? .dark : .light)
+                .tint((isDark ? NodusPalette.dark : NodusPalette.light).accent)
+                .environment(\.colorScheme, isDark ? .dark : .light)
         }
         .sheet(isPresented: $showPlayer) {
             PlayerView().presentationDragIndicator(.hidden)
@@ -162,8 +189,9 @@ struct ReaderView: View {
             PaginatedReaderContent(
                 book: book,
                 chapters: chapters,
-                style: ReaderPageStyle(theme: theme, preferences: preferences),
+                style: ReaderPageStyle(theme: theme, typography: typography),
                 theme: theme,
+                typography: typography,
                 buildKey: pageBuildKey,
                 initialChapterIndex: max(book.locator.chapterIndex, 0),
                 initialFraction: min(max(book.locator.scrollFraction, 0), 1),
@@ -193,7 +221,11 @@ struct ReaderView: View {
                 theme: theme,
                 pdfPageIndex: $pdfPageIndex,
                 pdfPageCount: $pdfPageCount,
-                jumpToPage: $pdfJumpPage
+                jumpToPage: $pdfJumpPage,
+                mode: $pdfMode,
+                onAnnotate: { page, range, quote, color in
+                    presentPDFAnnotation(page: page, range: range, quote: quote, color: color)
+                }
             )
         case .failed(let message):
             failureView(message, theme: theme)
@@ -300,6 +332,19 @@ struct ReaderView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Appearance and typography")
+            .popover(isPresented: $showAppearance, arrowEdge: .top) {
+                ReaderAppearancePopover(book: book, readerIsDark: theme.isDark) {
+                    showAppearance = false
+                    // Present the sheet once the popover has gone.
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(350))
+                        showAppearanceSheet = true
+                    }
+                }
+                #if os(iOS)
+                .presentationCompactAdaptation(.popover)
+                #endif
+            }
         }
         .padding(.horizontal, 6)
         .frame(height: 44)
@@ -573,6 +618,20 @@ struct ReaderView: View {
             existing: nil
         )
         _ = note
+    }
+
+    /// Highlights in PDF Intelligent Reading: `page` is the original page and
+    /// `range` is in that page's canonical reflow text.
+    private func presentPDFAnnotation(page: Int, range: NSRange, quote: String, color: AnnotationColor) {
+        guard range.length > 0, !quote.isEmpty else { return }
+        annotationDraft = ReaderAnnotationDraft(
+            chapterIndex: page,
+            range: range,
+            quote: quote,
+            color: color,
+            note: "",
+            existing: nil
+        )
     }
 
     private func editAnnotation(_ annotation: Annotation) {

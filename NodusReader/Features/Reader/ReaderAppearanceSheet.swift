@@ -2,119 +2,50 @@
 import DesignSystem
 import SwiftUI
 
+/// The full appearance editor opened from the reader popover's "More
+/// settings…": every typography control, the preview and custom themes.
 struct ReaderAppearanceSheet: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(ReaderPreferences.self) private var preferences
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.nodusPalette) private var palette
+
+    let book: Book
 
     @State private var editorContext: ThemeEditorContext?
     @State private var pendingDelete: CustomReaderTheme?
     @State private var showDeleteConfirmation = false
 
     var body: some View {
-        @Bindable var preferences = preferences
-
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Eyebrow("Theme")
-                    ThemeGrid(
-                        target: .reader,
-                        onCreateCustom: { editorContext = ThemeEditorContext(theme: nil) },
-                        onEditCustom: { editorContext = ThemeEditorContext(theme: $0) },
-                        onDeleteCustom: { theme in
-                            pendingDelete = theme
-                            showDeleteConfirmation = true
-                        }
-                    )
+                    ReaderAppearanceControls(target: .book(book), style: .full)
 
-                    Toggle("Match app theme", isOn: Binding(
-                        get: { themeManager.readerFollowsApp },
-                        set: { isOn in
-                            if isOn {
-                                themeManager.followAppTheme()
-                            } else if let id = themeManager.selectedReaderThemeID {
-                                themeManager.selectReaderTheme(id)
-                            }
-                        }
-                    ))
-                    .font(.footnote)
-                    .tint(palette.accent)
-                    .padding(.horizontal, 4)
-
-                    Eyebrow("Typography")
+                    Eyebrow("Custom themes")
                         .padding(.top, 8)
-
-                    VStack(alignment: .leading, spacing: 14) {
-                        VStack(alignment: .leading, spacing: 5) {
-                            HStack {
-                                Text("Text size")
-                                Spacer()
-                                Text("\(Int(preferences.baseFontSize.rounded())) pt")
-                                    .foregroundStyle(palette.muted)
-                                    .monospacedDigit()
-                            }
-                            .font(.footnote)
-                            Slider(value: $preferences.fontScale, in: 0.8...1.6, step: 0.05)
-                        }
-                        VStack(alignment: .leading, spacing: 5) {
-                            HStack {
-                                Text("Line spacing")
-                                Spacer()
-                                Text(String(format: "%.2f", preferences.lineHeight))
-                                    .foregroundStyle(palette.muted)
-                                    .monospacedDigit()
-                            }
-                            .font(.footnote)
-                            Slider(value: $preferences.lineHeight, in: 1.2...2.0, step: 0.05)
-                        }
-                        VStack(alignment: .leading, spacing: 5) {
-                            HStack {
-                                Text("Margins")
-                                Spacer()
-                                Text("\(Int(preferences.margin.rounded())) pt")
-                                    .foregroundStyle(palette.muted)
-                                    .monospacedDigit()
-                            }
-                            .font(.footnote)
-                            Slider(value: $preferences.margin, in: 16...64, step: 2)
-                        }
-                        Picker("Typeface", selection: $preferences.useSerif) {
-                            Text("Serif").tag(true)
-                            Text("Sans").tag(false)
-                        }
-                        .pickerStyle(.segmented)
-                        Picker("Weight", selection: $preferences.weightIndex) {
-                            Text("Regular").tag(0)
-                            Text("Medium").tag(1)
-                            Text("Semibold").tag(2)
-                        }
-                        .pickerStyle(.segmented)
-                        Toggle("Justify text", isOn: $preferences.justify)
-                            .font(.footnote)
-                        #if os(iOS)
-                        Picker("Page turn", selection: $preferences.pageTurn) {
-                            ForEach(PageTurnStyle.allCases) { style in
-                                Text(style.label).tag(style)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .accessibilityLabel("Page turn")
-                        #endif
+                    Button {
+                        editorContext = ThemeEditorContext(theme: nil)
+                    } label: {
+                        Label("Create custom theme", systemImage: "plus")
+                            .font(.footnote.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 44)
                     }
-                    .padding(14)
-                    .panelCard(radius: 18)
-
-                    preview
-
-                    Button("Reset typography") {
-                        preferences.reset()
+                    .buttonStyle(.bordered)
+                    ForEach(themeManager.customThemes) { custom in
+                        HStack {
+                            Text(custom.name.isEmpty ? "Custom" : custom.name)
+                                .font(.footnote)
+                            Spacer()
+                            Button("Edit") { editorContext = ThemeEditorContext(theme: custom) }
+                                .font(.footnote)
+                            Button("Delete", role: .destructive) {
+                                pendingDelete = custom
+                                showDeleteConfirmation = true
+                            }
+                            .font(.footnote)
+                        }
+                        .frame(minHeight: 44)
                     }
-                    .font(.footnote)
-                    .foregroundStyle(palette.accent)
-                    .padding(.horizontal, 4)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
@@ -143,44 +74,6 @@ struct ReaderAppearanceSheet: View {
         #if os(iOS)
         .presentationDetents([.large])
         #endif
-    }
-
-    private var preview: some View {
-        let theme = themeManager.readerTheme(colorScheme: colorScheme)
-        return VStack(alignment: .leading, spacing: 8) {
-            Text("CHAPTER 1")
-                .font(.system(size: 9, weight: .semibold))
-                .tracking(2)
-                .foregroundStyle(theme.muted)
-            Text("Loomings")
-                .font(.system(size: 22, design: .serif))
-                .italic()
-                .foregroundStyle(theme.text)
-            JustifiedText(
-                text: "Call me Ishmael. Some years ago—never mind how long precisely—I thought I would sail about a little and see the watery part of the world.",
-                size: preferences.baseFontSize,
-                weight: weight,
-                useSerif: preferences.useSerif,
-                color: theme.text,
-                lineSpacing: preferences.lineSpacing,
-                justified: preferences.justify
-            )
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(theme.line, lineWidth: 1)
-        )
-    }
-
-    private var weight: JustifiedText.Weight {
-        switch preferences.weightIndex {
-        case 2: .semibold
-        case 1: .medium
-        default: .regular
-        }
     }
 }
 

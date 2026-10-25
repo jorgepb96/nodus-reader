@@ -74,6 +74,7 @@ struct AnnotationEditorSheet: View {
 
                 Section("Note") {
                     TextEditor(text: $note)
+                        .accessibilityIdentifier("annotationNoteEditor")
                         .frame(minHeight: 100)
                         .overlay(alignment: .topLeading) {
                             if note.isEmpty {

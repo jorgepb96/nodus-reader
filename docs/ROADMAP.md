@@ -27,6 +27,12 @@ limitations.
 - [x] Two-page spread and native page text view on macOS.
 - [x] Reader themes, custom themes, typography, margins and justification.
 - [x] Contents, bookmarks, highlights, notes, annotation colours and notes export.
+- [x] Appearance popover in the reader (theme, typography, reading mode) with
+      "This book only" per-book overrides synced with the book; the same controls
+      in Settings › Reading & Typography.
+- [x] Reading modes: paged (curl, slide, vertical on iOS; two-page spread on Mac),
+      continuous vertical scroll and a horizontal strip of columns on all platforms.
+- [x] Highlights and notes in PDF Intelligent Reading, anchored to the page text.
 - [x] Text selection menus for Highlight and Add Note.
 - [x] PDF original rendering with PDFKit.
 - [x] PDF Intelligent Reading: reading-order reconstruction, multi-column handling,
@@ -65,7 +71,7 @@ limitations.
 
 ### Verification
 
-- [x] 31 unit/integration tests, including word alignment, language-aware voice
+- [x] 36 unit/integration tests (plus one opt-in model download test), including word alignment, language-aware voice
       selection and the durable sync outbox.
 - [x] 9 UI tests covering the phone screens, reader, page turn, bookmarks, PDF
       Intelligent Reading, system/neural narration, the book-language voice filter and
@@ -85,9 +91,8 @@ limitations.
 | PDF tap-to-play | Original PDF page does not map taps to narration | Intelligent Reading reflow does; original-page mapping is future work |
 | EPUB locators | Chapter + page/fraction locator, not CFI | Stable chapter offsets survive re-parses; CFI is future work |
 | Translation | Interface is English | Strings are localization-ready |
-| Per-book typography | Themes and typography sync, but are global; no per-document overrides | Needs a designed UI (plan §11 asks for per-document preferences) |
-| Reader modes | Page curl, Slide or Vertical (iOS/iPadOS); the Mac uses the two-page spread | A continuous (non-paged) scroll mode is not implemented |
-| PDF Intelligent Reading | Follows page jumps and keeps the position; no text highlights or notes in the reflow | Highlights are created in paginated text and Original PDF only |
+| Continuous scroll selection | A selection cannot cross the boundary between two page-sized slices | Slices keep page numbers, bookmarks and progress identical across modes |
+| PDF notes in Original PDF | Highlights made in Intelligent Reading are listed and opened there, not drawn on the original page | Mapping reflow text back to PDFKit glyphs is future work |
 
 ## Not started or not validated
 

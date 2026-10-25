@@ -46,7 +46,8 @@ final class ReaderMacPageContainer: NSView {
 }
 
 final class ReaderMacTextView: NSTextView {
-    var page: ReaderPage?
+    /// Local index ↔ anchor space (chapter offsets, or PDF page offsets).
+    var mapping: ReaderTextMapping?
     var onWordTap: ((Int) -> Void)?
     var onHighlight: ((NSRange, AnnotationColor) -> Void)?
     var onNote: ((NSRange) -> Void)?
@@ -63,11 +64,7 @@ final class ReaderMacTextView: NSTextView {
     }
 
     private func chapterRange(for localRange: NSRange) -> NSRange? {
-        guard let page, localRange.length > 0,
-              let start = page.chapterOffset(forLocalIndex: localRange.location) else { return nil }
-        let last = NSMaxRange(localRange) - 1
-        guard let end = page.chapterOffset(forLocalIndex: last) else { return nil }
-        return NSRange(location: start, length: max(1, end - start + 1))
+        mapping?.anchorRange(for: localRange)
     }
 
     override func menu(for event: NSEvent) -> NSMenu? {
@@ -104,15 +101,15 @@ final class ReaderMacTextView: NSTextView {
     }
 
     @objc private func handleClick(_ gesture: NSClickGestureRecognizer) {
-        guard selectedRange().length == 0, let page else { return }
+        guard selectedRange().length == 0, let mapping else { return }
         let point = gesture.location(in: self)
         let containerPoint = CGPoint(x: point.x - textContainerOrigin.x,
                                      y: point.y - textContainerOrigin.y)
         guard let container = textContainer, let layoutManager else { return }
         let index = layoutManager.characterIndex(for: containerPoint, in: container,
                                                  fractionOfDistanceBetweenInsertionPoints: nil)
-        if let chapterOffset = page.chapterOffset(forLocalIndex: index) {
-            onWordTap?(chapterOffset)
+        if let offset = mapping.anchorOffset(index) {
+            onWordTap?(offset)
         }
     }
 }
@@ -182,7 +179,7 @@ struct MacPageView: NSViewRepresentable {
         let styleChanged = container.style != style
         container.style = style
         container.layer?.backgroundColor = style.background.cgColor
-        container.textView.page = page
+        container.textView.mapping = .page(page)
         container.textView.onWordTap = onWordTap
         container.textView.onHighlight = onHighlight
         container.textView.onNote = onNote

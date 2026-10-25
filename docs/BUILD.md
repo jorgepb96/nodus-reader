@@ -69,7 +69,23 @@ them into an in-memory SwiftData store with a temporary `FileStore`, and assert
 metadata, chapters, duplicates, covers, collections, manual order, themes, utilities,
 pause-based word alignment and the durable sync outbox/tombstone rules, queued and
 folder imports, synced-book text rebuilding, synced preferences, background search and
-off-main pagination. As of the last run: **31 tests pass**.
+off-main pagination, per-book appearance, continuous-scroll slicing and PDF note
+anchoring. As of the last run: **36 tests pass**.
+
+An opt-in integration test downloads every model this machine can run (Phonon 31M
+and, on an Apple Silicon Mac, Kokoro 82M; about 500 MB), synthesizes a sentence with
+each and checks the word alignment that drives the read-along highlight:
+
+```bash
+mkdir -p /tmp/nodus-models-home/Library/Preferences
+TEST_RUNNER_NODUS_MODEL_DOWNLOAD_TESTS=1 TEST_RUNNER_CFFIXED_USER_HOME=/tmp/nodus-models-home \
+xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader \
+  -destination 'platform=macOS' \
+  -only-testing:'NodusReaderTests/modelDownloadsSynthesizeAndAlignWithText()' \
+  -derivedDataPath build/DerivedData-mac CODE_SIGNING_ALLOWED=NO
+```
+
+`CFFIXED_USER_HOME` keeps the downloaded models out of the real Mac app container.
 
 The DesignSystem package has its own test target:
 

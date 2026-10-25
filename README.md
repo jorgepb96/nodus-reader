@@ -15,13 +15,13 @@ Nodus Reader is part of the Nodus Research ecosystem. It is not a web wrapper: t
 - Import pipeline: format validation, SHA-256 hashing, duplicate detection, metadata extraction, cover extraction/thumbnail/generation, coordinated file copy and optional collection assignment.
 - Covers: embedded EPUB artwork, PDF first-page thumbnails and deterministic typographic covers; custom covers from Photos.
 - Collections: unlimited nesting, rename, move, delete-without-deleting-documents, multiple memberships per book, manual order.
-- Reader: real EPUB text extraction and TextKit pagination with an iOS page-curl transition, macOS two-page spread, contents, bookmarks, highlights, notes and export, persistent progress, light/sepia/dark/OLED/high-contrast themes, custom themes, typography controls and justified text.
-- PDF: original PDFKit reading plus Intelligent Reading with reading-order reconstruction, multi-column detection, Vision OCR fallback, table crops and an original-page overlay.
+- Reader: real EPUB text extraction and TextKit pagination with an iOS page-curl transition, macOS two-page spread, contents, bookmarks, highlights, notes and export, persistent progress, light/sepia/dark/OLED/high-contrast themes, custom themes, typography controls and justified text; an appearance popover with per-book settings; paged, continuous vertical and horizontal-column reading.
+- PDF: original PDFKit reading plus Intelligent Reading with reading-order reconstruction, multi-column detection, Vision OCR fallback, table crops, an original-page overlay, and highlights and notes on the reflowed text.
 - Narration: on-device system voices, plus optional Kokoro 82M (English) and Phonon 31M (English) Core ML engines downloaded from Hugging Face. Sentence and word highlighting, tap a word to start Read & Listen from that word, sentence-level audio cache with prefetch, progress, cancellation and deletion, player with transport, speed, voice, sleep timer and modes. Background audio, interruptions, headphone unplugging and lock-screen controls are wired for iOS.
 - Sync: optional personal iCloud sync through CloudKit and iCloud Drive, a durable outbox, tombstones, timestamp conflicts, cloud-only badges, download-on-open, `Remove Download` and `Delete from Library`.
 - Sharing: iOS Share Extension with an App Group inbox and collection selection.
 - Settings: separate App/Reader themes, custom theme editor, reading typography, real voice and model management with downloads/licences/storage, iCloud status and privacy.
-- Tests: 31 unit/integration tests plus 9 UI tests with screenshot capture (the Phonon narration test skips when no Phonon bundle is installed in the simulator).
+- Tests: 36 unit/integration tests (plus an opt-in model download test) and 11 UI tests with screenshot capture (the Phonon narration test skips when no Phonon bundle is installed in the simulator).
 
 ## Screenshots
 

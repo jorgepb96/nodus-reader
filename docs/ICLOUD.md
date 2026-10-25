@@ -27,7 +27,7 @@ constructing `CKContainer`, which would terminate the process. This is deliberat
 
 | Data | Mechanism |
 |---|---|
-| Book metadata, reading position, status, favourite, per-book voice/mode | CloudKit private database, `Book` record |
+| Book metadata, reading position, status, favourite, per-book voice/mode, per-book appearance (`appearanceJSON`) | CloudKit private database, `Book` record |
 | Collections and explicit memberships | `Collection`, `Membership` records |
 | Bookmarks and annotations (highlights/notes) | `Bookmark`, `Annotation` records |
 | Deletions | `Tombstone` records, never inferred from absence |
@@ -90,7 +90,10 @@ page turn) sync as one `Preference` record (`preference-settings`), last writer
 wins by its `updatedAt`. They live in `UserDefaults`; a local edit is detected by
 comparing snapshots when defaults change. A fresh install starts with a snapshot
 dated `distantPast`, so it adopts the synced choices instead of overwriting them
-with its defaults. There are no per-book typography settings yet. A book's
+with its defaults. A book's own appearance ("This book only": theme and typography,
+including the reading mode) travels with the book as the `appearanceJSON` field.
+Before release, deploy the `Preference` record type and the new `Book` field to the
+production CloudKit schema. A book's
 full-text search index and chapter titles are not uploaded; they are rebuilt
 locally once the document has been downloaded.
 

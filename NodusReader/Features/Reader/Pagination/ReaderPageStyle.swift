@@ -32,12 +32,16 @@ struct ReaderPageStyle: Equatable {
     var isDark: Bool
 
     init(theme: ReaderTheme, preferences: ReaderPreferences) {
-        fontSize = preferences.baseFontSize
-        lineSpacing = preferences.lineSpacing
-        margin = preferences.margin
-        justified = preferences.justify
-        useSerif = preferences.useSerif
-        weightIndex = preferences.weightIndex
+        self.init(theme: theme, typography: preferences.typography)
+    }
+
+    init(theme: ReaderTheme, typography: ReaderTypography) {
+        fontSize = typography.baseFontSize
+        lineSpacing = typography.lineSpacing
+        margin = typography.margin
+        justified = typography.justify
+        useSerif = typography.useSerif
+        weightIndex = typography.weightIndex
         text = PlatformColor(theme.text)
         muted = PlatformColor(theme.muted)
         background = PlatformColor(theme.background)

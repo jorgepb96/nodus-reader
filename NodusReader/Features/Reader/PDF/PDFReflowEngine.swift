@@ -497,3 +497,64 @@ enum PDFReflowExtractor {
         return data as Data
     }
 }
+
+// MARK: - Annotation anchoring
+
+extension PDFReflowBlock {
+    /// Blocks whose text can be selected, highlighted and annotated.
+    var isAnnotatableText: Bool {
+        switch kind {
+        case .heading1, .heading2, .body, .quote, .list: !text.isEmpty
+        case .figure, .tableImage: false
+        }
+    }
+}
+
+extension PDFReflowPage {
+    /// The page's text blocks joined with blank lines, in reading order,
+    /// headers and footers included, plus each block's UTF-16 start offset.
+    /// Highlights in Intelligent Reading are stored as offsets into this text
+    /// (`Annotation.chapterIndex` = original page index), so they do not depend
+    /// on the "Show images" or "Skip headers" switches. Block UUIDs are not
+    /// used: they change whenever the reflow cache is regenerated.
+    var canonicalLayout: (text: String, bases: [UUID: Int]) {
+        var text = ""
+        var bases: [UUID: Int] = [:]
+        for block in blocks where block.isAnnotatableText {
+            if !text.isEmpty { text += "\n\n" }
+            bases[block.id] = (text as NSString).length
+            text += block.text
+        }
+        return (text, bases)
+    }
+}
+
+/// Finds where a stored PDF highlight is in the current reflow text.
+enum ReflowAnnotationAnchor {
+    /// The stored range when it still covers `quote`; otherwise the occurrence
+    /// of `quote` closest to the old position (the reflow cache may have been
+    /// rebuilt with slightly different block boundaries); nil when the quote is
+    /// no longer on the page.
+    static func resolve(start: Int, end: Int, quote: String, in text: String) -> NSRange? {
+        let ns = text as NSString
+        let target = quote.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !target.isEmpty else { return nil }
+        let stored = NSRange(location: start, length: max(0, end - start))
+        if stored.location >= 0, stored.length > 0, NSMaxRange(stored) <= ns.length,
+           ns.substring(with: stored).trimmingCharacters(in: .whitespacesAndNewlines) == target {
+            return stored
+        }
+        var best: NSRange?
+        var searchRange = NSRange(location: 0, length: ns.length)
+        while searchRange.length > 0 {
+            let found = ns.range(of: target, options: [], range: searchRange)
+            guard found.location != NSNotFound else { break }
+            if best == nil || abs(found.location - start) < abs(best!.location - start) {
+                best = found
+            }
+            let next = NSMaxRange(found)
+            searchRange = NSRange(location: next, length: ns.length - next)
+        }
+        return best
+    }
+}

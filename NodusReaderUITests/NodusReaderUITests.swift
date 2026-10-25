@@ -26,10 +26,11 @@ final class NodusReaderUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Loomings"].firstMatch.waitForExistence(timeout: 15))
         snap("iPhone-03-Reader")
 
+        // "Aa" opens the appearance popover.
         app.buttons["Appearance and typography"].tap()
-        XCTAssertTrue(app.staticTexts["Appearance"].firstMatch.waitForExistence(timeout: 8))
+        XCTAssertTrue(app.switches["This book only"].firstMatch.waitForExistence(timeout: 8))
         snap("iPhone-04-Appearance")
-        app.buttons["Done"].tap()
+        dismissPopover(in: app)
         app.buttons["Back to library"].tap()
 
         tapTab("Collections", in: app)
@@ -44,7 +45,7 @@ final class NodusReaderUITests: XCTestCase {
         snap("iPhone-07-Settings")
 
         app.staticTexts["Reading & Typography"].firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["PREVIEW"].firstMatch.waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["Line spacing"].firstMatch.waitForExistence(timeout: 8))
         snap("iPhone-08-Typography")
         app.navigationBars.buttons.firstMatch.tap()
 
@@ -71,7 +72,7 @@ final class NodusReaderUITests: XCTestCase {
     }
 
     func testPadScreens() throws {
-        let app = launch()
+        let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60),
                       "The sample library did not finish importing")
 
@@ -303,7 +304,155 @@ final class NodusReaderUITests: XCTestCase {
         snap("iPhone-17-PDFSource")
     }
 
+    func testPDFReflowHighlightAndNote() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let width = app.windows.firstMatch.frame.width
+        try XCTSkipIf(width >= 700, "This test runs on iPhone")
+
+        let pdf = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@",
+                                                    "Experiments in Plant Hybridization")).firstMatch
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+        pdf.tap()
+        let intelligent = app.segmentedControls.buttons["Intelligent Reading"].firstMatch
+        XCTAssertTrue(intelligent.waitForExistence(timeout: 15))
+        intelligent.tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == 'Page 1'")).firstMatch
+            .waitForExistence(timeout: 60))
+
+        // Select a word in a reflowed paragraph and highlight it.
+        let paragraphs = app.textViews
+        XCTAssertTrue(paragraphs.firstMatch.waitForExistence(timeout: 20))
+        let target = paragraphs.count > 1 ? paragraphs.element(boundBy: 1) : paragraphs.firstMatch
+        target.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.3)).press(forDuration: 1.2)
+        let highlight = app.menuItems["Highlight"].firstMatch.exists
+            ? app.menuItems["Highlight"].firstMatch : app.buttons["Highlight"].firstMatch
+        XCTAssertTrue(highlight.waitForExistence(timeout: 8), "The selection menu offers Highlight")
+        highlight.tap()
+        let yellow = app.menuItems["Yellow"].firstMatch.waitForExistence(timeout: 3)
+            ? app.menuItems["Yellow"].firstMatch : app.buttons["Yellow"].firstMatch
+        XCTAssertTrue(yellow.waitForExistence(timeout: 5))
+        yellow.tap()
+
+        XCTAssertTrue(app.navigationBars["Add Highlight"].waitForExistence(timeout: 8))
+        // The sheet's note field, not a reflow paragraph behind the sheet.
+        let noteEditor = app.textViews["annotationNoteEditor"].firstMatch
+        XCTAssertTrue(noteEditor.waitForExistence(timeout: 5))
+        noteEditor.tap()
+        noteEditor.typeText("Mendel's ratio")
+        app.buttons["Save"].firstMatch.tap()
+        sleep(1)
+        snap("iPhone-24-PDFHighlight")
+
+        // The note is listed by page in the contents sheet.
+        app.buttons["Contents, bookmarks and notes"].tap()
+        XCTAssertTrue(app.staticTexts["Highlights and notes"].firstMatch.waitForExistence(timeout: 8)
+                      || app.otherElements["Highlights and notes"].firstMatch.exists)
+        let noteRow = app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'Page '")).firstMatch
+        XCTAssertTrue(noteRow.waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["Mendel's ratio"].firstMatch.waitForExistence(timeout: 3))
+        snap("iPhone-25-PDFNotes")
+    }
+
+    func testReaderAppearancePopoverAndContinuousScroll() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let isPad = app.windows.firstMatch.frame.width >= 700
+
+        if isPad {
+            // iPad opens on the library grid; Home has no Read button.
+            app.staticTexts["All Books"].firstMatch.tap()
+            let moby = app.staticTexts["Moby-Dick"].firstMatch
+            XCTAssertTrue(moby.waitForExistence(timeout: 10))
+            moby.tap()
+        } else {
+            app.buttons["Read"].firstMatch.tap()
+        }
+        XCTAssertTrue(app.staticTexts["Loomings"].firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(pageLabel(in: app, beginningWith: "Page 1 of").waitForExistence(timeout: 15))
+
+        // The "Aa" button opens a popover, not a full-screen sheet.
+        openAppearance(in: app)
+        XCTAssertTrue(app.switches["This book only"].firstMatch.waitForExistence(timeout: 5))
+        let sepia = app.buttons["Sepia theme"].firstMatch
+        XCTAssertTrue(sepia.waitForExistence(timeout: 5))
+        sepia.tap()
+        snap(isPad ? "iPad-06-AppearancePopover" : "iPhone-21-AppearancePopover")
+
+        if isPad {
+            // The sample book fits on about one iPad screen; larger text gives
+            // the continuous column something to scroll through.
+            let larger = app.buttons["Larger text"].firstMatch
+            XCTAssertTrue(larger.waitForExistence(timeout: 5))
+            for _ in 0..<12 where larger.isEnabled { larger.tap() }
+        }
+
+        // Continuous vertical scroll.
+        chooseFlow("Scroll down", in: app)
+        dismissPopover(in: app)
+        XCTAssertTrue(app.staticTexts["Loomings"].firstMatch.waitForExistence(timeout: 15))
+        app.swipeUp(velocity: .fast)
+        app.swipeUp(velocity: .fast)
+        XCTAssertTrue(pageLabel(in: app, notBeginningWith: "Page 1 of").waitForExistence(timeout: 10),
+                      "Scrolling down should advance the reading position")
+        snap(isPad ? "iPad-07-ScrollVertical" : "iPhone-22-ScrollVertical")
+
+        // Continuous horizontal strip of columns.
+        openAppearance(in: app)
+        chooseFlow("Scroll across", in: app)
+        dismissPopover(in: app)
+        app.swipeLeft(velocity: .fast)
+        app.swipeLeft(velocity: .fast)
+        XCTAssertTrue(pageLabel(in: app, notBeginningWith: "Page 1 of").waitForExistence(timeout: 10))
+        snap(isPad ? "iPad-08-ScrollHorizontal" : "iPhone-23-ScrollHorizontal")
+
+        // Restore the shared defaults for the other tests.
+        openAppearance(in: app)
+        chooseFlow("Paged", in: app)
+        app.buttons["Dark theme"].firstMatch.tap()
+        dismissPopover(in: app)
+    }
+
     // MARK: - Helpers
+
+    private func pageLabel(in app: XCUIApplication, beginningWith prefix: String) -> XCUIElement {
+        app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", prefix)).firstMatch
+    }
+
+    private func pageLabel(in app: XCUIApplication, notBeginningWith prefix: String) -> XCUIElement {
+        app.staticTexts.containing(NSPredicate(
+            format: "label BEGINSWITH 'Page ' AND label CONTAINS ' of ' AND NOT (label BEGINSWITH %@)", prefix
+        )).firstMatch
+    }
+
+    private func openAppearance(in app: XCUIApplication) {
+        let button = app.buttons["Appearance and typography"]
+        XCTAssertTrue(button.waitForExistence(timeout: 8))
+        button.tap()
+    }
+
+    private func chooseFlow(_ label: String, in app: XCUIApplication) {
+        let segment = app.buttons[label].firstMatch
+        if segment.waitForExistence(timeout: 3) {
+            segment.tap()
+            return
+        }
+        let fallback = label == "Paged" ? app.buttons["Paged"].firstMatch
+            : (label == "Scroll down" ? app.buttons["Continuous vertical scroll"].firstMatch
+                                      : app.buttons["Continuous horizontal scroll"].firstMatch)
+        XCTAssertTrue(fallback.waitForExistence(timeout: 3), "Reading mode \(label) was not found")
+        fallback.tap()
+    }
+
+    private func dismissPopover(in app: XCUIApplication) {
+        let region = app.otherElements["PopoverDismissRegion"].firstMatch
+        if region.waitForExistence(timeout: 2) {
+            region.tap()
+        } else {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.02)).tap()
+        }
+        XCTAssertFalse(app.switches["This book only"].firstMatch.waitForExistence(timeout: 1))
+    }
 
     private func launch(resetReadingState: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()

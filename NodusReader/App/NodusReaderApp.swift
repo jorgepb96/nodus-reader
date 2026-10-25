@@ -42,6 +42,14 @@ struct NodusReaderApp: App {
         _models = State(initialValue: models)
         let sync = CloudSyncService(context: container.mainContext, library: library, journal: journal)
         let theme = ThemeManager()
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-NodusResetReadingState") {
+            // UI tests share one simulator; start every reader test paged.
+            UserDefaults.standard.removeObject(forKey: "nodus.reader.flow")
+            UserDefaults.standard.removeObject(forKey: "nodus.reader.pageTurn")
+            UserDefaults.standard.removeObject(forKey: "nodus.reader.fontScale")
+        }
+        #endif
         let preferences = ReaderPreferences()
         sync.attachPreferences(theme: theme, reading: preferences)
         _sync = State(initialValue: sync)

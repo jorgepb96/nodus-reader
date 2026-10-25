@@ -450,6 +450,28 @@ public final class ThemeManager {
         return ReaderTheme.resolve(id, colorScheme: colorScheme)
     }
 
+    /// Resolves a stored selection (`ReaderThemeID` raw value or
+    /// `custom:<uuid>`), for example a book's own theme. A deleted custom theme
+    /// falls back to the current reader theme.
+    public func readerTheme(selection: String, colorScheme: ColorScheme) -> ReaderTheme {
+        if selection.hasPrefix("custom:") {
+            let uuid = UUID(uuidString: String(selection.dropFirst("custom:".count)))
+            if let custom = customThemes.first(where: { $0.id == uuid }) {
+                return custom.readerTheme
+            }
+            return readerTheme(colorScheme: colorScheme)
+        }
+        guard let id = ReaderThemeID(rawValue: selection) else {
+            return readerTheme(colorScheme: colorScheme)
+        }
+        return ReaderTheme.resolve(id, colorScheme: colorScheme)
+    }
+
+    /// The selection string currently in effect for the reader.
+    public var effectiveReaderSelection: String {
+        readerFollowsApp ? Self.matchingReaderTheme(for: appTheme).rawValue : readerThemeSelection
+    }
+
     public var selectedReaderThemeID: ReaderThemeID? {
         readerFollowsApp
             ? Self.matchingReaderTheme(for: appTheme)

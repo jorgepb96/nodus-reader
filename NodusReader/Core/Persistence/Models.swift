@@ -97,6 +97,22 @@ public enum ReadingMode: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 }
 
+// MARK: - Per-book appearance
+
+/// A book's own reader appearance. Each part is optional so a book can keep
+/// its own typography and still follow the global theme, or the reverse.
+public struct BookAppearance: Codable, Equatable, Sendable {
+    /// Same format as `ThemeManager.readerThemeSelection`, including
+    /// `custom:<uuid>`; nil follows the global reader theme.
+    public var readerThemeSelection: String?
+    public var typography: ReaderTypography?
+
+    public init(readerThemeSelection: String? = nil, typography: ReaderTypography? = nil) {
+        self.readerThemeSelection = readerThemeSelection
+        self.typography = typography
+    }
+}
+
 // MARK: - Locator
 
 /// A small, format-independent reading locator. Paginated text stores a chapter
@@ -143,6 +159,8 @@ public final class Book {
     public var lastPositionDate: Date?
     public var preferredVoiceID: String?
     public var readingModeRaw: String = ReadingMode.read.rawValue
+    /// JSON `BookAppearance`; empty when the book uses the global appearance.
+    public var appearanceJSON: String = ""
     public var createdAt: Date = Date()
     public var updatedAt: Date = Date()
 
@@ -237,6 +255,23 @@ public final class Book {
             if let data = try? JSONEncoder().encode(newValue), let string = String(data: data, encoding: .utf8) {
                 locatorJSON = string
             }
+        }
+    }
+
+    /// This book's own theme and typography, if the reader chose "This book
+    /// only". Synced with the book; nil means the global appearance applies.
+    public var appearance: BookAppearance? {
+        get {
+            guard !appearanceJSON.isEmpty, let data = appearanceJSON.data(using: .utf8) else { return nil }
+            return try? JSONDecoder().decode(BookAppearance.self, from: data)
+        }
+        set {
+            guard let newValue, let data = try? JSONEncoder().encode(newValue),
+                  let string = String(data: data, encoding: .utf8) else {
+                appearanceJSON = ""
+                return
+            }
+            appearanceJSON = string
         }
     }
 

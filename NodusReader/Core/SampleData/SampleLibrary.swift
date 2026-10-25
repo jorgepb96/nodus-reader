@@ -39,6 +39,7 @@ enum SampleLibrary {
             book.lastPositionDevice = ""
             book.lastPositionDate = nil
             book.status = .toRead
+            book.appearance = nil
         }
         if let moby = books.first(where: { $0.title == "Moby-Dick" }) {
             moby.lastOpenedAt = Date()

@@ -479,7 +479,9 @@ public final class LibraryService {
                     lines.append(annotation.note)
                     lines.append("")
                 }
-                lines.append("— Chapter \(annotation.chapterIndex + 1)")
+                lines.append(book.format == .pdf
+                             ? "— Page \(annotation.chapterIndex + 1)"
+                             : "— Chapter \(annotation.chapterIndex + 1)")
                 lines.append("")
             }
         }
@@ -509,6 +511,15 @@ public final class LibraryService {
         book.touch()
         save()
         return true
+    }
+
+    /// Stores (or clears, with nil) the book's own appearance. A user edit, so
+    /// it is timestamped and synced like any other book change.
+    public func setAppearance(_ appearance: BookAppearance?, for book: Book) {
+        guard book.appearance != appearance else { return }
+        book.appearance = appearance
+        book.touch()
+        save()
     }
 
     public func setPreferredVoice(_ book: Book, voiceID: String?) {

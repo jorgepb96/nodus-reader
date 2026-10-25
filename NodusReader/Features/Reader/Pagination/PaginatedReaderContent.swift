@@ -17,14 +17,18 @@ struct ReaderPageInfo: Equatable {
     var pagesInChapter: Int = 0
 }
 
-/// Owns TextKit pagination and turns a chapter list into page-curl (iOS) or a
-/// two-page spread (Mac). Highlights are drawn as an overlay, so narration and
-/// annotations never invalidate the pagination.
+/// Owns TextKit pagination and turns a chapter list into page-curl (iOS), a
+/// two-page spread (Mac) or a continuous scroll (vertical column or horizontal
+/// strip of columns). Continuous modes reuse the same TextKit slices, so
+/// progress, bookmarks, narration follow and highlights work identically.
+/// Highlights are drawn as an overlay, so narration and annotations never
+/// invalidate the pagination.
 struct PaginatedReaderContent: View {
     let book: Book
     let chapters: [ExtractedChapter]
     let style: ReaderPageStyle
     let theme: ReaderTheme
+    let typography: ReaderTypography
     let buildKey: String
     let initialChapterIndex: Int
     let initialFraction: Double
@@ -49,37 +53,65 @@ struct PaginatedReaderContent: View {
     @State private var builtKey = ""
     @State private var isBuilding = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(ReaderPreferences.self) private var preferences
-
     private var pageTurn: PageTurnStyle {
-        reduceMotion && preferences.pageTurn == .curl ? .slide : preferences.pageTurn
+        reduceMotion && typography.pageTurn == .curl ? .slide : typography.pageTurn
+    }
+
+    private var flow: ReadingFlow { typography.flow }
+
+    /// Pages shown side by side: the Mac spread in paged mode, otherwise one.
+    private var visibleColumns: Int {
+        flow == .paged ? max(1, columns) : 1
+    }
+
+    /// Width of one column in the horizontal strip: a readable measure, never
+    /// wider than the window.
+    private static func stripColumnWidth(for width: CGFloat) -> CGFloat {
+        min(width, 560)
     }
 
     var body: some View {
         GeometryReader { proxy in
-            let columnCount = max(1, columns)
+            let columnCount = visibleColumns
             let separator: CGFloat = columnCount > 1 ? 1 : 0
-            let availableWidth = (proxy.size.width - separator) / CGFloat(columnCount)
+            let availableWidth = flow == .scrollHorizontal
+                ? Self.stripColumnWidth(for: proxy.size.width)
+                : (proxy.size.width - separator) / CGFloat(columnCount)
             // Keep a comfortable measure on iPad/Mac instead of stretching
             // lines across the whole window. The page host uses the same
             // margin, so selection and tap coordinates stay aligned.
             let pageStyle: ReaderPageStyle = {
                 var adjusted = style
-                if columnCount == 1 {
+                if columnCount == 1, flow != .scrollHorizontal {
                     let readableWidth: CGFloat = 720
                     adjusted.margin = max(style.margin, (availableWidth - readableWidth) / 2)
                 }
                 return adjusted
             }()
             let pageWidth = availableWidth - pageStyle.margin * 2
+            // Continuous slices are page-sized, so "Page x of y", bookmarks
+            // and progress mean the same thing in every mode.
             let pageHeight = proxy.size.height - 16
             let size = CGSize(width: max(120, pageWidth), height: max(120, pageHeight))
-            let key = "\(buildKey)-\(Int(size.width))x\(Int(size.height))-\(Int(pageStyle.margin))-\(columnCount)-\(chapters.count)"
+            let key = "\(buildKey)-\(flow.rawValue)-\(Int(size.width))x\(Int(size.height))-\(Int(pageStyle.margin))-\(columnCount)-\(chapters.count)"
 
             ZStack {
                 if isBuilding || pages.isEmpty {
                     ProgressView()
                         .tint(Color(theme.accent))
+                } else if flow.isContinuous {
+                    ContinuousReaderContent(
+                        pages: pages,
+                        axis: flow == .scrollHorizontal ? .horizontal : .vertical,
+                        columnWidth: flow == .scrollHorizontal ? availableWidth : nil,
+                        columnHeight: flow == .scrollHorizontal ? proxy.size.height : nil,
+                        pageIndex: $pageIndex,
+                        style: pageStyle,
+                        highlightsProvider: highlights(for:),
+                        onWordTap: onWordTap,
+                        onHighlight: onHighlight,
+                        onNote: onNote
+                    )
                 } else {
                     #if os(macOS)
                     MacPageSpread(
@@ -127,10 +159,10 @@ struct PaginatedReaderContent: View {
             followNarrationIfNeeded()
         }
         .onAppear {
-            pageStep = columns
+            pageStep = visibleColumns
             updatePageInfo()
         }
-        .onChange(of: columns) { _, newValue in
+        .onChange(of: visibleColumns) { _, newValue in
             pageStep = max(1, newValue)
         }
     }

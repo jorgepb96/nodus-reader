@@ -529,6 +529,27 @@ final class ModelManager {
 
     func kokoroEngine() -> KokoroTTS? { kokoro }
 
+    /// One sentence of neural speech (mono Float PCM) from an installed
+    /// engine, loading it first if this launch has not used it yet.
+    func synthesize(_ text: String, voiceID: String, engine: Engine) async throws -> (samples: [Float], sampleRate: Double) {
+        switch engine {
+        case .kokoro:
+            if kokoro == nil { await loadInstalledEnginesIfNeeded() }
+            guard let kokoro else { throw NeuralNarrationError.engineNotLoaded("Kokoro") }
+            let raw = voiceID.hasPrefix("kokoro:") ? String(voiceID.dropFirst("kokoro:".count)) : voiceID
+            let audio = try await kokoro.synthesize(text, voice: KokoroVoiceID(raw))
+            return (audio.samples, Double(audio.sampleRate))
+        case .phonon:
+            if phonon == nil { await loadInstalledEnginesIfNeeded() }
+            guard let phonon else { throw NeuralNarrationError.engineNotLoaded("Phonon") }
+            let name = voiceID.hasPrefix("phonon:") ? String(voiceID.dropFirst("phonon:".count)) : voiceID
+            if phonon.voice != name, phonon.voices.contains(name) {
+                try await phonon.setVoice(name)
+            }
+            return (try await phonon.synthesize(text), Phonon.sampleRate)
+        }
+    }
+
     func phononEngine() -> Phonon? { phonon }
 
     /// Lazily loads an installed engine when the app starts after a previous

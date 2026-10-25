@@ -18,6 +18,7 @@ struct SyncedPreferences: Codable, Equatable {
     var useSerif: Bool
     var weightIndex: Int
     var pageTurn: String
+    var flow: String?
 
     @MainActor
     init(theme: ThemeManager, reading: ReaderPreferences) {
@@ -32,6 +33,7 @@ struct SyncedPreferences: Codable, Equatable {
         useSerif = reading.useSerif
         weightIndex = reading.weightIndex
         pageTurn = reading.pageTurn.rawValue
+        flow = reading.flow.rawValue
     }
 
     @MainActor
@@ -51,6 +53,7 @@ struct SyncedPreferences: Codable, Equatable {
         if reading.useSerif != useSerif { reading.useSerif = useSerif }
         if reading.weightIndex != weightIndex { reading.weightIndex = weightIndex }
         if let turn = PageTurnStyle(rawValue: pageTurn), reading.pageTurn != turn { reading.pageTurn = turn }
+        if let flow, let value = ReadingFlow(rawValue: flow), reading.flow != value { reading.flow = value }
     }
 
     /// Deterministic bytes, so "changed since last sync" is a byte comparison.

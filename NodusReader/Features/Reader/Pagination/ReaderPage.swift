@@ -52,3 +52,36 @@ struct PaginatedBook {
 
     static let empty = PaginatedBook(pages: [], firstPageByChapter: [:])
 }
+
+/// Maps between a text view's local character indexes and the stable anchor
+/// space used by annotations, narration and word taps: chapter offsets for
+/// paginated and continuous text, canonical page offsets for PDF reflow.
+struct ReaderTextMapping {
+    var anchorOffset: (Int) -> Int?
+    var localRange: (NSRange) -> NSRange?
+
+    /// The anchor range covered by a local selection.
+    func anchorRange(for local: NSRange) -> NSRange? {
+        guard local.length > 0, let start = anchorOffset(local.location) else { return nil }
+        guard let end = anchorOffset(NSMaxRange(local) - 1) else { return nil }
+        return NSRange(location: start, length: max(1, end - start + 1))
+    }
+
+    static func page(_ page: ReaderPage) -> ReaderTextMapping {
+        ReaderTextMapping(anchorOffset: { page.chapterOffset(forLocalIndex: $0) },
+                          localRange: { page.localRange(forChapterRange: $0) })
+    }
+
+    /// A block whose text starts at `base` in the anchor space.
+    static func block(base: Int, length: Int) -> ReaderTextMapping {
+        ReaderTextMapping(
+            anchorOffset: { index in index >= 0 && index < length ? base + index : nil },
+            localRange: { range in
+                let start = max(range.location, base)
+                let end = min(NSMaxRange(range), base + length)
+                guard end > start else { return nil }
+                return NSRange(location: start - base, length: end - start)
+            }
+        )
+    }
+}

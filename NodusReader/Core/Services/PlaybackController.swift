@@ -1052,38 +1052,11 @@ public final class PlaybackController {
     }
 
     private func synthesizeUnlocked(text: String, voice: VoiceCatalog.Voice) async throws -> NeuralAudio {
-        switch voice.engineRaw {
-        case "kokoro":
-            if models.kokoroEngine() == nil {
-                await models.loadInstalledEnginesIfNeeded()
-            }
-            guard let engine = models.kokoroEngine() else {
-                throw NeuralNarrationError.engineNotLoaded("Kokoro")
-            }
-            let raw = voice.id.hasPrefix("kokoro:")
-                ? String(voice.id.dropFirst("kokoro:".count))
-                : voice.id
-            let voiceID = KokoroVoiceID(raw)
-            let audio = try await engine.synthesize(text, voice: voiceID)
-            return NeuralAudio(samples: audio.samples, sampleRate: Double(audio.sampleRate))
-        case "phonon":
-            if models.phononEngine() == nil {
-                await models.loadInstalledEnginesIfNeeded()
-            }
-            guard let engine = models.phononEngine() else {
-                throw NeuralNarrationError.engineNotLoaded("Phonon")
-            }
-            let name = voice.id.hasPrefix("phonon:")
-                ? String(voice.id.dropFirst("phonon:".count))
-                : voice.id
-            if engine.voice != name, engine.voices.contains(name) {
-                try await engine.setVoice(name)
-            }
-            let samples = try await engine.synthesize(text)
-            return NeuralAudio(samples: samples, sampleRate: Phonon.sampleRate)
-        default:
+        guard let engine = ModelManager.Engine(rawValue: voice.engineRaw) else {
             throw NeuralNarrationError.engineNotLoaded(voice.engineRaw)
         }
+        let audio = try await models.synthesize(text, voiceID: voice.id, engine: engine)
+        return NeuralAudio(samples: audio.samples, sampleRate: audio.sampleRate)
     }
 
     private func makeBuffer(samples: [Float], sampleRate: Double) -> AVAudioPCMBuffer? {
@@ -1419,7 +1392,7 @@ enum NeuralNarrationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .engineNotLoaded(let engine):
-            "The \(engine) engine is not loaded. Open Settings → Voices & Models and install it again."
+            "The \(engine) engine is not loaded. Open Settings › Voices & Models and install it again."
         case .invalidAudio:
             "The neural engine returned audio in an unsupported format."
         }

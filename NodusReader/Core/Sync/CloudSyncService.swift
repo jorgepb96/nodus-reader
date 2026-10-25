@@ -574,6 +574,7 @@ final class CloudSyncService {
             record["lastPositionDate"] = book.lastPositionDate
             record["preferredVoiceID"] = book.preferredVoiceID ?? ""
             record["readingMode"] = book.readingModeRaw
+            record["appearanceJSON"] = book.appearanceJSON
             record["updatedAt"] = localUpdatedAt
         case .collection:
             guard let collection = fetchCollection(id: entry.entityID) else { return nil }
@@ -700,6 +701,7 @@ final class CloudSyncService {
         book.lastPositionDate = record["lastPositionDate"] as? Date
         book.preferredVoiceID = (record["preferredVoiceID"] as? String).flatMap { $0.isEmpty ? nil : $0 }
         book.readingModeRaw = record["readingMode"] as? String ?? book.readingModeRaw
+        book.appearanceJSON = record["appearanceJSON"] as? String ?? book.appearanceJSON
         book.updatedAt = remoteDate
 
         let localExists = FileManager.default.fileExists(atPath: library.fileStore.documentURL(for: book).path)

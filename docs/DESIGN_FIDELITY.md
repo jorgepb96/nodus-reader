@@ -55,6 +55,19 @@ The 2026-10-25 visual audit is recorded in [`VISUAL_AUDIT.md`](VISUAL_AUDIT.md).
 14. **The iOS 26 tab bar is translucent.** The app draws an in-content gradient to the app background behind the floating bar so bright covers do not bleed through; the bar itself remains the system Liquid Glass control rather than an opaque custom bar.
 15. **iPad Settings uses a full page sheet** with a centered 820 pt content column instead of the default form sheet, which clipped General rows at the bottom.
 
+## Reader appearance popover (requested change, 2026-10-25)
+
+The design opens reader appearance as a sheet. At the product owner's request the
+"Aa" button now opens a **popover** (also on iPhone, via
+`presentationCompactAdaptation(.popover)`): theme tiles, text size A−/A+, line
+spacing, margins, typeface, justification, **Reading mode** (Paged, Scroll down,
+Scroll across; page turn when paged on iOS) and **This book only**. "More settings…"
+opens the full sheet (weight, preview, custom themes). Settings › Reading &
+Typography uses the same controls. `design/` was not modified. Everything the reader
+presents (popover, sheets) takes the light or dark palette that matches the page, so
+system controls are never drawn dark-on-dark or light-on-light. Interface labels use
+words and SF Symbols only, never emoji.
+
 ## Accessibility
 
 - Icon-only controls have labels (`Import documents`, `Appearance and typography`, `Contents`, `Previous/Next sentence`, etc.).
