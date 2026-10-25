@@ -379,3 +379,18 @@ Verification for this change:
   **pass**.
 - DesignSystem package: **1/1 pass**. macOS app (fresh home): main window, Reading
   window and narration launch paths keep running.
+
+## TestFlight launch crash (2026-10-25)
+
+Build 0.1.0 (1), the first signed build, crashed on launch on device. Signed builds
+carry the iCloud and App Group entitlements, and `ModelConfiguration` defaults to
+`cloudKitDatabase: .automatic` and `groupContainer: .automatic`. SwiftData therefore
+tried NSPersistentCloudKitContainer mirroring, which rejects this schema (unique IDs,
+required relationships); the container failed to load and the app hit its
+`fatalError`. Unsigned simulator builds never had the entitlements, so tests could
+not see it. Reproduced with a signed Release simulator build; fixed by configuring
+the store with `cloudKitDatabase: .none` and `groupContainer: .none` (sync is
+`CloudSyncService`'s job; the store stays in Application Support). Regression test
+`localStoreNeverUsesSwiftDataCloudKitOrTheAppGroup`; verified by relaunching the
+signed Release build; shipped as build 0.1.0 (2). Lesson recorded in `docs/BUILD.md`:
+check a **signed** build before uploading.

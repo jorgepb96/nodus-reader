@@ -911,3 +911,14 @@ func modelDownloadsSynthesizeAndAlignWithText() async throws {
         #expect(timings.last.map { abs($0.end - duration) < 0.05 } == true)
     }
 }
+
+@Test
+func localStoreNeverUsesSwiftDataCloudKitOrTheAppGroup() {
+    // Signed builds carry iCloud and App Group entitlements. With SwiftData's
+    // `.automatic` defaults the store would try CloudKit mirroring (this schema
+    // is incompatible, so the app could not open its library and crashed at
+    // launch) and move into the shared group container.
+    let configuration = Persistence.configuration()
+    #expect(configuration.cloudKitContainerIdentifier == nil)
+    #expect(configuration.groupAppContainerIdentifier == nil)
+}

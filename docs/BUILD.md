@@ -186,6 +186,12 @@ xcodebuild -exportArchive -archivePath build/NodusReader-iOS.xcarchive \
   -allowProvisioningUpdates
 ```
 
+Before uploading, launch a **signed** Release build in the Simulator
+(`xcodebuild -configuration Release -destination 'platform=iOS Simulator,id=<UDID>'
+-allowProvisioningUpdates build`, then `simctl install` and `simctl launch`). Unsigned
+test builds have no iCloud or App Group entitlements and cannot catch
+entitlement-dependent failures such as the build 1 launch crash.
+
 Use an existing `-derivedDataPath` with resolved packages: a fresh one may fail to
 clone package submodules. The Mac app is not on TestFlight yet; it needs the App
 Sandbox entitlement first (see below).
