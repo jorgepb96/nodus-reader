@@ -48,7 +48,7 @@ The following will never be uploaded: neural model weights, voice embeddings, do
 
 ## Network access
 
-The app accesses the network only for explicit model downloads from pinned Hugging Face revisions, for an optional token verification you request, and, when sync is enabled, Apple's CloudKit/iCloud services. It does not send documents, audio, reading data or telemetry to Nodus Research. The About/Privacy links open GitHub in the system browser.
+The app accesses the network only for explicit model downloads from pinned Hugging Face revisions, for an optional token verification you request, when you share a web link to Nodus Reader (the Share Extension downloads that page or file from its own site so it can be imported), and, when sync is enabled, Apple's CloudKit/iCloud services. It does not send documents, audio, reading data or telemetry to Nodus Research. The About/Privacy links open GitHub in the system browser.
 
 ## Children and sensitive data
 

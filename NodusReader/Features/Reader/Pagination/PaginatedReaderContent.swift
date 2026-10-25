@@ -48,6 +48,7 @@ struct PaginatedReaderContent: View {
     @State private var generation = UUID()
     @State private var builtKey = ""
     @State private var isBuilding = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { proxy in
@@ -94,8 +95,12 @@ struct PaginatedReaderContent: View {
                         highlightsProvider: highlights(for:),
                         onWordTap: onWordTap,
                         onHighlight: onHighlight,
-                        onNote: onNote
+                        onNote: onNote,
+                        reduceMotion: reduceMotion
                     )
+                    // The transition style is fixed when the page controller
+                    // is created, so a Reduce Motion change rebuilds it.
+                    .id(reduceMotion)
                     #endif
                 }
             }

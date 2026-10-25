@@ -338,10 +338,15 @@ struct PlayerView: View {
         Button {
             showVoicePicker = true
         } label: {
-            controlTile(top: playback.activeVoice?.name ?? "Voice", bottom: playback.engineLabel, highlighted: false)
+            controlTile(top: playback.activeVoice?.name ?? "Voice",
+                        bottom: playback.preferredVoiceIsMissing ? "Install voice" : playback.engineLabel,
+                        highlighted: playback.preferredVoiceIsMissing)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Voice for this book")
+        .accessibilityHint(playback.preferredVoiceIsMissing
+                           ? "The voice chosen for this book is not installed on this device"
+                           : "")
     }
 
     private var sleepControl: some View {
@@ -538,6 +543,13 @@ struct VoicePickerSheet: View {
     @State private var languageFilter: String?
     @State private var didSetInitialLanguage = false
 
+    /// The per-book voice syncs, but voices and models are installed per
+    /// device (design/DESIGN.md §4). When it is missing here, say so and offer
+    /// to install it instead of silently using another voice.
+    private var bookVoiceIsMissing: Bool {
+        playback.preferredVoiceIsMissing
+    }
+
     private var filtered: [VoiceCatalog.Voice] {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let language = VoiceCatalog.languageCode(languageFilter)
@@ -569,6 +581,27 @@ struct VoicePickerSheet: View {
     var body: some View {
         NavigationStack {
             List {
+                if bookVoiceIsMissing {
+                    Section {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Book voice not installed")
+                                .font(.system(.headline, design: .serif))
+                            Text("This book uses a voice chosen on another device. \(playback.voiceLabel) reads it here until that voice is installed; voices and models are downloaded separately on each device.")
+                                .font(.caption)
+                                .foregroundStyle(palette.muted)
+                                .fixedSize(horizontal: false, vertical: true)
+                            NavigationLink {
+                                VoicesView()
+                                    .navigationTitle("Voices & Models")
+                            } label: {
+                                Label("Install voice", systemImage: "arrow.down.circle")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(palette.accent)
+                            }
+                        }
+                        .padding(.vertical, 6)
+                    }
+                }
                 if filtered.isEmpty {
                     Section {
                         VStack(alignment: .leading, spacing: 8) {

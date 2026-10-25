@@ -459,3 +459,161 @@ func readingLocatorRoundTripsThroughJSON() throws {
     let decoded = try JSONDecoder().decode(ReadingLocator.self, from: data)
     #expect(decoded == locator)
 }
+
+// MARK: - Independent audit regressions
+
+@Test @MainActor
+func progressWritesAfterDeletionAreIgnored() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+
+    let url = try SampleLibrary.makeEPUB(sampleSpec())
+    defer { try? FileManager.default.removeItem(at: url) }
+    let book = try #require(await fixture.service.importFiles([url]) { _ in }.imported.first)
+
+    // A reader or narration session can still hold the model when the book is
+    // deleted (Mac Reading window, remote tombstone). Its late writes must not
+    // touch the destroyed model or resurrect the row.
+    fixture.service.delete(book)
+    fixture.service.updateProgress(book, locator: ReadingLocator(chapterIndex: 1, scrollFraction: 0.5),
+                                   progress: 0.5)
+    fixture.service.open(book)
+    fixture.service.setReadingMode(book, mode: .listen)
+    #expect(fixture.service.allBooks().isEmpty)
+}
+
+@Test @MainActor
+func concurrentImportRequestsAreQueuedInsteadOfDropped() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let coordinator = ImportCoordinator(library: fixture.service)
+
+    var second = sampleSpec()
+    second.title = "Second Book"
+    let firstURL = try SampleLibrary.makeEPUB(sampleSpec())
+    let secondURL = try SampleLibrary.makeEPUB(second)
+    defer {
+        try? FileManager.default.removeItem(at: firstURL)
+        try? FileManager.default.removeItem(at: secondURL)
+    }
+
+    async let a: Void = coordinator.importFiles([firstURL])
+    async let b: Void = coordinator.importFiles([secondURL])
+    _ = await (a, b)
+
+    #expect(fixture.service.allBooks().count == 2)
+    #expect(!coordinator.isImporting)
+}
+
+@Test @MainActor
+func importingAFolderImportsSupportedFilesRecursively() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let coordinator = ImportCoordinator(library: fixture.service)
+
+    let folder = FileManager.default.temporaryDirectory
+        .appendingPathComponent("NodusFolderImport-\(UUID().uuidString)", isDirectory: true)
+    let nested = folder.appendingPathComponent("Nested/Deeper", isDirectory: true)
+    try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: folder) }
+
+    let epub = try SampleLibrary.makeEPUB(sampleSpec())
+    try FileManager.default.moveItem(at: epub, to: folder.appendingPathComponent("book.epub"))
+    try "A plain text note.\n\nWith two paragraphs.".write(
+        to: nested.appendingPathComponent("note.txt"), atomically: true, encoding: .utf8)
+    try Data([0xFF, 0xD8, 0xFF]).write(to: nested.appendingPathComponent("photo.jpg"))
+    try "hidden".write(to: folder.appendingPathComponent(".hidden.txt"), atomically: true, encoding: .utf8)
+
+    await coordinator.importFiles([folder])
+
+    #expect(fixture.service.allBooks().count == 2)
+    #expect(coordinator.lastResult?.failures.isEmpty == true)
+}
+
+@Test @MainActor
+func outboxEntryReenqueuedDuringPushIsKept() throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let context = fixture.container.mainContext
+    let journal = SyncJournal(context: context)
+    fixture.service.syncJournal = journal
+
+    let book = Book(title: "In flight", author: "Test", format: .txt,
+                    fileName: "flight.txt", relativePath: "Library/flight.txt",
+                    fileSize: 4, contentHash: UUID().uuidString)
+    context.insert(book)
+    try context.save()
+    journal.enqueueAll()
+    let entry = try #require(try context.fetch(FetchDescriptor<SyncOutboxEntry>()).first)
+    let enqueuedAt = entry.createdAt
+
+    // The user edits the book while its upsert is on the network.
+    fixture.service.setFavorite(book, isFavorite: true)
+    journal.completePush(entry, enqueuedAt: enqueuedAt, operation: .upsert)
+    try context.save()
+    #expect(journal.pendingCount() == 1, "The newer edit must still be pushed")
+
+    // A delete recorded during the push must not be dropped either.
+    let current = try #require(try context.fetch(FetchDescriptor<SyncOutboxEntry>()).first)
+    let snapshot = current.createdAt
+    journal.recordDelete(.book, id: book.id)
+    journal.completePush(current, enqueuedAt: snapshot, operation: .upsert)
+    try context.save()
+    #expect(journal.pendingCount() == 1)
+    #expect(try context.fetch(FetchDescriptor<SyncOutboxEntry>()).first?.operation == .delete)
+
+    // An untouched entry is removed after a successful push.
+    let pending = try #require(try context.fetch(FetchDescriptor<SyncOutboxEntry>()).first)
+    journal.completePush(pending, enqueuedAt: pending.createdAt, operation: .delete)
+    try context.save()
+    #expect(journal.pendingCount() == 0)
+}
+
+@Test @MainActor
+func syncedBooksRebuildSearchTextAndChaptersOnceLocal() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+
+    let url = try SampleLibrary.makeEPUB(sampleSpec())
+    defer { try? FileManager.default.removeItem(at: url) }
+    let book = try #require(await fixture.service.importFiles([url]) { _ in }.imported.first)
+
+    // CloudKit records carry neither field, so a book created from a pull has
+    // them empty until its document is downloaded.
+    book.searchText = ""
+    book.tocJSON = ""
+    let updatedAt = book.updatedAt
+    await fixture.service.refreshExtractedTextIfNeeded(book)
+
+    #expect(book.chapterTitles == ["First Chapter", "Second Chapter"])
+    #expect(book.searchText.contains("first paragraph"))
+    #expect(book.updatedAt == updatedAt, "Derived text is not a user edit")
+    #expect(fixture.service.search("semicolon", among: fixture.service.allBooks()).count == 1)
+}
+
+@Test @MainActor
+func syncJournalRecordsInsertsAndEditsFromSaves() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let context = fixture.container.mainContext
+    let journal = SyncJournal(context: context)
+    fixture.service.syncJournal = journal
+
+    // Ordinary saves (an import, a new collection, a bookmark) must reach the
+    // outbox without a manual enqueueAll; otherwise nothing after the first
+    // sync enable is ever pushed to iCloud.
+    let book = Book(title: "Recorded", author: "Test", format: .txt,
+                    fileName: "recorded.txt", relativePath: "Library/recorded.txt",
+                    fileSize: 4, contentHash: UUID().uuidString)
+    context.insert(book)
+    try context.save()
+    #expect(journal.pendingCount() == 1)
+
+    let collection = try #require(fixture.service.createCollection(name: "Recorded"))
+    fixture.service.add(book, to: collection)
+    fixture.service.addBookmark(book, title: "Page 1", chapterTitle: "",
+                                locator: ReadingLocator())
+    let entries = try context.fetch(FetchDescriptor<SyncOutboxEntry>())
+    #expect(Set(entries.map(\.entityType)) == [.book, .collection, .membership, .bookmark])
+    #expect(entries.allSatisfy { $0.operation == .upsert })
+}

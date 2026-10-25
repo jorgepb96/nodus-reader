@@ -39,6 +39,7 @@ public final class ImportCoordinator {
     public var alert: LibraryAlert?
 
     private var toastTask: Task<Void, Never>?
+    private var queuedRequests: [(urls: [URL], collectionID: UUID?)] = []
 
     public init(library: LibraryService) {
         self.library = library
@@ -50,28 +51,79 @@ public final class ImportCoordinator {
     }
 
     public func importFiles(_ urls: [URL]) async {
-        guard !urls.isEmpty, !isImporting else { return }
+        guard !urls.isEmpty else { return }
+        // A drop, Open With or picker result that arrives while another import
+        // is running is queued, never silently discarded.
+        queuedRequests.append((urls, destinationCollectionID))
+        destinationCollectionID = nil
+        await drainQueuedImports()
+    }
+
+    private func drainQueuedImports() async {
+        guard !isImporting, !queuedRequests.isEmpty else { return }
         isImporting = true
-        progress = ImportProgress(current: 0, total: urls.count, fileName: "")
         defer {
             isImporting = false
             progress = nil
         }
 
-        let result = await library.importFiles(urls, into: destinationCollectionID) { [weak self] progress in
-            self?.progress = progress
-        }
-        lastResult = result
-        destinationCollectionID = nil
+        while !queuedRequests.isEmpty {
+            let request = queuedRequests.removeFirst()
+            let expanded = Self.expandingFolders(request.urls)
+            defer { expanded.release() }
+            progress = ImportProgress(current: 0, total: expanded.files.count, fileName: "")
 
-        if !result.failures.isEmpty {
-            alert = LibraryAlert(
-                title: "Some files could not be imported",
-                message: result.failures.map { "\($0.fileName): \($0.message)" }.joined(separator: "\n")
-            )
-        } else if !result.isEmpty {
-            show(toast: result.summaryText)
+            let result = await library.importFiles(expanded.files, into: request.collectionID) { [weak self] progress in
+                self?.progress = progress
+            }
+            lastResult = result
+
+            if !result.failures.isEmpty {
+                alert = LibraryAlert(
+                    title: "Some files could not be imported",
+                    message: result.failures.map { "\($0.fileName): \($0.message)" }.joined(separator: "\n")
+                )
+            } else if !result.isEmpty {
+                show(toast: result.summaryText)
+            } else if expanded.files.isEmpty {
+                show(toast: "No supported documents were found")
+            }
         }
+    }
+
+    /// Folders (Finder drag & drop, Files) are expanded recursively into the
+    /// supported documents they contain. Hidden files and unsupported formats
+    /// inside a folder are skipped; an unsupported file chosen explicitly is
+    /// still reported. Security-scoped access to each folder stays open until
+    /// its files have been copied.
+    private static func expandingFolders(_ urls: [URL]) -> (files: [URL], release: () -> Void) {
+        var files: [URL] = []
+        var scoped: [URL] = []
+        for url in urls {
+            var isDirectory: ObjCBool = false
+            guard url.isFileURL,
+                  FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+                  isDirectory.boolValue else {
+                files.append(url)
+                continue
+            }
+            if url.startAccessingSecurityScopedResource() { scoped.append(url) }
+            guard let enumerator = FileManager.default.enumerator(
+                at: url,
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles, .skipsPackageDescendants]
+            ) else { continue }
+            var found: [URL] = []
+            for case let child as URL in enumerator
+                where BookFormat(fileExtension: child.pathExtension) != nil
+                    && (try? child.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true {
+                found.append(child)
+            }
+            files.append(contentsOf: found.sorted {
+                $0.path.localizedStandardCompare($1.path) == .orderedAscending
+            })
+        }
+        return (files, { scoped.forEach { $0.stopAccessingSecurityScopedResource() } })
     }
 
     public func handleOpenURLs(_ urls: [URL]) {
@@ -93,10 +145,6 @@ public final class ImportCoordinator {
 
         isImporting = true
         progress = ImportProgress(current: 0, total: pending.count, fileName: "")
-        defer {
-            isImporting = false
-            progress = nil
-        }
 
         var imported = 0
         var duplicates = 0
@@ -131,6 +179,10 @@ public final class ImportCoordinator {
         } else if duplicates > 0 {
             show(toast: duplicates == 1 ? "That document is already in your library" : "Those documents are already in your library")
         }
+        isImporting = false
+        progress = nil
+        // Picker results or drops that arrived while the inbox was imported.
+        await drainQueuedImports()
     }
 
     private func show(toast message: String) {

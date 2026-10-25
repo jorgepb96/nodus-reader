@@ -293,11 +293,15 @@ final class ShareImportModel {
             }
         }
         guard let url = value as? URL else { throw SharedInboxError.unreadableItem(name) }
-        let (data, response) = try await URLSession.shared.data(from: url)
+        // Stream to disk: share extensions have a small memory limit, so a
+        // large PDF loaded into memory would be killed before the size check.
+        let (downloaded, response) = try await URLSession.shared.download(from: url)
+        defer { try? FileManager.default.removeItem(at: downloaded) }
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw SharedInboxError.unsupported("\(url.absoluteString) (HTTP \(http.statusCode))")
         }
-        guard data.count <= 200 * 1024 * 1024 else {
+        let size = (try? downloaded.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        guard size <= 200 * 1024 * 1024 else {
             throw SharedInboxError.unreadableItem("\(name) (larger than 200 MB)")
         }
         let mime = (response as? HTTPURLResponse)?.mimeType ?? ""
@@ -316,7 +320,7 @@ final class ShareImportModel {
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let destination = directory.appendingPathComponent(SharedImportInbox.sanitized(fileName))
-            try data.write(to: destination, options: .atomic)
+            try FileManager.default.moveItem(at: downloaded, to: destination)
             return destination
         } catch {
             try? FileManager.default.removeItem(at: directory)

@@ -118,3 +118,126 @@ These are documented rather than silently ignored:
 - 9 UI tests: pass; the iPad-specific capture test is skipped on iPhone and was run separately on iPad: pass.
 - macOS clean QA bundle: main window plus a dedicated Reading window, no crash; the final build was launched with both `-NodusSampleLibrary` and `-NodusOpenSampleReader` and remained running.
 - Visual audit (iPhone, iPad, Mac; Light, Sepia, Dark and High Contrast): complete; findings and remaining visual notes are in [`VISUAL_AUDIT.md`](VISUAL_AUDIT.md).
+
+---
+
+# Independent audit — 2026-10-25
+
+An end-to-end pass that did not rely on the two audits above: every claim used
+below was re-checked in the code, in the unit tests or in the running app.
+Branch `zcode/sess-session3`, baseline `2b5ef3b`.
+
+## Scope and platforms
+
+- Read in full: `CLAUDE.md`, `design/PROMPT.md`, `design/DESIGN.md`, the
+  `design/screens/` renders, every file in `docs/`, `README.md` and `PRIVACY.md`.
+- Code reviewed: persistence and models, import (`LibraryService`,
+  `ImportCoordinator`, `FileStore`), Share Extension and App Group inbox, the whole
+  sync stack (`SyncJournal`, `CloudSyncService`, `ICloudDocumentStore`),
+  `PlaybackController`, `VoiceCatalog`, the reader (`ReaderView`, pagination, page
+  curl), the player and the library context menus.
+- Run: macOS app (fresh isolated home with `CFFIXED_USER_HOME`, sample library,
+  main window, `Reading` window, narration and Settings launch paths); iPhone 17 Pro
+  (iOS 26.5) and iPad Pro 13-inch M5 (iOS 26.5) simulators through the UI suite;
+  unit tests on macOS; the DesignSystem package tests.
+- Not possible here: signed CloudKit/iCloud Drive, the App Group with a signed
+  Share Extension, Kokoro (needs a Metal device), real VoiceOver traversal on a
+  device. Interactive control of the Mac app was declined for this session, so the
+  Mac check is launch/liveness and window presence, not a click-through.
+
+## Confirmed bugs fixed
+
+| # | Severity | Where (baseline) | Trigger → consequence | Proof |
+|---|---|---|---|---|
+| 1 | Critical | `Features/Shared/BookCoverView.swift:68` | First launch of the Mac app with books in the library: the AppKit `Table` lays a cover cell out re-entrantly before the scene environment reaches it; the required `@Environment(LibraryService.self)` aborts with *No Observable object of type LibraryService found*. Matching crash reports exist from earlier builds (02:56 and 09:21). | Fresh-home launch without the fix: 3/3 crashes. With the fix (optional environment, falls back to the same shared `FileStore`): 3/3 stay running, plus the reader, narration and Settings launch paths. |
+| 2 | Critical | `Core/Sync/SyncJournal.swift:87-88` | SwiftData posts `ModelContext.didSave` identifiers as `Array<PersistentIdentifier>` under the string keys `"inserted"`/`"updated"`; the journal subscripted with the enum and cast to `Set`, so every save produced an empty change set. **No insert or edit was ever recorded in the outbox.** With iCloud on, only the one-time `enqueueAll` on enable and explicit deletions were pushed; imports, progress, favourites, collections, bookmarks and notes made afterwards never left the device. The earlier "echo" fixes were never exercised for the same reason. | Probe test showed `didSave` delivered synchronously with the value type above and `pendingCount() == 0`. New test `syncJournalRecordsInsertsAndEditsFromSaves`. |
+| 3 | High | `Core/Sync/CloudSyncService.swift:309` | The outbox entry was deleted after a successful push even if it had been re-enqueued while the push was on the network (two CloudKit round trips). A later edit was lost; a **delete recorded during an upsert was dropped**, so the book stayed in iCloud and on other devices while the local tombstone blocked its return here. | `SyncJournal.completePush` removes the entry only if `createdAt` and operation are unchanged. Test `outboxEntryReenqueuedDuringPushIsKept`. |
+| 4 | High | `Core/Services/ImportCoordinator.swift:53` | A drop, Open With or picker result arriving while an import (or the Share inbox) was running returned silently: the files were never imported and no message appeared. | Requests are queued and drained in order, including after the Share inbox. Test `concurrentImportRequestsAreQueuedInsteadOfDropped` (failed before, passes now). |
+| 5 | High | `ImportCoordinator` / `RootView` | The plan requires recursive folder import (Finder drag, Files). A folder URL reached `BookFormat(fileExtension: "")` and failed as *unsupported format*; the picker did not accept folders. | Folders are expanded recursively (hidden files and unsupported formats inside a folder are skipped, security scope kept open); `.folder` is allowed in the importer. Test `importingAFolderImportsSupportedFilesRecursively` (failed before). |
+| 6 | Medium | `Core/Services/PlaybackController.swift:1268` | System-voice narration did not save the position when advancing sentences (the neural path did). A long listening session lost its position on quit/crash and never synced the narrated position. | Saves and resets the word range per sentence, like the neural path. Code parity; covered indirectly by the narration UI tests. |
+| 7 | Medium | `CloudSyncService.swift:481` + download path | CloudKit `Book` records carry neither `searchText` nor `tocJSON`; a book that arrived from another device had no full-text search and no chapter titles, even after download. | `LibraryService.refreshExtractedTextIfNeeded` rebuilds both once the document is local (after download and on open), without touching `updatedAt` and without enqueueing a push. Test `syncedBooksRebuildSearchTextAndChaptersOnceLocal`. |
+| 8 | Medium | `CloudSyncService.swift:830` | A remote tombstone applied during a (up to two-minute) iCloud download left the copied files on disk and the download code wrote into the deleted model. | After the await the book is re-fetched by id; if it is gone, its folder is removed and nothing is written. |
+| 9 | Medium | `Features/Reader/ReaderView.swift:368` | Opening a cloud-only book that could not be downloaded (sync off or failure) still called `library.open`, marking it *In progress* and putting an unreadable book on the Home *Continue* card. | `open` runs only once the document exists locally. |
+| 10 | Medium | `Pagination/IOSPageCurlReader.swift:25` | `DESIGN.md` → Motion: “Respect Reduce Motion … no page curl”. The reader always used `.pageCurl`. | With Reduce Motion the page controller is created with `.scroll` (finger-following slide; programmatic turns are already unanimated) and rebuilt when the setting changes. Not covered by a UI test. |
+| 11 | Medium | `NodusShareExtension/ShareViewController.swift:296` | A shared web link was downloaded entirely into memory before the 200 MB check; extensions have a much smaller memory limit, so a large PDF link would kill the extension. | Downloads to a file, checks the size on disk, moves it into staging. Needs a signed App Group to exercise end to end. |
+| 12 | Low | `Features/Library/LibraryComponents.swift:199` | *Remove Download* / *Download from iCloud* from a context menu failed silently (e.g. “This book has no iCloud copy yet”); the error was only visible in Settings. | The error is shown as an alert. |
+| 13 | Low (design §4) | Player voice tile / voice picker | A per-book voice synced from another device but not installed here was silently replaced. The design asks to “show the book default with an Install voice affordance”. | The voice tile reads *Install voice* (highlighted, with an accessibility hint) and the picker explains the fallback and links to Voices & Models. |
+| 14 | Low (a11y) | `BookCoverView` | The cover's accessibility label omitted the PDF badge and the iCloud download state that sighted users see. | Label now includes “PDF” and “in iCloud, not downloaded” / “downloading”. |
+
+Checked and **not** a bug: writes to a `Book` after it was deleted (Mac Reading
+window `onDisappear`, late narration saves) neither crash nor resurrect the row in
+the current SwiftData; kept as the regression test
+`progressWritesAfterDeletionAreIgnored`.
+
+## Deviations from the design or the original plan (not changed)
+
+These need a product or design decision, so they are recorded rather than
+implemented:
+
+1. **Custom themes and per-document reading preferences do not sync** (plan §11–§12).
+   `SyncEntityType.theme`/`.preference`/`.readingPosition` exist but are unused;
+   typography is global `UserDefaults` and there is no per-book typography.
+   `docs/ICLOUD.md` did not say so; it does now.
+2. **Reader modes:** no vertical-scroll mode, no selectable horizontal slide and no
+   in-app “disable animations” switch (plan §8, §11). Only Reduce Motion is honoured.
+3. **Models → “Install from file…”** (design `iPhone-Models`, plan §14) is not
+   implemented and was not listed as missing anywhere.
+4. **Downloading state** has no badge or progress on covers; only *cloud-only* has
+   a badge (design §4: “downloading (progress)”).
+5. **Design-system rule:** 36 hex literals remain in `Features/` (reader highlight,
+   player tiles, cover badges, PDF overlays, theme picker, sync storage bar) instead of
+   DesignSystem tokens (CLAUDE.md, DESIGN.md §1).
+6. **Progress semantics:** progress is `(page + 1) / pages`, so a one-page document
+   becomes *Finished* as soon as it is opened, and on the Mac spread the right-hand
+   last page never counts (a short document can never reach *Finished* there).
+7. Importing a file whose book already exists as **cloud-only** is reported as a
+   duplicate instead of attaching the local copy.
+
+## Declared but not implemented / documentation corrected
+
+- `README.md` said “iCloud sync is optional and not enabled in this build”; sync is
+  built and opt-in. Corrected.
+- The docs and the previous audits describe the outbox as recording every save; that
+  was false until fix 2.
+- “9 UI tests pass” hid that `testNeuralVoiceNarration` **skips** when no Phonon
+  bundle is in the simulator (it skipped in the baseline run here). It was run with a
+  copied bundle for this pass; BUILD.md now says so.
+- `PRIVACY.md` → Network access did not mention that the Share Extension fetches a
+  shared web link from that site. Added.
+
+## Residual risks (not fixed)
+
+1. **Outbox cost now that recording works:** `SyncJournal.enqueue` fetches every
+   outbox row per changed object and each save triggers a second journal save. Fine
+   for small libraries; large libraries need an indexed fetch (predicate on type+id).
+2. **Pagination runs on the main actor** (`TextPaginator.paginate` over the whole
+   book); very long books block the UI while paginating and after font changes.
+3. The 250 MB import limit is checked **after** the coordinated copy, so a huge file
+   is copied before being rejected.
+4. Signed CloudKit/iCloud Drive and Share Extension validation are still required:
+   fixes 2, 3, 7, 8 and 11 are proven at unit level or by reasoning, not against the
+   server.
+5. Earlier open items 2–17 above remain as described (child records across pages,
+   main-actor iCloud I/O, sync cancellation, PDF reflow bookmarks, unbounded page-host
+   cache, 80-page PDF extraction cap, scene-scoped navigation, non-throwing saves).
+6. No real-device VoiceOver/Dynamic Type traversal was possible here.
+
+## Commands and results
+
+| Command | Result |
+|---|---|
+| `xcodebuild … -destination 'platform=macOS' -derivedDataPath build/DerivedData-mac CODE_SIGNING_ALLOWED=NO build` | **Succeeded** (baseline and final) |
+| `xcodebuild … -destination 'platform=iOS Simulator,id=<iPhone 17 Pro, iOS 26.5>' -derivedDataPath build/DerivedData-ios CODE_SIGNING_ALLOWED=NO build` | **Succeeded** (baseline and final) |
+| `xcodebuild test … -destination 'platform=macOS' -only-testing:NodusReaderTests` | Baseline 21/21; final **27/27 pass** |
+| `xcodebuild test … iPhone 17 Pro -only-testing:NodusReaderUITests` | Baseline 7 pass, 2 skipped (iPad test; Phonon test without a bundle). Final: **8 pass, 1 skipped** (the iPad-only test); `testNeuralVoiceNarration` ran and passed with a Phonon bundle copied into the simulator |
+| `xcodebuild test … iPad Pro 13-inch (M5) -only-testing:NodusReaderUITests/NodusReaderUITests/testPadScreens` | **1/1 pass** |
+| `swift test --package-path Modules/DesignSystem` | **1/1 pass** |
+| macOS app, fresh home, `-NodusSampleLibrary` (+ `-NodusOpenSampleReader`, `-NodusStartSampleNarration`, `-NodusOpenSettings`) | Without fix 1: 3/3 crash at launch. Final: running, `All Books` and `Reading` windows present |
+
+The stale UI-test runner was uninstalled from both simulators
+(`xcrun simctl uninstall <device> ai.nodus.reader.uitests.xctrunner`) before each
+UI run. Note: two booted simulators are both named “iPhone 17 Pro” (iOS 26.2 and
+26.5), so `name=iPhone 17 Pro` is ambiguous; use the device id.
+
+No screenshots in `docs/screenshots/` were replaced in this pass; result bundles are
+`build/UITests-Audit-iPhone.xcresult` and `build/UITests-Audit-iPad.xcresult`.

@@ -62,4 +62,11 @@ The 2026-10-25 visual audit is recorded in [`VISUAL_AUDIT.md`](VISUAL_AUDIT.md).
 - Reader and player controls are at least 44 × 44 pt; the transport play button is 76 pt.
 - Dynamic Type is used for interface text; display titles scale through `@ScaledMetric`. Reader typography is user-adjustable.
 - Contrast was manually reviewed in Light, Sepia, Dark and High Contrast; High Contrast outline controls now use full-strength borders.
-- Remaining: full VoiceOver traversal on every screen, Reduce Motion behaviour for page transitions, and user-supplied custom-theme contrast.
+- Reduce Motion (independent audit, 2026-10-25): the iOS reader no longer uses the page curl when Reduce Motion is on; pages slide with the finger and programmatic turns are not animated. The design asks for a cross-fade; the slide is the closest native `UIPageViewController` behaviour without a custom transition.
+- Book covers announce the PDF badge and the iCloud download state.
+- Remaining: full VoiceOver traversal on every screen and user-supplied custom-theme contrast.
+
+## Independent audit additions (2026-10-25)
+
+- **Install voice** (DESIGN.md §4): when a book's synced voice is not installed on this device, the player's voice tile reads “Install voice” and the voice picker explains the fallback and links to Voices & Models.
+- Open deviations found in that pass, not yet changed: no *downloading* badge/progress on covers (only cloud-only), no Models → “Install from file…”, 36 hex literals still in feature views. Details in `docs/AUDIT.md`.

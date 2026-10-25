@@ -61,7 +61,10 @@ The metadata can arrive before the file. A book whose file is not local is marke
 
 `SyncJournal` observes `ModelContext.didSave` and enqueues an upsert for every
 inserted/updated `Book`, `LibraryCollection`, `CollectionMembership`, `Bookmark` or
-`Annotation`. It deduplicates by entity type + id. Deleting through `LibraryService`
+`Annotation`. It deduplicates by entity type + id. SwiftData delivers the changed
+identifiers as an array under string keys; until the 2026-10-25 independent audit
+the journal read them as a `Set` and recorded nothing. An entry re-enqueued while
+its push is in flight is kept, so the newer edit or delete is pushed next. Deleting through `LibraryService`
 records a durable `SyncTombstone` and a `delete` outbox entry with the book's file
 name for remote-file cleanup. The queue survives launches because it is stored in
 SwiftData.
@@ -81,6 +84,12 @@ SwiftData.
    the main actor and update the UI.
 7. Retries use exponential backoff (5 s doubling to 300 s) and store the last error
    on the outbox entry.
+
+Not synced yet: custom themes and reading/typography preferences (global
+`UserDefaults`; there are no per-book typography settings). The `theme`,
+`preference` and `readingPosition` entity types are reserved but unused. A book's
+full-text search index and chapter titles are not uploaded either; they are rebuilt
+locally once the document has been downloaded.
 
 Scalar conflicts are last-writer-wins by `updatedAt`. Memberships, bookmarks and
 annotations are individual records, so an edit on one device does not erase

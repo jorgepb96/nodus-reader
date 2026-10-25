@@ -67,8 +67,8 @@ xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader \
 The tests build real EPUB and PDF fixtures with the debug sample generator, import
 them into an in-memory SwiftData store with a temporary `FileStore`, and assert
 metadata, chapters, duplicates, covers, collections, manual order, themes, utilities,
-pause-based word alignment and the durable sync outbox/tombstone rules. As of the last
-run: **21 tests pass**.
+pause-based word alignment and the durable sync outbox/tombstone rules, queued and
+folder imports, and synced-book text rebuilding. As of the last run: **27 tests pass**.
 
 The DesignSystem package has its own test target:
 
@@ -77,6 +77,11 @@ swift test --package-path Modules/DesignSystem
 ```
 
 ## UI tests and screenshots
+
+If more than one simulator has the same name (for example two “iPhone 17 Pro”
+devices on different runtimes), `name=` is ambiguous; pass `id=<UDID>` from
+`xcrun simctl list devices`. Uninstall a stale runner first:
+`xcrun simctl uninstall <UDID> ai.nodus.reader.uitests.xctrunner`.
 
 ```bash
 xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader \
@@ -95,7 +100,8 @@ narration (behavioural: proves playback advances to sentence 2), the Spanish
 book-language voice picker and iCloud & Storage. The tests skip the iPad layout on
 iPhone and vice versa.
 
-The Phonon test requires a Phonon bundle in the simulator app container. Install it
+The Phonon test requires a Phonon bundle in the simulator app container; without one
+it is reported as **skipped**, not passed. Install it
 from **Settings → Voices & Models → Models → Phonon 31M → Download**, or copy an
 existing bundle:
 
@@ -139,6 +145,11 @@ Use `manifest.json` to rename the exported files. `docs/screenshots/` contains t
 ```
 
 These arguments are compiled behind `#if DEBUG` and do nothing in Release.
+
+The Mac build is not sandboxed, so these runs write to the real
+`~/Library/Application Support/NodusReader`. To test against a throwaway library,
+prefix the command with `CFFIXED_USER_HOME=/tmp/nodus-home` (create
+`/tmp/nodus-home/Library/Preferences` first).
 
 ## Signing and distribution
 

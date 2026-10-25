@@ -78,14 +78,22 @@ final class SyncJournal {
         persistJournal()
     }
 
+    /// Removes an outbox entry after its push succeeded, unless it was
+    /// re-enqueued while the push was in flight. In that case a newer edit or a
+    /// delete is still waiting to be sent and the entry must stay queued.
+    func completePush(_ entry: SyncOutboxEntry, enqueuedAt: Date, operation: SyncOperationKind) {
+        guard entry.createdAt == enqueuedAt, entry.operation == operation else { return }
+        context.delete(entry)
+    }
+
     func pendingCount() -> Int {
         (try? context.fetchCount(FetchDescriptor<SyncOutboxEntry>())) ?? 0
     }
 
     private func handle(_ notification: Notification) {
         guard !isRecording, !isSuspended else { return }
-        let inserted = notification.userInfo?[ModelContext.NotificationKey.insertedIdentifiers] as? Set<PersistentIdentifier> ?? []
-        let updated = notification.userInfo?[ModelContext.NotificationKey.updatedIdentifiers] as? Set<PersistentIdentifier> ?? []
+        let inserted = Self.identifiers(notification, .insertedIdentifiers)
+        let updated = Self.identifiers(notification, .updatedIdentifiers)
         guard !inserted.isEmpty || !updated.isEmpty else { return }
 
         for identifier in inserted.union(updated) {
@@ -106,6 +114,15 @@ final class SyncJournal {
             }
         }
         persistJournal()
+    }
+
+    /// SwiftData posts the identifiers as an `Array`, not the `Set` one might
+    /// expect; accept both so a save is never silently left out of the outbox.
+    private static func identifiers(_ notification: Notification,
+                                    _ key: ModelContext.NotificationKey) -> Set<PersistentIdentifier> {
+        let value = notification.userInfo?[key.rawValue]
+        if let array = value as? [PersistentIdentifier] { return Set(array) }
+        return value as? Set<PersistentIdentifier> ?? []
     }
 
     private func enqueue(type: SyncEntityType, id: UUID, operation: SyncOperationKind,

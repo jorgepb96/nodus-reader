@@ -65,7 +65,11 @@ struct StoredCoverImage: View {
 
 /// A real stored cover when available, otherwise the generated typographic cover.
 struct BookCoverView: View {
-    @Environment(LibraryService.self) private var library
+    /// Optional on purpose: AppKit `Table` cells can be laid out re-entrantly
+    /// before the scene's environment objects reach them, and a required
+    /// `@Environment` lookup then aborts the app. The shared store is the same
+    /// one `LibraryService` uses in the app.
+    @Environment(LibraryService.self) private var library: LibraryService?
     @Environment(\.nodusPalette) private var palette
 
     let book: Book
@@ -73,7 +77,7 @@ struct BookCoverView: View {
     var showBadges: Bool = true
 
     private var coverURL: URL? {
-        guard let url = library.fileStore.coverURL(for: book.coverFileName),
+        guard let url = (library?.fileStore ?? .shared).coverURL(for: book.coverFileName),
               FileManager.default.fileExists(atPath: url.path) else { return nil }
         return url
     }
@@ -132,7 +136,15 @@ struct BookCoverView: View {
         }
         .aspectRatio(2.0 / 3.0, contentMode: .fit)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(book.title), by \(book.displayAuthor)")
+        .accessibilityLabel(accessibilityDescription)
+    }
+
+    private var accessibilityDescription: String {
+        var parts = ["\(book.title), by \(book.displayAuthor)"]
+        if showBadges, book.format == .pdf { parts.append("PDF") }
+        if showBadges, book.downloadState == .cloudOnly { parts.append("in iCloud, not downloaded") }
+        if showBadges, book.downloadState == .downloading { parts.append("downloading") }
+        return parts.joined(separator: ", ")
     }
 }
 

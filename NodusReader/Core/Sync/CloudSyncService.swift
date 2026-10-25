@@ -299,14 +299,16 @@ final class CloudSyncService {
         var firstError: Error?
         for entry in ordered {
             guard entry.nextAttemptAt <= Date() else { continue }
+            let enqueuedAt = entry.createdAt
+            let operation = entry.operation
             do {
-                switch entry.operation {
+                switch operation {
                 case .delete:
                     try await pushDeletion(entry)
                 case .upsert:
                     try await pushUpsert(entry)
                 }
-                context.delete(entry)
+                journal.completePush(entry, enqueuedAt: enqueuedAt, operation: operation)
                 try context.save()
             } catch {
                 entry.attempts += 1
@@ -822,20 +824,30 @@ final class CloudSyncService {
 
     func download(_ book: Book) async {
         guard isEnabled, isAvailable, !downloadingBookIDs.contains(book.id) else { return }
-        downloadingBookIDs.insert(book.id)
+        let bookID = book.id
+        downloadingBookIDs.insert(bookID)
+        defer { downloadingBookIDs.remove(bookID) }
         downloadError = nil
         book.downloadState = .downloading
         library.save()
         do {
             try await documents.download(book)
+            // A remote tombstone or a local delete can land during the wait.
+            // Do not resurrect files for a book that no longer exists.
+            guard fetchBook(id: bookID) != nil else {
+                try? FileManager.default.removeItem(
+                    at: library.fileStore.libraryDirectory.appendingPathComponent(bookID.uuidString, isDirectory: true))
+                return
+            }
             book.downloadState = .downloaded
             library.save()
+            await library.refreshExtractedTextIfNeeded(book)
         } catch {
+            guard fetchBook(id: bookID) != nil else { return }
             book.downloadState = .cloudOnly
             library.save()
             downloadError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
-        downloadingBookIDs.remove(book.id)
     }
 
     func downloadAllCloudOnlyBooks() async {

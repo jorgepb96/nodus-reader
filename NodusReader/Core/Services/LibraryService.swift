@@ -199,6 +199,26 @@ public final class LibraryService {
         return .imported(book)
     }
 
+    /// CloudKit carries a book's metadata but not its full-text search index or
+    /// chapter titles. Once an iCloud document is local, rebuild both so global
+    /// search and the Continue card work the same as on the importing device.
+    func refreshExtractedTextIfNeeded(_ book: Book) async {
+        guard book.tocJSON.isEmpty else { return }
+        let url = fileStore.documentURL(for: book)
+        let format = book.format
+        guard let extraction = try? await Task.detached(priority: .utility, operation: {
+            try DocumentExtractor.extract(url: url, format: format)
+        }).value, book.modelContext != nil, !book.isDeleted else { return }
+        book.searchText = extraction.searchText
+        book.setChapterTitles(extraction.chapterTitles)
+        // Derived locally; it is not a user edit and must not be pushed.
+        if let syncJournal {
+            syncJournal.withSuspendedRecording { save() }
+        } else {
+            save()
+        }
+    }
+
     private func existingBook(withHash hash: String) throws -> Book? {
         var descriptor = FetchDescriptor<Book>(predicate: #Predicate<Book> { $0.contentHash == hash })
         descriptor.fetchLimit = 1

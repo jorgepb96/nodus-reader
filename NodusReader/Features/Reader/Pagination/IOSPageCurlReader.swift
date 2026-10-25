@@ -18,13 +18,18 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
     private(set) var currentIndex = 0
     private var transitioning = false
 
+    /// Reduce Motion replaces the page curl with a plain horizontal slide that
+    /// follows the finger; programmatic page changes are never animated.
     init(style: ReaderPageStyle,
+         reduceMotion: Bool,
          highlightsProvider: @escaping (ReaderPage) -> ReaderPageHighlights) {
         self.style = style
         self.highlightsProvider = highlightsProvider
-        super.init(transitionStyle: .pageCurl,
+        super.init(transitionStyle: reduceMotion ? .scroll : .pageCurl,
                    navigationOrientation: .horizontal,
-                   options: [.spineLocation: UIPageViewController.SpineLocation.min.rawValue])
+                   options: reduceMotion
+                       ? [.interPageSpacing: 0]
+                       : [.spineLocation: UIPageViewController.SpineLocation.min.rawValue])
         dataSource = self
         delegate = self
         isDoubleSided = false
@@ -161,9 +166,11 @@ struct PageCurlReader: UIViewControllerRepresentable {
     var onWordTap: (Int, Int) -> Void
     var onHighlight: (Int, NSRange, AnnotationColor) -> Void
     var onNote: (Int, NSRange) -> Void
+    var reduceMotion = false
 
     func makeUIViewController(context: Context) -> ReaderPageCurlController {
-        ReaderPageCurlController(style: style, highlightsProvider: highlightsProvider)
+        ReaderPageCurlController(style: style, reduceMotion: reduceMotion,
+                                 highlightsProvider: highlightsProvider)
     }
 
     func updateUIViewController(_ controller: ReaderPageCurlController, context: Context) {

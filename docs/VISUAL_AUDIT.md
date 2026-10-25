@@ -69,5 +69,10 @@ search fields, covers, sheet sizing, spacing, touch targets and transitions.
    `DESIGN_FIDELITY.md`.
 3. PDF Intelligent Reading still lacks bookmarks/notes and page-jump sync in the
    reflowed view; the original-page panel has them.
-4. Full VoiceOver traversal, Reduce Motion handling for page transitions and
-   large-library performance profiling remain part of the accessibility pass.
+4. Full VoiceOver traversal and large-library performance profiling remain part
+   of the accessibility pass. Reduce Motion now disables the page curl
+   (independent audit, 2026-10-25).
+5. Independent audit, 2026-10-25: the Mac app crashed on first launch with a
+   populated library (cover cell environment lookup in the `Table`); fixed. No
+   screenshots were re-captured in that pass. Covers still lack a *downloading*
+   badge, and feature views still contain hex literals; see `docs/AUDIT.md`.

@@ -146,6 +146,7 @@ struct LibrarySortMenu: View {
 struct BookContextActions: View {
     @Environment(LibraryService.self) private var library
     @Environment(CloudSyncService.self) private var sync
+    @Environment(ImportCoordinator.self) private var imports
     let book: Book
     var onOpen: () -> Void
     var onReadAndListen: () -> Void
@@ -196,14 +197,20 @@ struct BookContextActions: View {
         }
         if sync.isEnabled, book.downloadState == .downloaded {
             Button {
-                Task { await sync.removeLocalDownload(book) }
+                Task {
+                    await sync.removeLocalDownload(book)
+                    reportDownloadError(title: "Download not removed")
+                }
             } label: {
                 Label("Remove Download", systemImage: "icloud.and.arrow.up")
             }
         }
         if sync.isEnabled, book.downloadState == .cloudOnly {
             Button {
-                Task { await sync.download(book) }
+                Task {
+                    await sync.download(book)
+                    reportDownloadError(title: "Download failed")
+                }
             } label: {
                 Label("Download from iCloud", systemImage: "icloud.and.arrow.down")
             }
@@ -214,6 +221,13 @@ struct BookContextActions: View {
         } label: {
             Label("Delete from Library…", systemImage: "trash")
         }
+    }
+
+    /// The context menu is gone by the time the iCloud call returns, so a
+    /// failure would otherwise be visible only in Settings.
+    private func reportDownloadError(title: String) {
+        guard let message = sync.downloadError else { return }
+        imports.alert = LibraryAlert(title: title, message: message)
     }
 }
 

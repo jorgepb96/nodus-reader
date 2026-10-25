@@ -33,7 +33,8 @@ struct RootView: View {
             }
             .fileImporter(
                 isPresented: $imports.isPickerPresented,
-                allowedContentTypes: DocumentTypes.supported,
+                // Folders are imported recursively by `ImportCoordinator`.
+                allowedContentTypes: DocumentTypes.supported + [.folder],
                 allowsMultipleSelection: true
             ) { result in
                 switch result {

@@ -200,7 +200,7 @@ that mutates the library.
 
 ## Testing
 
-- 21 unit/integration tests build real EPUB and PDF fixtures, import through the
+- 27 unit/integration tests build real EPUB and PDF fixtures, import through the
   production pipeline into in-memory SwiftData, and cover duplicates, collections,
   ordering, themes, utilities, pause-based word alignment, language-aware voice
   choice and the durable sync outbox/tombstone behaviour.

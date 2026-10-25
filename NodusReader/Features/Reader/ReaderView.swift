@@ -365,8 +365,6 @@ struct ReaderView: View {
     // MARK: Load and save
 
     private func load() async {
-        library.open(book)
-
         let localURL = library.fileStore.documentURL(for: book)
         if !FileManager.default.fileExists(atPath: localURL.path) {
             if sync.isEnabled {
@@ -380,6 +378,10 @@ struct ReaderView: View {
                 return
             }
         }
+        // Only a document that can actually be read becomes "in progress" and
+        // the Home Continue card; a failed iCloud download must not.
+        library.open(book)
+        Task { await library.refreshExtractedTextIfNeeded(book) }
 
         if book.format == .pdf {
             content = .pdf(localURL)

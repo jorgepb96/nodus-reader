@@ -11,7 +11,7 @@ Nodus Reader is part of the Nodus Research ecosystem. It is not a web wrapper: t
 - Universal SwiftUI app for iPhone, iPad and Mac with a shared data layer.
 - Native navigation: `TabView` on iPhone, `NavigationSplitView` with a collection tree on iPad and Mac, sortable `Table` and `.inspector` on Mac.
 - Library: 3-column iPhone grid, 5-column iPad grid, Mac table/grid, search across titles/authors/text, filters, sorting, favorites, reading status and multi-selection actions.
-- Real import from Files/Finder and drag & drop: EPUB, PDF, TXT, Markdown, HTML and RTF. Set as an alternative handler for those document types.
+- Real import from Files/Finder and drag & drop, including whole folders (recursively): EPUB, PDF, TXT, Markdown, HTML and RTF. Set as an alternative handler for those document types.
 - Import pipeline: format validation, SHA-256 hashing, duplicate detection, metadata extraction, cover extraction/thumbnail/generation, coordinated file copy and optional collection assignment.
 - Covers: embedded EPUB artwork, PDF first-page thumbnails and deterministic typographic covers; custom covers from Photos.
 - Collections: unlimited nesting, rename, move, delete-without-deleting-documents, multiple memberships per book, manual order.
@@ -21,7 +21,7 @@ Nodus Reader is part of the Nodus Research ecosystem. It is not a web wrapper: t
 - Sync: optional personal iCloud sync through CloudKit and iCloud Drive, a durable outbox, tombstones, timestamp conflicts, cloud-only badges, download-on-open, `Remove Download` and `Delete from Library`.
 - Sharing: iOS Share Extension with an App Group inbox and collection selection.
 - Settings: separate App/Reader themes, custom theme editor, reading typography, real voice and model management with downloads/licences/storage, iCloud status and privacy.
-- Tests: 21 unit/integration tests plus 9 UI tests with screenshot capture.
+- Tests: 27 unit/integration tests plus 9 UI tests with screenshot capture (the Phonon narration test skips when no Phonon bundle is installed in the simulator).
 
 ## Screenshots
 
@@ -114,7 +114,7 @@ xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader \
 ## Privacy and licence
 
 - No telemetry, no ads, no accounts, no remote book or audio processing.
-- iCloud sync is optional and not enabled in this build.
+- iCloud sync is optional and off by default; it uses only your personal iCloud account.
 - Original code: AGPL-3.0-only (see [LICENSE](LICENSE)).
 - NodusMark reused under MIT from Nodus Drift; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - No model weights are bundled. See [MODEL_LICENSES.md](MODEL_LICENSES.md).

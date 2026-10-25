@@ -321,6 +321,13 @@ public final class PlaybackController {
         activeVoice?.name ?? "System voice"
     }
 
+    /// True when the book's synced voice is not installed on this device and a
+    /// fallback voice is reading it instead.
+    public var preferredVoiceIsMissing: Bool {
+        guard let id = activeBook?.preferredVoiceID else { return false }
+        return voices.voice(withID: id) == nil
+    }
+
     public var engineLabel: String {
         activeVoice?.engineLabel ?? "System"
     }
@@ -1266,6 +1273,10 @@ public final class PlaybackController {
         }
         currentIndex = nextIndex
         chapterIndex = nextChapter
+        // Same as the neural path: persist each sentence so a quit, a crash or
+        // another device never loses a long system-voice listening session.
+        resetWordState()
+        saveProgress()
         speakCurrent()
     }
 
