@@ -37,6 +37,11 @@ final class ShareImportModel {
     var progressText = ""
     var errorMessage: String?
     var appGroupAvailable = SharedImportInbox.defaultRoot != nil
+    private var cancelled = false
+
+    func cancel() {
+        cancelled = true
+    }
 
     init(context: NSExtensionContext?) {
         self.context = context
@@ -68,20 +73,18 @@ final class ShareImportModel {
         let fileTypes: [UTType] = [.pdf, .epub, .rtf, .html, .plainText, markdownType].compactMap { $0 }
         for type in fileTypes where provider.hasItemConformingToTypeIdentifier(type.identifier) {
             let name = displayName(for: provider, type: type)
-            guard supportedExtension(name, type: type) else {
-                return ShareAttachment(provider: provider, name: name,
-                                       kind: .file(type), type: type)
-            }
             return ShareAttachment(provider: provider, name: name,
                                    kind: .file(type), type: type)
+        }
+        // `public.file-url` conforms to `public.url`; test the more specific
+        // type first so it takes the security-scoped file path, not HTTP.
+        if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+            return ShareAttachment(provider: provider, name: provider.suggestedName ?? "Document",
+                                   kind: .fileURL, type: .fileURL)
         }
         if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
             return ShareAttachment(provider: provider, name: provider.suggestedName ?? "Web page",
                                    kind: .webURL, type: .url)
-        }
-        if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-            return ShareAttachment(provider: provider, name: provider.suggestedName ?? "Document",
-                                   kind: .fileURL, type: .fileURL)
         }
         return nil
     }
@@ -119,25 +122,40 @@ final class ShareImportModel {
         guard !attachments.isEmpty else { return false }
         isImporting = true
         errorMessage = nil
+        cancelled = false
         defer { isImporting = false }
 
+        var staged: [SharedImportItem] = []
         for (index, attachment) in attachments.enumerated() {
+            if cancelled { break }
             progressText = "Preparing \(attachment.name) (\(index + 1) of \(attachments.count))…"
             do {
                 let file = try await materialize(attachment)
                 defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
-                guard supportedExtension(attachment.name, type: attachment.type) else {
-                    throw SharedInboxError.unsupported(attachment.name)
+                guard cancelled == false else { break }
+                let actualName = file.lastPathComponent
+                guard supportedExtension(actualName, type: attachment.type) else {
+                    throw SharedInboxError.unsupported(actualName)
                 }
-                _ = try SharedImportInbox.stage(
+                let item = try SharedImportInbox.stage(
                     fileURL: file,
-                    fileName: attachment.name,
+                    fileName: actualName,
                     collectionID: destinationID
                 )
+                staged.append(item)
             } catch {
+                for item in staged {
+                    SharedImportInbox.remove(item)
+                }
                 errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 return false
             }
+        }
+        if cancelled {
+            for item in staged {
+                SharedImportInbox.remove(item)
+            }
+            return false
         }
         progressText = "Ready to import in Nodus Reader."
         return true
@@ -173,14 +191,16 @@ final class ShareImportModel {
                     continuation.resume(throwing: error ?? SharedInboxError.unreadableItem(name))
                     return
                 }
+                let directory = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString, isDirectory: true)
                 do {
-                    let directory = FileManager.default.temporaryDirectory
-                        .appendingPathComponent(UUID().uuidString, isDirectory: true)
                     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-                    let destination = directory.appendingPathComponent(SharedImportInbox.sanitized(name))
+                    let fileName = url.lastPathComponent.isEmpty ? name : url.lastPathComponent
+                    let destination = directory.appendingPathComponent(SharedImportInbox.sanitized(fileName))
                     try FileManager.default.copyItem(at: url, to: destination)
                     continuation.resume(returning: destination)
                 } catch {
+                    try? FileManager.default.removeItem(at: directory)
                     continuation.resume(throwing: error)
                 }
             }
@@ -198,19 +218,23 @@ final class ShareImportModel {
 
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let destination = directory.appendingPathComponent(SharedImportInbox.sanitized(name))
-
-        if let data = value as? Data {
-            try data.write(to: destination, options: .atomic)
-        } else if let string = value as? String {
-            try string.write(to: destination, atomically: true, encoding: .utf8)
-        } else if let url = value as? URL {
-            try FileManager.default.copyItem(at: url, to: destination)
-        } else {
-            throw SharedInboxError.unreadableItem(name)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let destination = directory.appendingPathComponent(SharedImportInbox.sanitized(name))
+            if let data = value as? Data {
+                try data.write(to: destination, options: .atomic)
+            } else if let string = value as? String {
+                try string.write(to: destination, atomically: true, encoding: .utf8)
+            } else if let url = value as? URL {
+                try FileManager.default.copyItem(at: url, to: destination)
+            } else {
+                throw SharedInboxError.unreadableItem(name)
+            }
+            return destination
+        } catch {
+            try? FileManager.default.removeItem(at: directory)
+            throw error
         }
-        return destination
     }
 
     private func loadFileURL(provider: NSItemProvider, name: String) async throws -> URL {
@@ -230,13 +254,20 @@ final class ShareImportModel {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var coordinationError: NSError?
         var copyError: Error?
-        let destination = directory.appendingPathComponent(SharedImportInbox.sanitized(name))
+        let fileName = url.lastPathComponent.isEmpty ? name : url.lastPathComponent
+        let destination = directory.appendingPathComponent(SharedImportInbox.sanitized(fileName))
         NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &coordinationError) { readURL in
             do { try FileManager.default.copyItem(at: readURL, to: destination) }
             catch { copyError = error }
         }
-        if let coordinationError { throw coordinationError }
-        if let copyError { throw copyError }
+        if let coordinationError {
+            try? FileManager.default.removeItem(at: directory)
+            throw coordinationError
+        }
+        if let copyError {
+            try? FileManager.default.removeItem(at: directory)
+            throw copyError
+        }
         return destination
     }
 
@@ -250,31 +281,34 @@ final class ShareImportModel {
         }
         guard let url = value as? URL else { throw SharedInboxError.unreadableItem(name) }
         let (data, response) = try await URLSession.shared.data(from: url)
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw SharedInboxError.unsupported("\(url.absoluteString) (HTTP \(http.statusCode))")
+        }
+        guard data.count <= 200 * 1024 * 1024 else {
+            throw SharedInboxError.unreadableItem("\(name) (larger than 200 MB)")
+        }
         let mime = (response as? HTTPURLResponse)?.mimeType ?? ""
         let ext: String
-        let fileName: String
         switch mime {
-        case "application/pdf":
-            ext = "pdf"
-            fileName = (url.lastPathComponent as NSString).pathExtension.isEmpty ? "Web page.pdf" : url.lastPathComponent
-        case "application/epub+zip":
-            ext = "epub"
-            fileName = (url.lastPathComponent as NSString).pathExtension.isEmpty ? "Web page.epub" : url.lastPathComponent
-        default:
-            ext = "html"
-            fileName = (url.lastPathComponent as NSString).pathExtension.isEmpty
-                ? "\(url.host ?? "Web page").html"
-                : url.lastPathComponent
+        case "application/pdf": ext = "pdf"
+        case "application/epub+zip": ext = "epub"
+        default: ext = "html"
         }
-        guard ["pdf", "epub", "html", "htm"].contains(ext) else {
-            throw SharedInboxError.unsupported(url.absoluteString)
-        }
+        let suggested = name.isEmpty ? url.lastPathComponent : name
+        let base = (suggested as NSString).deletingPathExtension
+        let safeBase = SharedImportInbox.sanitized(base.isEmpty ? (url.host ?? "Web page") : base)
+        let fileName = "\(safeBase).\(ext)"
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let destination = directory.appendingPathComponent(SharedImportInbox.sanitized(fileName))
-        try data.write(to: destination, options: .atomic)
-        return destination
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let destination = directory.appendingPathComponent(SharedImportInbox.sanitized(fileName))
+            try data.write(to: destination, options: .atomic)
+            return destination
+        } catch {
+            try? FileManager.default.removeItem(at: directory)
+            throw error
+        }
     }
 }
 
@@ -293,7 +327,10 @@ struct ShareImportView: View {
                     HStack {
                         BrandToolbar()
                         Spacer()
-                        Button("Cancel") { onFinish(false) }
+                        Button("Cancel") {
+                            model.cancel()
+                            onFinish(false)
+                        }
                             .font(.subheadline)
                             .foregroundStyle(palette.muted)
                     }

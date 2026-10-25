@@ -75,7 +75,10 @@ struct ReaderView: View {
     }
 
     private var pageBuildKey: String {
-        "\(book.id.uuidString)-\(themeManager.readerThemeSelection)-\(colorScheme.hashValue)-\(preferences.fontScale)-\(preferences.lineSpacing)-\(preferences.margin)-\(preferences.justify)-\(preferences.useSerif)-\(preferences.weightIndex)"
+        let custom = themeManager.selectedCustomTheme.map {
+            "\($0.id.uuidString)-\($0.backgroundHex)-\($0.textHex)-\($0.accentHex)-\($0.isDark)"
+        } ?? ""
+        return "\(book.id.uuidString)-\(themeManager.readerThemeSelection)-\(custom)-\(colorScheme.hashValue)-\(preferences.fontScale)-\(preferences.lineSpacing)-\(preferences.margin)-\(preferences.justify)-\(preferences.useSerif)-\(preferences.weightIndex)"
     }
 
     var body: some View {
@@ -159,9 +162,13 @@ struct ReaderView: View {
                 narrationWordRange: narrationActive ? playback.currentWordChapterRange : nil,
                 columns: paginationColumns,
                 followNarration: playback.mode == .readAndListen,
-                onWordTap: startNarration(at:),
-                onHighlight: { range, color in presentAnnotation(range: range, color: color, note: false) },
-                onNote: { range in presentAnnotation(range: range, color: .yellow, note: true) },
+                onWordTap: { chapter, offset in startNarration(chapter: chapter, offset: offset) },
+                onHighlight: { chapter, range, color in
+                    presentAnnotation(chapter: chapter, range: range, color: color, note: false)
+                },
+                onNote: { chapter, range in
+                    presentAnnotation(chapter: chapter, range: range, color: .yellow, note: true)
+                },
                 pageIndex: $pageIndex,
                 pageInfo: $pageInfo,
                 firstPageByChapter: $firstPageByChapter,
@@ -395,8 +402,8 @@ struct ReaderView: View {
         switch content {
         case .chapters(let chapters):
             guard pageInfo.pageCount > 0, !chapters.isEmpty else { return }
-            let chapterFraction = pageInfo.pagesInChapter > 0
-                ? Double(pageInfo.pageIndexInChapter) / Double(pageInfo.pagesInChapter)
+            let chapterFraction = pageInfo.pagesInChapter > 1
+                ? Double(pageInfo.pageIndexInChapter) / Double(pageInfo.pagesInChapter - 1)
                 : 0
             let overall = min(1, Double(pageInfo.pageIndex + 1) / Double(pageInfo.pageCount))
             library.updateProgress(
@@ -407,6 +414,7 @@ struct ReaderView: View {
                 progress: overall
             )
         case .pdf:
+            guard pdfPageCount > 0 else { return }
             let total = max(pdfPageCount, 1)
             let overall = min(1, Double(pdfPageIndex + 1) / Double(total))
             library.updateProgress(
@@ -447,7 +455,8 @@ struct ReaderView: View {
 
     private var progressLine: String {
         if book.format == .pdf {
-            let total = max(pdfPageCount, 1)
+            guard pdfPageCount > 0 else { return "Loading PDF…" }
+            let total = pdfPageCount
             let percent = Int(((Double(pdfPageIndex + 1) / Double(total)) * 100).rounded())
             return "Page \(min(pdfPageIndex + 1, total)) of \(total) · \(percent)%"
         }
@@ -458,17 +467,38 @@ struct ReaderView: View {
 
     // MARK: Bookmarks and annotations
 
+    private var currentPageFraction: Double {
+        guard readerPages.indices.contains(pageIndex) else { return 0 }
+        let page = readerPages[pageIndex]
+        return page.pagesInChapter > 1
+            ? Double(page.pageIndexInChapter) / Double(page.pagesInChapter - 1)
+            : 0
+    }
+
     private var isCurrentPageBookmarked: Bool {
         if book.format == .pdf {
             return book.bookmarks.contains { $0.locator.pageIndex == pdfPageIndex }
         }
-        return book.bookmarks.contains { $0.locator.pageIndex == pageIndex }
+        guard readerPages.indices.contains(pageIndex) else { return false }
+        let chapter = readerPages[pageIndex].chapterIndex
+        let fraction = currentPageFraction
+        return book.bookmarks.contains {
+            $0.locator.chapterIndex == chapter &&
+            abs($0.locator.scrollFraction - fraction) < 0.015
+        }
     }
 
     private func toggleBookmark() {
-        if let existing = book.bookmarks.first(where: {
-            book.format == .pdf ? $0.locator.pageIndex == pdfPageIndex : $0.locator.pageIndex == pageIndex
-        }) {
+        if book.format == .pdf,
+           let existing = book.bookmarks.first(where: { $0.locator.pageIndex == pdfPageIndex }) {
+            library.deleteBookmark(existing)
+            return
+        }
+        if book.format != .pdf, let page = readerPages.indices.contains(pageIndex) ? readerPages[pageIndex] : nil,
+           let existing = book.bookmarks.first(where: {
+               $0.locator.chapterIndex == page.chapterIndex &&
+               abs($0.locator.scrollFraction - currentPageFraction) < 0.015
+           }) {
             library.deleteBookmark(existing)
             return
         }
@@ -490,17 +520,14 @@ struct ReaderView: View {
                 title: "Page \(pageIndex + 1)",
                 chapterTitle: page.chapterTitle,
                 locator: ReadingLocator(chapterIndex: page.chapterIndex,
-                                        scrollFraction: page.pagesInChapter > 0
-                                            ? Double(page.pageIndexInChapter) / Double(page.pagesInChapter) : 0,
+                                        scrollFraction: page.pagesInChapter > 1
+                                            ? Double(page.pageIndexInChapter) / Double(page.pagesInChapter - 1) : 0,
                                         pageIndex: pageIndex)
             )
         }
     }
 
-    private func startNarration(at chapterOffset: Int) {
-        let chapter = readerPages.indices.contains(pageIndex)
-            ? readerPages[pageIndex].chapterIndex
-            : pageInfo.chapterIndex
+    private func startNarration(chapter: Int, offset chapterOffset: Int) {
         Task {
             await playback.start(book: book, mode: .readAndListen,
                                  startingChapterIndex: chapter,
@@ -508,10 +535,8 @@ struct ReaderView: View {
         }
     }
 
-    private func presentAnnotation(range: NSRange, color: AnnotationColor, note: Bool) {
-        let chapter = readerPages.indices.contains(pageIndex)
-            ? readerPages[pageIndex].chapterIndex
-            : pageInfo.chapterIndex
+    private func presentAnnotation(chapter: Int, range: NSRange,
+                                   color: AnnotationColor, note: Bool) {
         guard chapters.indices.contains(chapter) else { return }
         let ns = chapters[chapter].text as NSString
         guard range.length > 0, range.location >= 0, NSMaxRange(range) <= ns.length else { return }
@@ -529,7 +554,7 @@ struct ReaderView: View {
     }
 
     private func editAnnotation(_ annotation: Annotation) {
-        annotationDraft = ReaderAnnotationDraft(
+        let draft = ReaderAnnotationDraft(
             chapterIndex: annotation.chapterIndex,
             range: NSRange(location: annotation.startOffset,
                            length: max(1, annotation.endOffset - annotation.startOffset)),
@@ -538,6 +563,13 @@ struct ReaderView: View {
             note: annotation.note,
             existing: annotation
         )
+        showContents = false
+        Task { @MainActor in
+            // Let the navigation sheet finish dismissing before presenting the
+            // editor; iOS cannot stack two sheets on the same host.
+            try? await Task.sleep(for: .milliseconds(220))
+            annotationDraft = draft
+        }
     }
 }
 

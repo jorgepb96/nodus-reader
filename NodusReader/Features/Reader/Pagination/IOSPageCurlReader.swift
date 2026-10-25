@@ -9,9 +9,9 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
     private(set) var pages: [ReaderPage] = []
     private var style: ReaderPageStyle
     private var highlightsProvider: (ReaderPage) -> ReaderPageHighlights
-    private var onWordTap: ((Int) -> Void)?
-    private var onHighlight: ((NSRange, AnnotationColor) -> Void)?
-    private var onNote: ((NSRange) -> Void)?
+    private var onWordTap: ((Int, Int) -> Void)?
+    private var onHighlight: ((Int, NSRange, AnnotationColor) -> Void)?
+    private var onNote: ((Int, NSRange) -> Void)?
     private var onPageChanged: ((Int) -> Void)?
     private var hosts: [Int: ReaderPageHostController] = [:]
     private var generation = UUID()
@@ -45,9 +45,9 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
                    generation: UUID,
                    requestedIndex: Int,
                    highlightsProvider: @escaping (ReaderPage) -> ReaderPageHighlights,
-                   onWordTap: @escaping (Int) -> Void,
-                   onHighlight: @escaping (NSRange, AnnotationColor) -> Void,
-                   onNote: @escaping (NSRange) -> Void,
+                   onWordTap: @escaping (Int, Int) -> Void,
+                   onHighlight: @escaping (Int, NSRange, AnnotationColor) -> Void,
+                   onNote: @escaping (Int, NSRange) -> Void,
                    onPageChanged: @escaping (Int) -> Void) {
         let pagesChanged = generation != self.generation || pages.count != self.pages.count
         self.pages = pages
@@ -105,9 +105,10 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
         let page = pages[index]
         let host = ReaderPageHostController(page: page, style: style,
                                             highlights: highlightsProvider(page))
-        host.onWordTap = { [weak self] offset in self?.onWordTap?(offset) }
-        host.onHighlight = { [weak self] range, color in self?.onHighlight?(range, color) }
-        host.onNote = { [weak self] range in self?.onNote?(range) }
+        let chapter = page.chapterIndex
+        host.onWordTap = { [weak self] offset in self?.onWordTap?(chapter, offset) }
+        host.onHighlight = { [weak self] range, color in self?.onHighlight?(chapter, range, color) }
+        host.onNote = { [weak self] range in self?.onNote?(chapter, range) }
         hosts[index] = host
         return host
     }
@@ -157,9 +158,9 @@ struct PageCurlReader: UIViewControllerRepresentable {
     var generation: UUID
     var style: ReaderPageStyle
     var highlightsProvider: (ReaderPage) -> ReaderPageHighlights
-    var onWordTap: (Int) -> Void
-    var onHighlight: (NSRange, AnnotationColor) -> Void
-    var onNote: (NSRange) -> Void
+    var onWordTap: (Int, Int) -> Void
+    var onHighlight: (Int, NSRange, AnnotationColor) -> Void
+    var onNote: (Int, NSRange) -> Void
 
     func makeUIViewController(context: Context) -> ReaderPageCurlController {
         ReaderPageCurlController(style: style, highlightsProvider: highlightsProvider)

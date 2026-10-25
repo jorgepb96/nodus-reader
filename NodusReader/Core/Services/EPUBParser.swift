@@ -8,6 +8,9 @@ import ZIPFoundation
 /// labels. Layout, CFI and rendering belong to the EPUBReader module in
 /// The parser deliberately has no opinion about presentation.
 public enum EPUBParser {
+    private static let maximumEntryBytes = 64 * 1024 * 1024
+    private static let maximumExtractedBytes = 256 * 1024 * 1024
+
     public static func parse(url: URL, fallbackTitle: String) throws -> DocumentExtraction {
         guard let archive = Archive(url: url, accessMode: .read) else {
             throw ImportError.unreadableDocument(url.lastPathComponent)
@@ -27,10 +30,16 @@ public enum EPUBParser {
             return entries.first { $0.key.caseInsensitiveCompare(path) == .orderedSame }?.value
         }
 
+        var extractedBytes = 0
         func data(_ path: String) throws -> Data? {
             guard let item = entry(path) else { return nil }
+            guard item.uncompressedSize <= UInt64(maximumEntryBytes),
+                  extractedBytes + Int(item.uncompressedSize) <= maximumExtractedBytes else {
+                throw ImportError.fileTooLarge(url.lastPathComponent)
+            }
             var output = Data()
             _ = try archive.extract(item) { chunk in output.append(chunk) }
+            extractedBytes += output.count
             return output
         }
 

@@ -100,6 +100,12 @@ struct PlayerView: View {
                         .foregroundStyle(palette.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                if let error = playback.cacheErrorMessage {
+                    Text(error)
+                        .font(.system(size: 10))
+                        .foregroundStyle(palette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .padding(12)
@@ -317,7 +323,7 @@ struct PlayerView: View {
                 Button {
                     playback.setSpeed(speed)
                 } label: {
-                    Label(String(format: "%.2g×", speed),
+                    Label(String(format: "%g×", speed),
                           systemImage: playback.speedMultiplier == speed ? "checkmark" : "circle")
                 }
             }

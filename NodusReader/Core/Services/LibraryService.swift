@@ -4,6 +4,10 @@ import Observation
 import SwiftData
 import SwiftUI
 
+extension Notification.Name {
+    static let nodusLibraryBooksDeleted = Notification.Name("nodus.library.booksDeleted")
+}
+
 // MARK: - Import result types
 
 public struct ImportFailure: Identifiable, Sendable {
@@ -120,6 +124,10 @@ public final class LibraryService {
             }
         }
 
+        let stagedSize = FileStore.fileSize(at: staged)
+        guard stagedSize <= 250 * 1024 * 1024 else {
+            throw ImportError.fileTooLarge(originalName)
+        }
         let hash = try ContentHash.sha256(of: staged)
         if let existing = try existingBook(withHash: hash) {
             return .duplicate(existing.title)
@@ -473,6 +481,9 @@ public final class LibraryService {
         if let cache = narrationCache {
             Task.detached { await cache.deleteBook(bookID: bookID) }
         }
+        NotificationCenter.default.post(name: .nodusLibraryBooksDeleted,
+                                        object: nil,
+                                        userInfo: ["ids": [bookID]])
     }
 
     public func deleteBooks(_ books: [Book]) {
@@ -488,6 +499,9 @@ public final class LibraryService {
                 for id in ids { await cache.deleteBook(bookID: id) }
             }
         }
+        NotificationCenter.default.post(name: .nodusLibraryBooksDeleted,
+                                        object: nil,
+                                        userInfo: ["ids": ids])
     }
 
     private func recordDeletions(for book: Book) {

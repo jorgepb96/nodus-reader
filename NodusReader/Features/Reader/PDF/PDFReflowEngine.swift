@@ -102,6 +102,15 @@ struct PDFReflowStore {
               let document = try? JSONDecoder().decode(PDFReflowDocument.self, from: data),
               document.version == PDFReflowDocument.schemaVersion,
               document.contentHash == contentHash else { return nil }
+        let images = imagesDirectory(for: bookID)
+        let referenced = document.pages
+            .flatMap(\.blocks)
+            .compactMap(\.imageFileName)
+        for name in referenced where !FileManager.default.fileExists(
+            atPath: images.appendingPathComponent(name).path
+        ) {
+            return nil
+        }
         return document
     }
 

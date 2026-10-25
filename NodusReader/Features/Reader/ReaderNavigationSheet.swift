@@ -232,7 +232,12 @@ struct ReaderNavigationSheet: View {
                 List {
                     ForEach(book.bookmarks.sorted { $0.createdAt > $1.createdAt }) { bookmark in
                         Button {
-                            pageIndex = min(max(bookmark.locator.pageIndex ?? 0, 0), max(pages.count - 1, 0))
+                            let chapter = max(bookmark.locator.chapterIndex, 0)
+                            let chapterPages = pages.filter { $0.chapterIndex == chapter }.count
+                            let fraction = min(max(bookmark.locator.scrollFraction, 0), 1)
+                            let offset = Int((fraction * Double(max(chapterPages - 1, 0))).rounded())
+                            let start = firstPageByChapter[chapter] ?? 0
+                            pageIndex = min(start + max(0, offset), max(pages.count - 1, 0))
                             dismiss()
                         } label: {
                             HStack(spacing: 10) {

@@ -68,12 +68,22 @@ enum SharedImportInbox {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let safeName = sanitized(fileName)
         let payload = directory.appendingPathComponent(safeName)
-        try FileManager.default.copyItem(at: fileURL, to: payload)
+        do {
+            try FileManager.default.copyItem(at: fileURL, to: payload)
+        } catch {
+            try? FileManager.default.removeItem(at: directory)
+            throw error
+        }
         let item = SharedImportItem(id: id, fileName: safeName, payloadName: safeName,
                                     collectionID: collectionID, createdAt: Date())
         // Metadata is written last: a half-copied item is never visible to the app.
         let data = try JSONEncoder().encode(item)
-        try data.write(to: directory.appendingPathComponent("item.json"), options: .atomic)
+        do {
+            try data.write(to: directory.appendingPathComponent("item.json"), options: .atomic)
+        } catch {
+            try? FileManager.default.removeItem(at: directory)
+            throw error
+        }
         return item
     }
 
@@ -87,7 +97,10 @@ enum SharedImportInbox {
         return directories.compactMap { directory in
             let metadata = directory.appendingPathComponent("item.json")
             guard let data = try? Data(contentsOf: metadata),
-                  let item = try? JSONDecoder().decode(SharedImportItem.self, from: data) else { return nil }
+                  let item = try? JSONDecoder().decode(SharedImportItem.self, from: data),
+                  item.payloadName == (item.payloadName as NSString).lastPathComponent,
+                  !item.payloadName.isEmpty,
+                  item.payloadName != ".", item.payloadName != ".." else { return nil }
             let payload = directory.appendingPathComponent(item.payloadName)
             guard FileManager.default.fileExists(atPath: payload.path) else { return nil }
             return item
@@ -112,8 +125,10 @@ enum SharedImportInbox {
         let cleaned = last
             .replacingOccurrences(of: ":", with: "-")
             .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: "\\", with: "-")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        return cleaned.isEmpty ? "Document" : cleaned
+        guard !cleaned.isEmpty, cleaned != ".", cleaned != ".." else { return "Document" }
+        return cleaned
     }
 }
 

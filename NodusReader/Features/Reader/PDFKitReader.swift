@@ -63,7 +63,9 @@ private struct MacPDFReader: NSViewRepresentable {
     }
 
     private func go(to index: Int, in view: PDFView) {
-        guard let page = view.document?.page(at: max(0, index)) else { return }
+        guard let document = view.document, document.pageCount > 0 else { return }
+        let clamped = min(max(0, index), document.pageCount - 1)
+        guard let page = document.page(at: clamped) else { return }
         view.go(to: page)
     }
 
@@ -73,6 +75,10 @@ private struct MacPDFReader: NSViewRepresentable {
 
         init(parent: MacPDFReader) {
             self.parent = parent
+        }
+
+        deinit {
+            if let token { NotificationCenter.default.removeObserver(token) }
         }
 
         func observe(_ view: PDFView) {
@@ -128,7 +134,9 @@ private struct IOSPDFReader: UIViewRepresentable {
     }
 
     private func go(to index: Int, in view: PDFView) {
-        guard let page = view.document?.page(at: max(0, index)) else { return }
+        guard let document = view.document, document.pageCount > 0 else { return }
+        let clamped = min(max(0, index), document.pageCount - 1)
+        guard let page = document.page(at: clamped) else { return }
         view.go(to: page)
     }
 
@@ -138,6 +146,10 @@ private struct IOSPDFReader: UIViewRepresentable {
 
         init(parent: IOSPDFReader) {
             self.parent = parent
+        }
+
+        deinit {
+            if let token { NotificationCenter.default.removeObserver(token) }
         }
 
         func observe(_ view: PDFView) {

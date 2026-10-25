@@ -134,10 +134,16 @@ public final class VoiceCatalog {
             return exact
         }
         if let language {
-            let prefix = String(language.prefix(2))
-            if let match = voices.first(where: { $0.language.hasPrefix(prefix) && $0.quality >= 3 })
-                ?? voices.first(where: { $0.language.hasPrefix(prefix) && $0.quality >= 2 })
-                ?? voices.first(where: { $0.language.hasPrefix(prefix) }) {
+            let prefix = String(language.prefix(2)).lowercased()
+            let matching = voices.filter { $0.language.lowercased().hasPrefix(prefix) }
+            // A selected neural engine is the user's explicit choice; a system
+            // voice is the fallback when that engine has no voice for the book.
+            if let neural = matching.first(where: { !$0.isSystem }) {
+                return neural
+            }
+            if let match = matching.first(where: { $0.quality >= 3 })
+                ?? matching.first(where: { $0.quality >= 2 })
+                ?? matching.first {
                 return match
             }
         }
@@ -215,8 +221,8 @@ public final class VoiceCatalog {
             return chosen
         }
         if let language {
-            let prefix = String(language.prefix(2))
-            if let match = voices.first(where: { $0.language.hasPrefix(prefix) && $0.quality >= 2 })
+            let prefix = String(language.prefix(2)).lowercased()
+            if let match = voices.first(where: { $0.language.lowercased().hasPrefix(prefix) && $0.quality >= 2 })
                 ?? voices.first(where: { $0.language.hasPrefix(prefix) }),
                let voice = AVSpeechSynthesisVoice(identifier: match.id) {
                 return voice

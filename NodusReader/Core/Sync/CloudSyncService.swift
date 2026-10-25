@@ -81,6 +81,7 @@ final class CloudSyncService {
     nonisolated(unsafe) private var outboxObserver: NSObjectProtocol?
     private var zoneReady = false
     private var started = false
+    private var activeSyncGeneration = UUID()
 
     init(context: ModelContext, library: LibraryService, journal: SyncJournal,
          fileStore: FileStore = .shared, defaults: UserDefaults = .standard) {
@@ -137,6 +138,7 @@ final class CloudSyncService {
 
     func refreshAvailability() async {
         pendingCount = journal.pendingCount()
+        reconcileDownloadStates()
         fileSyncAvailable = documents.isAvailable
         guard FileManager.default.ubiquityIdentityToken != nil,
               Self.hasCloudKitContainerEntitlement() else {
@@ -199,12 +201,17 @@ final class CloudSyncService {
         guard enabled != isEnabled else { return }
         defaults.set(enabled, forKey: Key.enabled)
         isEnabled = enabled
+        activeSyncGeneration = UUID()
         syncTask?.cancel()
         if !enabled {
             status = .disabled
             return
         }
         await refreshAvailability()
+        guard isEnabled else {
+            status = .disabled
+            return
+        }
         guard isAvailable else {
             status = .unavailable(availabilityMessage)
             return
@@ -219,18 +226,29 @@ final class CloudSyncService {
 
     func syncNow() async {
         guard isEnabled, isAvailable, !isSyncing else { return }
+        let generation = UUID()
+        activeSyncGeneration = generation
         isSyncing = true
         status = .syncing
         defer { isSyncing = false }
         do {
             try await ensureZone()
-            try await pushOutbox()
+            guard isEnabled, generation == activeSyncGeneration else { return }
+            var pushError: Error?
+            do {
+                try await pushOutbox()
+            } catch {
+                pushError = error
+            }
+            guard isEnabled, generation == activeSyncGeneration else { return }
             try await pullChanges()
+            guard isEnabled, generation == activeSyncGeneration else { return }
             lastSync = Date()
             defaults.set(lastSync, forKey: Key.lastSync)
             pendingCount = journal.pendingCount()
-            status = .upToDate
+            status = pushError.map { status(for: $0) } ?? .upToDate
         } catch {
+            guard isEnabled, generation == activeSyncGeneration else { return }
             pendingCount = journal.pendingCount()
             status = status(for: error)
         }
@@ -259,10 +277,27 @@ final class CloudSyncService {
 
     // MARK: Outbox
 
+    private static func pushPriority(_ type: SyncEntityType) -> Int {
+        switch type {
+        case .book: 0
+        case .collection: 1
+        case .membership: 2
+        case .bookmark: 3
+        case .annotation: 4
+        case .readingPosition, .theme, .preference: 5
+        }
+    }
+
     private func pushOutbox() async throws {
         let descriptor = FetchDescriptor<SyncOutboxEntry>(sortBy: [SortDescriptor(\SyncOutboxEntry.createdAt)])
         let entries = (try? context.fetch(descriptor)) ?? []
-        for entry in entries {
+        let ordered = entries.sorted {
+            let lhs = Self.pushPriority($0.entityType)
+            let rhs = Self.pushPriority($1.entityType)
+            return lhs == rhs ? $0.createdAt < $1.createdAt : lhs < rhs
+        }
+        var firstError: Error?
+        for entry in ordered {
             guard entry.nextAttemptAt <= Date() else { continue }
             do {
                 switch entry.operation {
@@ -272,17 +307,18 @@ final class CloudSyncService {
                     try await pushUpsert(entry)
                 }
                 context.delete(entry)
-                try? context.save()
+                try context.save()
             } catch {
                 entry.attempts += 1
                 let delay = min(300, pow(2, Double(entry.attempts)) * 5)
                 entry.nextAttemptAt = Date().addingTimeInterval(delay)
                 entry.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 try? context.save()
-                throw error
+                if firstError == nil { firstError = error }
             }
         }
         pendingCount = journal.pendingCount()
+        if let firstError { throw firstError }
     }
 
     private func pushUpsert(_ entry: SyncOutboxEntry) async throws {
@@ -321,31 +357,44 @@ final class CloudSyncService {
             savePolicy: .allKeys,
             atomically: false
         )
-        if entry.entityType == .book, let book = fetchBook(id: entry.entityID) {
+        if entry.entityType == .book, let book = fetchBook(id: entry.entityID),
+           !documents.hasRemoteFile(for: book) {
             documents.upload(book)
         }
     }
 
     private func pushDeletion(_ entry: SyncOutboxEntry) async throws {
         guard let database else { throw SyncServiceError.cloudKitUnavailable }
+        let localTombstone = fetchTombstone(type: entry.entityType, id: entry.entityID)
+        let deletedAt = localTombstone?.deletedAt ?? Date()
         let tombstone = CKRecord(recordType: "Tombstone",
                                   recordID: tombstoneID(type: entry.entityType, id: entry.entityID))
         tombstone["entityType"] = entry.entityType.rawValue
         tombstone["entityID"] = entry.entityID.uuidString
-        tombstone["deletedAt"] = Date()
+        tombstone["deletedAt"] = deletedAt
 
+        let dataRecordID = recordID(type: entry.entityType, id: entry.entityID)
         do {
             _ = try await database.modifyRecords(
                 saving: [tombstone],
-                deleting: [recordID(type: entry.entityType, id: entry.entityID)],
+                deleting: [dataRecordID],
                 savePolicy: .allKeys,
                 atomically: false
             )
-        } catch let error as CKError where error.code == .unknownItem || error.code == .partialFailure {
-            // The data record was already absent; the tombstone may still have
-            // been saved.
+        } catch let error as CKError where error.code == .partialFailure {
+            let partial = error.partialErrorsByItemID ?? [:]
+            if let tombstoneError = partial[tombstone.recordID] {
+                throw tombstoneError
+            }
+            if let dataError = partial[dataRecordID] as? CKError,
+               dataError.code != .unknownItem {
+                throw dataError
+            }
+        } catch let error as CKError where error.code == .unknownItem {
+            // The data record was already absent; the tombstone still saved.
         }
 
+        localTombstone?.isPushed = true
         if entry.entityType == .book,
            let data = entry.payloadJSON.data(using: .utf8),
            let payload = try? JSONSerialization.jsonObject(with: data) as? [String: String],
@@ -360,10 +409,11 @@ final class CloudSyncService {
         guard let database else { throw SyncServiceError.cloudKitUnavailable }
         var token = loadChangeToken()
         var moreComing = true
+        var retriedZone = false
         while moreComing {
             do {
                 let changes = try await database.recordZoneChanges(inZoneWith: zoneID, since: token)
-                journal.withSuspendedRecording {
+                try journal.withSuspendedRecording {
                     // Parents must exist before children: a membership or
                     // annotation can arrive in the same batch as its book.
                     let records = changes.modificationResultsByID.values.compactMap { result -> CKRecord? in
@@ -376,7 +426,7 @@ final class CloudSyncService {
                     for deletion in changes.deletions {
                         applyRemoteDeletion(deletion.recordID, recordType: deletion.recordType)
                     }
-                    try? context.save()
+                    try context.save()
                 }
                 token = changes.changeToken
                 saveChangeToken(changes.changeToken)
@@ -384,6 +434,14 @@ final class CloudSyncService {
             } catch let error as CKError where error.code == .changeTokenExpired {
                 token = nil
                 clearChangeToken()
+                moreComing = true
+            } catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
+                guard !retriedZone else { throw error }
+                retriedZone = true
+                zoneReady = false
+                token = nil
+                clearChangeToken()
+                try await ensureZone()
                 moreComing = true
             }
         }
@@ -511,8 +569,11 @@ final class CloudSyncService {
         book.language = record["language"] as? String ?? book.language
         book.published = record["published"] as? String ?? book.published
         book.bookDescription = record["bookDescription"] as? String ?? book.bookDescription
-        book.fileName = record["fileName"] as? String ?? book.fileName
-        book.relativePath = record["relativePath"] as? String ?? book.relativePath
+        if let remoteName = record["fileName"] as? String, !remoteName.isEmpty {
+            book.fileName = FileStore.sanitizedFileName(remoteName)
+        }
+        // Trust the stable ID, never a path string received from CloudKit.
+        book.relativePath = "Library/\(book.id.uuidString)/\(book.fileName)"
         book.fileSize = integer(record, "fileSize") ?? book.fileSize
         book.contentHash = record["contentHash"] as? String ?? book.contentHash
         book.addedAt = record["addedAt"] as? Date ?? book.addedAt
@@ -521,7 +582,14 @@ final class CloudSyncService {
         book.locatorJSON = record["locatorJSON"] as? String ?? book.locatorJSON
         book.statusRaw = record["status"] as? String ?? book.statusRaw
         book.isFavorite = (integer(record, "isFavorite") ?? 0) == 1
-        book.coverFileName = (record["coverFileName"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+        if let coverName = record["coverFileName"] as? String, !coverName.isEmpty {
+            let safeCover = FileStore.sanitizedFileName(coverName)
+            let localCover = library.fileStore.coverURL(for: safeCover)
+            let hasLocalCover = localCover.map { FileManager.default.fileExists(atPath: $0.path) } ?? false
+            if book.coverFileName == nil || !hasLocalCover {
+                book.coverFileName = safeCover
+            }
+        }
         book.sourceDevice = record["sourceDevice"] as? String ?? book.sourceDevice
         book.lastPositionDevice = record["lastPositionDevice"] as? String ?? book.lastPositionDevice
         book.lastPositionDate = record["lastPositionDate"] as? Date
@@ -530,8 +598,10 @@ final class CloudSyncService {
         book.updatedAt = remoteDate
 
         let localExists = FileManager.default.fileExists(atPath: library.fileStore.documentURL(for: book).path)
-        book.downloadState = localExists ? .downloaded : .cloudOnly
-        if !localExists {
+        if !downloadingBookIDs.contains(book.id) {
+            book.downloadState = localExists ? .downloaded : .cloudOnly
+        }
+        if !localExists || book.coverFileName == nil {
             documents.downloadCover(for: book)
         }
     }
@@ -663,7 +733,9 @@ final class CloudSyncService {
     }
 
     private func applyRemoteDeletion(_ recordID: CKRecord.ID, recordType: CKRecord.RecordType) {
-        guard let type = entityType(forRecordName: recordID.recordName),
+        // The deletion of a tombstone record is not the deletion of the entity.
+        guard recordType != "Tombstone",
+              let type = entityType(forRecordName: recordID.recordName),
               let id = uuid(from: recordID) else { return }
         deleteLocal(type: type, id: id)
         removeOutbox(type: type, id: id)
@@ -680,6 +752,9 @@ final class CloudSyncService {
                 if let cache = library.narrationCache {
                     Task.detached { await cache.deleteBook(bookID: id) }
                 }
+                NotificationCenter.default.post(name: .nodusLibraryBooksDeleted,
+                                                object: nil,
+                                                userInfo: ["ids": [id]])
             }
         case .collection:
             if let collection = fetchCollection(id: id) {
@@ -712,8 +787,22 @@ final class CloudSyncService {
 
     // MARK: Downloads
 
+    private func reconcileDownloadStates() {
+        var changed = false
+        for book in library.allBooks()
+            where book.downloadState == .downloading && !downloadingBookIDs.contains(book.id) {
+            let url = library.fileStore.documentURL(for: book)
+            let size = FileStore.fileSize(at: url)
+            let exists = FileManager.default.fileExists(atPath: url.path)
+            let complete = exists && (book.fileSize <= 0 || size == book.fileSize)
+            book.downloadState = complete ? .downloaded : .cloudOnly
+            changed = true
+        }
+        if changed { library.save() }
+    }
+
     func download(_ book: Book) async {
-        guard isEnabled, isAvailable else { return }
+        guard isEnabled, isAvailable, !downloadingBookIDs.contains(book.id) else { return }
         downloadingBookIDs.insert(book.id)
         downloadError = nil
         book.downloadState = .downloading
@@ -739,6 +828,7 @@ final class CloudSyncService {
 
     func removeLocalDownload(_ book: Book) async {
         guard isEnabled, isAvailable else { return }
+        downloadError = nil
         guard await documents.hasRemoteCopy(for: book) else {
             downloadError = "This book has no iCloud copy yet."
             return
@@ -747,6 +837,7 @@ final class CloudSyncService {
             try documents.removeLocalDownload(for: book)
             book.downloadState = .cloudOnly
             library.save()
+            downloadError = nil
         } catch {
             downloadError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
@@ -851,6 +942,13 @@ final class CloudSyncService {
         var descriptor = FetchDescriptor<Bookmark>(predicate: #Predicate { $0.id == id })
         descriptor.fetchLimit = 1
         return try? context.fetch(descriptor).first
+    }
+
+    private func fetchTombstone(type: SyncEntityType, id: UUID) -> SyncTombstone? {
+        let descriptor = FetchDescriptor<SyncTombstone>()
+        return (try? context.fetch(descriptor))?.first {
+            $0.entityType == type && $0.entityID == id
+        }
     }
 
     private func fetchAnnotation(id: UUID) -> Annotation? {

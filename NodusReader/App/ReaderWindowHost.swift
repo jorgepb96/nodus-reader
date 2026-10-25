@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 #if os(macOS)
+import DesignSystem
 import SwiftData
 import SwiftUI
 
@@ -7,6 +8,8 @@ import SwiftUI
 /// as a modal sheet inside the library and can be taken full screen natively.
 struct ReaderWindowHost: View {
     @Environment(\.dismissWindow) private var dismissWindow
+    @Environment(ThemeManager.self) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     @Query private var books: [Book]
 
     private let bookID: UUID
@@ -32,6 +35,8 @@ struct ReaderWindowHost: View {
         }
         .frame(minWidth: 900, minHeight: 680)
         .background(Color.black)
+        .nodusPalette(theme.palette(colorScheme: colorScheme))
+        .tint(theme.palette(colorScheme: colorScheme).accent)
     }
 }
 #endif

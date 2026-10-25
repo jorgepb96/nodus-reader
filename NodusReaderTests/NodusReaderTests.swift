@@ -300,6 +300,92 @@ func voiceCatalogPrefersTheBookLanguage() async throws {
     #expect(missingPreferred?.language.lowercased().hasPrefix("es") == true)
 }
 
+// MARK: - Defensive paths
+
+@Test
+func fileStoreRejectsEscapedPathsAndUsesCanonicalBookFolders() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("NodusPathTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let store = FileStore(root: root)
+    let outside = root.appendingPathComponent("Outside.txt")
+    try Data("sentinel".utf8).write(to: outside)
+
+    let book = Book(
+        title: "Unsafe", author: "Test", format: .txt,
+        fileName: "../Outside.txt",
+        relativePath: "../../Outside.txt",
+        fileSize: 1, contentHash: "hash"
+    )
+    #expect(store.documentURL(for: book).path.hasPrefix(store.libraryDirectory.path))
+    #expect(!store.documentURL(for: book).path.contains(".."))
+    #expect(store.coverURL(for: "../../Outside.jpg")?.deletingLastPathComponent().path
+        == store.coversDirectory.path)
+
+    store.removeBookFiles(book)
+    #expect(FileManager.default.fileExists(atPath: outside.path))
+}
+
+@Test
+func pageHighlightsClipAtPageBoundaries() {
+    let page1 = ReaderPage(
+        id: 0, chapterIndex: 0, chapterTitle: "One", chapterLength: 100,
+        prefixLength: 0, fullRange: NSRange(location: 0, length: 60),
+        attributed: NSAttributedString(string: String(repeating: "a", count: 60)),
+        pageIndexInChapter: 0, pagesInChapter: 2
+    )
+    let page2 = ReaderPage(
+        id: 1, chapterIndex: 0, chapterTitle: "One", chapterLength: 100,
+        prefixLength: 0, fullRange: NSRange(location: 60, length: 40),
+        attributed: NSAttributedString(string: String(repeating: "b", count: 40)),
+        pageIndexInChapter: 1, pagesInChapter: 2
+    )
+    let crossing = NSRange(location: 50, length: 20)
+    #expect(page1.localRange(forChapterRange: crossing) == NSRange(location: 50, length: 10))
+    #expect(page2.localRange(forChapterRange: crossing) == NSRange(location: 0, length: 10))
+}
+
+@Test @MainActor
+func syncJournalSuspensionIgnoresProgrammaticRemoteSaves() throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let journal = SyncJournal(context: fixture.container.mainContext)
+
+    journal.withSuspendedRecording {
+        let book = Book(
+            title: "Remote", author: "Test", format: .txt,
+            fileName: "remote.txt", relativePath: "Library/remote.txt",
+            fileSize: 4, contentHash: UUID().uuidString
+        )
+        fixture.container.mainContext.insert(book)
+        try? fixture.container.mainContext.save()
+    }
+    #expect(journal.pendingCount() == 0)
+}
+
+@Test @MainActor
+func pushedTombstonesAreNotRequeuedOnEverySyncEnable() throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let journal = SyncJournal(context: fixture.container.mainContext)
+    fixture.service.syncJournal = journal
+
+    journal.recordDelete(.book, id: UUID())
+    let tombstones = try fixture.container.mainContext.fetch(FetchDescriptor<SyncTombstone>())
+    let tombstone = try #require(tombstones.first)
+    #expect(!tombstone.isPushed)
+
+    tombstone.isPushed = true
+    try fixture.container.mainContext.save()
+    let entries = try fixture.container.mainContext.fetch(FetchDescriptor<SyncOutboxEntry>())
+    for entry in entries { fixture.container.mainContext.delete(entry) }
+    try fixture.container.mainContext.save()
+
+    journal.enqueueAll()
+    let requeued = try fixture.container.mainContext.fetch(FetchDescriptor<SyncOutboxEntry>())
+    #expect(requeued.isEmpty)
+}
+
 // MARK: - Utilities
 
 @Test

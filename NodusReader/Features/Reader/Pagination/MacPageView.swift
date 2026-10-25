@@ -179,13 +179,16 @@ struct MacPageView: NSViewRepresentable {
     }
 
     func updateNSView(_ container: ReaderMacPageContainer, context: Context) {
+        let styleChanged = container.style != style
         container.style = style
         container.layer?.backgroundColor = style.background.cgColor
         container.textView.page = page
         container.textView.onWordTap = onWordTap
         container.textView.onHighlight = onHighlight
         container.textView.onNote = onNote
-        if container.textView.string != page.attributed.string {
+        // A theme change keeps the same characters but changes their colours,
+        // so comparing only the plain string would leave stale text colours.
+        if styleChanged || container.textView.string != page.attributed.string {
             container.textView.textStorage?.setAttributedString(page.attributed)
         }
         container.overlay.spans = highlights.spans.compactMap { span in
@@ -205,9 +208,9 @@ struct MacPageSpread: View {
     @Binding var pageIndex: Int
     var style: ReaderPageStyle
     var highlightsProvider: (ReaderPage) -> ReaderPageHighlights
-    var onWordTap: (Int) -> Void
-    var onHighlight: (NSRange, AnnotationColor) -> Void
-    var onNote: (NSRange) -> Void
+    var onWordTap: (Int, Int) -> Void
+    var onHighlight: (Int, NSRange, AnnotationColor) -> Void
+    var onNote: (Int, NSRange) -> Void
 
     private var firstVisibleIndex: Int {
         // On an odd final page, pair it with the previous page so the spread
@@ -223,9 +226,14 @@ struct MacPageSpread: View {
             ForEach(0..<2, id: \.self) { offset in
                 let index = firstVisibleIndex + offset
                 if pages.indices.contains(index) {
-                    MacPageView(page: pages[index], style: style,
-                                highlights: highlightsProvider(pages[index]),
-                                onWordTap: onWordTap, onHighlight: onHighlight, onNote: onNote)
+                    let page = pages[index]
+                    MacPageView(page: page, style: style,
+                                highlights: highlightsProvider(page),
+                                onWordTap: { offset in onWordTap(page.chapterIndex, offset) },
+                                onHighlight: { range, color in
+                                    onHighlight(page.chapterIndex, range, color)
+                                },
+                                onNote: { range in onNote(page.chapterIndex, range) })
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     Color(nsColor: style.background)

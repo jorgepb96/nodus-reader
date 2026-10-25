@@ -34,9 +34,9 @@ struct PaginatedReaderContent: View {
     let narrationWordRange: NSRange?
     let columns: Int
     let followNarration: Bool
-    var onWordTap: (Int) -> Void
-    var onHighlight: (NSRange, AnnotationColor) -> Void
-    var onNote: (NSRange) -> Void
+    var onWordTap: (Int, Int) -> Void
+    var onHighlight: (Int, NSRange, AnnotationColor) -> Void
+    var onNote: (Int, NSRange) -> Void
 
     @Binding var pageIndex: Int
     @Binding var pageInfo: ReaderPageInfo
@@ -126,8 +126,12 @@ struct PaginatedReaderContent: View {
         await Task.yield()
 
         let previousChapter = pageInfo.chapterIndex
+        let previousPagesInChapter = pageInfo.pagesInChapter
         let previousPageInChapter = pageInfo.pageIndexInChapter
         let hadPages = !pages.isEmpty
+        let previousFraction = previousPagesInChapter > 1
+            ? Double(previousPageInChapter) / Double(previousPagesInChapter - 1)
+            : 0
 
         let paginated = TextPaginator.paginate(chapters: chapters, style: style, pageSize: size)
         guard !paginated.pages.isEmpty else {
@@ -138,8 +142,7 @@ struct PaginatedReaderContent: View {
         }
 
         let targetChapter = hadPages ? previousChapter : initialChapterIndex
-        let targetPageInChapter = hadPages ? previousPageInChapter
-            : Int((max(0, min(initialFraction, 1)) * Double(max(1, pagesInChapter(paginated, chapter: initialChapterIndex)) - 1)).rounded())
+        let targetFraction = hadPages ? previousFraction : max(0, min(initialFraction, 1))
 
         pages = paginated.pages
         readerPages = paginated.pages
@@ -151,8 +154,9 @@ struct PaginatedReaderContent: View {
         let chapter = min(max(targetChapter, 0), max(chapters.count - 1, 0))
         let start = paginated.firstPageByChapter[chapter] ?? 0
         let chapterPages = pages.filter { $0.chapterIndex == chapter }.count
-        let offset = min(max(targetPageInChapter, 0), max(chapterPages - 1, 0))
-        pageIndex = min(start + offset, pages.count - 1)
+        let offset = Int((targetFraction * Double(max(chapterPages - 1, 0))).rounded())
+        let clampedOffset = min(max(offset, 0), max(chapterPages - 1, 0))
+        pageIndex = min(start + clampedOffset, pages.count - 1)
         isBuilding = false
         updatePageInfo()
         followNarrationIfNeeded()

@@ -32,7 +32,7 @@ struct StorageSettingsView: View {
     }
 
     private var downloadedCount: Int {
-        books.filter { $0.downloadState != .cloudOnly }.count
+        books.filter { $0.downloadState == .downloaded }.count
     }
 
     var body: some View {

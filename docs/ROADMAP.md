@@ -65,7 +65,7 @@ limitations.
 
 ### Verification
 
-- [x] 16 unit/integration tests, including word alignment, language-aware voice
+- [x] 20 unit/integration tests, including word alignment, language-aware voice
       selection and the durable sync outbox.
 - [x] 9 UI tests covering the phone screens, reader, page turn, bookmarks, PDF
       Intelligent Reading, system/neural narration, the book-language voice filter and

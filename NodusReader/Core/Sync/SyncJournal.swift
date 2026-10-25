@@ -26,7 +26,10 @@ final class SyncJournal {
             object: context,
             queue: .main
         ) { [weak self] notification in
-            Task { @MainActor [weak self] in
+            // `ModelContext.didSave` is posted synchronously while
+            // `withSuspendedRecording` is active. Deferring to a Task made the
+            // suspension flag already false and re-enqueued every remote change.
+            MainActor.assumeIsolated {
                 self?.handle(notification)
             }
         }
@@ -36,18 +39,21 @@ final class SyncJournal {
         if let observer { NotificationCenter.default.removeObserver(observer) }
     }
 
-    func withSuspendedRecording(_ body: () -> Void) {
+    func withSuspendedRecording<T>(_ body: () throws -> T) rethrows -> T {
         let previous = isSuspended
         isSuspended = true
-        body()
-        isSuspended = previous
+        defer { isSuspended = previous }
+        return try body()
     }
 
     func recordDelete(_ type: SyncEntityType, id: UUID, payloadJSON: String = "") {
         enqueue(type: type, id: id, operation: .delete, payloadJSON: payloadJSON)
         let descriptors = FetchDescriptor<SyncTombstone>()
         let tombstones = (try? context.fetch(descriptors)) ?? []
-        if !tombstones.contains(where: { $0.entityType == type && $0.entityID == id }) {
+        if let existing = tombstones.first(where: { $0.entityType == type && $0.entityID == id }) {
+            existing.deletedAt = Date()
+            existing.isPushed = false
+        } else {
             context.insert(SyncTombstone(entityType: type, entityID: id))
         }
         persistJournal()
@@ -65,7 +71,7 @@ final class SyncJournal {
         for bookmark in bookmarks { enqueue(type: .bookmark, id: bookmark.id, operation: .upsert) }
         for annotation in annotations { enqueue(type: .annotation, id: annotation.id, operation: .upsert) }
         let tombstones = (try? context.fetch(FetchDescriptor<SyncTombstone>())) ?? []
-        for tombstone in tombstones {
+        for tombstone in tombstones where !tombstone.isPushed {
             enqueue(type: tombstone.entityType, id: tombstone.entityID, operation: .delete)
         }
         persistJournal()

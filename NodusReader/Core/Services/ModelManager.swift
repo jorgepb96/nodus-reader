@@ -5,6 +5,10 @@ import Observation
 import PhononTTS
 import Security
 
+extension Notification.Name {
+    static let nodusVoiceEngineChanged = Notification.Name("nodus.voiceEngineChanged")
+}
+
 /// Device-local management of the optional neural narration engines.
 ///
 /// Weight files are downloaded on request into Application Support, are excluded
@@ -93,6 +97,9 @@ final class ModelManager {
     private let audioCache: NarrationAudioCache
     private let defaults: UserDefaults
     private var installTasks: [String: Task<Void, Never>] = [:]
+    private var installTokens: [String: UUID] = [:]
+    @ObservationIgnored private var engineLoadTask: Task<Void, Never>?
+    @ObservationIgnored private var engineLoadToken = UUID()
 
     @ObservationIgnored private var kokoro: KokoroTTS?
     @ObservationIgnored private var phonon: Phonon?
@@ -204,6 +211,9 @@ final class ModelManager {
     /// Selecting a model also makes its first voice the default; the system
     /// option restores the best installed system voice.
     func selectModel(_ id: String) {
+        engineLoadTask?.cancel()
+        engineLoadTask = nil
+        engineLoadToken = UUID()
         if id == Self.systemModelID {
             selectedModelID = id
             defaults.set(id, forKey: "nodus.models.selected")
@@ -211,6 +221,7 @@ final class ModelManager {
             if let system = voices.bestSystemVoice {
                 voices.setDefault(system)
             }
+            NotificationCenter.default.post(name: .nodusVoiceEngineChanged, object: nil)
             return
         }
         guard let model = models.first(where: { $0.id == id }),
@@ -222,6 +233,7 @@ final class ModelManager {
         if let first = voices.voice(withID: model.voices.first?.id) {
             voices.setDefault(first)
         }
+        NotificationCenter.default.post(name: .nodusVoiceEngineChanged, object: nil)
     }
 
     func selectModel(_ model: Model) {
@@ -286,9 +298,11 @@ final class ModelManager {
         guard installTasks[model.id] == nil else { return }
         states[model.id] = .downloading(0)
         errorMessage = nil
+        let token = UUID()
+        installTokens[model.id] = token
         let task = Task { [weak self] in
             guard let self else { return }
-            await self.performInstall(model)
+            await self.performInstall(model, token: token)
         }
         installTasks[model.id] = task
     }
@@ -297,6 +311,7 @@ final class ModelManager {
         guard case .downloading(let progress) = state(for: model) else { return }
         installTasks[model.id]?.cancel()
         installTasks[model.id] = nil
+        installTokens[model.id] = nil
         states[model.id] = .paused(progress)
     }
 
@@ -306,8 +321,12 @@ final class ModelManager {
     }
 
     func delete(_ model: Model) {
+        engineLoadTask?.cancel()
+        engineLoadTask = nil
+        engineLoadToken = UUID()
         installTasks[model.id]?.cancel()
         installTasks[model.id] = nil
+        installTokens[model.id] = nil
         switch model.engine {
         case .kokoro:
             kokoro = nil
@@ -323,10 +342,12 @@ final class ModelManager {
            voices.defaultVoice?.isSystem != true {
             voices.setDefault(system)
         }
+        NotificationCenter.default.post(name: .nodusVoiceEngineChanged, object: nil)
         Task { await refreshStorage() }
     }
 
-    private func performInstall(_ model: Model) async {
+    private func performInstall(_ model: Model, token: UUID) async {
+        guard installTokens[model.id] == token else { return }
         states[model.id] = .downloading(0)
         do {
             switch model.engine {
@@ -336,7 +357,8 @@ final class ModelManager {
                 ) { [weak self] progress in
                     guard progress.phase == .downloading else { return }
                     Task { @MainActor [weak self] in
-                        self?.states[model.id] = .downloading(progress.fraction)
+                        guard let self, self.installTokens[model.id] == token else { return }
+                        self.states[model.id] = .downloading(progress.fraction)
                     }
                 }
                 try Task.checkCancellation()
@@ -352,26 +374,33 @@ final class ModelManager {
                     to: Self.phononDirectory
                 ) { [weak self] fraction in
                     Task { @MainActor [weak self] in
-                        self?.states[model.id] = .downloading(fraction)
+                        guard let self, self.installTokens[model.id] == token else { return }
+                        self.states[model.id] = .downloading(fraction)
                     }
                 }
                 try Task.checkCancellation()
                 states[model.id] = .loading
                 phonon = try await Phonon.load(models: directory, language: .english)
             }
+            guard installTokens[model.id] == token else { return }
             states[model.id] = .installed
             installTasks[model.id] = nil
+            installTokens[model.id] = nil
             publishVoices()
             await refreshStorage()
         } catch is CancellationError {
+            guard installTokens[model.id] == token else { return }
             if states[model.id]?.isBusy == true {
                 states[model.id] = .paused(progressValue(for: model))
             }
             installTasks[model.id] = nil
+            installTokens[model.id] = nil
         } catch {
+            guard installTokens[model.id] == token else { return }
             states[model.id] = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             installTasks[model.id] = nil
+            installTokens[model.id] = nil
             await refreshStorage()
         }
     }
@@ -392,27 +421,57 @@ final class ModelManager {
     /// Lazily loads an installed engine when the app starts after a previous
     /// install, so playback can use it without visiting the Models screen.
     func loadInstalledEnginesIfNeeded() async {
-        #if !targetEnvironment(simulator)
-        if kokoro == nil, let kokoroModel = models.first(where: { $0.id == "kokoro-82m" }),
-           isInstalled(kokoroModel) {
+        if let existing = engineLoadTask {
+            await existing.value
+            return
+        }
+        let token = UUID()
+        engineLoadToken = token
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.loadSelectedEngineIfNeeded(token: token)
+        }
+        engineLoadTask = task
+        await task.value
+        if engineLoadToken == token { engineLoadTask = nil }
+    }
+
+    private func loadSelectedEngineIfNeeded(token: UUID) async {
+        guard let model = selectedModel, isInstalled(model) else {
+            validateSelection()
+            publishVoices()
+            return
+        }
+        switch model.engine {
+        case .kokoro:
+            #if !targetEnvironment(simulator)
+            guard kokoro == nil else { return }
             do {
-                let resources = try await KokoroResourceProvider.huggingFace(
-                    cacheDirectory: Self.kokoroCacheDirectory
-                )
-                kokoro = try await KokoroTTS.load(resources: resources)
+                // Load the already-verified local bundle. The hosted provider
+                // would fetch HostedManifest.json on every launch, breaking
+                // offline narration and adding a network request per start.
+                let resources = KokoroResourceProvider.directory(Self.kokoroCacheDirectory)
+                let loaded = try await KokoroTTS.load(resources: resources)
+                guard token == engineLoadToken, selectedModelID == model.id else { return }
+                kokoro = loaded
+                states[model.id] = .installed
             } catch {
-                states["kokoro-82m"] = .failed(
+                guard token == engineLoadToken, selectedModelID == model.id else { return }
+                states[model.id] = .failed(
                     (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 )
             }
-        }
-        #endif
-        if phonon == nil, let phononModel = models.first(where: { $0.id == "phonon-31m-en" }),
-           isInstalled(phononModel) {
+            #endif
+        case .phonon:
+            guard phonon == nil else { return }
             do {
-                phonon = try await Phonon.load(models: Self.phononDirectory, language: .english)
+                let loaded = try await Phonon.load(models: Self.phononDirectory, language: .english)
+                guard token == engineLoadToken, selectedModelID == model.id else { return }
+                phonon = loaded
+                states[model.id] = .installed
             } catch {
-                states["phonon-31m-en"] = .failed(
+                guard token == engineLoadToken, selectedModelID == model.id else { return }
+                states[model.id] = .failed(
                     (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 )
             }

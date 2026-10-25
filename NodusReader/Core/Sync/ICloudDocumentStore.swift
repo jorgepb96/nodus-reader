@@ -59,6 +59,7 @@ final class ICloudDocumentStore {
         if fileManager.fileExists(atPath: remote.path) { return remote }
 
         let fileName = book.fileName
+        let expectedDirectory = remote.deletingLastPathComponent().standardizedFileURL.path
         let query = NSMetadataQuery()
         query.searchScopes = [root]
         query.predicate = NSPredicate(format: "%K == %@", NSMetadataItemFSNameKey, fileName)
@@ -83,7 +84,8 @@ final class ICloudDocumentStore {
                     guard let item = query.result(at: index) as? NSMetadataItem,
                           let path = item.value(forAttribute: NSMetadataItemPathKey) as? String else { continue }
                     let url = URL(fileURLWithPath: path)
-                    if url.lastPathComponent == fileName {
+                    let parent = url.deletingLastPathComponent().standardizedFileURL.path
+                    if url.lastPathComponent == fileName, parent == expectedDirectory {
                         found = url
                         break
                     }
@@ -159,6 +161,11 @@ final class ICloudDocumentStore {
             try fileManager.removeItem(at: local)
         }
         try fileManager.copyItem(at: remote, to: local)
+        let copiedSize = FileStore.fileSize(at: local)
+        if book.fileSize > 0, copiedSize != book.fileSize {
+            try? fileManager.removeItem(at: local)
+            throw SyncFileError.sizeMismatch
+        }
 
         if let remoteCover = remoteCoverURL(for: book.id),
            fileManager.fileExists(atPath: remoteCover.path) {
@@ -175,7 +182,6 @@ final class ICloudDocumentStore {
               let data = try? Data(contentsOf: remote),
               let name = try? fileStore.writeCover(data, bookID: book.id) else { return }
         book.coverFileName = name
-        book.touch()
     }
 
     func deleteRemoteFiles(for book: Book) {
@@ -206,6 +212,7 @@ final class ICloudDocumentStore {
 enum SyncFileError: LocalizedError {
     case notInICloud
     case downloadTimedOut
+    case sizeMismatch
 
     var errorDescription: String? {
         switch self {
@@ -213,6 +220,8 @@ enum SyncFileError: LocalizedError {
             "The document is not available in iCloud yet."
         case .downloadTimedOut:
             "The iCloud download took too long. Check your connection and try again."
+        case .sizeMismatch:
+            "The downloaded document does not match the library metadata. Try downloading it again."
         }
     }
 }

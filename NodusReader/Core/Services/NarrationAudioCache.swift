@@ -12,7 +12,7 @@ struct NarrationWordTiming: Codable, Sendable, Equatable {
     var end: TimeInterval
 }
 
-struct CachedNarration: Sendable {
+struct CachedNarration: @unchecked Sendable {
     var buffer: AVAudioPCMBuffer
     var words: [NarrationWordTiming]
     var duration: TimeInterval
@@ -38,7 +38,7 @@ actor NarrationAudioCache {
     }
 
     nonisolated func key(text: String, engine: String, voice: String) -> String {
-        let digest = SHA256.hash(data: Data("\(engine)|\(voice)|\(text)".utf8))
+        let digest = SHA256.hash(data: Data("v2|\(engine)|\(voice)|\(text)".utf8))
         return digest.map { String(format: "%02x", $0) }.joined()
     }
 
@@ -78,23 +78,44 @@ actor NarrationAudioCache {
         try? mutable.setResourceValues(values)
 
         let audioURL = directory.appendingPathComponent("\(key).caf")
+        let metaURL = directory.appendingPathComponent("\(key).json")
+        let temporaryAudio = directory.appendingPathComponent("\(key).tmp.caf")
+        let temporaryMeta = directory.appendingPathComponent("\(key).tmp.json")
         do {
-            let file = try AVAudioFile(forWriting: audioURL,
+            try? fileManager.removeItem(at: temporaryAudio)
+            let file = try AVAudioFile(forWriting: temporaryAudio,
                                        settings: buffer.format.settings,
                                        commonFormat: .pcmFormatFloat32,
                                        interleaved: false)
             try file.write(from: buffer)
+            // AVAudioFile closes when this scope ends, before the rename.
         } catch {
+            try? fileManager.removeItem(at: temporaryAudio)
             return 0
         }
         let duration = Double(buffer.frameLength) / max(buffer.format.sampleRate, 1)
         let meta = Meta(duration: duration, words: words)
-        if let data = try? JSONEncoder().encode(meta) {
-            try? data.write(to: directory.appendingPathComponent("\(key).json"), options: .atomic)
+        guard let data = try? JSONEncoder().encode(meta) else {
+            try? fileManager.removeItem(at: temporaryAudio)
+            return 0
+        }
+        do {
+            try data.write(to: temporaryMeta, options: .atomic)
+            if fileManager.fileExists(atPath: audioURL.path) {
+                try fileManager.removeItem(at: audioURL)
+            }
+            try fileManager.moveItem(at: temporaryAudio, to: audioURL)
+            if fileManager.fileExists(atPath: metaURL.path) {
+                try fileManager.removeItem(at: metaURL)
+            }
+            try fileManager.moveItem(at: temporaryMeta, to: metaURL)
+        } catch {
+            try? fileManager.removeItem(at: temporaryAudio)
+            try? fileManager.removeItem(at: temporaryMeta)
+            return 0
         }
         let audioSize = (try? audioURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-        let metaSize = (try? directory.appendingPathComponent("\(key).json")
-            .resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        let metaSize = (try? metaURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
         return Int64(audioSize + metaSize)
     }
 

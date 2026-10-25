@@ -36,10 +36,13 @@ struct ReaderPage: Identifiable, Equatable {
     }
 
     func localRange(forChapterRange range: NSRange) -> NSRange? {
-        let start = range.location + prefixLength - fullRange.location
-        let end = start + range.length
-        guard end > start, start >= 0, end <= attributed.length else { return nil }
-        return NSRange(location: start, length: range.length)
+        let clippedStart = max(range.location, chapterStartOffset)
+        let clippedEnd = min(NSMaxRange(range), chapterEndOffset)
+        guard clippedEnd > clippedStart else { return nil }
+        let start = clippedStart + prefixLength - fullRange.location
+        let length = clippedEnd - clippedStart
+        guard start >= 0, start + length <= attributed.length else { return nil }
+        return NSRange(location: start, length: length)
     }
 }
 

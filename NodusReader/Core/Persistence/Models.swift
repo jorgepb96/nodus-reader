@@ -577,12 +577,16 @@ public final class SyncTombstone {
     public var entityTypeRaw: String = SyncEntityType.book.rawValue
     public var entityID: UUID = UUID()
     public var deletedAt: Date = Date()
+    /// False until the tombstone has been accepted by CloudKit. Kept locally so
+    /// re-enabling sync does not resurrect and re-delete historical items.
+    public var isPushed: Bool = false
 
     public init(id: UUID = UUID(), entityType: SyncEntityType, entityID: UUID) {
         self.id = id
         self.entityTypeRaw = entityType.rawValue
         self.entityID = entityID
         self.deletedAt = Date()
+        self.isPushed = false
     }
 
     public var entityType: SyncEntityType {

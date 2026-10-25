@@ -49,17 +49,36 @@ public final class FileStore: @unchecked Sendable {
         }
     }
 
+    /// Resolves a persisted relative path defensively. Only paths inside the
+    /// app's `Library` directory are accepted; a malformed remote record must
+    /// never be able to point deletion at the app container or outside it.
     public func documentURL(for relativePath: String) -> URL {
-        root.appendingPathComponent(relativePath)
+        let candidate = root.appendingPathComponent(relativePath).standardizedFileURL
+        let base = libraryDirectory.standardizedFileURL
+        guard !relativePath.isEmpty,
+              !relativePath.hasPrefix("/"),
+              !relativePath.contains(".."),
+              candidate.path.hasPrefix(base.path + "/") else {
+            return libraryDirectory.appendingPathComponent(".invalid-path")
+        }
+        return candidate
     }
 
+    /// Canonical on-disk location for a book. `relativePath` is synchronized
+    /// data, so the live URL is derived from the stable ID and sanitized file
+    /// name instead of trusting the stored path.
     public func documentURL(for book: Book) -> URL {
-        documentURL(for: book.relativePath)
+        let name = Self.sanitizedFileName(book.fileName)
+        return libraryDirectory
+            .appendingPathComponent(book.id.uuidString, isDirectory: true)
+            .appendingPathComponent(name)
     }
 
     public func coverURL(for fileName: String?) -> URL? {
         guard let fileName, !fileName.isEmpty else { return nil }
-        return coversDirectory.appendingPathComponent(fileName)
+        let safe = Self.sanitizedFileName(fileName)
+        guard safe != ".", safe != ".." else { return nil }
+        return coversDirectory.appendingPathComponent(safe)
     }
 
     public func coverForBook(_ book: Book) -> URL? {
@@ -100,19 +119,25 @@ public final class FileStore: @unchecked Sendable {
     }
 
     public func removeBookFiles(_ book: Book) {
-        let document = documentURL(for: book)
-        try? fileManager.removeItem(at: document.deletingLastPathComponent())
+        let folder = libraryDirectory.appendingPathComponent(book.id.uuidString, isDirectory: true)
+        if folder.lastPathComponent == book.id.uuidString {
+            try? fileManager.removeItem(at: folder)
+        }
         if let cover = coverURL(for: book.coverFileName) {
             try? fileManager.removeItem(at: cover)
         }
+        let reflow = root.appendingPathComponent("Reflow", isDirectory: true)
+            .appendingPathComponent(book.id.uuidString, isDirectory: true)
+        try? fileManager.removeItem(at: reflow)
     }
 
     /// Removes only the document copy (the "Remove Download" path once iCloud
     /// sync exists). Metadata and annotations stay in the local database.
     public func removeDocument(_ book: Book) throws {
-        let document = documentURL(for: book)
-        guard fileManager.fileExists(atPath: document.path) else { return }
-        try fileManager.removeItem(at: document.deletingLastPathComponent())
+        let folder = libraryDirectory.appendingPathComponent(book.id.uuidString, isDirectory: true)
+        guard folder.lastPathComponent == book.id.uuidString,
+              fileManager.fileExists(atPath: folder.path) else { return }
+        try fileManager.removeItem(at: folder)
     }
 
     public func cleanTemporaryFiles(olderThan interval: TimeInterval = 60 * 60 * 24) {
@@ -152,8 +177,10 @@ public final class FileStore: @unchecked Sendable {
         let cleaned = last
             .replacingOccurrences(of: ":", with: "-")
             .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: "\\", with: "-")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        return cleaned.isEmpty ? "Document" : cleaned
+        guard !cleaned.isEmpty, cleaned != ".", cleaned != ".." else { return "Document" }
+        return cleaned
     }
 
     public static func fileSize(at url: URL) -> Int64 {

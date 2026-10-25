@@ -63,7 +63,7 @@ struct MacPlayerBar: View {
             HStack(spacing: 8) {
                 Menu {
                     ForEach(PlaybackController.speedOptions, id: \.self) { speed in
-                        Button(String(format: "%.2g×", speed)) { playback.setSpeed(speed) }
+                        Button(String(format: "%g×", speed)) { playback.setSpeed(speed) }
                     }
                 } label: {
                     chip(playback.speedLabel)

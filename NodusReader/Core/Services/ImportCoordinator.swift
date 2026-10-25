@@ -98,6 +98,7 @@ public final class ImportCoordinator {
         }
 
         var imported = 0
+        var duplicates = 0
         var failures: [ImportFailure] = []
         for (index, item) in pending.enumerated() {
             progress = ImportProgress(current: index + 1, total: pending.count, fileName: item.fileName)
@@ -108,9 +109,14 @@ public final class ImportCoordinator {
             let result = await library.importFiles([url], into: item.collectionID) { [weak self] update in
                 self?.progress = update
             }
-            imported += result.imported.count + result.duplicates.count
+            imported += result.imported.count
+            duplicates += result.duplicates.count
             failures.append(contentsOf: result.failures)
-            SharedImportInbox.remove(item, root: root)
+            // Keep a failed payload so the user can retry; the shared copy is
+            // often the only source for a link or pasted text.
+            if result.failures.isEmpty {
+                SharedImportInbox.remove(item, root: root)
+            }
         }
 
         if !failures.isEmpty {
@@ -119,7 +125,10 @@ public final class ImportCoordinator {
                 message: failures.map { "\($0.fileName): \($0.message)" }.joined(separator: "\n")
             )
         } else if imported > 0 {
-            show(toast: imported == 1 ? "1 shared document imported" : "\(imported) shared documents imported")
+            let count = imported == 1 ? "1 shared document imported" : "\(imported) shared documents imported"
+            show(toast: duplicates > 0 ? "\(count) · \(duplicates) already present" : count)
+        } else if duplicates > 0 {
+            show(toast: duplicates == 1 ? "That document is already in your library" : "Those documents are already in your library")
         }
     }
 

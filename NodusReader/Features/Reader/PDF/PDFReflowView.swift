@@ -341,23 +341,31 @@ struct PDFReflowView: View {
         let contentHash = book.contentHash
         let store = self.store
         let url = self.url
-        do {
-            let document = try await Task.detached(priority: .userInitiated) {
-                try PDFReflowExtractor.extract(
-                    url: url,
-                    bookID: bookID,
-                    contentHash: contentHash,
-                    store: store
-                ) { fraction in
-                    Task { @MainActor in
-                        job.progress = fraction
-                    }
+        let work = Task.detached(priority: .userInitiated) {
+            try PDFReflowExtractor.extract(
+                url: url,
+                bookID: bookID,
+                contentHash: contentHash,
+                store: store
+            ) { fraction in
+                Task { @MainActor in
+                    job.progress = fraction
                 }
-            }.value
+            }
+        }
+        do {
+            let document = try await withTaskCancellationHandler {
+                try await work.value
+            } onCancel: {
+                work.cancel()
+            }
             job.document = document
             job.progress = 1
         } catch {
-            job.errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            if !Task.isCancelled {
+                job.errorMessage = (error as? LocalizedError)?.errorDescription
+                    ?? error.localizedDescription
+            }
         }
         job.isWorking = false
     }
@@ -406,8 +414,9 @@ struct PDFSourcePanel: View {
                     }
                     if let page {
                         GeometryReader { proxy in
+                            let fitted = fittedPageRect(page: page, in: proxy.size)
                             ForEach(page.regions) { region in
-                                regionOverlay(region, size: proxy.size)
+                                regionOverlay(region, fittedRect: fitted)
                             }
                         }
                     }
@@ -473,11 +482,29 @@ struct PDFSourcePanel: View {
         #endif
     }
 
-    private func regionOverlay(_ region: PDFReflowRegion, size: CGSize) -> some View {
-        let rect = CGRect(x: region.rect.minX * size.width,
-                          y: region.rect.minY * size.height,
-                          width: region.rect.width * size.width,
-                          height: region.rect.height * size.height)
+    private func fittedPageRect(page: PDFReflowPage, in size: CGSize) -> CGRect {
+        guard page.width > 1, page.height > 1 else {
+            return CGRect(origin: .zero, size: size)
+        }
+        let pageAspect = page.width / page.height
+        let boxAspect = size.width / max(size.height, 1)
+        let fitted: CGSize
+        if pageAspect > boxAspect {
+            fitted = CGSize(width: size.width, height: size.width / pageAspect)
+        } else {
+            fitted = CGSize(width: size.height * pageAspect, height: size.height)
+        }
+        return CGRect(x: (size.width - fitted.width) / 2,
+                      y: (size.height - fitted.height) / 2,
+                      width: fitted.width,
+                      height: fitted.height)
+    }
+
+    private func regionOverlay(_ region: PDFReflowRegion, fittedRect: CGRect) -> some View {
+        let rect = CGRect(x: fittedRect.minX + region.rect.minX * fittedRect.width,
+                          y: fittedRect.minY + region.rect.minY * fittedRect.height,
+                          width: region.rect.width * fittedRect.width,
+                          height: region.rect.height * fittedRect.height)
         let color: Color = switch region.kind {
         case .text: Color(hex: 0xC4B5FD)
         case .heading: Color(hex: 0x7C3AED)
@@ -502,12 +529,14 @@ struct PDFSourcePanel: View {
 
     private func loadImage() async {
         isLoading = true
+        image = nil
         let index = min(max(pageIndex, 0), document.totalPageCount - 1)
-        let image = await Task.detached(priority: .userInitiated) { () -> PlatformImage? in
+        let rendered = await Task.detached(priority: .userInitiated) { () -> PlatformImage? in
             guard let pdf = PDFDocument(url: url), let page = pdf.page(at: index) else { return nil }
             return page.thumbnail(of: CGSize(width: 900, height: 1200), for: .cropBox)
         }.value
-        self.image = image
+        guard !Task.isCancelled else { return }
+        self.image = rendered
         isLoading = false
     }
 }
@@ -518,6 +547,7 @@ struct ReflowImage: View {
     let url: URL
     let theme: ReaderTheme
     @State private var image: PlatformImage?
+    @State private var failed = false
 
     var body: some View {
         Group {
@@ -525,6 +555,15 @@ struct ReflowImage: View {
                 Image(platformImage: image)
                     .resizable()
                     .scaledToFit()
+            } else if failed {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(theme.panelFallback)
+                    .frame(height: 120)
+                    .overlay(
+                        Label("Image unavailable", systemImage: "photo.badge.exclamationmark")
+                            .font(.caption)
+                            .foregroundStyle(theme.muted)
+                    )
             } else {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(theme.panelFallback)
@@ -533,8 +572,16 @@ struct ReflowImage: View {
             }
         }
         .task(id: url) {
-            guard let data = await Task.detached(priority: .userInitiated, operation: { try? Data(contentsOf: url) }).value,
-                  let platform = PlatformImage(data: data) else { return }
+            failed = false
+            image = nil
+            let data = await Task.detached(priority: .userInitiated, operation: {
+                try? Data(contentsOf: url)
+            }).value
+            guard !Task.isCancelled else { return }
+            guard let data, let platform = PlatformImage(data: data) else {
+                failed = true
+                return
+            }
             image = platform
         }
     }
