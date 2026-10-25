@@ -14,9 +14,9 @@ public enum PageTurnStyle: String, CaseIterable, Codable, Identifiable, Sendable
 
     public var label: String {
         switch self {
-        case .curl: "Page curl"
-        case .slide: "Slide"
-        case .vertical: "Vertical"
+        case .curl: String(localized: "Page curl")
+        case .slide: String(localized: "Slide")
+        case .vertical: String(localized: "Vertical")
         }
     }
 }
@@ -32,17 +32,17 @@ public enum ReadingFlow: String, CaseIterable, Codable, Identifiable, Sendable {
 
     public var label: String {
         switch self {
-        case .paged: "Paged"
-        case .scrollVertical: "Scroll down"
-        case .scrollHorizontal: "Scroll across"
+        case .paged: String(localized: "Paged")
+        case .scrollVertical: String(localized: "Scroll down")
+        case .scrollHorizontal: String(localized: "Scroll across")
         }
     }
 
     public var accessibilityLabel: String {
         switch self {
         case .paged: "Paged"
-        case .scrollVertical: "Continuous vertical scroll"
-        case .scrollHorizontal: "Continuous horizontal scroll"
+        case .scrollVertical: String(localized: "Continuous vertical scroll")
+        case .scrollHorizontal: String(localized: "Continuous horizontal scroll")
         }
     }
 
@@ -85,7 +85,7 @@ public struct ReaderTypography: Codable, Equatable, Sendable {
     }
 
     public var summary: String {
-        "\(useSerif ? "Serif" : "Sans") · \(Int(baseFontSize.rounded())) pt"
+        "\(useSerif ? String(localized: "Serif") : String(localized: "Sans")) · \(Int(baseFontSize.rounded())) pt"
     }
 
     // Tolerate payloads written before a field existed (synced books).

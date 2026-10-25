@@ -46,7 +46,7 @@ struct RootView: View {
                 case .success(let urls):
                     Task { await imports.importFiles(urls) }
                 case .failure(let error):
-                    imports.alert = LibraryAlert(title: "Import failed", message: error.localizedDescription)
+                    imports.alert = LibraryAlert(title: String(localized: "Import failed"), message: error.localizedDescription)
                 }
             }
             .alert(item: $imports.alert) { alert in

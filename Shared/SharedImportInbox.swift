@@ -160,7 +160,7 @@ enum SharedInboxError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .appGroupUnavailable:
-            "Nodus Reader's shared container is not available. Open the app once and check the App Group entitlement."
+            String(localized: "Nodus Reader's shared container is not available. Open the app once and check the App Group entitlement.")
         case .unreadableItem(let name):
             "“\(name)” could not be read."
         case .unsupported(let name):

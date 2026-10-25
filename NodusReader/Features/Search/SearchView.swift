@@ -43,7 +43,7 @@ struct SearchView: View {
                 if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     emptyPrompt
                 } else {
-                    Text("\(results.count) \(results.count == 1 ? "result" : "results")")
+                    Text(results.count == 1 ? "1 result" : "\(results.count) results")
                         .font(.caption)
                         .foregroundStyle(palette.muted)
                         .padding(.horizontal, 20)
@@ -121,7 +121,7 @@ struct SearchView: View {
         .padding(.horizontal, 20)
     }
 
-    private func searchHint(_ icon: String, _ text: String) -> some View {
+    private func searchHint(_ icon: String, _ text: LocalizedStringKey) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .foregroundStyle(palette.accent)

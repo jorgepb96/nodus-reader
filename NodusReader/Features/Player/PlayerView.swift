@@ -68,7 +68,7 @@ struct PlayerView: View {
                 ProgressView(value: playback.audioCacheProgress ?? 0)
                     .tint(palette.accent)
                 HStack {
-                    Text("Generating every sentence with \(playback.activeVoice?.name ?? "this voice")…")
+                    Text("Generating every sentence with \(playback.activeVoice?.name ?? String(localized: "this voice"))…")
                         .font(.system(size: 10))
                         .foregroundStyle(palette.muted)
                     Spacer()
@@ -192,7 +192,7 @@ struct PlayerView: View {
             .padding(.top, 8)
 
             VStack(spacing: 4) {
-                Text(playback.activeBook?.title ?? "Nothing playing")
+                Text(playback.activeBook?.title ?? String(localized: "Nothing playing"))
                     .font(.system(size: 26, design: .serif))
                     .tracking(-0.3)
                     .foregroundStyle(palette.text)
@@ -213,9 +213,9 @@ struct PlayerView: View {
 
     private var playbackTopLabel: String {
         switch playback.mode {
-        case .listen: playback.isPlaying ? "LISTENING" : "LISTEN"
-        case .readAndListen: "READ & LISTEN"
-        case .read: "READING"
+        case .listen: playback.isPlaying ? String(localized: "LISTENING") : String(localized: "LISTEN")
+        case .readAndListen: String(localized: "READ & LISTEN")
+        case .read: String(localized: "READING")
         }
     }
 
@@ -328,7 +328,7 @@ struct PlayerView: View {
                 }
             }
         } label: {
-            controlTile(top: playback.speedLabel, bottom: "Speed", highlighted: false)
+            controlTile(top: playback.speedLabel, bottom: String(localized: "Speed"), highlighted: false)
         }
         .menuIndicator(.hidden)
         .accessibilityLabel("Playback speed")
@@ -338,14 +338,14 @@ struct PlayerView: View {
         Button {
             showVoicePicker = true
         } label: {
-            controlTile(top: playback.activeVoice?.name ?? "Voice",
-                        bottom: playback.preferredVoiceIsMissing ? "Install voice" : playback.engineLabel,
+            controlTile(top: playback.activeVoice?.name ?? String(localized: "Voice"),
+                        bottom: playback.preferredVoiceIsMissing ? String(localized: "Install voice") : playback.engineLabel,
                         highlighted: playback.preferredVoiceIsMissing)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Voice for this book")
         .accessibilityHint(playback.preferredVoiceIsMissing
-                           ? "The voice chosen for this book is not installed on this device"
+                           ? String(localized: "The voice chosen for this book is not installed on this device")
                            : "")
     }
 
@@ -362,7 +362,7 @@ struct PlayerView: View {
             controlTile(
                 icon: "moon",
                 top: playback.sleepRemainingLabel ?? playback.sleepTimer.shortLabel,
-                bottom: "Sleep",
+                bottom: String(localized: "Sleep"),
                 highlighted: playback.sleepTimer != .off
             )
         }
@@ -384,7 +384,7 @@ struct PlayerView: View {
             controlTile(
                 icon: "book.pages",
                 top: playback.mode.label,
-                bottom: "Mode",
+                bottom: String(localized: "Mode"),
                 highlighted: playback.mode == .readAndListen
             )
         }
@@ -567,7 +567,7 @@ struct VoicePickerSheet: View {
     }
 
     private var languageLabel: String {
-        languageFilter.map { voices.languageName(for: $0) } ?? "All languages"
+        languageFilter.map { voices.languageName(for: $0) } ?? String(localized: "All languages")
     }
 
     /// One section per language; regional variants are shown on each row.
@@ -591,7 +591,7 @@ struct VoicePickerSheet: View {
                                 VoicesView()
                                     .navigationTitle("Voices & Models")
                             } label: {
-                                Label("Install voice", systemImage: "arrow.down.circle")
+                                Label(String(localized: "Install voice"), systemImage: "arrow.down.circle")
                                     .font(.footnote.weight(.semibold))
                                     .foregroundStyle(palette.accent)
                             }
@@ -649,7 +649,7 @@ struct VoicePickerSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Menu {
-                        Button("All languages") { languageFilter = nil }
+                        Button(String(localized: "All languages")) { languageFilter = nil }
                         Divider()
                         ForEach(availableLanguages, id: \.self) { language in
                             Button(voices.languageName(for: language)) { languageFilter = language }

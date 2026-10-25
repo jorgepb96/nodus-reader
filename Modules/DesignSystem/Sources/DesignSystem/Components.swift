@@ -34,13 +34,21 @@ public struct CircleIconButton: View {
     @Environment(\.nodusPalette) private var palette
 
     private let systemName: String
-    private let label: String
+    private let label: Text
     private let filled: Bool
     private let action: () -> Void
 
-    public init(_ systemName: String, label: String, filled: Bool = false, action: @escaping () -> Void) {
+    public init(_ systemName: String, label: LocalizedStringKey, filled: Bool = false, action: @escaping () -> Void) {
         self.systemName = systemName
-        self.label = label
+        self.label = Text(label)
+        self.filled = filled
+        self.action = action
+    }
+
+    @_disfavoredOverload
+    public init<S: StringProtocol>(_ systemName: String, label: S, filled: Bool = false, action: @escaping () -> Void) {
+        self.systemName = systemName
+        self.label = Text(label)
         self.filled = filled
         self.action = action
     }
@@ -63,19 +71,26 @@ public struct CircleIconButton: View {
 public struct CapsuleChip: View {
     @Environment(\.nodusPalette) private var palette
 
-    private let title: String
+    private let title: Text
     private let isSelected: Bool
     private let action: () -> Void
 
-    public init(_ title: String, isSelected: Bool, action: @escaping () -> Void) {
-        self.title = title
+    public init(_ title: LocalizedStringKey, isSelected: Bool, action: @escaping () -> Void) {
+        self.title = Text(title)
+        self.isSelected = isSelected
+        self.action = action
+    }
+
+    @_disfavoredOverload
+    public init<S: StringProtocol>(_ title: S, isSelected: Bool, action: @escaping () -> Void) {
+        self.title = Text(title)
         self.isSelected = isSelected
         self.action = action
     }
 
     public var body: some View {
         Button(action: action) {
-            Text(title)
+            title
                 .font(.footnote.weight(isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? palette.onAccent : palette.text)
                 .padding(.horizontal, 14)
@@ -91,12 +106,19 @@ public struct CapsuleChip: View {
 public struct PrimaryPillButton: View {
     @Environment(\.nodusPalette) private var palette
 
-    private let title: String
+    private let title: Text
     private let systemImage: String?
     private let action: () -> Void
 
-    public init(_ title: String, systemImage: String? = nil, action: @escaping () -> Void) {
-        self.title = title
+    public init(_ title: LocalizedStringKey, systemImage: String? = nil, action: @escaping () -> Void) {
+        self.title = Text(title)
+        self.systemImage = systemImage
+        self.action = action
+    }
+
+    @_disfavoredOverload
+    public init<S: StringProtocol>(_ title: S, systemImage: String? = nil, action: @escaping () -> Void) {
+        self.title = Text(title)
         self.systemImage = systemImage
         self.action = action
     }
@@ -107,7 +129,7 @@ public struct PrimaryPillButton: View {
                 if let systemImage {
                     Image(systemName: systemImage).font(.system(size: 15, weight: .semibold))
                 }
-                Text(title).font(.subheadline.weight(.semibold))
+                title.font(.subheadline.weight(.semibold))
             }
             .foregroundStyle(palette.onAccent)
             .frame(maxWidth: .infinity)
@@ -121,12 +143,19 @@ public struct PrimaryPillButton: View {
 public struct OutlinePillButton: View {
     @Environment(\.nodusPalette) private var palette
 
-    private let title: String
+    private let title: Text
     private let systemImage: String?
     private let action: () -> Void
 
-    public init(_ title: String, systemImage: String? = nil, action: @escaping () -> Void) {
-        self.title = title
+    public init(_ title: LocalizedStringKey, systemImage: String? = nil, action: @escaping () -> Void) {
+        self.title = Text(title)
+        self.systemImage = systemImage
+        self.action = action
+    }
+
+    @_disfavoredOverload
+    public init<S: StringProtocol>(_ title: S, systemImage: String? = nil, action: @escaping () -> Void) {
+        self.title = Text(title)
         self.systemImage = systemImage
         self.action = action
     }
@@ -137,7 +166,7 @@ public struct OutlinePillButton: View {
                 if let systemImage {
                     Image(systemName: systemImage).font(.system(size: 15, weight: .medium))
                 }
-                Text(title).font(.subheadline.weight(.medium))
+                title.font(.subheadline.weight(.medium))
             }
             .foregroundStyle(palette.text)
             .frame(maxWidth: .infinity)
@@ -299,7 +328,7 @@ public struct CoverArtwork: View {
         }
         .aspectRatio(2.0 / 3.0, contentMode: .fit)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(title), by \(author)")
+        .accessibilityLabel(Text("\(title), by \(author)"))
     }
 }
 
@@ -377,13 +406,20 @@ public struct NodusEmptyState: View {
     @Environment(\.nodusPalette) private var palette
 
     private let icon: String
-    private let title: String
-    private let message: String
+    private let title: Text
+    private let message: Text
 
-    public init(icon: String, title: String, message: String) {
+    public init(icon: String, title: LocalizedStringKey, message: LocalizedStringKey) {
         self.icon = icon
-        self.title = title
-        self.message = message
+        self.title = Text(title)
+        self.message = Text(message)
+    }
+
+    @_disfavoredOverload
+    public init<S1: StringProtocol, S2: StringProtocol>(icon: String, title: S1, message: S2) {
+        self.icon = icon
+        self.title = Text(title)
+        self.message = Text(message)
     }
 
     public var body: some View {
@@ -393,10 +429,10 @@ public struct NodusEmptyState: View {
                 .foregroundStyle(palette.accent)
                 .frame(width: 64, height: 64)
                 .background(palette.selection, in: Circle())
-            Text(title)
+            title
                 .font(.system(.title3, design: .serif))
                 .multilineTextAlignment(.center)
-            Text(message)
+            message
                 .font(.subheadline)
                 .foregroundStyle(palette.muted)
                 .multilineTextAlignment(.center)

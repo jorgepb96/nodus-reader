@@ -63,7 +63,7 @@ public enum DocumentExtractor {
             guard let page = document.page(at: index), let text = page.string else { continue }
             let cleaned = HTMLText.normalize(text)
             guard !cleaned.isEmpty else { continue }
-            chapters.append(ExtractedChapter(id: index, title: "Page \(index + 1)", text: cleaned))
+            chapters.append(ExtractedChapter(id: index, title: String(localized: "Page \(index + 1)"), text: cleaned))
             extractedCharacters += cleaned.count
             if !completeText, extractedCharacters > 500_000 { break }
         }

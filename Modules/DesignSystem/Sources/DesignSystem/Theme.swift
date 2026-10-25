@@ -18,12 +18,12 @@ public enum NodusAppTheme: String, CaseIterable, Codable, Identifiable, Sendable
 
     public var title: String {
         switch self {
-        case .system: "System"
-        case .light: "Light"
-        case .dark: "Dark"
-        case .oled: "OLED Black"
-        case .sepia: "Sepia"
-        case .highContrast: "High Contrast"
+        case .system: String(localized: "System")
+        case .light: String(localized: "Light")
+        case .dark: String(localized: "Dark")
+        case .oled: String(localized: "OLED Black")
+        case .sepia: String(localized: "Sepia")
+        case .highContrast: String(localized: "High Contrast")
         }
     }
 

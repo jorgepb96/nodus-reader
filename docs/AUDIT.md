@@ -464,3 +464,30 @@ check a **signed** build before uploading.
   public, how to create a Read token, how to accept a gated model's licence, and links
   to the gated models (Gradium Phonon 40M Spanish and Multilingual, which this build
   lists but cannot run because no Core ML version exists).
+
+## Spanish interface (2026-10-25)
+
+- The interface is localized in English (base language) and Spanish with one String
+  Catalog, `NodusReader/Resources/Localizable.xcstrings`, shared by the app and the
+  Share Extension. `CFBundleLocalizations` lists `en` and `es`; iOS shows Spanish when
+  Spanish is the device's (or the app's) preferred language and English otherwise.
+- Every user-visible string goes through the catalog: SwiftUI literals, alerts and
+  menus; `String(localized:)` for model labels, errors, sync and import messages,
+  toasts, the Now Playing labels, fallback chapter and page titles; and
+  `LocalizedStringKey` initialisers on the DesignSystem components (`DisplayTitle`,
+  `SectionHeading`, the pill buttons, `CapsuleChip`, `CircleIconButton`,
+  `NodusEmptyState`). `Eyebrow` takes a `LocalizedStringResource` and resolves it
+  before drawing: a localized `Text` with `.textCase(.uppercase)` also capitalises its
+  VoiceOver label ("COLLECTIONS"), which the UI tests caught. Their `String` initialisers stay for data (book and collection
+  names), which is never looked up as a key. Sentences that used to glue an English
+  noun into a count ("3 results", "1 book is not downloaded…") are whole sentences
+  now. Language names from `Locale` are capitalised ("Inglés").
+- 634 keys, all translated; `tools/localization/gencat.py` regenerates the catalog
+  from the compiler's extracted keys and reports missing translations and placeholder
+  mismatches (0 and 0). Checked on the simulator in Spanish (Home, Library, Settings,
+  Voices).
+- UI tests read English labels and now launch the app with `-AppleLanguages (en)`, so
+  they pass whatever language the simulator uses. Result: 42 unit tests pass; iPhone
+  UI 10 pass + 1 iPad-only skip; iPad UI 2 pass; macOS build succeeds.
+- Not translated: Info.plist document-type names, and names that come from data or
+  the system (book titles, collection names, OS voice names such as "Default").

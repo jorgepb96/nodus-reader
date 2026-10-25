@@ -32,13 +32,13 @@ public struct ImportResult {
 
     public var summaryText: String {
         var parts: [String] = []
-        if imported.count == 1 { parts.append("1 document imported") }
-        if imported.count > 1 { parts.append("\(imported.count) documents imported") }
+        if imported.count == 1 { parts.append(String(localized: "1 document imported")) }
+        if imported.count > 1 { parts.append(String(localized: "\(imported.count) documents imported")) }
         if !duplicates.isEmpty {
-            parts.append(duplicates.count == 1 ? "1 duplicate skipped" : "\(duplicates.count) duplicates skipped")
+            parts.append(duplicates.count == 1 ? String(localized: "1 duplicate skipped") : String(localized: "\(duplicates.count) duplicates skipped"))
         }
         if !failures.isEmpty {
-            parts.append(failures.count == 1 ? "1 file could not be imported" : "\(failures.count) files could not be imported")
+            parts.append(failures.count == 1 ? String(localized: "1 file could not be imported") : String(localized: "\(failures.count) files could not be imported"))
         }
         return parts.joined(separator: " · ")
     }
@@ -463,7 +463,7 @@ public final class LibraryService {
             lines.append("## Bookmarks")
             lines.append("")
             for bookmark in bookmarks {
-                let chapter = bookmark.chapterTitle.isEmpty ? "Chapter \(bookmark.locator.chapterIndex + 1)" : bookmark.chapterTitle
+                let chapter = bookmark.chapterTitle.isEmpty ? String(localized: "Chapter \(bookmark.locator.chapterIndex + 1)") : bookmark.chapterTitle
                 lines.append("- **\(bookmark.title)** — \(chapter)")
             }
             lines.append("")

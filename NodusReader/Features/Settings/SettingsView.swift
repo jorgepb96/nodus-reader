@@ -81,7 +81,7 @@ struct SettingsView: View {
                     NavigationLink {
                         VoicesView()
                     } label: {
-                        SettingsRow(title: "Voices & Models", value: voices.defaultVoice?.name ?? "System")
+                        SettingsRow(title: "Voices & Models", value: voices.defaultVoice?.name ?? String(localized: "System"))
                     }
                     divider
                     NavigationLink {
@@ -141,8 +141,8 @@ struct SettingsView: View {
     }
 
     private var syncValue: String {
-        guard sync.isEnabled else { return "Off" }
-        return sync.isAvailable ? "On" : "Unavailable"
+        guard sync.isEnabled else { return String(localized: "Off") }
+        return sync.isAvailable ? String(localized: "On") : String(localized: "Unavailable")
     }
 }
 
@@ -156,7 +156,7 @@ struct ThemeTargetPicker: View {
                 Button {
                     target = option
                 } label: {
-                    Text(option.rawValue)
+                    Text(option.title)
                         .font(.footnote.weight(target == option ? .semibold : .regular))
                         .foregroundStyle(target == option ? palette.text : palette.muted)
                         .frame(maxWidth: .infinity)
@@ -168,7 +168,7 @@ struct ThemeTargetPicker: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(option.rawValue)
+                .accessibilityLabel(option.title)
                 .accessibilityAddTraits(target == option ? [.isSelected] : [])
             }
         }
@@ -191,7 +191,7 @@ private struct ThemeEditorContext: Identifiable {
 
 struct SettingsRow: View {
     @Environment(\.nodusPalette) private var palette
-    let title: String
+    let title: LocalizedStringKey
     let value: String?
 
     var body: some View {

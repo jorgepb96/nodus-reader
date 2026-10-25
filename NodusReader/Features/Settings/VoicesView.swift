@@ -60,7 +60,7 @@ struct VoicesView: View {
 
                 Picker("Voices and models", selection: $mode) {
                     ForEach(VoicesMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Text(LocalizedStringKey(mode.rawValue)).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -168,7 +168,13 @@ struct VoicesView: View {
             ScrollView(.horizontal, showsIndicators: false) { filterRow }
         }
 
-        Text("\(filteredVoices.count) voices\(languageFilter.map { " · \(voices.languageName(for: $0))" } ?? "")")
+        Group {
+            if let languageFilter {
+                Text("\(filteredVoices.count) voices · \(voices.languageName(for: languageFilter))")
+            } else {
+                Text("\(filteredVoices.count) voices")
+            }
+        }
             .font(.caption)
             .foregroundStyle(palette.muted)
 
@@ -330,15 +336,15 @@ struct VoicesView: View {
     private var engineSelectionCard: some View {
         VStack(spacing: 0) {
             engineRow(id: ModelManager.systemModelID,
-                      title: "System voices",
-                      detail: "Voices provided by \(DeviceInfo.platformName)",
+                      title: String(localized: "System voices"),
+                      detail: String(localized: "Voices provided by \(DeviceInfo.platformName)"),
                       systemImage: "waveform")
 
             ForEach(models.models.filter { models.isInstalled($0) }) { model in
                 Divider().overlay(palette.line)
                 engineRow(id: model.id,
                           title: model.name,
-                          detail: "\(model.voices.count) voices · \(model.language)",
+                          detail: String(localized: "\(model.voices.count) voices · \(model.language)"),
                           systemImage: "brain")
             }
 
@@ -386,7 +392,7 @@ struct VoicesView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(title), \(models.selectedModelID == id ? "selected" : "not selected")")
+        .accessibilityLabel(models.selectedModelID == id ? "\(title), selected" : "\(title), not selected")
     }
 
     private func modelCard(_ model: ModelManager.Model) -> some View {
@@ -664,10 +670,10 @@ struct VoicesView: View {
 
     private func engineLabel(for engine: String?) -> String {
         switch engine {
-        case "system": "System"
-        case "kokoro": "Kokoro 82M"
-        case "phonon": "Phonon 31M"
-        default: "All"
+        case "system": String(localized: "System")
+        case "kokoro": String(localized: "Kokoro 82M")
+        case "phonon": String(localized: "Phonon 31M")
+        default: String(localized: "All")
         }
     }
 
@@ -684,7 +690,7 @@ struct VoicesView: View {
     }
 
     private var modelFilterMenu: some View {
-        filterMenu(title: "Model", systemImage: "cpu",
+        filterMenu(title: String(localized: "Model"), systemImage: "cpu",
                    value: engineFilter == nil ? nil : engineLabel(for: engineFilter),
                    isActive: engineFilter != nil) {
             Button("All models") { engineFilter = nil }
@@ -700,7 +706,7 @@ struct VoicesView: View {
     }
 
     private var languageFilterMenu: some View {
-        filterMenu(title: "Language", systemImage: "globe",
+        filterMenu(title: String(localized: "Language"), systemImage: "globe",
                    value: languageFilter.map { voices.languageName(for: $0) },
                    isActive: languageFilter != nil) {
             Button("All languages") { languageFilter = nil }
@@ -712,7 +718,7 @@ struct VoicesView: View {
     }
 
     private var qualityFilterMenu: some View {
-        filterMenu(title: "Quality", systemImage: "waveform",
+        filterMenu(title: String(localized: "Quality"), systemImage: "waveform",
                    value: qualityFilter == nil ? nil : qualityLabel(for: qualityFilter),
                    isActive: qualityFilter != nil) {
             Button("All qualities") { qualityFilter = nil }
@@ -766,16 +772,16 @@ struct VoicesView: View {
             .overlay(Capsule().stroke(isActive ? Color.clear : palette.line, lineWidth: 1))
         }
         .menuIndicator(.hidden)
-        .accessibilityLabel("Filter by \(title)")
-        .accessibilityValue(value ?? "All")
+        .accessibilityLabel(Text("Filter by \(title)"))
+        .accessibilityValue(value ?? String(localized: "All"))
     }
 
     private func qualityLabel(for quality: Int?) -> String {
         switch quality {
-        case 3: "Premium"
-        case 2: "Enhanced"
-        case 1: "Standard"
-        default: "All"
+        case 3: String(localized: "Premium")
+        case 2: String(localized: "Enhanced")
+        case 1: String(localized: "Standard")
+        default: String(localized: "All")
         }
     }
 }

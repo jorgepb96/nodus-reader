@@ -36,7 +36,7 @@ struct ReaderContentsSheet: View {
             for index in 0..<node.numberOfChildren {
                 guard let child = node.child(at: index) else { continue }
                 let pageIndex = child.destination?.page.flatMap { document.index(for: $0) } ?? 0
-                rows.append(OutlineRow(title: child.label ?? "Untitled", pageIndex: pageIndex, depth: depth))
+                rows.append(OutlineRow(title: child.label ?? String(localized: "Untitled"), pageIndex: pageIndex, depth: depth))
                 visit(child, depth: depth + 1)
             }
         }

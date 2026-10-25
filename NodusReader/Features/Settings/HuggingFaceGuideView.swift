@@ -94,7 +94,7 @@ struct HuggingFaceGuideView: View {
         #endif
     }
 
-    private func section<Content: View>(_ title: String, systemImage: String,
+    private func section<Content: View>(_ title: LocalizedStringKey, systemImage: String,
                                         @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Label(title, systemImage: systemImage)
@@ -105,14 +105,14 @@ struct HuggingFaceGuideView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func paragraph(_ text: String) -> some View {
+    private func paragraph(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(.callout)
             .foregroundStyle(palette.muted)
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func step(_ number: Int, _ text: String) -> some View {
+    private func step(_ number: Int, _ text: LocalizedStringKey) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text("\(number).")
                 .font(.callout.weight(.semibold).monospacedDigit())
@@ -125,7 +125,7 @@ struct HuggingFaceGuideView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func link(_ title: String, url: String) -> some View {
+    private func link(_ title: LocalizedStringKey, url: String) -> some View {
         Link(destination: URL(string: url)!) {
             Label(title, systemImage: "arrow.up.right.square")
                 .font(.footnote.weight(.semibold))

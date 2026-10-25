@@ -31,7 +31,7 @@ public enum LanguageDetector {
 
     public static func displayName(for code: String) -> String {
         let normalized = normalize(code)
-        guard !normalized.isEmpty else { return "Unknown language" }
+        guard !normalized.isEmpty else { return String(localized: "Unknown language") }
         if let name = Locale.current.localizedString(forIdentifier: normalized) {
             return name
         }

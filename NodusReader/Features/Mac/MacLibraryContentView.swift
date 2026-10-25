@@ -37,7 +37,7 @@ struct MacLibraryContentView: View {
     @State private var showDeleteConfirmation = false
 
     private var title: String {
-        selection.smartList?.title ?? "Library"
+        selection.smartList?.title ?? String(localized: "Library")
     }
 
     private var shownBooks: [Book] {
@@ -351,8 +351,8 @@ struct MacLibraryContentView: View {
         guard let date else { return "—" }
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .short
-        if Calendar.current.isDateInToday(date) { return "Today" }
-        if Calendar.current.isDateInYesterday(date) { return "Yesterday" }
+        if Calendar.current.isDateInToday(date) { return String(localized: "Today") }
+        if Calendar.current.isDateInYesterday(date) { return String(localized: "Yesterday") }
         let components = Calendar.current.dateComponents([.day], from: date, to: Date())
         if let days = components.day, days < 7 {
             return formatter.localizedString(for: date, relativeTo: Date())
@@ -390,7 +390,7 @@ struct BookInspector: View {
     }
 
     private var currentVoiceName: String {
-        voices.voice(withID: book.preferredVoiceID)?.name ?? "Book default"
+        voices.voice(withID: book.preferredVoiceID)?.name ?? String(localized: "Book default")
     }
 
     var body: some View {
@@ -500,7 +500,7 @@ struct BookInspector: View {
                         Text("Voice for this book").foregroundStyle(palette.muted)
                         Spacer()
                         Menu(currentVoiceName) {
-                            Button("Book default") { library.setPreferredVoice(book, voiceID: nil) }
+                            Button(String(localized: "Book default")) { library.setPreferredVoice(book, voiceID: nil) }
                             Divider()
                             ForEach(bookVoices) { voice in
                                 Button("\(voice.name) · \(voice.languageName)") {
@@ -545,7 +545,7 @@ struct BookInspector: View {
         }
     }
 
-    private func inspectorField(_ label: String, text: Binding<String>) -> some View {
+    private func inspectorField(_ label: LocalizedStringKey, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label)
                 .font(.caption2)

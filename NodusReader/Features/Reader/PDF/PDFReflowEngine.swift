@@ -285,12 +285,12 @@ enum PDFReflowExtractor {
                 try? data.write(to: imagesDirectory.appendingPathComponent(imageName))
             }
             let block = PDFReflowBlock(
-                id: UUID(), kind: .figure, text: "Page \(index + 1)", rect: CGRect(x: 0, y: 0, width: 1, height: 1),
+                id: UUID(), kind: .figure, text: String(localized: "Page \(index + 1)"), rect: CGRect(x: 0, y: 0, width: 1, height: 1),
                 pageIndex: index, imageFileName: imageName, isHeaderFooter: false, usedOCR: usedOCR
             )
             regions.append(PDFReflowRegion(id: UUID(), kind: .figure,
                                            rect: CGRect(x: 0, y: 0, width: 1, height: 1),
-                                           label: "Scanned page"))
+                                           label: String(localized: "Scanned page")))
             return PDFReflowPage(pageIndex: index, width: bounds.width, height: bounds.height,
                                  blocks: [block], regions: regions)
         }
@@ -316,7 +316,7 @@ enum PDFReflowExtractor {
                                        usedOCR: usedOCR)
             blocks.append(block)
             regions.append(PDFReflowRegion(id: UUID(), kind: isHeading ? .heading : .text,
-                                           rect: rect, label: isHeading ? "Heading" : "Text"))
+                                           rect: rect, label: isHeading ? String(localized: "Heading") : String(localized: "Text")))
             currentLines = []
         }
 
@@ -355,7 +355,7 @@ enum PDFReflowExtractor {
                 isHeaderFooter: false, usedOCR: usedOCR
             )
             blocks.append(block)
-            regions.append(PDFReflowRegion(id: UUID(), kind: .table, rect: rect, label: "Table"))
+            regions.append(PDFReflowRegion(id: UUID(), kind: .table, rect: rect, label: String(localized: "Table")))
             tableLines = []
         }
 

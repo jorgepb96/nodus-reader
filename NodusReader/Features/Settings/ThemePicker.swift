@@ -6,6 +6,13 @@ enum ThemeTarget: String, CaseIterable, Identifiable {
     case app = "App"
     case reader = "Reader"
     var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .app: "App"
+        case .reader: "Reader"
+        }
+    }
 }
 
 struct ThemeGrid: View {
@@ -200,7 +207,7 @@ struct ThemeSwatchTile: View {
                 )
                 .overlay(selectionOverlay)
 
-                Text(name.isEmpty ? "Custom" : name)
+                (name.isEmpty ? Text("Custom") : Text(name))
                     .font(.caption)
                     .foregroundStyle(palette.text)
                     .lineLimit(1)

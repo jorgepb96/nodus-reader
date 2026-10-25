@@ -206,7 +206,7 @@ struct CollectionDetailView: View {
 
     private func header(_ collection: LibraryCollection) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Eyebrow((["Library"] + path.map(\.name)).joined(separator: " / "))
+            Eyebrow(([String(localized: "Library")] + path.map(\.name)).joined(separator: " / "))
             DisplayTitle(collection.name, size: DeviceInfo.isPad ? 44 : 36)
             Text("\(children.count) subcollections · \(totalBookCount) books")
                 .font(.footnote)
@@ -352,7 +352,7 @@ struct CollectionDetailView: View {
     private func statusLine(for book: Book, in collection: LibraryCollection) -> String {
         var parts: [String] = []
         switch book.status {
-        case .finished: parts.append("Finished")
+        case .finished: parts.append(String(localized: "Finished"))
         case .toRead: parts.append("\(book.format.badge) · To read")
         case .inProgress: parts.append("\(book.format.badge) · \(Int((book.progress * 100).rounded()))%")
         }
@@ -473,7 +473,7 @@ struct AddBooksToCollectionSheet: View {
                 }
             }
             .librarySearchable(text: $searchText, prompt: "Search books")
-            .navigationTitle(collection?.name ?? "Add Books")
+            .navigationTitle(collection?.name ?? String(localized: "Add Books"))
             .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

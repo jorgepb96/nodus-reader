@@ -80,7 +80,9 @@ The reader follows the app theme by default, hides the status bar on iOS and ope
 in a dedicated full-window Reading window on macOS. A selected voice engine (System, Kokoro or Phonon) filters
 the voices exposed everywhere, and narration starts in the book's detected language
 unless the user has chosen a per-book voice. Book covers always draw a typographic
-fallback while the real cover loads.
+fallback while the real cover loads. The interface is localized in English (base)
+and Spanish through `NodusReader/Resources/Localizable.xcstrings`; see
+`tools/localization/README.md` before adding UI text.
 
 Kokoro is English-only and unavailable in the Simulator (MLX needs a Metal device).
 Phonon 31M is English; the CC BY-NC 40M Spanish/multilingual checkpoints are listed

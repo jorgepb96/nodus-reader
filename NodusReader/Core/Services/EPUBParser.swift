@@ -369,7 +369,7 @@ struct ChapterBuilder {
         let body = Self.removingHeading(title, from: text)
         guard body.count > 10 else { return }
         chapters.append(ExtractedChapter(id: chapters.count,
-                                         title: title.isEmpty ? "Chapter \(chapters.count + 1)" : title,
+                                         title: title.isEmpty ? String(localized: "Chapter \(chapters.count + 1)") : title,
                                          text: body))
     }
 

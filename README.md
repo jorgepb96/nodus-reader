@@ -20,6 +20,7 @@ Nodus Reader is part of the Nodus Research ecosystem. It is not a web wrapper: t
 - Narration: on-device system voices, plus optional Kokoro 82M (English) and Phonon 31M (English) Core ML engines downloaded from Hugging Face. Sentence and word highlighting, tap a word to start Read & Listen from that word, sentence-level audio cache with prefetch, progress, cancellation and deletion, player with transport, speed, voice, sleep timer and modes. Background audio, interruptions, headphone unplugging and lock-screen controls are wired for iOS.
 - Sync: optional personal iCloud sync through CloudKit and iCloud Drive, a durable outbox, tombstones, timestamp conflicts, cloud-only badges, download-on-open, `Remove Download` and `Delete from Library`.
 - Sharing: iOS Share Extension with an App Group inbox and collection selection.
+- Languages: English and Spanish. The app follows the device language: Spanish on a device set to Spanish, English everywhere else (or per app in Settings › Nodus Reader › Language).
 - Settings: separate App/Reader themes, custom theme editor, reading typography, real voice and model management with downloads/licences/storage, iCloud status and privacy.
 - Tests: 42 unit/integration tests (plus an opt-in model download test) and 11 UI tests with screenshot capture (the Phonon narration test skips when no Phonon bundle is installed in the simulator).
 
@@ -49,9 +50,9 @@ The design source of truth is [`design/DESIGN.md`](design/DESIGN.md) and [`desig
   unavailable by design; real-device two-device validation is still required.
 - DOCX, FB2, CBZ and other phase-2 formats; DRM-protected content is not supported.
 - EPUB locators are chapter/page based, not CFI.
-- Interface translations beyond English; strings are localization-ready.
+- Interface languages other than English and Spanish.
 - PDF Original page tap-to-play (Intelligent Reading uses the normal text path).
-- App Store/TestFlight distribution, notarisation and the final licence audit.
+- App Store review and Mac notarisation (iOS builds go to TestFlight internal testing), and the final licence audit.
 - Real-device accessibility and large-library performance audits.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full status and deviations,

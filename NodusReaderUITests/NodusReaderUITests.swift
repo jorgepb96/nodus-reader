@@ -463,7 +463,9 @@ final class NodusReaderUITests: XCTestCase {
 
     private func launch(resetReadingState: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-NodusSampleLibrary"]
+        // The tests read English labels; the app follows the device language
+        // (Spanish or English), so pin it to English whatever the simulator uses.
+        app.launchArguments = ["-NodusSampleLibrary", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         if resetReadingState {
             app.launchArguments.append("-NodusResetReadingState")
         }

@@ -20,15 +20,23 @@ public struct DisplayTitle: View {
     @ScaledMetric(relativeTo: .largeTitle) private var typeScale: CGFloat = 1
 
     private let baseSize: CGFloat
-    private let text: String
+    private let text: Text
 
-    public init(_ text: String, size: CGFloat = 36) {
-        self.text = text
+    /// A literal is looked up in the app's string catalog, like `Text`.
+    public init(_ key: LocalizedStringKey, size: CGFloat = 36) {
+        self.text = Text(key)
+        self.baseSize = size
+    }
+
+    /// Data (a book or collection name) is shown as it is.
+    @_disfavoredOverload
+    public init<S: StringProtocol>(_ text: S, size: CGFloat = 36) {
+        self.text = Text(text)
         self.baseSize = size
     }
 
     public var body: some View {
-        Text(text)
+        text
             .font(.system(size: baseSize * typeScale, weight: .regular, design: .serif))
             .tracking(baseSize * NodusType.displayTracking / 36)
             .lineLimit(2)
@@ -43,13 +51,22 @@ public struct Eyebrow: View {
     private let text: String
     private let color: Color?
 
-    public init(_ text: String, color: Color? = nil) {
-        self.text = text
+    /// A literal is translated through the app's string catalog. It is
+    /// resolved here, not by `Text`, because a localized `Text` also turns its
+    /// accessibility label into capitals, which VoiceOver may spell out.
+    public init(_ resource: LocalizedStringResource, color: Color? = nil) {
+        self.text = String(localized: resource)
+        self.color = color
+    }
+
+    @_disfavoredOverload
+    public init<S: StringProtocol>(_ text: S, color: Color? = nil) {
+        self.text = String(text)
         self.color = color
     }
 
     public var body: some View {
-        Text(text)
+        Text(verbatim: text)
             .font(.caption2.weight(.semibold))
             .tracking(NodusType.eyebrowTracking)
             .textCase(.uppercase)
@@ -59,14 +76,19 @@ public struct Eyebrow: View {
 }
 
 public struct SectionHeading: View {
-    private let text: String
+    private let text: Text
 
-    public init(_ text: String) {
-        self.text = text
+    public init(_ key: LocalizedStringKey) {
+        self.text = Text(key)
+    }
+
+    @_disfavoredOverload
+    public init<S: StringProtocol>(_ text: S) {
+        self.text = Text(text)
     }
 
     public var body: some View {
-        Text(text)
+        text
             .font(.system(.title3, design: .serif))
             .accessibilityAddTraits(.isHeader)
     }

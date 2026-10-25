@@ -134,6 +134,14 @@ private enum ReaderNavigationTab: String, CaseIterable, Identifiable {
     case bookmarks = "Bookmarks"
     case notes = "Notes"
     var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .contents: "Contents"
+        case .bookmarks: "Bookmarks"
+        case .notes: "Notes"
+        }
+    }
 }
 
 struct ReaderNavigationSheet: View {
@@ -159,7 +167,7 @@ struct ReaderNavigationSheet: View {
             VStack(spacing: 0) {
                 Picker("Reader navigation", selection: $tab) {
                     ForEach(ReaderNavigationTab.allCases) { tab in
-                        Text(tab.rawValue).tag(tab)
+                        Text(tab.title).tag(tab)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -249,7 +257,7 @@ struct ReaderNavigationSheet: View {
                                         .foregroundStyle(palette.text)
                                         .lineLimit(1)
                                     Text(bookmark.chapterTitle.isEmpty
-                                         ? "Chapter \(bookmark.locator.chapterIndex + 1)"
+                                         ? String(localized: "Chapter \(bookmark.locator.chapterIndex + 1)")
                                          : bookmark.chapterTitle)
                                         .font(.caption)
                                         .foregroundStyle(palette.muted)
@@ -357,7 +365,7 @@ struct ReaderNavigationSheet: View {
         }
     }
 
-    private func emptyState(icon: String, title: String, message: String) -> some View {
+    private func emptyState(icon: String, title: LocalizedStringKey, message: LocalizedStringKey) -> some View {
         VStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 26, weight: .light))

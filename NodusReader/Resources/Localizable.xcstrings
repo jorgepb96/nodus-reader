@@ -1,0 +1,6337 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "": {},
+    "%@ by %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ de %2$@"
+          }
+        }
+      }
+    },
+    "%@ cached on this device": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ guardados en este dispositivo"
+          }
+        }
+      }
+    },
+    "%@ is the default voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ es la voz predeterminada"
+          }
+        }
+      }
+    },
+    "%@ theme": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tema %@"
+          }
+        }
+      }
+    },
+    "%@ · %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@ · %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@ · %3$@"
+          }
+        }
+      }
+    },
+    "%@ · %lld%%": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$lld %%"
+          }
+        }
+      }
+    },
+    "%@ · Downloaded": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Descargado"
+          }
+        }
+      }
+    },
+    "%@ · FROM CHAPTER %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · DESDE EL CAPÍTULO %2$lld"
+          }
+        }
+      }
+    },
+    "%@ · Finished": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Terminado"
+          }
+        }
+      }
+    },
+    "%@ · To read": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Por leer"
+          }
+        }
+      }
+    },
+    "%@, %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "%@, by %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, de %2$@"
+          }
+        }
+      }
+    },
+    "%@, collection, %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, colección, %2$@"
+          }
+        }
+      }
+    },
+    "%@, collection, %lld books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, colección, %2$lld libros"
+          }
+        }
+      }
+    },
+    "%@, collection, 1 book": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, colección, 1 libro"
+          }
+        }
+      }
+    },
+    "%@, not selected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, no seleccionado"
+          }
+        }
+      }
+    },
+    "%@, selected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, seleccionado"
+          }
+        }
+      }
+    },
+    "%lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
+          }
+        }
+      }
+    },
+    "%lld / %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld / %2$lld"
+          }
+        }
+      }
+    },
+    "%lld books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld libros"
+          }
+        }
+      }
+    },
+    "%lld books are not downloaded on this %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld libros no están descargados en este %2$@."
+          }
+        }
+      }
+    },
+    "%lld books · Local library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld libros · Biblioteca local"
+          }
+        }
+      }
+    },
+    "%lld documents imported": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld documentos importados"
+          }
+        }
+      }
+    },
+    "%lld duplicates skipped": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld duplicados omitidos"
+          }
+        }
+      }
+    },
+    "%lld files could not be imported": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron importar %lld archivos"
+          }
+        }
+      }
+    },
+    "%lld matches for “%@”": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld coincidencias para «%2$@»"
+          }
+        }
+      }
+    },
+    "%lld of %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld de %2$lld"
+          }
+        }
+      }
+    },
+    "%lld pt": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld pt"
+          }
+        }
+      }
+    },
+    "%lld regions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld regiones"
+          }
+        }
+      }
+    },
+    "%lld results": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld resultados"
+          }
+        }
+      }
+    },
+    "%lld selected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld seleccionados"
+          }
+        }
+      }
+    },
+    "%lld subcollections · %lld books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld subcolecciones · %2$lld libros"
+          }
+        }
+      }
+    },
+    "%lld voices": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld voces"
+          }
+        }
+      }
+    },
+    "%lld voices · %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld voces · %2$@"
+          }
+        }
+      }
+    },
+    "%lld%%": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld %%"
+          }
+        }
+      }
+    },
+    "%lld.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld."
+          }
+        }
+      }
+    },
+    "1 book": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 libro"
+          }
+        }
+      }
+    },
+    "1 book is not downloaded on this %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 libro no está descargado en este %@."
+          }
+        }
+      }
+    },
+    "1 document imported": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 documento importado"
+          }
+        }
+      }
+    },
+    "1 duplicate skipped": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 duplicado omitido"
+          }
+        }
+      }
+    },
+    "1 file could not be imported": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo importar 1 archivo"
+          }
+        }
+      }
+    },
+    "1 match for “%@”": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 coincidencia para «%@»"
+          }
+        }
+      }
+    },
+    "1 result": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 resultado"
+          }
+        }
+      }
+    },
+    "15 minutes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "15 minutos"
+          }
+        }
+      }
+    },
+    "30 minutes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 minutos"
+          }
+        }
+      }
+    },
+    "45 minutes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "45 minutos"
+          }
+        }
+      }
+    },
+    "5 minutes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutos"
+          }
+        }
+      }
+    },
+    "60 minutes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 minutos"
+          }
+        }
+      }
+    },
+    "A": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A"
+          }
+        }
+      }
+    },
+    "A document uploaded on another device may take a moment to appear. Pull to refresh or tap Check Again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un documento subido desde otro dispositivo puede tardar un poco en aparecer. Desliza hacia abajo para actualizar o toca Comprobar de nuevo."
+          }
+        }
+      }
+    },
+    "AGPL-3.0-only licence": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licencia AGPL-3.0-only"
+          }
+        }
+      }
+    },
+    "Aa": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aa"
+          }
+        }
+      }
+    },
+    "About": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acerca de"
+          }
+        }
+      }
+    },
+    "About 210 MB download": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga de unos 210 MB"
+          }
+        }
+      }
+    },
+    "About 300 MB download": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga de unos 300 MB"
+          }
+        }
+      }
+    },
+    "About Nodus Reader": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acerca de Nodus Reader"
+          }
+        }
+      }
+    },
+    "Accent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acento"
+          }
+        }
+      }
+    },
+    "Acknowledgements": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agradecimientos"
+          }
+        }
+      }
+    },
+    "Add %lld Books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir %lld libros"
+          }
+        }
+      }
+    },
+    "Add Books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir libros"
+          }
+        }
+      }
+    },
+    "Add Books…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir libros…"
+          }
+        }
+      }
+    },
+    "Add Highlight": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir resaltado"
+          }
+        }
+      }
+    },
+    "Add Note…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir nota…"
+          }
+        }
+      }
+    },
+    "Add to": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir a"
+          }
+        }
+      }
+    },
+    "Add to Collection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir a la colección"
+          }
+        }
+      }
+    },
+    "Add to Collection…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir a la colección…"
+          }
+        }
+      }
+    },
+    "Add to Favorites": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir a Favoritos"
+          }
+        }
+      }
+    },
+    "All": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo"
+          }
+        }
+      }
+    },
+    "All Books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos los libros"
+          }
+        }
+      }
+    },
+    "All books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos los libros"
+          }
+        }
+      }
+    },
+    "All languages": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos los idiomas"
+          }
+        }
+      }
+    },
+    "All models": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos los modelos"
+          }
+        }
+      }
+    },
+    "All qualities": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todas las calidades"
+          }
+        }
+      }
+    },
+    "Analysing the PDF on this device…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizando el PDF en este dispositivo…"
+          }
+        }
+      }
+    },
+    "App": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App"
+          }
+        }
+      }
+    },
+    "Appearance": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apariencia"
+          }
+        }
+      }
+    },
+    "Appearance and typography": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apariencia y tipografía"
+          }
+        }
+      }
+    },
+    "Audio cache %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caché de audio %@"
+          }
+        }
+      }
+    },
+    "Author": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autor"
+          }
+        }
+      }
+    },
+    "Available": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disponible"
+          }
+        }
+      }
+    },
+    "BOOK DEFAULT": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PREDETERMINADA DEL LIBRO"
+          }
+        }
+      }
+    },
+    "Back to library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver a la biblioteca"
+          }
+        }
+      }
+    },
+    "Background": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fondo"
+          }
+        }
+      }
+    },
+    "Blue": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Azul"
+          }
+        }
+      }
+    },
+    "Book default": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Predeterminada del libro"
+          }
+        }
+      }
+    },
+    "Book unavailable": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libro no disponible"
+          }
+        }
+      }
+    },
+    "Book voice not installed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La voz del libro no está instalada"
+          }
+        }
+      }
+    },
+    "Bookmark this page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir marcador en esta página"
+          }
+        }
+      }
+    },
+    "Bookmarks": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcadores"
+          }
+        }
+      }
+    },
+    "Books %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libros %@"
+          }
+        }
+      }
+    },
+    "Books, PDFs and notes are read and stored on this device. Nodus Reader has no servers and no Nodus account.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los libros, los PDF y las notas se leen y se guardan en este dispositivo. Nodus Reader no tiene servidores ni cuentas de Nodus."
+          }
+        }
+      }
+    },
+    "Books, collections, text and notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libros, colecciones, texto y notas"
+          }
+        }
+      }
+    },
+    "CHAPTER %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CAPÍTULO %lld"
+          }
+        }
+      }
+    },
+    "CHAPTER 1": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CAPÍTULO 1"
+          }
+        }
+      }
+    },
+    "Cached sentence by sentence as you listen": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se guarda frase a frase mientras escuchas"
+          }
+        }
+      }
+    },
+    "Call me Ishmael. Some years ago—never mind how long precisely—I thought I would sail about a little and see the watery part of the world.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Llamadme Ismael. Hace unos años —no importa cuántos exactamente— pensé que navegaría un poco y vería la parte acuática del mundo."
+          }
+        }
+      }
+    },
+    "Call me Ishmael. Some years ago—never mind how long precisely—I thought I would sail about a little.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Llamadme Ismael. Hace unos años —no importa cuántos exactamente— pensé que navegaría un poco."
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
+          }
+        }
+      }
+    },
+    "Ch. %lld · %@ · %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cap. %1$lld · %2$@ · %3$@"
+          }
+        }
+      }
+    },
+    "Change Cover…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambiar portada…"
+          }
+        }
+      }
+    },
+    "Change not saved": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El cambio no se ha guardado"
+          }
+        }
+      }
+    },
+    "Changes apply only to this book. Turn off to use your general settings again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los cambios solo se aplican a este libro. Desactívalo para volver a usar tus ajustes generales."
+          }
+        }
+      }
+    },
+    "Changes apply to every book. Turn on to keep separate settings for this one.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los cambios se aplican a todos los libros. Actívalo para guardar ajustes propios para este."
+          }
+        }
+      }
+    },
+    "Changes are moving through your personal iCloud.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los cambios se están enviando a través de tu iCloud personal."
+          }
+        }
+      }
+    },
+    "Changes are queued and will be sent when you are back online.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los cambios están en cola y se enviarán cuando vuelvas a tener conexión."
+          }
+        }
+      }
+    },
+    "Chapter %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capítulo %lld"
+          }
+        }
+      }
+    },
+    "Chapter %lld of %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capítulo %1$lld de %2$lld"
+          }
+        }
+      }
+    },
+    "Chapter %lld · %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capítulo %1$lld · %2$@"
+          }
+        }
+      }
+    },
+    "Check Again": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobar de nuevo"
+          }
+        }
+      }
+    },
+    "Choose a Kokoro or Phonon voice before generating audio.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige una voz de Kokoro o Phonon antes de generar audio."
+          }
+        }
+      }
+    },
+    "Choose a Kokoro or Phonon voice to generate offline audio. System voices never write audio files.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige una voz de Kokoro o Phonon para generar audio sin conexión. Las voces del sistema nunca guardan archivos de audio."
+          }
+        }
+      }
+    },
+    "Choose custom cover…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir una portada…"
+          }
+        }
+      }
+    },
+    "Choose voice…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir voz…"
+          }
+        }
+      }
+    },
+    "Clear": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borrar"
+          }
+        }
+      }
+    },
+    "Clear filters": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borrar filtros"
+          }
+        }
+      }
+    },
+    "Clear search": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borrar búsqueda"
+          }
+        }
+      }
+    },
+    "Close": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar"
+          }
+        }
+      }
+    },
+    "Close player": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar reproductor"
+          }
+        }
+      }
+    },
+    "CloudKit is unavailable in this build or on this device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CloudKit no está disponible en esta versión o en este dispositivo."
+          }
+        }
+      }
+    },
+    "CloudKit stores titles, collections, bookmarks, notes and reading positions. iCloud Drive stores the documents and covers.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CloudKit guarda títulos, colecciones, marcadores, notas y posiciones de lectura. iCloud Drive guarda los documentos y las portadas."
+          }
+        }
+      }
+    },
+    "Collection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colección"
+          }
+        }
+      }
+    },
+    "Collection actions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acciones de la colección"
+          }
+        }
+      }
+    },
+    "Collection names": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombres de colecciones"
+          }
+        }
+      }
+    },
+    "Collection not found": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se ha encontrado la colección"
+          }
+        }
+      }
+    },
+    "Collections": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colecciones"
+          }
+        }
+      }
+    },
+    "Collections can contain subcollections and documents.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las colecciones pueden contener subcolecciones y documentos."
+          }
+        }
+      }
+    },
+    "Colours": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colores"
+          }
+        }
+      }
+    },
+    "Come back to this screen, paste the token in the field, select \"Save token\" and then \"Verify\".": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuelve a esta pantalla, pega el token en el campo, selecciona «Guardar token» y después «Verificar»."
+          }
+        }
+      }
+    },
+    "Compare with page %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparar con la página %lld"
+          }
+        }
+      }
+    },
+    "Compiling for this device. This can take a minute the first time.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compilando para este dispositivo. La primera vez puede tardar un minuto."
+          }
+        }
+      }
+    },
+    "Contents": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Índice"
+          }
+        }
+      }
+    },
+    "Contents, bookmarks and notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Índice, marcadores y notas"
+          }
+        }
+      }
+    },
+    "Continue": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar"
+          }
+        }
+      }
+    },
+    "Continue · from %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar · desde %@"
+          }
+        }
+      }
+    },
+    "Continuous horizontal scroll": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desplazamiento horizontal continuo"
+          }
+        }
+      }
+    },
+    "Continuous vertical scroll": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desplazamiento vertical continuo"
+          }
+        }
+      }
+    },
+    "Copy the token. It starts with \"hf_\".": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copia el token. Empieza por «hf_»."
+          }
+        }
+      }
+    },
+    "Cover": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portada"
+          }
+        }
+      }
+    },
+    "Covers %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portadas %@"
+          }
+        }
+      }
+    },
+    "Create": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear"
+          }
+        }
+      }
+    },
+    "Create a collection, nest subcollections as deeply as you need and add the same book to several places.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea una colección, anida subcolecciones con tantos niveles como necesites y añade el mismo libro a varios sitios."
+          }
+        }
+      }
+    },
+    "Create a free account, or sign in if you already have one.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea una cuenta gratuita o inicia sesión si ya tienes una."
+          }
+        }
+      }
+    },
+    "Create an account": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear una cuenta"
+          }
+        }
+      }
+    },
+    "Create custom theme": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear tema personalizado"
+          }
+        }
+      }
+    },
+    "Custom": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personalizado"
+          }
+        }
+      }
+    },
+    "Custom themes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temas personalizados"
+          }
+        }
+      }
+    },
+    "Custom themes apply to the reader. They are stored on this device and will join iCloud sync with the rest of your reading preferences.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los temas personalizados se aplican al lector. Se guardan en este dispositivo y se sincronizarán con iCloud junto con el resto de tus preferencias de lectura."
+          }
+        }
+      }
+    },
+    "Dark": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oscuro"
+          }
+        }
+      }
+    },
+    "Delete": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar"
+          }
+        }
+      }
+    },
+    "Delete Collection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar colección"
+          }
+        }
+      }
+    },
+    "Delete Collection?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar la colección?"
+          }
+        }
+      }
+    },
+    "Delete Collection…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar colección…"
+          }
+        }
+      }
+    },
+    "Delete Custom Theme?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar el tema personalizado?"
+          }
+        }
+      }
+    },
+    "Delete Theme": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar tema"
+          }
+        }
+      }
+    },
+    "Delete cache": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar caché"
+          }
+        }
+      }
+    },
+    "Delete from Library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar de la biblioteca"
+          }
+        }
+      }
+    },
+    "Delete from Library?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar de la biblioteca?"
+          }
+        }
+      }
+    },
+    "Delete from Library…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar de la biblioteca…"
+          }
+        }
+      }
+    },
+    "Delete generated audio": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar el audio generado"
+          }
+        }
+      }
+    },
+    "Delete partial download": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar la descarga parcial"
+          }
+        }
+      }
+    },
+    "Description": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descripción"
+          }
+        }
+      }
+    },
+    "Device-local data": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datos locales del dispositivo"
+          }
+        }
+      }
+    },
+    "Do I need an account?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Necesito una cuenta?"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "Download": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar"
+          }
+        }
+      }
+    },
+    "Download %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar %@"
+          }
+        }
+      }
+    },
+    "Download All": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar todo"
+          }
+        }
+      }
+    },
+    "Download failed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error en la descarga"
+          }
+        }
+      }
+    },
+    "Download from iCloud": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar de iCloud"
+          }
+        }
+      }
+    },
+    "Download not removed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se ha eliminado la descarga"
+          }
+        }
+      }
+    },
+    "Downloaded books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libros descargados"
+          }
+        }
+      }
+    },
+    "Downloading from Hugging Face": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando de Hugging Face"
+          }
+        }
+      }
+    },
+    "EPUB": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB"
+          }
+        }
+      }
+    },
+    "EPUB, PDF, Markdown, text, HTML and RTF stay on this device. Nothing is uploaded.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los EPUB, PDF, Markdown, texto, HTML y RTF se quedan en este dispositivo. No se sube nada."
+          }
+        }
+      }
+    },
+    "Edit": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editar"
+          }
+        }
+      }
+    },
+    "Edit Highlight": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editar resaltado"
+          }
+        }
+      }
+    },
+    "Edit Info": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editar información"
+          }
+        }
+      }
+    },
+    "Edit Info…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editar información…"
+          }
+        }
+      }
+    },
+    "Edit Theme": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editar tema"
+          }
+        }
+      }
+    },
+    "Edit…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editar…"
+          }
+        }
+      }
+    },
+    "End of chapter": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Final del capítulo"
+          }
+        }
+      }
+    },
+    "English": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inglés"
+          }
+        }
+      }
+    },
+    "Enhanced": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mejorada"
+          }
+        }
+      }
+    },
+    "Export bookmarks and notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportar marcadores y notas"
+          }
+        }
+      }
+    },
+    "Expressive American and British English narration with 28 voices.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Narración expresiva en inglés americano y británico con 28 voces."
+          }
+        }
+      }
+    },
+    "Failed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
+          }
+        }
+      }
+    },
+    "Favorites": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favoritos"
+          }
+        }
+      }
+    },
+    "File": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo"
+          }
+        }
+      }
+    },
+    "File name": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre del archivo"
+          }
+        }
+      }
+    },
+    "Filter by %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtrar por %@"
+          }
+        }
+      }
+    },
+    "Find a title, an author or a passage across your library.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busca un título, un autor o un fragmento en toda tu biblioteca."
+          }
+        }
+      }
+    },
+    "Finished": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminado"
+          }
+        }
+      }
+    },
+    "Format": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formato"
+          }
+        }
+      }
+    },
+    "Full text of imported documents": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto completo de los documentos importados"
+          }
+        }
+      }
+    },
+    "General": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        }
+      }
+    },
+    "Generate for this book": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generar para este libro"
+          }
+        }
+      }
+    },
+    "Generating every sentence with %@…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generando cada frase con %@…"
+          }
+        }
+      }
+    },
+    "Go to page %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ir a la página %lld"
+          }
+        }
+      }
+    },
+    "Gradium publishes this checkpoint as gated CC BY-NC weights but has not published a Core ML bundle. Nodus Reader will not offer a download it cannot run.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gradium publica este modelo con acceso restringido y licencia CC BY-NC, pero no ha publicado una versión Core ML. Nodus Reader no ofrece descargas que no puede ejecutar."
+          }
+        }
+      }
+    },
+    "Green": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verde"
+          }
+        }
+      }
+    },
+    "Grid or list view": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vista de cuadrícula o de lista"
+          }
+        }
+      }
+    },
+    "Grid view": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vista de cuadrícula"
+          }
+        }
+      }
+    },
+    "Group books into folders and subfolders. A book can be in several collections without being copied.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agrupa los libros en carpetas y subcarpetas. Un libro puede estar en varias colecciones sin copiarse."
+          }
+        }
+      }
+    },
+    "Group documents without duplicating them.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agrupa documentos sin duplicarlos."
+          }
+        }
+      }
+    },
+    "HTML": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTML"
+          }
+        }
+      }
+    },
+    "Header / footer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encabezado / pie"
+          }
+        }
+      }
+    },
+    "Heading": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título"
+          }
+        }
+      }
+    },
+    "High Contrast": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alto contraste"
+          }
+        }
+      }
+    },
+    "Highlight": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resaltar"
+          }
+        }
+      }
+    },
+    "Highlight colour": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Color del resaltado"
+          }
+        }
+      }
+    },
+    "Highlights and notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resaltados y notas"
+          }
+        }
+      }
+    },
+    "Home": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicio"
+          }
+        }
+      }
+    },
+    "How to accept a gated model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cómo aceptar un modelo restringido"
+          }
+        }
+      }
+    },
+    "How to get a token": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cómo conseguir un token"
+          }
+        }
+      }
+    },
+    "Hugging Face": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hugging Face"
+          }
+        }
+      }
+    },
+    "Hugging Face (huggingface.co) is a website where companies and researchers publish AI models. Nodus Reader downloads its narration voices from there.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hugging Face (huggingface.co) es una web donde empresas e investigadores publican modelos de IA. Nodus Reader descarga de ahí sus voces de narración."
+          }
+        }
+      }
+    },
+    "Hugging Face rejected this token.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hugging Face ha rechazado este token."
+          }
+        }
+      }
+    },
+    "Hugging Face returned an unexpected response.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hugging Face ha devuelto una respuesta inesperada."
+          }
+        }
+      }
+    },
+    "Hugging Face token": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token de Hugging Face"
+          }
+        }
+      }
+    },
+    "If iCloud is unavailable, check that you are signed in to iCloud and that iCloud Drive is enabled for Nodus Reader.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si iCloud no está disponible, comprueba que has iniciado sesión en iCloud y que iCloud Drive está activado para Nodus Reader."
+          }
+        }
+      }
+    },
+    "Image": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imagen"
+          }
+        }
+      }
+    },
+    "Image unavailable": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imagen no disponible"
+          }
+        }
+      }
+    },
+    "Import": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar"
+          }
+        }
+      }
+    },
+    "Import a document or change the filters.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa un documento o cambia los filtros."
+          }
+        }
+      }
+    },
+    "Import an EPUB, PDF, Markdown, text, HTML or RTF document to begin.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa un documento EPUB, PDF, Markdown, de texto, HTML o RTF para empezar."
+          }
+        }
+      }
+    },
+    "Import an EPUB, PDF, Markdown, text, HTML or RTF document.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa un documento EPUB, PDF, Markdown, de texto, HTML o RTF."
+          }
+        }
+      }
+    },
+    "Import cancelled": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importación cancelada"
+          }
+        }
+      }
+    },
+    "Import documents": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar documentos"
+          }
+        }
+      }
+    },
+    "Import documents (⇧⌘I)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar documentos (⇧⌘I)"
+          }
+        }
+      }
+    },
+    "Import failed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error al importar"
+          }
+        }
+      }
+    },
+    "Import to Nodus Reader": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar a Nodus Reader"
+          }
+        }
+      }
+    },
+    "Import your first document": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa tu primer documento"
+          }
+        }
+      }
+    },
+    "Import…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar…"
+          }
+        }
+      }
+    },
+    "In %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En %@"
+          }
+        }
+      }
+    },
+    "In iCloud only": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo en iCloud"
+          }
+        }
+      }
+    },
+    "In iCloud, not downloaded": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En iCloud, sin descargar"
+          }
+        }
+      }
+    },
+    "In progress": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En curso"
+          }
+        }
+      }
+    },
+    "Inbox": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bandeja de entrada"
+          }
+        }
+      }
+    },
+    "Install from file…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalar desde un archivo…"
+          }
+        }
+      }
+    },
+    "Install voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalar voz"
+          }
+        }
+      }
+    },
+    "Installed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalado"
+          }
+        }
+      }
+    },
+    "Installs a Kokoro or Phonon Core ML bundle folder that is already on this device": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instala una carpeta de Kokoro o Phonon en formato Core ML que ya está en este dispositivo"
+          }
+        }
+      }
+    },
+    "Intelligent Reading": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lectura inteligente"
+          }
+        }
+      }
+    },
+    "Intelligent Reading could not be prepared": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se ha podido preparar la Lectura inteligente"
+          }
+        }
+      }
+    },
+    "It may have been deleted on another device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puede que se haya eliminado en otro dispositivo."
+          }
+        }
+      }
+    },
+    "Justify text": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Justificar texto"
+          }
+        }
+      }
+    },
+    "Kokoro": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kokoro"
+          }
+        }
+      }
+    },
+    "Kokoro 82M": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kokoro 82M"
+          }
+        }
+      }
+    },
+    "Kokoro's English phonemizer uses MLX, which needs a Metal GPU. The Simulator does not provide one. Install Kokoro on an iPhone, iPad or Mac; Phonon and system voices work in the Simulator.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El fonetizador inglés de Kokoro usa MLX, que necesita una GPU Metal. El Simulador no la tiene. Instala Kokoro en un iPhone, iPad o Mac; Phonon y las voces del sistema funcionan en el Simulador."
+          }
+        }
+      }
+    },
+    "LISTEN": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ESCUCHAR"
+          }
+        }
+      }
+    },
+    "LISTENING": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ESCUCHANDO"
+          }
+        }
+      }
+    },
+    "Language": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma"
+          }
+        }
+      }
+    },
+    "Larger text": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto más grande"
+          }
+        }
+      }
+    },
+    "Last opened": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Última apertura"
+          }
+        }
+      }
+    },
+    "Laying out pages": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maquetando páginas"
+          }
+        }
+      }
+    },
+    "Library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biblioteca"
+          }
+        }
+      }
+    },
+    "Library (top level)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biblioteca (nivel superior)"
+          }
+        }
+      }
+    },
+    "Library / %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biblioteca / %@"
+          }
+        }
+      }
+    },
+    "Licence: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licencia: %@"
+          }
+        }
+      }
+    },
+    "Light": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claro"
+          }
+        }
+      }
+    },
+    "Line spacing": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interlineado"
+          }
+        }
+      }
+    },
+    "List view": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vista de lista"
+          }
+        }
+      }
+    },
+    "Listen": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escuchar"
+          }
+        }
+      }
+    },
+    "Loading PDF…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando PDF…"
+          }
+        }
+      }
+    },
+    "Loading system voices…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando voces del sistema…"
+          }
+        }
+      }
+    },
+    "Local library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biblioteca local"
+          }
+        }
+      }
+    },
+    "Local-first reading and offline narration for iPhone, iPad and Mac. One library through your own iCloud.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lectura local y narración sin conexión para iPhone, iPad y Mac. Una sola biblioteca a través de tu propio iCloud."
+          }
+        }
+      }
+    },
+    "Loomings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espejismos"
+          }
+        }
+      }
+    },
+    "Manual Order": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orden manual"
+          }
+        }
+      }
+    },
+    "Manual order": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orden manual"
+          }
+        }
+      }
+    },
+    "Margins": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Márgenes"
+          }
+        }
+      }
+    },
+    "Mark as": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcar como"
+          }
+        }
+      }
+    },
+    "Mark as favorite": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcar como favorito"
+          }
+        }
+      }
+    },
+    "Markdown": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown"
+          }
+        }
+      }
+    },
+    "Match app theme": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Igual que la app"
+          }
+        }
+      }
+    },
+    "Medium": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media"
+          }
+        }
+      }
+    },
+    "Metadata": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metadatos"
+          }
+        }
+      }
+    },
+    "Metadata and annotations sync through your private CloudKit database. Original documents and covers live in your iCloud Drive. Voices, neural models, generated audio, OCR caches and credentials stay on this device and are never uploaded.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los metadatos y las anotaciones se sincronizan con tu base de datos privada de CloudKit. Los documentos originales y las portadas se guardan en tu iCloud Drive. Las voces, los modelos neuronales, el audio generado, las cachés de OCR y las credenciales se quedan en este dispositivo y nunca se suben."
+          }
+        }
+      }
+    },
+    "Metadata, collections, status and the book's voice appear here.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aquí aparecen los metadatos, las colecciones, el estado y la voz del libro."
+          }
+        }
+      }
+    },
+    "Mode": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modo"
+          }
+        }
+      }
+    },
+    "Model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo"
+          }
+        }
+      }
+    },
+    "Model card and licence": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ficha del modelo y licencia"
+          }
+        }
+      }
+    },
+    "Model licences": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licencias de los modelos"
+          }
+        }
+      }
+    },
+    "Models": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelos"
+          }
+        }
+      }
+    },
+    "Models %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelos %@"
+          }
+        }
+      }
+    },
+    "Models and audio on this %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelos y audio en este %@"
+          }
+        }
+      }
+    },
+    "Models that need an accepted licence": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelos que requieren aceptar la licencia"
+          }
+        }
+      }
+    },
+    "More settings…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más ajustes…"
+          }
+        }
+      }
+    },
+    "Move to": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mover a"
+          }
+        }
+      }
+    },
+    "Multilingual": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multilingüe"
+          }
+        }
+      }
+    },
+    "Multilingual Phonon checkpoint.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo multilingüe de Phonon."
+          }
+        }
+      }
+    },
+    "Name": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre"
+          }
+        }
+      }
+    },
+    "Narration position": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posición de la narración"
+          }
+        }
+      }
+    },
+    "Narration unavailable": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Narración no disponible"
+          }
+        }
+      }
+    },
+    "Narration, OCR and document analysis run locally. Documents and generated audio are never sent to a remote service.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La narración, el OCR y el análisis de documentos se ejecutan en el dispositivo. Los documentos y el audio generado nunca se envían a un servicio remoto."
+          }
+        }
+      }
+    },
+    "Neural engines": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Motores neuronales"
+          }
+        }
+      }
+    },
+    "New Collection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nueva colección"
+          }
+        }
+      }
+    },
+    "New Subcollection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nueva subcolección"
+          }
+        }
+      }
+    },
+    "New Subcollection…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nueva subcolección…"
+          }
+        }
+      }
+    },
+    "New Theme": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuevo tema"
+          }
+        }
+      }
+    },
+    "New collection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nueva colección"
+          }
+        }
+      }
+    },
+    "New subcollection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nueva subcolección"
+          }
+        }
+      }
+    },
+    "Next Chapter": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capítulo siguiente"
+          }
+        }
+      }
+    },
+    "Next Sentence": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frase siguiente"
+          }
+        }
+      }
+    },
+    "Next page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Página siguiente"
+          }
+        }
+      }
+    },
+    "Next sentence": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frase siguiente"
+          }
+        }
+      }
+    },
+    "No book selected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ningún libro seleccionado"
+          }
+        }
+      }
+    },
+    "No bookmarks yet": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay marcadores"
+          }
+        }
+      }
+    },
+    "No books here": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay libros aquí"
+          }
+        }
+      }
+    },
+    "No books here yet": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay libros aquí"
+          }
+        }
+      }
+    },
+    "No books match this filter. Try another one.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ningún libro coincide con este filtro. Prueba con otro."
+          }
+        }
+      }
+    },
+    "No collections yet": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay colecciones"
+          }
+        }
+      }
+    },
+    "No collections yet. Create one to group documents without duplicating them.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay colecciones. Crea una para agrupar documentos sin duplicarlos."
+          }
+        }
+      }
+    },
+    "No documents here yet.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay documentos aquí."
+          }
+        }
+      }
+    },
+    "No highlights or notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay resaltados ni notas"
+          }
+        }
+      }
+    },
+    "No matches": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin resultados"
+          }
+        }
+      }
+    },
+    "No other collections": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay otras colecciones"
+          }
+        }
+      }
+    },
+    "No regions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay regiones"
+          }
+        }
+      }
+    },
+    "No remote processing": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin procesamiento remoto"
+          }
+        }
+      }
+    },
+    "No supported document was found in the shared items.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se ha encontrado ningún documento compatible en lo que has compartido."
+          }
+        }
+      }
+    },
+    "No supported documents were found": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se han encontrado documentos compatibles"
+          }
+        }
+      }
+    },
+    "No supported documents were shared.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se han compartido documentos compatibles."
+          }
+        }
+      }
+    },
+    "No system voice is available for this document.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay ninguna voz del sistema disponible para este documento."
+          }
+        }
+      }
+    },
+    "No telemetry": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin telemetría"
+          }
+        }
+      }
+    },
+    "No voice is available for this document.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay ninguna voz disponible para este documento."
+          }
+        }
+      }
+    },
+    "No voices in this language": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay voces en este idioma"
+          }
+        }
+      }
+    },
+    "No voices match": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ninguna voz coincide"
+          }
+        }
+      }
+    },
+    "No, not for the voices you can download in this version. Kokoro 82M and Phonon 31M are public: anyone can download them without an account or a token.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No para las voces que puedes descargar en esta versión. Kokoro 82M y Phonon 31M son públicas: cualquiera puede descargarlas sin cuenta ni token."
+          }
+        }
+      }
+    },
+    "Nodus Reader": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodus Reader"
+          }
+        }
+      }
+    },
+    "Nodus Reader could not determine the state of your iCloud account.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodus Reader no ha podido comprobar el estado de tu cuenta de iCloud."
+          }
+        }
+      }
+    },
+    "Nodus Reader could not read “%@”.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodus Reader no ha podido leer «%@»."
+          }
+        }
+      }
+    },
+    "Nodus Reader is local-first by design.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodus Reader está diseñado para funcionar en local."
+          }
+        }
+      }
+    },
+    "Nodus Reader uses the voices already installed by the operating system. Neural Kokoro and Phonon voices are downloaded separately and also stay on this device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodus Reader usa las voces que ya instala el sistema operativo. Las voces neuronales de Kokoro y Phonon se descargan aparte y también se quedan en este dispositivo."
+          }
+        }
+      }
+    },
+    "Nodus Reader's shared container is not available. Open the app once and check the App Group entitlement.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El contenedor compartido de Nodus Reader no está disponible. Abre la app una vez y comprueba el permiso del grupo de apps."
+          }
+        }
+      }
+    },
+    "Not available": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No disponible"
+          }
+        }
+      }
+    },
+    "Not available in this version of Nodus Reader: there is no Core ML version of this model that runs on Apple devices yet. Accepting the licence now only gives your account access for later.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No disponible en esta versión de Nodus Reader: todavía no existe una versión Core ML de este modelo que funcione en dispositivos Apple. Aceptar la licencia ahora solo da acceso a tu cuenta para más adelante."
+          }
+        }
+      }
+    },
+    "Not yet synced": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no sincronizado"
+          }
+        }
+      }
+    },
+    "Note": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nota"
+          }
+        }
+      }
+    },
+    "Notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notas"
+          }
+        }
+      }
+    },
+    "Notes and highlighted passages": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notas y fragmentos resaltados"
+          }
+        }
+      }
+    },
+    "Nothing playing": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se está reproduciendo nada"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "OLED Black": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Negro OLED"
+          }
+        }
+      }
+    },
+    "Off": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No"
+          }
+        }
+      }
+    },
+    "Offline audio": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio sin conexión"
+          }
+        }
+      }
+    },
+    "On": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sí"
+          }
+        }
+      }
+    },
+    "On this %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En este %@"
+          }
+        }
+      }
+    },
+    "On this device": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En este dispositivo"
+          }
+        }
+      }
+    },
+    "One library across your devices through your personal iCloud account. Nodus Reader never runs a sync server.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una sola biblioteca en todos tus dispositivos a través de tu cuenta personal de iCloud. Nodus Reader nunca usa un servidor de sincronización propio."
+          }
+        }
+      }
+    },
+    "Only the selected voice engine appears in the reader and player voice lists. System voices are always available as a fallback.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En las listas de voces del lector y del reproductor solo aparece el motor de voz seleccionado. Las voces del sistema siempre están disponibles como alternativa."
+          }
+        }
+      }
+    },
+    "Open": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir"
+          }
+        }
+      }
+    },
+    "Open Access Tokens": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Access Tokens"
+          }
+        }
+      }
+    },
+    "Open player": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir reproductor"
+          }
+        }
+      }
+    },
+    "Open player, %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir reproductor, %@"
+          }
+        }
+      }
+    },
+    "Open source": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código abierto"
+          }
+        }
+      }
+    },
+    "Open the Access Tokens page in your account settings.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre la página Access Tokens en los ajustes de tu cuenta."
+          }
+        }
+      }
+    },
+    "Open the model's page. The links are below.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre la página del modelo. Los enlaces están más abajo."
+          }
+        }
+      }
+    },
+    "Opening %@…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abriendo %@…"
+          }
+        }
+      }
+    },
+    "Optional access token": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token de acceso opcional"
+          }
+        }
+      }
+    },
+    "Original PDF": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF original"
+          }
+        }
+      }
+    },
+    "Original page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Página original"
+          }
+        }
+      }
+    },
+    "Original page panel": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panel de la página original"
+          }
+        }
+      }
+    },
+    "PDF": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF"
+          }
+        }
+      }
+    },
+    "PDF reading mode": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modo de lectura del PDF"
+          }
+        }
+      }
+    },
+    "Page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Página"
+          }
+        }
+      }
+    },
+    "Page %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Página %lld"
+          }
+        }
+      }
+    },
+    "Page %lld of %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Página %1$lld de %2$lld"
+          }
+        }
+      }
+    },
+    "Page %lld of %lld in this chapter": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Página %1$lld de %2$lld de este capítulo"
+          }
+        }
+      }
+    },
+    "Page %lld of %lld · %lld%%": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Página %1$lld de %2$lld · %3$lld %%"
+          }
+        }
+      }
+    },
+    "Page curl": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasar página"
+          }
+        }
+      }
+    },
+    "Page image": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imagen de la página"
+          }
+        }
+      }
+    },
+    "Page turn": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paso de página"
+          }
+        }
+      }
+    },
+    "Paged": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por páginas"
+          }
+        }
+      }
+    },
+    "Paginating…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paginando…"
+          }
+        }
+      }
+    },
+    "Passage": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fragmento"
+          }
+        }
+      }
+    },
+    "Pause": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausa"
+          }
+        }
+      }
+    },
+    "Pause narration": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausar narración"
+          }
+        }
+      }
+    },
+    "Paused · %lld%%": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En pausa · %lld %%"
+          }
+        }
+      }
+    },
+    "Phonon": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phonon"
+          }
+        }
+      }
+    },
+    "Phonon 31M": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phonon 31M"
+          }
+        }
+      }
+    },
+    "Pick up where you left off, on any device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sigue donde lo dejaste, en cualquier dispositivo."
+          }
+        }
+      }
+    },
+    "Pink": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rosa"
+          }
+        }
+      }
+    },
+    "Play": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reproducir"
+          }
+        }
+      }
+    },
+    "Play narration": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reproducir narración"
+          }
+        }
+      }
+    },
+    "Play sample, %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escuchar muestra, %@"
+          }
+        }
+      }
+    },
+    "Playback speed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Velocidad de reproducción"
+          }
+        }
+      }
+    },
+    "Player": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reproductor"
+          }
+        }
+      }
+    },
+    "Player options": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opciones del reproductor"
+          }
+        }
+      }
+    },
+    "Premium": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Premium"
+          }
+        }
+      }
+    },
+    "Preparing": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando"
+          }
+        }
+      }
+    },
+    "Preview": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vista previa"
+          }
+        }
+      }
+    },
+    "Previous Chapter": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capítulo anterior"
+          }
+        }
+      }
+    },
+    "Previous Sentence": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frase anterior"
+          }
+        }
+      }
+    },
+    "Previous page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Página anterior"
+          }
+        }
+      }
+    },
+    "Previous sentence": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frase anterior"
+          }
+        }
+      }
+    },
+    "Privacy": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacidad"
+          }
+        }
+      }
+    },
+    "Private iCloud library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biblioteca privada en iCloud"
+          }
+        }
+      }
+    },
+    "Progress": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progreso"
+          }
+        }
+      }
+    },
+    "Published": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Publicación"
+          }
+        }
+      }
+    },
+    "Purple": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Morado"
+          }
+        }
+      }
+    },
+    "Quality": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calidad"
+          }
+        }
+      }
+    },
+    "READ & LISTEN": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LEER Y ESCUCHAR"
+          }
+        }
+      }
+    },
+    "READING": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LEYENDO"
+          }
+        }
+      }
+    },
+    "RTF": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RTF"
+          }
+        }
+      }
+    },
+    "Read": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leer"
+          }
+        }
+      }
+    },
+    "Read %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leer %@"
+          }
+        }
+      }
+    },
+    "Read & Listen": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leer y escuchar"
+          }
+        }
+      }
+    },
+    "Read the full privacy policy": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leer la política de privacidad completa"
+          }
+        }
+      }
+    },
+    "Read the licence. If you agree with it, fill in the short form on the page and select the button to agree and request access.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lee la licencia. Si estás de acuerdo, rellena el breve formulario de la página y selecciona el botón para aceptar y solicitar acceso."
+          }
+        }
+      }
+    },
+    "Reader": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lector"
+          }
+        }
+      }
+    },
+    "Reader navigation": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Navegación del lector"
+          }
+        }
+      }
+    },
+    "Reading": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lectura"
+          }
+        }
+      }
+    },
+    "Reading & Typography": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lectura y tipografía"
+          }
+        }
+      }
+    },
+    "Reading mode": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modo de lectura"
+          }
+        }
+      }
+    },
+    "Reading now": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leyendo ahora"
+          }
+        }
+      }
+    },
+    "Ready to import in Nodus Reader.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo para importar en Nodus Reader."
+          }
+        }
+      }
+    },
+    "Recently added": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadidos recientemente"
+          }
+        }
+      }
+    },
+    "Recently opened": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abiertos recientemente"
+          }
+        }
+      }
+    },
+    "Regions are detected locally. Nothing is uploaded.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las regiones se detectan en el dispositivo. No se sube nada."
+          }
+        }
+      }
+    },
+    "Regular": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normal"
+          }
+        }
+      }
+    },
+    "Remove": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar"
+          }
+        }
+      }
+    },
+    "Remove Download": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar descarga"
+          }
+        }
+      }
+    },
+    "Remove bookmark from this page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar el marcador de esta página"
+          }
+        }
+      }
+    },
+    "Remove favorite": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar de favoritos"
+          }
+        }
+      }
+    },
+    "Remove from Favorites": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar de Favoritos"
+          }
+        }
+      }
+    },
+    "Removing a download keeps the book in your library and in iCloud. Delete from Library removes it everywhere.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al eliminar una descarga, el libro se mantiene en tu biblioteca y en iCloud. «Eliminar de la biblioteca» lo borra en todas partes."
+          }
+        }
+      }
+    },
+    "Rename Collection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renombrar colección"
+          }
+        }
+      }
+    },
+    "Rename…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renombrar…"
+          }
+        }
+      }
+    },
+    "Reset": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restablecer"
+          }
+        }
+      }
+    },
+    "Reset typography": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restablecer tipografía"
+          }
+        }
+      }
+    },
+    "Results": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resultados"
+          }
+        }
+      }
+    },
+    "Resume": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reanudar"
+          }
+        }
+      }
+    },
+    "Retry": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reintentar"
+          }
+        }
+      }
+    },
+    "Sans": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sans"
+          }
+        }
+      }
+    },
+    "Save": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar"
+          }
+        }
+      }
+    },
+    "Save token": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar token"
+          }
+        }
+      }
+    },
+    "Scanned page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Página escaneada"
+          }
+        }
+      }
+    },
+    "Scroll across": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desplazar en horizontal"
+          }
+        }
+      }
+    },
+    "Scroll down": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desplazar en vertical"
+          }
+        }
+      }
+    },
+    "Scroll freely through the book in one column.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recorre el libro libremente en una sola columna."
+          }
+        }
+      }
+    },
+    "Scroll sideways along a strip of columns.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desplázate de lado por una tira de columnas."
+          }
+        }
+      }
+    },
+    "Search": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar"
+          }
+        }
+      }
+    },
+    "Search across titles, authors and the text of your documents.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busca en los títulos, los autores y el texto de tus documentos."
+          }
+        }
+      }
+    },
+    "Search books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar libros"
+          }
+        }
+      }
+    },
+    "Search in %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar en %@"
+          }
+        }
+      }
+    },
+    "Search library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar en la biblioteca"
+          }
+        }
+      }
+    },
+    "Search this collection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar en esta colección"
+          }
+        }
+      }
+    },
+    "Search voices": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar voces"
+          }
+        }
+      }
+    },
+    "See all": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver todo"
+          }
+        }
+      }
+    },
+    "Select": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seleccionar"
+          }
+        }
+      }
+    },
+    "Select \"Create new token\". Choose the \"Read\" token type, type a name such as \"Nodus Reader\", and create the token.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecciona «Create new token». Elige el tipo de token «Read», escribe un nombre como «Nodus Reader» y crea el token."
+          }
+        }
+      }
+    },
+    "Select a book": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecciona un libro"
+          }
+        }
+      }
+    },
+    "Select text in the reader to highlight it or add a note.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecciona texto en el lector para resaltarlo o añadir una nota."
+          }
+        }
+      }
+    },
+    "Selected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seleccionado"
+          }
+        }
+      }
+    },
+    "Semibold": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seminegrita"
+          }
+        }
+      }
+    },
+    "Sentence %lld of %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frase %1$lld de %2$lld"
+          }
+        }
+      }
+    },
+    "Sepia": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sepia"
+          }
+        }
+      }
+    },
+    "Serif": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serif"
+          }
+        }
+      }
+    },
+    "Set %@ as default voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usar %@ como voz predeterminada"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes"
+          }
+        }
+      }
+    },
+    "Shared documents could not be imported": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se han podido importar los documentos compartidos"
+          }
+        }
+      }
+    },
+    "Shared documents imported with errors": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documentos compartidos importados con errores"
+          }
+        }
+      }
+    },
+    "Show all books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar todos los libros"
+          }
+        }
+      }
+    },
+    "Show all languages": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar todos los idiomas"
+          }
+        }
+      }
+    },
+    "Show as grid": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar en cuadrícula"
+          }
+        }
+      }
+    },
+    "Show as list": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar en lista"
+          }
+        }
+      }
+    },
+    "Show images": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar imágenes"
+          }
+        }
+      }
+    },
+    "Show or hide the inspector": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar u ocultar el inspector"
+          }
+        }
+      }
+    },
+    "Shows the expanded player": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muestra el reproductor ampliado"
+          }
+        }
+      }
+    },
+    "Shows the whole library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muestra toda la biblioteca"
+          }
+        }
+      }
+    },
+    "Sign in to Hugging Face in your web browser, with the same account as your token.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión en Hugging Face en tu navegador con la misma cuenta que tu token."
+          }
+        }
+      }
+    },
+    "Sign in to iCloud and enable iCloud Drive for Nodus Reader to sync your library.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión en iCloud y activa iCloud Drive para Nodus Reader para sincronizar tu biblioteca."
+          }
+        }
+      }
+    },
+    "Sign in to iCloud on this device to sync your library.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión en iCloud en este dispositivo para sincronizar tu biblioteca."
+          }
+        }
+      }
+    },
+    "Size": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamaño"
+          }
+        }
+      }
+    },
+    "Skip headers & page numbers": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omitir encabezados y números de página"
+          }
+        }
+      }
+    },
+    "Sleep": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporizador"
+          }
+        }
+      }
+    },
+    "Sleep timer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporizador de apagado"
+          }
+        }
+      }
+    },
+    "Slide": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deslizar"
+          }
+        }
+      }
+    },
+    "Smaller text": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto más pequeño"
+          }
+        }
+      }
+    },
+    "Some files could not be imported": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se han podido importar algunos archivos"
+          }
+        }
+      }
+    },
+    "Some models are \"gated\": the publisher asks you to sign in and accept their licence before you can download them. A token is how an app proves to Hugging Face that it is acting for your account.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Algunos modelos tienen acceso restringido: quien los publica te pide iniciar sesión y aceptar su licencia antes de descargarlos. Un token es la forma en que una app demuestra a Hugging Face que actúa en nombre de tu cuenta."
+          }
+        }
+      }
+    },
+    "Some pages had no text layer and were read with on-device OCR. OCR can make mistakes; compare with the original page.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Algunas páginas no tenían capa de texto y se han leído con OCR en el dispositivo. El OCR puede cometer errores; compáralo con la página original."
+          }
+        }
+      }
+    },
+    "Some publishers approve requests at once; others review them by hand. The model page tells you when your account has access.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Algunos editores aprueban las solicitudes al momento; otros las revisan a mano. La página del modelo te indica cuándo tu cuenta tiene acceso."
+          }
+        }
+      }
+    },
+    "Sort": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordenar"
+          }
+        }
+      }
+    },
+    "Sort books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordenar libros"
+          }
+        }
+      }
+    },
+    "Source code": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código fuente"
+          }
+        }
+      }
+    },
+    "Space": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espacio"
+          }
+        }
+      }
+    },
+    "Spanish": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Español"
+          }
+        }
+      }
+    },
+    "Spanish Phonon checkpoint.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo de Phonon en español."
+          }
+        }
+      }
+    },
+    "Speed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Velocidad"
+          }
+        }
+      }
+    },
+    "Standard": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estándar"
+          }
+        }
+      }
+    },
+    "Status": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estado"
+          }
+        }
+      }
+    },
+    "Stop narration": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detener narración"
+          }
+        }
+      }
+    },
+    "Storage": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Almacenamiento"
+          }
+        }
+      }
+    },
+    "Streaming English speech with nine built-in voices.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voz en inglés en tiempo real con nueve voces incluidas."
+          }
+        }
+      }
+    },
+    "Subcollections can be nested as deeply as you need.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las subcolecciones se pueden anidar con tantos niveles como necesites."
+          }
+        }
+      }
+    },
+    "Sync Now": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizar ahora"
+          }
+        }
+      }
+    },
+    "Sync error": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error de sincronización"
+          }
+        }
+      }
+    },
+    "Sync is off": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronización desactivada"
+          }
+        }
+      }
+    },
+    "Sync is optional and off by default. Turning it off leaves every local file untouched.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La sincronización es opcional y está desactivada de forma predeterminada. Al desactivarla, los archivos locales no se modifican."
+          }
+        }
+      }
+    },
+    "Sync is optional and off by default. When you enable it, Nodus Reader uses your personal iCloud account through CloudKit and iCloud Drive. Nodus Research does not operate a sync server and cannot read your library.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La sincronización es opcional y está desactivada de forma predeterminada. Si la activas, Nodus Reader usa tu cuenta personal de iCloud mediante CloudKit e iCloud Drive. Nodus Research no tiene un servidor de sincronización y no puede leer tu biblioteca."
+          }
+        }
+      }
+    },
+    "Sync with iCloud": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizar con iCloud"
+          }
+        }
+      }
+    },
+    "Syncing…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizando…"
+          }
+        }
+      }
+    },
+    "System": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistema"
+          }
+        }
+      }
+    },
+    "System voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voz del sistema"
+          }
+        }
+      }
+    },
+    "System voices": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voces del sistema"
+          }
+        }
+      }
+    },
+    "TXT": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TXT"
+          }
+        }
+      }
+    },
+    "Table": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tabla"
+          }
+        }
+      }
+    },
+    "Tap the bookmark button in the reader to save the current page.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca el botón de marcador en el lector para guardar la página actual."
+          }
+        }
+      }
+    },
+    "Text": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto"
+          }
+        }
+      }
+    },
+    "Text size": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamaño del texto"
+          }
+        }
+      }
+    },
+    "Text size %lld points": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamaño del texto: %lld puntos"
+          }
+        }
+      }
+    },
+    "That document is already in your library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ese documento ya está en tu biblioteca"
+          }
+        }
+      }
+    },
+    "The %@ engine is not loaded. Open Settings › Voices & Models and install it again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El motor %@ no está cargado. Abre Ajustes › Voces y modelos e instálalo de nuevo."
+          }
+        }
+      }
+    },
+    "The Kokoro and Phonon bundles used here are public, so no account is required. A token is kept in this device's Keychain only and is never written to iCloud, the library or logs.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los paquetes de Kokoro y Phonon que se usan aquí son públicos, así que no hace falta cuenta. El token se guarda solo en el llavero de este dispositivo y nunca se escribe en iCloud, en la biblioteca ni en registros."
+          }
+        }
+      }
+    },
+    "The Nodus mark is reused under the MIT licence from Nodus Drift. ZIPFoundation is used under the MIT licence. Nodus Reader is not affiliated with Apple.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El logotipo de Nodus se reutiliza de Nodus Drift con licencia MIT. ZIPFoundation se usa con licencia MIT. Nodus Reader no está afiliado a Apple."
+          }
+        }
+      }
+    },
+    "The built-in themes remain available.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los temas incluidos siguen disponibles."
+          }
+        }
+      }
+    },
+    "The collection and its subcollections are removed. Documents stay in your library.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eliminan la colección y sus subcolecciones. Los documentos se quedan en tu biblioteca."
+          }
+        }
+      }
+    },
+    "The collection and its subcollections are removed. The documents stay in your library.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eliminan la colección y sus subcolecciones. Los documentos se quedan en tu biblioteca."
+          }
+        }
+      }
+    },
+    "The document could not be downloaded from iCloud.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se ha podido descargar el documento de iCloud."
+          }
+        }
+      }
+    },
+    "The document is not available in iCloud yet.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El documento aún no está disponible en iCloud."
+          }
+        }
+      }
+    },
+    "The document stays on this device. Nothing is uploaded.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El documento se queda en este dispositivo. No se sube nada."
+          }
+        }
+      }
+    },
+    "The download goes straight to this device. Your books, notes and audio are never sent to Hugging Face.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La descarga va directamente a este dispositivo. Tus libros, notas y audio nunca se envían a Hugging Face."
+          }
+        }
+      }
+    },
+    "The downloaded document does not match the library metadata. Try downloading it again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El documento descargado no coincide con los datos de la biblioteca. Vuelve a descargarlo."
+          }
+        }
+      }
+    },
+    "The iCloud download took too long. Check your connection and try again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La descarga de iCloud ha tardado demasiado. Comprueba tu conexión e inténtalo de nuevo."
+          }
+        }
+      }
+    },
+    "The import was cancelled.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se ha cancelado la importación."
+          }
+        }
+      }
+    },
+    "The neural engine returned audio in an unsupported format.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El motor neuronal ha devuelto audio en un formato no compatible."
+          }
+        }
+      }
+    },
+    "The neural engine returned no audio.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El motor neuronal no ha devuelto audio."
+          }
+        }
+      }
+    },
+    "The reader follows the App appearance.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El lector sigue la apariencia de la app."
+          }
+        }
+      }
+    },
+    "The selected engine has no installed voice for %@. Search all languages or choose another model in Settings.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El motor seleccionado no tiene voces instaladas para %@. Busca en todos los idiomas o elige otro modelo en Ajustes."
+          }
+        }
+      }
+    },
+    "The source is published under AGPL-3.0-only so the privacy claims above can be audited.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El código fuente se publica con licencia AGPL-3.0-only para que cualquiera pueda comprobar estas garantías de privacidad."
+          }
+        }
+      }
+    },
+    "The token could not be saved in the Keychain (status %d).": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se ha podido guardar el token en el llavero (estado %d)."
+          }
+        }
+      }
+    },
+    "The token is stored in this device's Keychain only. It is not synced with iCloud and Nodus Reader does not send it anywhere except Hugging Face. You can remove it here, or delete it on the Access Tokens page, at any time.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El token se guarda solo en el llavero de este dispositivo. No se sincroniza con iCloud y Nodus Reader solo lo envía a Hugging Face. Puedes quitarlo aquí, o borrarlo en la página Access Tokens, cuando quieras."
+          }
+        }
+      }
+    },
+    "The voice chosen for this book is not installed on this device": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La voz elegida para este libro no está instalada en este dispositivo"
+          }
+        }
+      }
+    },
+    "Theme": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tema"
+          }
+        }
+      }
+    },
+    "Theme applies to": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El tema se aplica a"
+          }
+        }
+      }
+    },
+    "Theme name": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre del tema"
+          }
+        }
+      }
+    },
+    "There are no analytics, advertising SDKs, tracking pixels or usage reports. The app does not collect identifiers.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay analíticas, SDK de publicidad, píxeles de seguimiento ni informes de uso. La app no recoge identificadores."
+          }
+        }
+      }
+    },
+    "Third-party notices": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisos de terceros"
+          }
+        }
+      }
+    },
+    "This PDF does not include an outline.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este PDF no incluye un índice."
+          }
+        }
+      }
+    },
+    "This book has no iCloud copy yet.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este libro aún no tiene copia en iCloud."
+          }
+        }
+      }
+    },
+    "This book is stored in iCloud. Enable iCloud sync in Settings to download it on this device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este libro está guardado en iCloud. Activa la sincronización con iCloud en Ajustes para descargarlo en este dispositivo."
+          }
+        }
+      }
+    },
+    "This book only": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo este libro"
+          }
+        }
+      }
+    },
+    "This book uses a voice chosen on another device. %@ reads it here until that voice is installed; voices and models are downloaded separately on each device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este libro usa una voz elegida en otro dispositivo. Aquí lo lee %@ hasta que instales esa voz; las voces y los modelos se descargan por separado en cada dispositivo."
+          }
+        }
+      }
+    },
+    "This build has analysed the first %lld of %lld pages. The original PDF remains available in full.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta versión ha analizado las primeras %1$lld de %2$lld páginas. El PDF original sigue disponible completo."
+          }
+        }
+      }
+    },
+    "This build is not signed for the Nodus Reader iCloud container.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta versión no está firmada para el contenedor de iCloud de Nodus Reader."
+          }
+        }
+      }
+    },
+    "This build is not signed for the Nodus Reader iCloud container. Configure the CloudKit container and entitlements before using sync.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta versión no está firmada para el contenedor de iCloud de Nodus Reader. Configura el contenedor de CloudKit y los permisos antes de usar la sincronización."
+          }
+        }
+      }
+    },
+    "This checkpoint is gated and non-commercial, and there is no Core ML bundle for it. It is listed for transparency only.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este modelo tiene acceso restringido, es de uso no comercial y no existe una versión Core ML. Solo aparece por transparencia."
+          }
+        }
+      }
+    },
+    "This document could not be opened": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se ha podido abrir este documento"
+          }
+        }
+      }
+    },
+    "This document does not contain readable text.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este documento no contiene texto legible."
+          }
+        }
+      }
+    },
+    "This document was removed from the library.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este documento se ha eliminado de la biblioteca."
+          }
+        }
+      }
+    },
+    "This folder is not a complete Kokoro or Phonon Core ML bundle. Choose the folder that contains the model packages and their manifest.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta carpeta no es un paquete Core ML completo de Kokoro o Phonon. Elige la carpeta que contiene los paquetes del modelo y su manifiesto."
+          }
+        }
+      }
+    },
+    "This removes %lld documents and their local files from Nodus Reader.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eliminarán %lld documentos y sus archivos locales de Nodus Reader."
+          }
+        }
+      }
+    },
+    "This removes “%@” and its local file from Nodus Reader.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eliminará «%@» y su archivo local de Nodus Reader."
+          }
+        }
+      }
+    },
+    "Those documents are already in your library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esos documentos ya están en tu biblioteca"
+          }
+        }
+      }
+    },
+    "Title": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título"
+          }
+        }
+      }
+    },
+    "Titles and authors": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Títulos y autores"
+          }
+        }
+      }
+    },
+    "Titles, authors, text and notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Títulos, autores, texto y notas"
+          }
+        }
+      }
+    },
+    "To Read": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por leer"
+          }
+        }
+      }
+    },
+    "To read": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por leer"
+          }
+        }
+      }
+    },
+    "Today": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoy"
+          }
+        }
+      }
+    },
+    "Troubleshooting": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solución de problemas"
+          }
+        }
+      }
+    },
+    "Try Again": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reintentar"
+          }
+        }
+      }
+    },
+    "Try a different title, author or passage.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba con otro título, autor o fragmento."
+          }
+        }
+      }
+    },
+    "Try again": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reintentar"
+          }
+        }
+      }
+    },
+    "Try clearing the search or filters.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba a borrar la búsqueda o los filtros."
+          }
+        }
+      }
+    },
+    "Two facing pages, like an open book.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dos páginas enfrentadas, como un libro abierto."
+          }
+        }
+      }
+    },
+    "Typeface": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tipo de letra"
+          }
+        }
+      }
+    },
+    "Typography": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tipografía"
+          }
+        }
+      }
+    },
+    "Unavailable": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No disponible"
+          }
+        }
+      }
+    },
+    "Unknown author": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autor desconocido"
+          }
+        }
+      }
+    },
+    "Unknown language": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma desconocido"
+          }
+        }
+      }
+    },
+    "Untitled": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin título"
+          }
+        }
+      }
+    },
+    "Up next": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A continuación"
+          }
+        }
+      }
+    },
+    "Up to date": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizado"
+          }
+        }
+      }
+    },
+    "Update token": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar token"
+          }
+        }
+      }
+    },
+    "Use generated cover": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usar portada generada"
+          }
+        }
+      }
+    },
+    "Use this model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usar este modelo"
+          }
+        }
+      }
+    },
+    "Verify": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificar"
+          }
+        }
+      }
+    },
+    "Version %@ (%@)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión %1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "Vertical": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vertical"
+          }
+        }
+      }
+    },
+    "View": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver"
+          }
+        }
+      }
+    },
+    "Voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voz"
+          }
+        }
+      }
+    },
+    "Voice engine": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Motor de voz"
+          }
+        }
+      }
+    },
+    "Voice engine selected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Motor de voz seleccionado"
+          }
+        }
+      }
+    },
+    "Voice for this book": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voz para este libro"
+          }
+        }
+      }
+    },
+    "Voice generated on this %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voz generada en este %@"
+          }
+        }
+      }
+    },
+    "Voice models, audio caches, OCR caches and credentials stay on the device that created them. They are excluded from iCloud sync.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los modelos de voz, las cachés de audio y de OCR y las credenciales se quedan en el dispositivo que los creó. Están excluidos de la sincronización con iCloud."
+          }
+        }
+      }
+    },
+    "Voice models, generated audio and OCR caches are device-local by design. They are excluded from backup and never enter iCloud.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los modelos de voz, el audio generado y las cachés de OCR son locales del dispositivo. Están excluidos de las copias de seguridad y nunca pasan por iCloud."
+          }
+        }
+      }
+    },
+    "Voices": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voces"
+          }
+        }
+      }
+    },
+    "Voices & Models": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voces y modelos"
+          }
+        }
+      }
+    },
+    "Voices and models": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voces y modelos"
+          }
+        }
+      }
+    },
+    "Voices available on this %@. Only the selected voice engine is shown; nothing is synced to iCloud.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voces disponibles en este %@. Solo se muestra el motor de voz seleccionado; no se sincroniza nada con iCloud."
+          }
+        }
+      }
+    },
+    "Voices provided by %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voces de %@"
+          }
+        }
+      }
+    },
+    "Waiting for a connection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esperando conexión"
+          }
+        }
+      }
+    },
+    "Weight": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grosor"
+          }
+        }
+      }
+    },
+    "What is Hugging Face and how do I get a token?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué es Hugging Face y cómo consigo un token?"
+          }
+        }
+      }
+    },
+    "What is Hugging Face?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué es Hugging Face?"
+          }
+        }
+      }
+    },
+    "With Reduce Motion on, Page curl is shown as Slide.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con Reducir movimiento activado, «Pasar página» se muestra como «Deslizar»."
+          }
+        }
+      }
+    },
+    "Write a note…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escribe una nota…"
+          }
+        }
+      }
+    },
+    "Yellow": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amarillo"
+          }
+        }
+      }
+    },
+    "Yesterday": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayer"
+          }
+        }
+      }
+    },
+    "You can enable sync at any time. Local data is never deleted when you do.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puedes activar la sincronización cuando quieras. Al hacerlo, nunca se eliminan los datos locales."
+          }
+        }
+      }
+    },
+    "Your documents": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus documentos"
+          }
+        }
+      }
+    },
+    "Your documents, metadata and reading progress are stored in this app's container on this device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus documentos, metadatos y progreso de lectura se guardan en el contenedor de esta app en este dispositivo."
+          }
+        }
+      }
+    },
+    "Your iCloud": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu iCloud"
+          }
+        }
+      }
+    },
+    "Your iCloud storage is full.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu almacenamiento de iCloud está lleno."
+          }
+        }
+      }
+    },
+    "Your library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu biblioteca"
+          }
+        }
+      }
+    },
+    "Your library is empty": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu biblioteca está vacía"
+          }
+        }
+      }
+    },
+    "Your library is kept in step across your devices.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu biblioteca se mantiene igual en todos tus dispositivos."
+          }
+        }
+      }
+    },
+    "Your library stays on this device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu biblioteca se queda en este dispositivo."
+          }
+        }
+      }
+    },
+    "downloading": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "descargando"
+          }
+        }
+      }
+    },
+    "hf_…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hf_…"
+          }
+        }
+      }
+    },
+    "iCloud": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iCloud"
+          }
+        }
+      }
+    },
+    "iCloud & Storage": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iCloud y almacenamiento"
+          }
+        }
+      }
+    },
+    "iCloud unavailable": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iCloud no disponible"
+          }
+        }
+      }
+    },
+    "in iCloud, not downloaded": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "en iCloud, sin descargar"
+          }
+        }
+      }
+    },
+    "play": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "reproducir"
+          }
+        }
+      }
+    },
+    "this voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "esta voz"
+          }
+        }
+      }
+    },
+    "your Mac": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tu Mac"
+          }
+        }
+      }
+    },
+    "your iPad": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tu iPad"
+          }
+        }
+      }
+    },
+    "your iPhone": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tu iPhone"
+          }
+        }
+      }
+    },
+    "© 2026 Nodus Research · AGPL-3.0-only": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 Nodus Research · AGPL-3.0-only"
+          }
+        }
+      }
+    },
+    "· %lld waiting": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· %lld en espera"
+          }
+        }
+      }
+    },
+    "“%@”": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@»"
+          }
+        }
+      }
+    },
+    "“%@” could not be opened. The file may be damaged or protected.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se ha podido abrir «%@». Puede que el archivo esté dañado o protegido."
+          }
+        }
+      }
+    },
+    "“%@” could not be read from where it is stored. If it is in iCloud Drive or another cloud service, open it once in Files so it downloads to this device, then import it again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se ha podido leer «%@» desde donde está guardado. Si está en iCloud Drive u otro servicio en la nube, ábrelo una vez en Archivos para que se descargue en este dispositivo y vuelve a importarlo."
+          }
+        }
+      }
+    },
+    "“%@” does not contain readable text.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» no contiene texto legible."
+          }
+        }
+      }
+    },
+    "“%@” is not a supported document format.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» no tiene un formato de documento compatible."
+          }
+        }
+      }
+    },
+    "“%@” is protected with DRM. Nodus Reader does not remove DRM; import a DRM-free copy of the book.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» está protegido con DRM. Nodus Reader no elimina el DRM; importa una copia del libro sin DRM."
+          }
+        }
+      }
+    },
+    "“%@” is too large to import safely on this device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» es demasiado grande para importarlo de forma segura en este dispositivo."
+          }
+        }
+      }
+    },
+    "•": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "•"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

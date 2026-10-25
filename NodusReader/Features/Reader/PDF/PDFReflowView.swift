@@ -39,7 +39,7 @@ struct PDFReaderContainer: View {
             HStack {
                 Picker("PDF reading mode", selection: $mode) {
                     ForEach(PDFReadingMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Text(LocalizedStringKey(mode.rawValue)).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -606,7 +606,7 @@ struct PDFSourcePanel: View {
             .offset(x: rect.minX, y: rect.minY)
     }
 
-    private func legend(_ color: Color, _ text: String) -> some View {
+    private func legend(_ color: Color, _ text: LocalizedStringKey) -> some View {
         HStack(spacing: 6) {
             RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 10, height: 8)
             Text(text).font(.caption2).foregroundStyle(.secondary)

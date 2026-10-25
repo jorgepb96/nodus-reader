@@ -273,34 +273,34 @@ struct HomeView: View {
 
     private func continueEyebrow(for book: Book) -> String? {
         let source = book.lastPositionDevice
-        guard !source.isEmpty, source != DeviceInfo.name else { return "Continue" }
+        guard !source.isEmpty, source != DeviceInfo.name else { return String(localized: "Continue") }
         let label: String
         if source.localizedCaseInsensitiveContains("mac") {
-            label = "your Mac"
+            label = String(localized: "your Mac")
         } else if source.localizedCaseInsensitiveContains("ipad") {
-            label = "your iPad"
+            label = String(localized: "your iPad")
         } else if source.localizedCaseInsensitiveContains("iphone") {
-            label = "your iPhone"
+            label = String(localized: "your iPhone")
         } else {
             label = source
         }
-        return "Continue · from \(label)"
+        return String(localized: "Continue · from \(label)")
     }
 
     private func chapterLine(for book: Book) -> String {
         let titles = book.chapterTitles
         let index = min(max(book.locator.chapterIndex, 0), max(titles.count - 1, 0))
         if titles.indices.contains(index) {
-            return "Chapter \(index + 1) · \(titles[index])"
+            return String(localized: "Chapter \(index + 1) · \(titles[index])")
         }
-        return book.format == .pdf ? "PDF" : "Chapter \(index + 1)"
+        return book.format == .pdf ? "PDF" : String(localized: "Chapter \(index + 1)")
     }
 
     private func metaLine(for book: Book) -> String {
         switch book.status {
-        case .finished: "\(book.format.badge) · Finished"
-        case .toRead: "\(book.format.badge) · To read"
-        case .inProgress: "\(book.format.badge) · \(Int((book.progress * 100).rounded()))%"
+        case .finished: String(localized: "\(book.format.badge) · Finished")
+        case .toRead: String(localized: "\(book.format.badge) · To read")
+        case .inProgress: String(localized: "\(book.format.badge) · \(Int((book.progress * 100).rounded()))%")
         }
     }
 }

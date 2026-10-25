@@ -23,8 +23,8 @@ final class ModelManager {
 
         var label: String {
             switch self {
-            case .kokoro: "Kokoro"
-            case .phonon: "Phonon"
+            case .kokoro: String(localized: "Kokoro")
+            case .phonon: String(localized: "Phonon")
             }
         }
     }
@@ -128,15 +128,15 @@ final class ModelManager {
             id: "kokoro-82m",
             engine: .kokoro,
             name: "Kokoro 82M",
-            detail: "Expressive American and British English narration with 28 voices.",
-            language: "English",
-            sizeText: "About 210 MB download",
+            detail: String(localized: "Expressive American and British English narration with 28 voices."),
+            language: String(localized: "English"),
+            sizeText: String(localized: "About 210 MB download"),
             license: "Apache-2.0",
             source: URL(string: "https://huggingface.co/mattmireles/kokoro-coreml")!,
             voices: ModelManager.kokoroVoices,
             availability: {
                 #if targetEnvironment(simulator)
-                .unavailable("Kokoro's English phonemizer uses MLX, which needs a Metal GPU. The Simulator does not provide one. Install Kokoro on an iPhone, iPad or Mac; Phonon and system voices work in the Simulator.")
+                .unavailable(String(localized: "Kokoro's English phonemizer uses MLX, which needs a Metal GPU. The Simulator does not provide one. Install Kokoro on an iPhone, iPad or Mac; Phonon and system voices work in the Simulator."))
                 #else
                 .available
                 #endif
@@ -146,9 +146,9 @@ final class ModelManager {
             id: "phonon-31m-en",
             engine: .phonon,
             name: "Phonon 31M",
-            detail: "Streaming English speech with nine built-in voices.",
-            language: "English",
-            sizeText: "About 300 MB download",
+            detail: String(localized: "Streaming English speech with nine built-in voices."),
+            language: String(localized: "English"),
+            sizeText: String(localized: "About 300 MB download"),
             license: "Apache-2.0",
             source: URL(string: "https://huggingface.co/mosiah/phonon-31m-en-coreml")!,
             voices: ModelManager.phononVoices,
@@ -158,14 +158,14 @@ final class ModelManager {
             id: "phonon-40m-es",
             engine: .phonon,
             name: "Phonon 40M Spanish",
-            detail: "Spanish Phonon checkpoint.",
-            language: "Spanish",
-            sizeText: "Not available",
+            detail: String(localized: "Spanish Phonon checkpoint."),
+            language: String(localized: "Spanish"),
+            sizeText: String(localized: "Not available"),
             license: "CC BY-NC 4.0",
             source: URL(string: "https://huggingface.co/gradium/phonon-40m-es")!,
             voices: [],
             availability: .unavailable(
-                "Gradium publishes this checkpoint as gated CC BY-NC weights but has not published a Core ML bundle. Nodus Reader will not offer a download it cannot run."
+                String(localized: "Gradium publishes this checkpoint as gated CC BY-NC weights but has not published a Core ML bundle. Nodus Reader will not offer a download it cannot run.")
             ),
             requiresAcceptedLicense: true
         ),
@@ -173,14 +173,14 @@ final class ModelManager {
             id: "phonon-40m-multilingual",
             engine: .phonon,
             name: "Phonon 40M Multilingual",
-            detail: "Multilingual Phonon checkpoint.",
-            language: "Multilingual",
-            sizeText: "Not available",
+            detail: String(localized: "Multilingual Phonon checkpoint."),
+            language: String(localized: "Multilingual"),
+            sizeText: String(localized: "Not available"),
             license: "CC BY-NC 4.0",
             source: URL(string: "https://huggingface.co/gradium/phonon-40m-multilingual")!,
             voices: [],
             availability: .unavailable(
-                "This checkpoint is gated and non-commercial, and there is no Core ML bundle for it. It is listed for transparency only."
+                String(localized: "This checkpoint is gated and non-commercial, and there is no Core ML bundle for it. It is listed for transparency only.")
             ),
             requiresAcceptedLicense: true
         )
@@ -477,7 +477,7 @@ final class ModelManager {
             return nil
         }.value
         guard let engine else {
-            errorMessage = "This folder is not a complete Kokoro or Phonon Core ML bundle. Choose the folder that contains the model packages and their manifest."
+            errorMessage = String(localized: "This folder is not a complete Kokoro or Phonon Core ML bundle. Choose the folder that contains the model packages and their manifest.")
             return
         }
         guard let model = models.first(where: { $0.engine == engine }) else { return }
@@ -872,13 +872,13 @@ enum HuggingFaceTokenError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .keychain(let status):
-            "The token could not be saved in the Keychain (status \(status))."
+            String(localized: "The token could not be saved in the Keychain (status \(status)).")
         case .rejected(let code):
             code == 401
-                ? "Hugging Face rejected this token."
+                ? String(localized: "Hugging Face rejected this token.")
                 : "Hugging Face returned HTTP \(code)."
         case .invalidResponse:
-            "Hugging Face returned an unexpected response."
+            String(localized: "Hugging Face returned an unexpected response.")
         }
     }
 }

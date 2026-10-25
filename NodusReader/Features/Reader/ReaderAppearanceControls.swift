@@ -229,7 +229,7 @@ struct ReaderAppearanceControls: View {
         .accessibilityLabel(smaller ? "Smaller text" : "Larger text")
     }
 
-    private func labeledSlider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>,
+    private func labeledSlider(_ title: LocalizedStringKey, value: Binding<Double>, range: ClosedRange<Double>,
                                step: Double, display: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
@@ -280,14 +280,14 @@ struct ReaderAppearanceControls: View {
         switch typography.flow {
         case .paged:
             #if os(iOS)
-            "With Reduce Motion on, Page curl is shown as Slide."
+            String(localized: "With Reduce Motion on, Page curl is shown as Slide.")
             #else
-            "Two facing pages, like an open book."
+            String(localized: "Two facing pages, like an open book.")
             #endif
         case .scrollVertical:
-            "Scroll freely through the book in one column."
+            String(localized: "Scroll freely through the book in one column.")
         case .scrollHorizontal:
-            "Scroll sideways along a strip of columns."
+            String(localized: "Scroll sideways along a strip of columns.")
         }
     }
 
@@ -331,7 +331,7 @@ struct ReaderAppearanceControls: View {
                 .italic()
                 .foregroundStyle(theme.text)
             JustifiedText(
-                text: "Call me Ishmael. Some years ago—never mind how long precisely—I thought I would sail about a little and see the watery part of the world.",
+                text: String(localized: "Call me Ishmael. Some years ago—never mind how long precisely—I thought I would sail about a little and see the watery part of the world."),
                 size: typography.baseFontSize,
                 weight: weight,
                 useSerif: typography.useSerif,

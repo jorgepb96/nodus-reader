@@ -14,21 +14,21 @@ public enum ImportError: LocalizedError, Equatable {
     public var errorDescription: String? {
         switch self {
         case .unsupportedFormat(let name):
-            "“\(name)” is not a supported document format."
+            String(localized: "“\(name)” is not a supported document format.")
         case .fileAccessDenied(let name):
-            "Nodus Reader could not read “\(name)”."
+            String(localized: "Nodus Reader could not read “\(name)”.")
         case .unreadableDocument(let name):
-            "“\(name)” could not be opened. The file may be damaged or protected."
+            String(localized: "“\(name)” could not be opened. The file may be damaged or protected.")
         case .emptyDocument(let name):
-            "“\(name)” does not contain readable text."
+            String(localized: "“\(name)” does not contain readable text.")
         case .fileTooLarge(let name):
-            "“\(name)” is too large to import safely on this device."
+            String(localized: "“\(name)” is too large to import safely on this device.")
         case .providerUnavailable(let name):
-            "“\(name)” could not be read from where it is stored. If it is in iCloud Drive or another cloud service, open it once in Files so it downloads to this device, then import it again."
+            String(localized: "“\(name)” could not be read from where it is stored. If it is in iCloud Drive or another cloud service, open it once in Files so it downloads to this device, then import it again.")
         case .drmProtected(let name):
-            "“\(name)” is protected with DRM. Nodus Reader does not remove DRM; import a DRM-free copy of the book."
+            String(localized: "“\(name)” is protected with DRM. Nodus Reader does not remove DRM; import a DRM-free copy of the book.")
         case .cancelled:
-            "The import was cancelled."
+            String(localized: "The import was cancelled.")
         }
     }
 }

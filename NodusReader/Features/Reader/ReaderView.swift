@@ -428,8 +428,8 @@ struct ReaderView: View {
             }
             guard FileManager.default.fileExists(atPath: localURL.path) else {
                 let hint = sync.isEnabled
-                    ? (sync.downloadError ?? "The document could not be downloaded from iCloud.")
-                    : "This book is stored in iCloud. Enable iCloud sync in Settings to download it on this device."
+                    ? (sync.downloadError ?? String(localized: "The document could not be downloaded from iCloud."))
+                    : String(localized: "This book is stored in iCloud. Enable iCloud sync in Settings to download it on this device.")
                 content = .failed(hint)
                 return
             }
@@ -447,7 +447,7 @@ struct ReaderView: View {
         do {
             let loaded = try await BookTextLoader.loadChapters(for: book, fileStore: library.fileStore)
             guard !loaded.isEmpty else {
-                content = .failed("This document does not contain readable text.")
+                content = .failed(String(localized: "This document does not contain readable text."))
                 return
             }
             content = .chapters(loaded)
@@ -506,28 +506,28 @@ struct ReaderView: View {
 
     private var currentChapterLabel: String {
         if book.format == .pdf {
-            return pdfPageCount > 0 ? "Page \(min(pdfPageIndex + 1, pdfPageCount)) of \(pdfPageCount)" : "PDF"
+            return pdfPageCount > 0 ? String(localized: "Page \(min(pdfPageIndex + 1, pdfPageCount)) of \(pdfPageCount)") : "PDF"
         }
         if !pageInfo.chapterTitle.isEmpty {
             return pageInfo.chapterTitle
         }
-        return "Chapter \(pageInfo.chapterIndex + 1)"
+        return String(localized: "Chapter \(pageInfo.chapterIndex + 1)")
     }
 
     private var progressLine: String {
         if book.format == .pdf {
-            guard pdfPageCount > 0 else { return "Loading PDF…" }
+            guard pdfPageCount > 0 else { return String(localized: "Loading PDF…") }
             let total = pdfPageCount
             let percent = Int(((Double(pdfPageIndex + 1) / Double(total)) * 100).rounded())
-            return "Page \(min(pdfPageIndex + 1, total)) of \(total) · \(percent)%"
+            return String(localized: "Page \(min(pdfPageIndex + 1, total)) of \(total) · \(percent)%")
         }
-        guard pageInfo.pageCount > 0 else { return "Paginating…" }
+        guard pageInfo.pageCount > 0 else { return String(localized: "Paginating…") }
         if pageInfo.isProvisional {
             // Only this chapter is laid out yet; book-wide numbers follow.
-            return "Page \(pageInfo.pageIndexInChapter + 1) of \(pageInfo.pagesInChapter) in this chapter"
+            return String(localized: "Page \(pageInfo.pageIndexInChapter + 1) of \(pageInfo.pagesInChapter) in this chapter")
         }
         let percent = Int((Double(pageInfo.pageIndex + 1) / Double(pageInfo.pageCount) * 100).rounded())
-        return "Page \(pageInfo.pageIndex + 1) of \(pageInfo.pageCount) · \(percent)%"
+        return String(localized: "Page \(pageInfo.pageIndex + 1) of \(pageInfo.pageCount) · \(percent)%")
     }
 
     // MARK: Bookmarks and annotations
@@ -577,7 +577,7 @@ struct ReaderView: View {
         if book.format == .pdf {
             library.addBookmark(
                 book,
-                title: "Page \(pdfPageIndex + 1)",
+                title: String(localized: "Page \(pdfPageIndex + 1)"),
                 chapterTitle: "PDF page \(pdfPageIndex + 1)",
                 locator: ReadingLocator(chapterIndex: pdfPageIndex,
                                         scrollFraction: Double(pdfPageIndex + 1) / Double(max(pdfPageCount, 1)),
@@ -588,7 +588,7 @@ struct ReaderView: View {
             let page = readerPages[pageIndex]
             library.addBookmark(
                 book,
-                title: "Page \(pageIndex + 1)",
+                title: String(localized: "Page \(pageIndex + 1)"),
                 chapterTitle: page.chapterTitle,
                 locator: ReadingLocator(chapterIndex: page.chapterIndex,
                                         scrollFraction: page.pagesInChapter > 1

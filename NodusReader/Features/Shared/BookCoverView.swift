@@ -159,8 +159,8 @@ struct BookCoverView: View {
     private var accessibilityDescription: String {
         var parts = ["\(book.title), by \(book.displayAuthor)"]
         if showBadges, book.format == .pdf { parts.append("PDF") }
-        if showBadges, book.downloadState == .cloudOnly { parts.append("in iCloud, not downloaded") }
-        if showBadges, book.downloadState == .downloading { parts.append("downloading") }
+        if showBadges, book.downloadState == .cloudOnly { parts.append(String(localized: "in iCloud, not downloaded")) }
+        if showBadges, book.downloadState == .downloading { parts.append(String(localized: "downloading")) }
         return parts.joined(separator: ", ")
     }
 }

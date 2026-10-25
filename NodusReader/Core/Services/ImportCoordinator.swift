@@ -81,13 +81,13 @@ public final class ImportCoordinator {
 
             if !result.failures.isEmpty {
                 alert = LibraryAlert(
-                    title: "Some files could not be imported",
+                    title: String(localized: "Some files could not be imported"),
                     message: result.failures.map { "\($0.fileName): \($0.message)" }.joined(separator: "\n")
                 )
             } else if !result.isEmpty {
                 show(toast: result.summaryText)
             } else if expanded.files.isEmpty {
-                show(toast: "No supported documents were found")
+                show(toast: String(localized: "No supported documents were found"))
             }
         }
     }
@@ -184,7 +184,7 @@ public final class ImportCoordinator {
 
         if !failures.isEmpty {
             alert = LibraryAlert(
-                title: imported > 0 ? "Shared documents imported with errors" : "Shared documents could not be imported",
+                title: imported > 0 ? String(localized: "Shared documents imported with errors") : String(localized: "Shared documents could not be imported"),
                 message: failures.map { "\($0.fileName): \($0.message)" }.joined(separator: "\n")
                     + "\n\nShare the document again to retry."
             )
@@ -192,7 +192,7 @@ public final class ImportCoordinator {
             let count = imported == 1 ? "1 shared document imported" : "\(imported) shared documents imported"
             show(toast: duplicates > 0 ? "\(count) · \(duplicates) already present" : count)
         } else if duplicates > 0 {
-            show(toast: duplicates == 1 ? "That document is already in your library" : "Those documents are already in your library")
+            show(toast: duplicates == 1 ? String(localized: "That document is already in your library") : String(localized: "Those documents are already in your library"))
         }
         isImporting = false
         progress = nil

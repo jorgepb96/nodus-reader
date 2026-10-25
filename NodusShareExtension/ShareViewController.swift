@@ -65,7 +65,7 @@ final class ShareImportModel {
         if !appGroupAvailable {
             errorMessage = SharedInboxError.appGroupUnavailable.errorDescription
         } else if found.isEmpty {
-            errorMessage = "No supported document was found in the shared items."
+            errorMessage = String(localized: "No supported document was found in the shared items.")
         }
     }
 
@@ -162,7 +162,7 @@ final class ShareImportModel {
             }
             return false
         }
-        progressText = "Ready to import in Nodus Reader."
+        progressText = String(localized: "Ready to import in Nodus Reader.")
         return true
     }
 
@@ -365,7 +365,7 @@ struct ShareImportView: View {
                         ProgressView().tint(palette.accent)
                             .frame(maxWidth: .infinity, minHeight: 120)
                     } else if model.attachments.isEmpty {
-                        Text(model.errorMessage ?? "No supported documents were shared.")
+                        Text(model.errorMessage ?? String(localized: "No supported documents were shared."))
                             .font(.footnote)
                             .foregroundStyle(palette.muted)
                             .frame(maxWidth: .infinity, minHeight: 100)
@@ -393,7 +393,7 @@ struct ShareImportView: View {
                         .panelCard(radius: 18)
 
                         Menu {
-                            Button("Inbox") { model.destinationID = nil }
+                            Button(String(localized: "Inbox")) { model.destinationID = nil }
                             if !model.collections.isEmpty { Divider() }
                             ForEach(model.collections) { collection in
                                 Button(String(repeating: "  ", count: collection.depth) + collection.name) {
@@ -404,7 +404,7 @@ struct ShareImportView: View {
                             HStack {
                                 Text("Add to")
                                     .foregroundStyle(palette.muted)
-                                Text(model.collections.first(where: { $0.id == model.destinationID })?.name ?? "Inbox")
+                                Text(model.collections.first(where: { $0.id == model.destinationID })?.name ?? String(localized: "Inbox"))
                                     .foregroundStyle(palette.text)
                                 Spacer()
                                 Image(systemName: "chevron.down")
@@ -490,7 +490,7 @@ final class ShareViewController: UIViewController {
             extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
         } else {
             let error = NSError(domain: "ai.nodus.reader.share", code: 0,
-                                userInfo: [NSLocalizedDescriptionKey: "Import cancelled"])
+                                userInfo: [NSLocalizedDescriptionKey: String(localized: "Import cancelled")])
             extensionContext?.cancelRequest(withError: error)
         }
     }

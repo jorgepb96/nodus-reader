@@ -73,8 +73,8 @@ final class ReaderMacTextView: NSTextView {
         let menu = super.menu(for: event) ?? NSMenu()
         guard let range = chapterRange(for: selectedRange()), range.length > 0 else { return menu }
 
-        let highlightItem = NSMenuItem(title: "Highlight", action: nil, keyEquivalent: "")
-        let submenu = NSMenu(title: "Highlight")
+        let highlightItem = NSMenuItem(title: String(localized: "Highlight"), action: nil, keyEquivalent: "")
+        let submenu = NSMenu(title: String(localized: "Highlight"))
         for color in AnnotationColor.allCases {
             let item = NSMenuItem(title: color.title, action: #selector(applyHighlight(_:)), keyEquivalent: "")
             item.target = self
@@ -84,7 +84,7 @@ final class ReaderMacTextView: NSTextView {
         highlightItem.submenu = submenu
         menu.insertItem(highlightItem, at: 0)
 
-        let noteItem = NSMenuItem(title: "Add Note…", action: #selector(addNote), keyEquivalent: "")
+        let noteItem = NSMenuItem(title: String(localized: "Add Note…"), action: #selector(addNote), keyEquivalent: "")
         noteItem.target = self
         menu.insertItem(noteItem, at: 1)
         return menu

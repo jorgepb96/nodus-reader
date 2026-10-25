@@ -44,7 +44,7 @@ struct SearchResultsContent: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Eyebrow("Search")
                     DisplayTitle("Results", size: DeviceInfo.isPad ? 44 : 36)
-                    Text("\(results.count) \(results.count == 1 ? "match" : "matches") for “\(query)”")
+                    Text(results.count == 1 ? "1 match for “\(query)”" : "\(results.count) matches for “\(query)”")
                         .font(.footnote)
                         .foregroundStyle(palette.muted)
                 }

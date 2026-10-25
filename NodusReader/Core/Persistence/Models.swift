@@ -16,12 +16,12 @@ public enum BookFormat: String, Codable, CaseIterable, Identifiable, Sendable {
 
     public var label: String {
         switch self {
-        case .epub: "EPUB"
-        case .pdf: "PDF"
-        case .txt: "TXT"
-        case .markdown: "Markdown"
-        case .html: "HTML"
-        case .rtf: "RTF"
+        case .epub: String(localized: "EPUB")
+        case .pdf: String(localized: "PDF")
+        case .txt: String(localized: "TXT")
+        case .markdown: String(localized: "Markdown")
+        case .html: String(localized: "HTML")
+        case .rtf: String(localized: "RTF")
         }
     }
 
@@ -68,9 +68,9 @@ public enum ReadingStatus: String, Codable, CaseIterable, Identifiable, Sendable
 
     public var label: String {
         switch self {
-        case .toRead: "To read"
-        case .inProgress: "In progress"
-        case .finished: "Finished"
+        case .toRead: String(localized: "To read")
+        case .inProgress: String(localized: "In progress")
+        case .finished: String(localized: "Finished")
         }
     }
 }
@@ -90,9 +90,9 @@ public enum ReadingMode: String, Codable, CaseIterable, Identifiable, Sendable {
 
     public var label: String {
         switch self {
-        case .read: "Read"
-        case .listen: "Listen"
-        case .readAndListen: "Read & Listen"
+        case .read: String(localized: "Read")
+        case .listen: String(localized: "Listen")
+        case .readAndListen: String(localized: "Read & Listen")
         }
     }
 }
@@ -227,7 +227,7 @@ public final class Book {
     }
 
     public var displayAuthor: String {
-        author.isEmpty ? "Unknown author" : author
+        author.isEmpty ? String(localized: "Unknown author") : author
     }
 
     public var languageDisplayName: String {
@@ -364,12 +364,12 @@ public enum SmartList: String, CaseIterable, Identifiable, Hashable, Sendable {
 
     public var title: String {
         switch self {
-        case .home: "Home"
-        case .allBooks: "All Books"
-        case .favorites: "Favorites"
-        case .toRead: "To Read"
-        case .finished: "Finished"
-        case .inbox: "Inbox"
+        case .home: String(localized: "Home")
+        case .allBooks: String(localized: "All Books")
+        case .favorites: String(localized: "Favorites")
+        case .toRead: String(localized: "To Read")
+        case .finished: String(localized: "Finished")
+        case .inbox: String(localized: "Inbox")
         }
     }
 
@@ -393,13 +393,13 @@ public struct LibraryFilter: Sendable, Equatable {
 
         public var title: String {
             switch self {
-            case .all: "All"
-            case .inProgress: "In progress"
-            case .toRead: "To read"
-            case .finished: "Finished"
-            case .favorites: "Favorites"
-            case .epub: "EPUB"
-            case .pdf: "PDF"
+            case .all: String(localized: "All")
+            case .inProgress: String(localized: "In progress")
+            case .toRead: String(localized: "To read")
+            case .finished: String(localized: "Finished")
+            case .favorites: String(localized: "Favorites")
+            case .epub: String(localized: "EPUB")
+            case .pdf: String(localized: "PDF")
             }
         }
     }
@@ -427,10 +427,10 @@ public enum LibrarySort: String, CaseIterable, Identifiable, Sendable {
 
     public var title: String {
         switch self {
-        case .recentlyOpened: "Recently opened"
-        case .recentlyAdded: "Recently added"
-        case .title: "Title"
-        case .author: "Author"
+        case .recentlyOpened: String(localized: "Recently opened")
+        case .recentlyAdded: String(localized: "Recently added")
+        case .title: String(localized: "Title")
+        case .author: String(localized: "Author")
         }
     }
 }
@@ -449,11 +449,11 @@ public enum AnnotationColor: String, Codable, CaseIterable, Identifiable, Sendab
 
     public var title: String {
         switch self {
-        case .yellow: "Yellow"
-        case .green: "Green"
-        case .blue: "Blue"
-        case .pink: "Pink"
-        case .purple: "Purple"
+        case .yellow: String(localized: "Yellow")
+        case .green: String(localized: "Green")
+        case .blue: String(localized: "Blue")
+        case .pink: String(localized: "Pink")
+        case .purple: String(localized: "Purple")
         }
     }
 

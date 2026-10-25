@@ -281,11 +281,11 @@ enum SyncFileError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notInICloud:
-            "The document is not available in iCloud yet."
+            String(localized: "The document is not available in iCloud yet.")
         case .downloadTimedOut:
-            "The iCloud download took too long. Check your connection and try again."
+            String(localized: "The iCloud download took too long. Check your connection and try again.")
         case .sizeMismatch:
-            "The downloaded document does not match the library metadata. Try downloading it again."
+            String(localized: "The downloaded document does not match the library metadata. Try downloading it again.")
         }
     }
 }

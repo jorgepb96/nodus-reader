@@ -305,7 +305,7 @@ struct StorageSettingsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("In iCloud only")
                         .font(.body)
-                    Text("\(cloudOnlyBooks.count) \(cloudOnlyBooks.count == 1 ? "book is" : "books are") not downloaded on this \(DeviceInfo.platformName).")
+                    Text(cloudOnlyBooks.count == 1 ? "1 book is not downloaded on this \(DeviceInfo.platformName)." : "\(cloudOnlyBooks.count) books are not downloaded on this \(DeviceInfo.platformName).")
                         .font(.caption2)
                         .foregroundStyle(palette.muted)
                 }
@@ -374,7 +374,7 @@ struct StorageSettingsView: View {
         }
     }
 
-    private func troubleshootingLine(_ text: String) -> some View {
+    private func troubleshootingLine(_ text: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 7) {
             Circle().fill(palette.muted.opacity(0.5)).frame(width: 4, height: 4).padding(.top, 6)
             Text(text)
@@ -416,7 +416,7 @@ struct StorageSettingsView: View {
         .accessibilityHidden(true)
     }
 
-    private func legend(color: Color, text: String) -> some View {
+    private func legend(color: Color, text: LocalizedStringKey) -> some View {
         HStack(spacing: 5) {
             Circle().fill(color).frame(width: 8, height: 8)
             Text(text)
@@ -483,7 +483,7 @@ struct PrivacyView: View {
         }
     }
 
-    private func section(title: String, body: String) -> some View {
+    private func section(title: LocalizedStringKey, body: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.system(.headline, design: .serif))
@@ -505,7 +505,7 @@ struct AboutView: View {
     private var version: String {
         let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
-        return "Version \(short) (\(build))"
+        return String(localized: "Version \(short) (\(build))")
     }
 
     var body: some View {
@@ -587,7 +587,7 @@ struct AboutView: View {
         Divider().overlay(palette.line).padding(.leading, 14)
     }
 
-    private func linkRow(_ title: String, url: String) -> some View {
+    private func linkRow(_ title: LocalizedStringKey, url: String) -> some View {
         Link(destination: URL(string: url)!) {
             HStack {
                 Text(title)

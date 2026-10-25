@@ -28,22 +28,22 @@ final class CloudSyncService {
 
         var title: String {
             switch self {
-            case .disabled: "Sync is off"
-            case .unavailable: "iCloud unavailable"
-            case .syncing: "Syncing…"
-            case .upToDate: "Up to date"
-            case .offline: "Waiting for a connection"
-            case .error: "Sync error"
+            case .disabled: String(localized: "Sync is off")
+            case .unavailable: String(localized: "iCloud unavailable")
+            case .syncing: String(localized: "Syncing…")
+            case .upToDate: String(localized: "Up to date")
+            case .offline: String(localized: "Waiting for a connection")
+            case .error: String(localized: "Sync error")
             }
         }
 
         var detail: String? {
             switch self {
-            case .disabled: "Your library stays on this device."
+            case .disabled: String(localized: "Your library stays on this device.")
             case .unavailable(let message): message
-            case .syncing: "Changes are moving through your personal iCloud."
+            case .syncing: String(localized: "Changes are moving through your personal iCloud.")
             case .upToDate: nil
-            case .offline: "Changes are queued and will be sent when you are back online."
+            case .offline: String(localized: "Changes are queued and will be sent when you are back online.")
             case .error(let message): message
             }
         }
@@ -192,7 +192,7 @@ final class CloudSyncService {
     }
 
     var lastSyncText: String {
-        guard let lastSync else { return "Not yet synced" }
+        guard let lastSync else { return String(localized: "Not yet synced") }
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
         return "Last successful sync: \(formatter.localizedString(for: lastSync, relativeTo: Date()))"
@@ -223,7 +223,7 @@ final class CloudSyncService {
         guard FileManager.default.ubiquityIdentityToken != nil,
               Self.hasCloudKitContainerEntitlement() else {
             isAvailable = false
-            availabilityMessage = "Sign in to iCloud and enable iCloud Drive for Nodus Reader to sync your library."
+            availabilityMessage = String(localized: "Sign in to iCloud and enable iCloud Drive for Nodus Reader to sync your library.")
             if !isEnabled { status = .disabled } else { status = .unavailable(availabilityMessage) }
             return
         }
@@ -232,7 +232,7 @@ final class CloudSyncService {
         }
         guard let container else {
             isAvailable = false
-            availabilityMessage = "This build is not signed for the Nodus Reader iCloud container."
+            availabilityMessage = String(localized: "This build is not signed for the Nodus Reader iCloud container.")
             return
         }
         do {
@@ -248,13 +248,13 @@ final class CloudSyncService {
                 }
             case .noAccount:
                 isAvailable = false
-                availabilityMessage = "Sign in to iCloud on this device to sync your library."
+                availabilityMessage = String(localized: "Sign in to iCloud on this device to sync your library.")
             case .restricted:
                 isAvailable = false
                 availabilityMessage = "iCloud is restricted on this device."
             case .couldNotDetermine:
                 isAvailable = false
-                availabilityMessage = "Nodus Reader could not determine the state of your iCloud account."
+                availabilityMessage = String(localized: "Nodus Reader could not determine the state of your iCloud account.")
             case .temporarilyUnavailable:
                 isAvailable = false
                 availabilityMessage = "iCloud is temporarily unavailable. Try again shortly."
@@ -265,7 +265,7 @@ final class CloudSyncService {
         } catch {
             isAvailable = false
             fileSyncAvailable = false
-            availabilityMessage = "This build is not signed for the Nodus Reader iCloud container. Configure the CloudKit container and entitlements before using sync."
+            availabilityMessage = String(localized: "This build is not signed for the Nodus Reader iCloud container. Configure the CloudKit container and entitlements before using sync.")
         }
 
         if !isEnabled {
@@ -1028,7 +1028,7 @@ final class CloudSyncService {
         downloadError = nil
         let file = RemoteBookFile(book)
         guard await documents.hasRemoteCopy(for: file) else {
-            downloadError = "This book has no iCloud copy yet."
+            downloadError = String(localized: "This book has no iCloud copy yet.")
             return
         }
         do {
@@ -1065,9 +1065,9 @@ final class CloudSyncService {
             case .networkUnavailable, .networkFailure:
                 return .offline
             case .notAuthenticated:
-                return .unavailable("Sign in to iCloud on this device to sync your library.")
+                return .unavailable(String(localized: "Sign in to iCloud on this device to sync your library."))
             case .quotaExceeded:
-                return .error("Your iCloud storage is full.")
+                return .error(String(localized: "Your iCloud storage is full."))
             default:
                 break
             }
@@ -1188,7 +1188,7 @@ enum SyncServiceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .cloudKitUnavailable:
-            "CloudKit is unavailable in this build or on this device."
+            String(localized: "CloudKit is unavailable in this build or on this device.")
         }
     }
 }

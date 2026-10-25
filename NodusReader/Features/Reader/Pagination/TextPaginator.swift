@@ -134,7 +134,7 @@ enum TextPaginator {
 
     private static func chapterString(_ chapter: ExtractedChapter, index: Int,
                                       style: ReaderPageStyle) -> (NSAttributedString, Int) {
-        let header = EditorialChapterHeader(eyebrow: "CHAPTER \(index + 1)",
+        let header = EditorialChapterHeader(eyebrow: String(localized: "CHAPTER \(index + 1)"),
                                             title: chapter.title, style: style)
         let full = NSMutableAttributedString(attributedString: header.attributed)
         full.append(NSAttributedString(string: chapter.text, attributes: style.bodyAttributes))

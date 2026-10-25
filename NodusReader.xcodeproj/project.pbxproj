@@ -38,6 +38,7 @@
 		67F386AD47DD382F646DF469 /* HTMLText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC3CCAB5516F1CC4ED19C9F /* HTMLText.swift */; };
 		68BC4B6B98AE208B59C91A2B /* VoiceCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9B64BBE71DDC847CBDFB58A /* VoiceCatalog.swift */; };
 		6BAF600273BDA0BF69E66AB3 /* ReaderNavigationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8374C8CF82EADFE4C61847B6 /* ReaderNavigationSheet.swift */; };
+		6DC4D3ED190B8EA6E4E6A49A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FF7CBF9CFCF8E117C3191309 /* Localizable.xcstrings */; };
 		760428D786B438C27B4A5133 /* ReaderPageStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECD64B338813C089B0F2DEE /* ReaderPageStyle.swift */; };
 		76B09484C08564F659686167 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 482C91BD01D7902D6B10D7D4 /* RootView.swift */; };
 		7811592388EAB8C07E8E48AC /* MacRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 638DEE4E57C7085D36B92FB0 /* MacRootView.swift */; };
@@ -62,6 +63,7 @@
 		C13569691FA7A02D86024424 /* ImagePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CD993B1E77129C04C4EB63 /* ImagePipeline.swift */; };
 		C6AE3EF01BF6C2203D01DE43 /* ReaderContentsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390305E758451EF6E06B5D1A /* ReaderContentsSheet.swift */; };
 		CF5F0A39E4882E6C4AA6E75D /* NodusReaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CFF6B8EDA004F101CAF1458 /* NodusReaderApp.swift */; };
+		D29D48D11AE77ACE6EF3453D /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FF7CBF9CFCF8E117C3191309 /* Localizable.xcstrings */; };
 		D45E6022A985F00EEA2F542E /* SearchResultsContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E62F2F972274F54CF57BEE33 /* SearchResultsContent.swift */; };
 		D4BB0B652DA9BA54E98A519B /* StorageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEA231B6036008AC4763DC43 /* StorageSettingsView.swift */; };
 		D500B03C89B854345292E938 /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9D8968A724911866F8AC36D /* PlaybackController.swift */; };
@@ -215,6 +217,7 @@
 		F9B64BBE71DDC847CBDFB58A /* VoiceCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCatalog.swift; sourceTree = "<group>"; };
 		F9D8968A724911866F8AC36D /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
 		FEA231B6036008AC4763DC43 /* StorageSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsView.swift; sourceTree = "<group>"; };
+		FF7CBF9CFCF8E117C3191309 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -495,6 +498,7 @@
 			isa = PBXGroup;
 			children = (
 				5510E74AD69D8D4AC80C34D8 /* Assets.xcassets */,
+				FF7CBF9CFCF8E117C3191309 /* Localizable.xcstrings */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -561,6 +565,7 @@
 			buildConfigurationList = 3632592B0188566473149553 /* Build configuration list for PBXNativeTarget "NodusReaderShare" */;
 			buildPhases = (
 				ECE0EBEE344B5FE1161B4BA1 /* Sources */,
+				E06E9A9CAE22B93EBCFFEC63 /* Resources */,
 				4E897D7045EFE9FB684F82CC /* Frameworks */,
 			);
 			buildRules = (
@@ -671,6 +676,7 @@
 			knownRegions = (
 				Base,
 				en,
+				es,
 			);
 			mainGroup = 4AB3ABCC69E9506A328B2CF7;
 			minimizedProjectReferenceProxies = 1;
@@ -698,7 +704,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				0802E556B9ABA14117D10227 /* Assets.xcassets in Resources */,
+				6DC4D3ED190B8EA6E4E6A49A /* Localizable.xcstrings in Resources */,
 				93533DE2B72BC80C29C17F4D /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E06E9A9CAE22B93EBCFFEC63 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D29D48D11AE77ACE6EF3453D /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -887,7 +902,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -903,6 +918,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 0.1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -952,7 +968,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -974,6 +990,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 0.1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;

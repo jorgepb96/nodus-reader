@@ -18,9 +18,9 @@ public final class VoiceCatalog {
 
         public var qualityLabel: String {
             switch quality {
-            case 3: "Premium"
-            case 2: "Enhanced"
-            default: "Standard"
+            case 3: String(localized: "Premium")
+            case 2: String(localized: "Enhanced")
+            default: String(localized: "Standard")
             }
         }
 
@@ -174,16 +174,23 @@ public final class VoiceCatalog {
     }
 
     public func languageName(for code: String) -> String {
-        Locale.current.localizedString(forLanguageCode: code) ?? code
+        Self.sentenceCase(Locale.current.localizedString(forLanguageCode: code) ?? code)
+    }
+
+    /// Spanish and other languages return lowercase names ("inglés"); they
+    /// are shown as labels, so the first letter is capitalised.
+    static func sentenceCase(_ name: String) -> String {
+        guard let first = name.first else { return name }
+        return String(first).uppercased(with: Locale.current) + name.dropFirst()
     }
 
     /// "English (United Kingdom)" for `en-GB`; the plain language name when
     /// the code has no region.
     public static func variantName(for code: String) -> String {
         let identifier = code.replacingOccurrences(of: "-", with: "_")
-        return Locale.current.localizedString(forIdentifier: identifier)
+        return sentenceCase(Locale.current.localizedString(forIdentifier: identifier)
             ?? Locale.current.localizedString(forLanguageCode: code)
-            ?? code
+            ?? code)
     }
 
     public var defaultVoice: Voice? {

@@ -33,8 +33,8 @@ public enum SidebarDestination: Hashable {
 
     public var title: String {
         switch self {
-        case .collection: "Collection"
-        default: smartList?.title ?? "Library"
+        case .collection: String(localized: "Collection")
+        default: smartList?.title ?? String(localized: "Library")
         }
     }
 }

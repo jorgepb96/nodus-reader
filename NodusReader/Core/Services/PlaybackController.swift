@@ -24,13 +24,13 @@ public enum SleepTimerOption: String, CaseIterable, Identifiable, Sendable {
 
     public var label: String {
         switch self {
-        case .off: "Off"
-        case .fiveMinutes: "5 minutes"
-        case .fifteenMinutes: "15 minutes"
-        case .thirtyMinutes: "30 minutes"
-        case .fortyFiveMinutes: "45 minutes"
-        case .sixtyMinutes: "60 minutes"
-        case .endOfChapter: "End of chapter"
+        case .off: String(localized: "Off")
+        case .fiveMinutes: String(localized: "5 minutes")
+        case .fifteenMinutes: String(localized: "15 minutes")
+        case .thirtyMinutes: String(localized: "30 minutes")
+        case .fortyFiveMinutes: String(localized: "45 minutes")
+        case .sixtyMinutes: String(localized: "60 minutes")
+        case .endOfChapter: String(localized: "End of chapter")
         }
     }
 
@@ -322,7 +322,7 @@ public final class PlaybackController {
     }
 
     public var voiceLabel: String {
-        activeVoice?.name ?? "System voice"
+        activeVoice?.name ?? String(localized: "System voice")
     }
 
     /// True when the book's synced voice is not installed on this device and a
@@ -780,7 +780,7 @@ public final class PlaybackController {
 
     func generateAudioCacheForCurrentBook() {
         guard let book = activeBook, let voice = activeVoice, !voice.isSystem else {
-            errorMessage = "Choose a Kokoro or Phonon voice before generating audio."
+            errorMessage = String(localized: "Choose a Kokoro or Phonon voice before generating audio.")
             return
         }
         guard !isGeneratingAudioCache else { return }
@@ -912,7 +912,7 @@ public final class PlaybackController {
         guard let book = activeBook, sentences.indices.contains(currentIndex) else { return }
         guard let voice = voices.narrationVoice(preferredID: book.preferredVoiceID,
                                                 language: book.language) else {
-            errorMessage = "No voice is available for this document."
+            errorMessage = String(localized: "No voice is available for this document.")
             return
         }
         if voice.isSystem {
@@ -924,7 +924,7 @@ public final class PlaybackController {
 
     private func speakSystemCurrent(voice: VoiceCatalog.Voice, fromOffset offset: Int) {
         guard let resolved = voices.systemVoice(for: voice) else {
-            errorMessage = "No system voice is available for this document."
+            errorMessage = String(localized: "No system voice is available for this document.")
             return
         }
         let fullText = sentences[currentIndex].text as NSString
@@ -1013,7 +1013,7 @@ public final class PlaybackController {
         }
         guard !Task.isCancelled, token == neuralPlaybackToken, let cached else { return }
         guard cached.buffer.frameLength > 0 else {
-            errorMessage = "The neural engine returned no audio."
+            errorMessage = String(localized: "The neural engine returned no audio.")
             isPlaying = false
             isLoading = false
             return
@@ -1421,9 +1421,9 @@ enum NeuralNarrationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .engineNotLoaded(let engine):
-            "The \(engine) engine is not loaded. Open Settings › Voices & Models and install it again."
+            String(localized: "The \(engine) engine is not loaded. Open Settings › Voices & Models and install it again.")
         case .invalidAudio:
-            "The neural engine returned audio in an unsupported format."
+            String(localized: "The neural engine returned audio in an unsupported format.")
         }
     }
 }

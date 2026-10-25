@@ -33,7 +33,7 @@ struct ReaderAppearanceSheet: View {
                     .buttonStyle(.bordered)
                     ForEach(themeManager.customThemes) { custom in
                         HStack {
-                            Text(custom.name.isEmpty ? "Custom" : custom.name)
+                            (custom.name.isEmpty ? Text("Custom") : Text(custom.name))
                                 .font(.footnote)
                             Spacer()
                             Button("Edit") { editorContext = ThemeEditorContext(theme: custom) }

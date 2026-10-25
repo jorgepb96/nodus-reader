@@ -81,9 +81,9 @@ struct BookListRow: View {
 
     private var statusLine: String {
         switch book.status {
-        case .finished: "\(book.format.badge) · Finished"
-        case .toRead: "\(book.format.badge) · To read"
-        case .inProgress: "\(book.format.badge) · \(Int((book.progress * 100).rounded()))%"
+        case .finished: String(localized: "\(book.format.badge) · Finished")
+        case .toRead: String(localized: "\(book.format.badge) · To read")
+        case .inProgress: String(localized: "\(book.format.badge) · \(Int((book.progress * 100).rounded()))%")
         }
     }
 }
@@ -199,7 +199,7 @@ struct BookContextActions: View {
             Button {
                 Task {
                     await sync.removeLocalDownload(book)
-                    reportDownloadError(title: "Download not removed")
+                    reportDownloadError(title: String(localized: "Download not removed"))
                 }
             } label: {
                 Label("Remove Download", systemImage: "icloud.and.arrow.up")
@@ -209,7 +209,7 @@ struct BookContextActions: View {
             Button {
                 Task {
                     await sync.download(book)
-                    reportDownloadError(title: "Download failed")
+                    reportDownloadError(title: String(localized: "Download failed"))
                 }
             } label: {
                 Label("Download from iCloud", systemImage: "icloud.and.arrow.down")
@@ -473,7 +473,7 @@ extension View {
     }
 
     @ViewBuilder
-    func librarySearchable(text: Binding<String>, prompt: String) -> some View {
+    func librarySearchable(text: Binding<String>, prompt: LocalizedStringKey) -> some View {
         #if os(iOS)
         searchable(text: text, placement: .navigationBarDrawer(displayMode: .always), prompt: Text(prompt))
         #else
@@ -518,8 +518,8 @@ extension View {
 struct LibrarySearchField: View {
     @Environment(\.nodusPalette) private var palette
     @Binding var text: String
-    var prompt: String
-    var accessibilityLabel: String
+    var prompt: LocalizedStringKey
+    var accessibilityLabel: LocalizedStringKey
 
     var body: some View {
         HStack(spacing: 8) {
@@ -575,6 +575,6 @@ struct CollectionFolderTile: View {
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(collection.name), collection, \(bookCount == 1 ? "1 book" : "\(bookCount) books")")
+        .accessibilityLabel(bookCount == 1 ? "\(collection.name), collection, 1 book" : "\(collection.name), collection, \(bookCount) books")
     }
 }
