@@ -155,6 +155,11 @@ struct PadRootView: View {
             .onChange(of: navigation.sidebarSelection) { _, _ in
                 detailPath = NavigationPath()
             }
+            .onChange(of: searchText) { _, newValue in
+                if !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    detailPath = NavigationPath()
+                }
+            }
             .alert("Rename Collection", isPresented: $showRename) {
                 TextField("Name", text: $renameText)
                 Button("Save") {
@@ -184,9 +189,10 @@ struct PadRootView: View {
         .confirmationDialog("Delete Collection?", isPresented: $showDelete, titleVisibility: .visible) {
             Button("Delete Collection", role: .destructive) {
                 if let deleteTarget {
+                    let deletedIDs = Set([deleteTarget.id] + library.descendantIDs(of: deleteTarget))
                     library.deleteCollection(deleteTarget)
                     if case .collection(let id) = navigation.sidebarSelection,
-                       id == deleteTarget.id || library.descendantIDs(of: deleteTarget).contains(id) {
+                       deletedIDs.contains(id) {
                         navigation.sidebarSelection = .allBooks
                     }
                 }

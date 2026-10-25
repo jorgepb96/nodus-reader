@@ -19,6 +19,10 @@ struct ReaderWindowHost: View {
         _books = Query(filter: #Predicate<Book> { $0.id == bookID })
     }
 
+    private var palette: NodusPalette {
+        theme.palette(colorScheme: colorScheme)
+    }
+
     var body: some View {
         Group {
             if let book = books.first {
@@ -34,9 +38,10 @@ struct ReaderWindowHost: View {
             }
         }
         .frame(minWidth: 900, minHeight: 680)
-        .background(Color.black)
-        .nodusPalette(theme.palette(colorScheme: colorScheme))
-        .tint(theme.palette(colorScheme: colorScheme).accent)
+        .background(palette.background)
+        .nodusPalette(palette)
+        .tint(palette.accent)
+        .preferredColorScheme(theme.appTheme.preferredColorScheme)
     }
 }
 #endif

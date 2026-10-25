@@ -87,8 +87,28 @@ enum SharedImportInbox {
         return item
     }
 
-    static func pending(root override: URL? = nil) -> [SharedImportItem] {
+    /// Copies are only visible once `item.json` exists. A process killed during
+    /// staging can leave an unreachable directory behind; sweep those after a
+    /// day so the shared container cannot grow without bound.
+    static func sweepStale(root override: URL? = nil, olderThan interval: TimeInterval = 86_400) {
         guard let root = root(override),
+              let directories = try? FileManager.default.contentsOfDirectory(
+                at: root,
+                includingPropertiesForKeys: [.isDirectoryKey, .contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+              ) else { return }
+        let cutoff = Date().addingTimeInterval(-interval)
+        for directory in directories {
+            let metadata = directory.appendingPathComponent("item.json")
+            guard !FileManager.default.fileExists(atPath: metadata.path),
+                  let values = try? directory.resourceValues(forKeys: [.contentModificationDateKey]),
+                  let date = values.contentModificationDate,
+                  date < cutoff else { continue }
+            try? FileManager.default.removeItem(at: directory)
+        }
+    }
+
+    static func pending(root override: URL? = nil) -> [SharedImportItem] {        guard let root = root(override),
               let directories = try? FileManager.default.contentsOfDirectory(
                 at: root,
                 includingPropertiesForKeys: [.isDirectoryKey],

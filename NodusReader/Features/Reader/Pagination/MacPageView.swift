@@ -241,7 +241,7 @@ struct MacPageSpread: View {
                 if offset == 0 {
                     Rectangle()
                         .fill(Color.black.opacity(0.12))
-                        .frame(width: 0.5)
+                        .frame(width: 1)
                 }
             }
         }

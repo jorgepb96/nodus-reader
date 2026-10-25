@@ -101,7 +101,12 @@ public enum EPUBParser {
                 ?? "Chapter \(chapters.count + 1)"
 
             if text.hasPrefix(title) {
-                text = String(text.dropFirst(title.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                let remainder = text.dropFirst(title.count)
+                // Only strip a real heading line. A title such as "I" or "A"
+                // must not eat the first letter of the body ("It was…").
+                if remainder.isEmpty || remainder.first?.isWhitespace == true {
+                    text = String(remainder).trimmingCharacters(in: .whitespacesAndNewlines)
+                }
             }
             guard text.count > 10 else { continue }
 

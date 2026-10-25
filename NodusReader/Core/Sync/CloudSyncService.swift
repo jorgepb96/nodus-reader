@@ -541,6 +541,7 @@ final class CloudSyncService {
 
     private func applyRemoteBook(_ record: CKRecord) {
         guard let id = uuid(from: record.recordID), let remoteDate = record["updatedAt"] as? Date else { return }
+        if remoteIsSupersededByLocalDeletion(.book, id: id, remoteDate: remoteDate) { return }
         if let local = fetchBook(id: id), local.updatedAt > remoteDate { return }
         let book: Book
         if let local = fetchBook(id: id) {
@@ -608,6 +609,7 @@ final class CloudSyncService {
 
     private func applyRemoteCollection(_ record: CKRecord) {
         guard let id = uuid(from: record.recordID), let remoteDate = record["updatedAt"] as? Date else { return }
+        if remoteIsSupersededByLocalDeletion(.collection, id: id, remoteDate: remoteDate) { return }
         if let local = fetchCollection(id: id), local.updatedAt > remoteDate { return }
         let collection: LibraryCollection
         if let local = fetchCollection(id: id) {
@@ -636,6 +638,7 @@ final class CloudSyncService {
               let book = fetchBook(id: bookID),
               let collection = fetchCollection(id: collectionID) else { return }
         let remoteDate = record["updatedAt"] as? Date ?? .distantPast
+        if remoteIsSupersededByLocalDeletion(.membership, id: id, remoteDate: remoteDate) { return }
         if let local = fetchMembership(id: id), local.updatedAt > remoteDate { return }
         let membership: CollectionMembership
         if let existing = fetchMembership(id: id) {
@@ -657,6 +660,7 @@ final class CloudSyncService {
               let bookID = UUID(uuidString: bookIDString),
               let book = fetchBook(id: bookID),
               let remoteDate = record["updatedAt"] as? Date else { return }
+        if remoteIsSupersededByLocalDeletion(.bookmark, id: id, remoteDate: remoteDate) { return }
         if let local = fetchBookmark(id: id), local.updatedAt > remoteDate { return }
         let bookmark: Bookmark
         if let local = fetchBookmark(id: id) {
@@ -679,6 +683,7 @@ final class CloudSyncService {
               let bookID = UUID(uuidString: bookIDString),
               let book = fetchBook(id: bookID),
               let remoteDate = record["updatedAt"] as? Date else { return }
+        if remoteIsSupersededByLocalDeletion(.annotation, id: id, remoteDate: remoteDate) { return }
         if let local = fetchAnnotation(id: id), local.updatedAt > remoteDate { return }
         let annotation: Annotation
         if let local = fetchAnnotation(id: id) {
@@ -703,6 +708,20 @@ final class CloudSyncService {
         annotation.colorRaw = record["color"] as? String ?? annotation.colorRaw
         annotation.createdAt = record["createdAt"] as? Date ?? annotation.createdAt
         annotation.updatedAt = remoteDate
+    }
+
+    /// A local tombstone that is newer than the incoming record must win even
+    /// while its delete is still queued or backing off; otherwise a pull can
+    /// resurrect an item the user deleted offline. If the remote record is
+    /// newer than the deletion, the remote edit wins and the stale local delete
+    /// is discarded.
+    private func remoteIsSupersededByLocalDeletion(_ type: SyncEntityType, id: UUID,
+                                                    remoteDate: Date) -> Bool {
+        guard let tombstone = fetchTombstone(type: type, id: id) else { return false }
+        if tombstone.deletedAt >= remoteDate { return true }
+        context.delete(tombstone)
+        removeOutbox(type: type, id: id)
+        return false
     }
 
     private func applyRemoteTombstone(_ record: CKRecord) {

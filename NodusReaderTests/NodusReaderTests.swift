@@ -65,6 +65,21 @@ func epubParserExtractsMetadataAndChapters() throws {
 }
 
 @Test @MainActor
+func epubTitlePrefixDoesNotEatBodyText() throws {
+    var spec = sampleSpec()
+    spec.chapters = [
+        SampleLibrary.Chapter(title: "I", paragraphs: ["It was a dark and stormy night."])
+    ]
+    let url = try SampleLibrary.makeEPUB(spec)
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let extraction = try EPUBParser.parse(url: url, fallbackTitle: "Fallback")
+    let chapter = try #require(extraction.chapters.first)
+    #expect(chapter.title == "I")
+    #expect(chapter.text.hasPrefix("It was a dark and stormy night."))
+}
+
+@Test @MainActor
 func importsEPUBAndRejectsDuplicateContent() async throws {
     let fixture = try Fixture()
     defer { fixture.cleanUp() }
@@ -346,7 +361,7 @@ func pageHighlightsClipAtPageBoundaries() {
 }
 
 @Test @MainActor
-func syncJournalSuspensionIgnoresProgrammaticRemoteSaves() throws {
+func syncJournalSuspensionIgnoresProgrammaticRemoteSaves() async throws {
     let fixture = try Fixture()
     defer { fixture.cleanUp() }
     let journal = SyncJournal(context: fixture.container.mainContext)
@@ -360,6 +375,11 @@ func syncJournalSuspensionIgnoresProgrammaticRemoteSaves() throws {
         fixture.container.mainContext.insert(book)
         try? fixture.container.mainContext.save()
     }
+
+    // Let any queued NotificationCenter block run before asserting; a regression
+    // to `queue: .main` must fail here rather than pass immediately.
+    await Task.yield()
+    await Task.yield()
     #expect(journal.pendingCount() == 0)
 }
 

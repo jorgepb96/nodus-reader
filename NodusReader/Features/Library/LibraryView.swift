@@ -222,19 +222,30 @@ struct LibraryView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
+        let libraryEmpty = books.isEmpty
+        let isSearching = !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let filterEmpty = !libraryEmpty && !isSearching
+        return VStack(spacing: 14) {
             NodusEmptyState(
-                icon: searchText.isEmpty ? "books.vertical" : "magnifyingglass",
-                title: searchText.isEmpty ? "Your library is empty" : "No matches",
-                message: searchText.isEmpty
+                icon: libraryEmpty ? "books.vertical" : isSearching ? "magnifyingglass" : "line.3.horizontal.decrease.circle",
+                title: libraryEmpty ? "Your library is empty" : isSearching ? "No matches" : "No books here",
+                message: libraryEmpty
                     ? "Import an EPUB, PDF, Markdown, text, HTML or RTF document to begin."
-                    : "Try a different title, author or passage."
+                    : isSearching
+                        ? "Try a different title, author or passage."
+                        : "No books match this filter. Try another one."
             )
-            if searchText.isEmpty {
+            if libraryEmpty {
                 PrimaryPillButton("Import documents", systemImage: "plus") {
                     imports.beginImport()
                 }
                 .frame(maxWidth: 260)
+            } else if filterEmpty {
+                Button("Show all books") {
+                    filter = .all
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(palette.accent)
             }
         }
         .frame(minHeight: 380)

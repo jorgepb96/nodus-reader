@@ -223,7 +223,8 @@ struct VoicesView: View {
             Button {
                 playback.playSample(voice: voice)
             } label: {
-                Image(systemName: playback.isPlayingSample ? "speaker.wave.2.fill" : "play.fill")
+                Image(systemName: playback.isPlayingSample && playback.sampleVoiceID == voice.id
+                      ? "speaker.wave.2.fill" : "play.fill")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(palette.text)
                     .frame(width: 44, height: 44)
@@ -261,7 +262,10 @@ struct VoicesView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Set \(voice.name) as default voice")
+            .accessibilityLabel(voices.defaultVoiceID == voice.id
+                                ? "\(voice.name) is the default voice"
+                                : "Set \(voice.name) as default voice")
+            .accessibilityAddTraits(voices.defaultVoiceID == voice.id ? [.isSelected] : [])
 
             Button {
                 voices.toggleFavorite(voice)

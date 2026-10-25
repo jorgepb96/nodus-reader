@@ -109,6 +109,12 @@ struct PaginatedReaderContent: View {
         .onChange(of: narrationSentenceRange) { _, _ in
             followNarrationIfNeeded()
         }
+        .onChange(of: narrationChapterIndex) { _, _ in
+            followNarrationIfNeeded()
+        }
+        .onChange(of: followNarration) { _, _ in
+            followNarrationIfNeeded()
+        }
         .onAppear {
             pageStep = columns
             updatePageInfo()

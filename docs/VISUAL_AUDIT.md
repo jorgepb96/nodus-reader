@@ -57,7 +57,7 @@ search fields, covers, sheet sizing, spacing, touch targets and transitions.
   transport, model/voice filtering and PDF reflow are exercised by the UI suite.
   The mini player uses a move-plus-fade transition above the tab bar.
 - iPhone UI suite: 9 tests pass (iPad capture test skipped on phone); iPad capture
-  suite passes separately. macOS build and all 20 unit tests pass.
+  suite passes separately. macOS build and all 21 unit tests pass.
 
 ## Remaining visual notes
 

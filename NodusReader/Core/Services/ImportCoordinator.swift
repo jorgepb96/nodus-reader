@@ -87,6 +87,7 @@ public final class ImportCoordinator {
     public func consumeSharedInbox() async {
         guard !isImporting,
               let root = SharedImportInbox.defaultRoot else { return }
+        SharedImportInbox.sweepStale(root: root)
         let pending = SharedImportInbox.pending(root: root)
         guard !pending.isEmpty else { return }
 
@@ -112,9 +113,9 @@ public final class ImportCoordinator {
             imported += result.imported.count
             duplicates += result.duplicates.count
             failures.append(contentsOf: result.failures)
-            // Keep a failed payload so the user can retry; the shared copy is
-            // often the only source for a link or pasted text.
-            if result.failures.isEmpty {
+            // Keep a failed payload for a day so the user can retry; then drop
+            // it instead of alerting forever and growing the shared container.
+            if result.failures.isEmpty || item.createdAt < Date().addingTimeInterval(-86_400) {
                 SharedImportInbox.remove(item, root: root)
             }
         }

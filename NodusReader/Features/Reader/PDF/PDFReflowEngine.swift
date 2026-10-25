@@ -363,7 +363,9 @@ enum PDFReflowExtractor {
         for block in blocks {
             let linesInBlock = ordered.filter { block.rect.intersects($0.rect) && block.kind == .body }
             let tabular = linesInBlock.filter { looksTabular($0.text) }
-            if tabular.count >= 2 {
+            // Only replace a block when every line is tabular. Replacing a
+            // mixed paragraph would silently drop its prose from the reflow.
+            if !linesInBlock.isEmpty, tabular.count == linesInBlock.count, tabular.count >= 2 {
                 tableLines.append(contentsOf: tabular)
                 tableCandidates.insert(block.id)
             }

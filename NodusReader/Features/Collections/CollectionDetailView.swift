@@ -6,6 +6,7 @@ import SwiftUI
 struct CollectionDetailView: View {
     @Environment(LibraryService.self) private var library
     @Environment(PlaybackController.self) private var playback
+    @Environment(NavigationModel.self) private var navigation
     @Environment(\.dismiss) private var dismiss
     @Environment(\.nodusPalette) private var palette
 
@@ -153,8 +154,13 @@ struct CollectionDetailView: View {
         .confirmationDialog("Delete Collection?", isPresented: $showDeleteCollection, titleVisibility: .visible) {
             Button("Delete Collection", role: .destructive) {
                 if let collection {
+                    let deletedID = collection.id
                     library.deleteCollection(collection)
-                    dismiss()
+                    if case .collection(let id) = navigation.sidebarSelection, id == deletedID {
+                        navigation.sidebarSelection = .allBooks
+                    } else {
+                        dismiss()
+                    }
                 }
             }
             Button("Cancel", role: .cancel) {}

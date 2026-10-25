@@ -68,7 +68,7 @@ The tests build real EPUB and PDF fixtures with the debug sample generator, impo
 them into an in-memory SwiftData store with a temporary `FileStore`, and assert
 metadata, chapters, duplicates, covers, collections, manual order, themes, utilities,
 pause-based word alignment and the durable sync outbox/tombstone rules. As of the last
-run: **20 tests pass**.
+run: **21 tests pass**.
 
 The DesignSystem package has its own test target:
 

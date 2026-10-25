@@ -2,6 +2,9 @@
 import DesignSystem
 import SwiftData
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 @main
 struct NodusReaderApp: App {
@@ -154,9 +157,15 @@ struct NodusCommands: Commands {
                 .keyboardShortcut("6", modifiers: .command)
         }
         CommandMenu("Player") {
-            Button(playback.isPlaying ? "Pause" : "Play") { playback.toggle() }
-                .keyboardShortcut(.space, modifiers: [])
-                .disabled(!playback.hasActiveBook)
+            Button(playback.isPlaying ? "Pause" : "Play") {
+                // A bare Space is a menu key equivalent, so it would otherwise
+                // steal spaces from search fields and text editors.
+                if !Self.insertSpaceIntoFocusedTextEditor() {
+                    playback.toggle()
+                }
+            }
+            .keyboardShortcut(.space, modifiers: [])
+            .disabled(!playback.hasActiveBook)
             Divider()
             Button("Previous Sentence") { playback.previousSentence() }
                 .keyboardShortcut(.leftArrow, modifiers: [.command])
@@ -171,6 +180,15 @@ struct NodusCommands: Commands {
                 .keyboardShortcut(.rightArrow, modifiers: [.command, .shift])
                 .disabled(!playback.hasActiveBook)
         }
+    }
+
+    /// Returns true when the focused responder is an editable text view; the
+    /// caller must then leave the space key to normal text input.
+    private static func insertSpaceIntoFocusedTextEditor() -> Bool {
+        guard let textView = NSApp.keyWindow?.firstResponder as? NSTextView,
+              textView.isEditable else { return false }
+        textView.insertText(" ", replacementRange: textView.selectedRange())
+        return true
     }
 }
 #else

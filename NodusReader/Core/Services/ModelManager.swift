@@ -262,11 +262,39 @@ final class ModelManager {
         guard model.isAvailable else { return false }
         switch model.engine {
         case .kokoro:
-            return model.id == "kokoro-82m" && FileManager.default.fileExists(
-                atPath: Self.kokoroCacheDirectory.appendingPathComponent("KokoroRuntimeManifest.json").path
-            )
+            return model.id == "kokoro-82m" && Self.kokoroBundleIsComplete(at: Self.kokoroCacheDirectory)
         case .phonon:
             return model.id == "phonon-31m-en" && PhononModels.isInstalled(at: Self.phononDirectory)
+        }
+    }
+
+    /// The manifest is only useful when every asset it lists actually exists.
+    /// Checking just the manifest lets a cancelled download look installed and
+    /// leaves the model selected but unable to load.
+    private static func kokoroBundleIsComplete(at directory: URL) -> Bool {
+        let manifestURL = directory.appendingPathComponent("KokoroRuntimeManifest.json")
+        guard let data = try? Data(contentsOf: manifestURL),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return false
+        }
+        var paths: [String] = []
+        if let runtime = object["runtime_assets"] as? [String: Any] {
+            for value in runtime.values {
+                if let item = value as? [String: Any], let path = item["path"] as? String {
+                    paths.append(path)
+                }
+            }
+        }
+        if let voices = object["voices"] as? [[String: Any]] {
+            paths.append(contentsOf: voices.compactMap { $0["path"] as? String })
+        }
+        if let packages = object["model_packages"] as? [[String: Any]] {
+            paths.append(contentsOf: packages.compactMap { $0["path"] as? String })
+        }
+        guard !paths.isEmpty else { return false }
+        return paths.allSatisfy { path in
+            guard !path.hasPrefix("/"), !path.split(separator: "/").contains("..") else { return false }
+            return FileManager.default.fileExists(atPath: directory.appendingPathComponent(path).path)
         }
     }
 
@@ -366,8 +394,10 @@ final class ModelManager {
                 states[model.id] = .loading
                 let loaded = try await KokoroTTS.load(resources: resources)
                 try Task.checkCancellation()
-                kokoro = loaded
                 try await loaded.prewarm(text: "Nodus Reader is ready to narrate.", voice: .afHeart)
+                try Task.checkCancellation()
+                guard installTokens[model.id] == token else { return }
+                kokoro = loaded
             case .phonon:
                 let directory = try await PhononModels.download(
                     from: Self.phononBundleBase,
@@ -379,8 +409,12 @@ final class ModelManager {
                     }
                 }
                 try Task.checkCancellation()
+                guard installTokens[model.id] == token else { return }
                 states[model.id] = .loading
-                phonon = try await Phonon.load(models: directory, language: .english)
+                let loaded = try await Phonon.load(models: directory, language: .english)
+                try Task.checkCancellation()
+                guard installTokens[model.id] == token else { return }
+                phonon = loaded
             }
             guard installTokens[model.id] == token else { return }
             states[model.id] = .installed

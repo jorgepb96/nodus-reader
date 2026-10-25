@@ -116,7 +116,22 @@ public final class LibraryService {
         }
 
         let originalName = url.lastPathComponent
-        let staged = try FileAccess.stageCopy(from: url, suggestedName: originalName, store: fileStore)
+        let prepared = try await Task.detached(priority: .userInitiated) { [fileStore] in
+            let staged = try FileAccess.stageCopy(from: url, suggestedName: originalName, store: fileStore)
+            do {
+                let size = FileStore.fileSize(at: staged)
+                guard size <= 250 * 1024 * 1024 else {
+                    throw ImportError.fileTooLarge(originalName)
+                }
+                let hash = try ContentHash.sha256(of: staged)
+                let extraction = try DocumentExtractor.extract(url: staged, format: format)
+                return (staged: staged, size: size, hash: hash, extraction: extraction)
+            } catch {
+                try? FileManager.default.removeItem(at: staged.deletingLastPathComponent())
+                throw error
+            }
+        }.value
+        let staged = prepared.staged
         var moved = false
         defer {
             if !moved {
@@ -124,19 +139,11 @@ public final class LibraryService {
             }
         }
 
-        let stagedSize = FileStore.fileSize(at: staged)
-        guard stagedSize <= 250 * 1024 * 1024 else {
-            throw ImportError.fileTooLarge(originalName)
-        }
-        let hash = try ContentHash.sha256(of: staged)
-        if let existing = try existingBook(withHash: hash) {
+        if let existing = try existingBook(withHash: prepared.hash) {
             return .duplicate(existing.title)
         }
 
-        let extraction = try await Task.detached(priority: .userInitiated) {
-            try DocumentExtractor.extract(url: staged, format: format)
-        }.value
-
+        let extraction = prepared.extraction
         let bookID = UUID()
         let coverData = CoverGenerator.coverData(
             extraction: extraction,
@@ -160,7 +167,7 @@ public final class LibraryService {
             fileName: FileStore.sanitizedFileName(originalName),
             relativePath: committed.relativePath,
             fileSize: committed.size,
-            contentHash: hash,
+            contentHash: prepared.hash,
             searchText: extraction.searchText,
             sourceDevice: DeviceInfo.name
         )
@@ -182,6 +189,10 @@ public final class LibraryService {
         } catch {
             context.delete(book)
             try? FileManager.default.removeItem(at: fileStore.documentURL(for: committed.relativePath).deletingLastPathComponent())
+            if let coverName = book.coverFileName,
+               let coverURL = fileStore.coverURL(for: coverName) {
+                try? FileManager.default.removeItem(at: coverURL)
+            }
             throw error
         }
         try? FileManager.default.removeItem(at: staged.deletingLastPathComponent())
@@ -313,6 +324,7 @@ public final class LibraryService {
 
     public func setReadingMode(_ book: Book, mode: ReadingMode) {
         book.readingMode = mode
+        book.touch()
         save()
     }
 
@@ -444,6 +456,7 @@ public final class LibraryService {
 
     public func setPreferredVoice(_ book: Book, voiceID: String?) {
         book.preferredVoiceID = voiceID
+        book.touch()
         save()
     }
 

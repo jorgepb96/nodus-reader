@@ -17,6 +17,7 @@ struct MacRootView: View {
     @Query private var memberships: [CollectionMembership]
 
     @State private var searchText = ""
+    @State private var detailPath = NavigationPath()
     @State private var showNewCollection = false
     @State private var newCollectionParent: UUID?
     @State private var newCollectionName = ""
@@ -50,12 +51,20 @@ struct MacRootView: View {
             sidebar
                 .navigationSplitViewColumnWidth(min: 220, ideal: 244, max: 300)
         } detail: {
-            NavigationStack {
+            NavigationStack(path: $detailPath) {
                 detailContent
                     .searchable(text: $searchText, placement: .toolbar, prompt: "Search library")
             }
         }
         .tint(palette.accent)
+        .onChange(of: navigation.sidebarSelection) { _, _ in
+            detailPath = NavigationPath()
+        }
+        .onChange(of: searchText) { _, newValue in
+            if !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                detailPath = NavigationPath()
+            }
+        }
         .task {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-NodusOpenSettings") {
@@ -155,9 +164,10 @@ struct MacRootView: View {
         .confirmationDialog("Delete Collection?", isPresented: $showDelete, titleVisibility: .visible) {
             Button("Delete Collection", role: .destructive) {
                 if let deleteTarget {
+                    let deletedIDs = Set([deleteTarget.id] + library.descendantIDs(of: deleteTarget))
                     library.deleteCollection(deleteTarget)
                     if case .collection(let id) = navigation.sidebarSelection,
-                       id == deleteTarget.id || library.descendantIDs(of: deleteTarget).contains(id) {
+                       deletedIDs.contains(id) {
                         navigation.sidebarSelection = .allBooks
                     }
                 }

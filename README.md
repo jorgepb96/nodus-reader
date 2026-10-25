@@ -21,7 +21,7 @@ Nodus Reader is part of the Nodus Research ecosystem. It is not a web wrapper: t
 - Sync: optional personal iCloud sync through CloudKit and iCloud Drive, a durable outbox, tombstones, timestamp conflicts, cloud-only badges, download-on-open, `Remove Download` and `Delete from Library`.
 - Sharing: iOS Share Extension with an App Group inbox and collection selection.
 - Settings: separate App/Reader themes, custom theme editor, reading typography, real voice and model management with downloads/licences/storage, iCloud status and privacy.
-- Tests: 20 unit/integration tests plus 9 UI tests with screenshot capture.
+- Tests: 21 unit/integration tests plus 9 UI tests with screenshot capture.
 
 ## Screenshots
 

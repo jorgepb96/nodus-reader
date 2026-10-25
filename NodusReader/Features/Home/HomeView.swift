@@ -262,11 +262,15 @@ struct HomeView: View {
     }
 
     private func seeAll() {
+        #if os(macOS)
+        navigation.sidebarSelection = .allBooks
+        #else
         if DeviceInfo.isPad {
             navigation.sidebarSelection = .allBooks
         } else {
             navigation.phoneTab = .library
         }
+        #endif
     }
 
     private func continueEyebrow(for book: Book) -> String? {

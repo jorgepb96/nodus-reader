@@ -118,6 +118,7 @@ public final class PlaybackController {
     public private(set) var isPlaying = false
     public private(set) var isLoading = false
     public private(set) var isPlayingSample = false
+    public private(set) var sampleVoiceID: String?
     public private(set) var currentWordRange: NSRange?
     public private(set) var currentWord: String?
     public private(set) var audioCacheBytes: Int64 = 0
@@ -344,6 +345,7 @@ public final class PlaybackController {
                       startingSentence: String? = nil, wordOffset: Int = 0,
                       startingChapterIndex: Int? = nil, startingChapterOffset: Int? = nil) async {
         if activeBook?.id == book.id {
+            self.mode = mode
             if let startingChapterIndex, let startingChapterOffset,
                let found = sentenceIndex(chapter: startingChapterIndex, offset: startingChapterOffset) {
                 let offset = startingChapterOffset - sentences[found].chapterOffset
@@ -394,7 +396,13 @@ public final class PlaybackController {
             guard !sentences.isEmpty else {
                 throw ImportError.emptyDocument(book.title)
             }
-            let resumeChapter = min(max(book.locator.chapterIndex, 0), max(chapters.count - 1, 0))
+            let resumeChapter: Int
+            if book.format == .pdf {
+                let page = max(book.locator.pageIndex ?? book.locator.chapterIndex, 0)
+                resumeChapter = loaded.lastIndex { $0.id <= page } ?? 0
+            } else {
+                resumeChapter = min(max(book.locator.chapterIndex, 0), max(chapters.count - 1, 0))
+            }
             currentIndex = sentences.firstIndex { $0.chapterIndex == resumeChapter } ?? 0
             var startOffset = 0
             if let startingChapterIndex, let startingChapterOffset,
@@ -511,6 +519,9 @@ public final class PlaybackController {
 
     /// The SwiftData object is already deleted; do not save progress into it.
     private func forgetDeletedBook() {
+        let deletedBookID = activeBook?.id
+        let pendingCacheTask = cacheTask
+        cancelAudioCacheGeneration()
         sleepTask?.cancel()
         sleepTask = nil
         sleepTimer = .off
@@ -525,6 +536,13 @@ public final class PlaybackController {
         chapterIndex = 0
         mode = .listen
         updateNowPlaying()
+        if let deletedBookID {
+            let cache = models.narrationCache
+            Task.detached {
+                _ = await pendingCacheTask?.value
+                await cache.deleteBook(bookID: deletedBookID)
+            }
+        }
     }
 
     public func stopSpeaking(clearBook: Bool) {
@@ -679,6 +697,7 @@ public final class PlaybackController {
             ? "Así suena esta voz al narrar tu biblioteca en Nodus Reader."
             : "This is how this voice sounds reading your library in Nodus Reader."
         isPlayingSample = true
+        sampleVoiceID = voice.id
 
         if voice.isSystem {
             let utterance = AVSpeechUtterance(string: sample)
@@ -735,6 +754,7 @@ public final class PlaybackController {
         samplePlayer?.stop()
         samplePlayer = nil
         isPlayingSample = false
+        sampleVoiceID = nil
     }
 
     // MARK: Audio cache
@@ -870,6 +890,7 @@ public final class PlaybackController {
         let wasPlaying = isPlaying
         stopAudio()
         isPlaying = false
+        resetWordState()
         currentIndex = index
         chapterIndex = sentences[index].chapterIndex
         saveProgress()
@@ -896,7 +917,8 @@ public final class PlaybackController {
             return
         }
         let fullText = sentences[currentIndex].text as NSString
-        let clamped = min(max(offset, 0), max(fullText.length - 1, 0))
+        let requested = max(offset, 0)
+        let clamped = requested < fullText.length ? requested : 0
         let spokenText = fullText.substring(from: clamped)
         guard !spokenText.isEmpty else { return }
         utteranceStartOffset = clamped
@@ -922,7 +944,8 @@ public final class PlaybackController {
         stopAudio()
         let sentence = sentences[currentIndex]
         let text = sentence.text
-        let clamped = min(max(offset, 0), max((text as NSString).length - 1, 0))
+        let requested = max(offset, 0)
+        let clamped = requested < (text as NSString).length ? requested : 0
         resetWordState()
         neuralPaused = false
         neuralStartOffset = clamped
@@ -1250,8 +1273,14 @@ public final class PlaybackController {
         guard !sentences.isEmpty else { return }
         stopAudio()
         if let book = activeBook {
-            library.updateProgress(book, locator: ReadingLocator(chapterIndex: max(chapters.count - 1, 0), scrollFraction: 1),
-                                   progress: 1)
+            let locator: ReadingLocator
+            if book.format == .pdf {
+                let lastPage = chapters.last?.id ?? max(book.locator.pageIndex ?? 0, 0)
+                locator = ReadingLocator(chapterIndex: lastPage, scrollFraction: 1, pageIndex: lastPage)
+            } else {
+                locator = ReadingLocator(chapterIndex: max(chapters.count - 1, 0), scrollFraction: 1)
+            }
+            library.updateProgress(book, locator: locator, progress: 1)
         }
         isPlaying = false
         resetWordState()
@@ -1260,6 +1289,16 @@ public final class PlaybackController {
 
     private func saveProgress() {
         guard let book = activeBook, !sentences.isEmpty else { return }
+        if book.format == .pdf {
+            // PDF chapters are stored by original page id, not by array index.
+            let pageID = chapters.indices.contains(chapterIndex)
+                ? chapters[chapterIndex].id
+                : max(book.locator.pageIndex ?? 0, 0)
+            let locator = ReadingLocator(chapterIndex: pageID, scrollFraction: chapterProgress,
+                                         pageIndex: pageID)
+            library.updateProgress(book, locator: locator, progress: overallProgress)
+            return
+        }
         var locator = ReadingLocator(chapterIndex: chapterIndex, scrollFraction: chapterProgress)
         locator.pageIndex = book.locator.pageIndex
         library.updateProgress(book, locator: locator, progress: overallProgress)

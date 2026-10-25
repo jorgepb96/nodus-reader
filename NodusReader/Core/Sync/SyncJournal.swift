@@ -24,11 +24,12 @@ final class SyncJournal {
         observer = NotificationCenter.default.addObserver(
             forName: ModelContext.didSave,
             object: context,
-            queue: .main
+            queue: nil
         ) { [weak self] notification in
-            // `ModelContext.didSave` is posted synchronously while
-            // `withSuspendedRecording` is active. Deferring to a Task made the
-            // suspension flag already false and re-enqueued every remote change.
+            // A nil queue runs the block synchronously on the posting thread,
+            // while `withSuspendedRecording` is still active. That is what
+            // prevents programmatic remote applies from being re-enqueued.
+            guard Thread.isMainThread else { return }
             MainActor.assumeIsolated {
                 self?.handle(notification)
             }

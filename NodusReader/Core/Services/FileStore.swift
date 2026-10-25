@@ -112,7 +112,7 @@ public final class FileStore: @unchecked Sendable {
 
     public func writeCover(_ data: Data, bookID: UUID) throws -> String {
         try fileManager.createDirectory(at: coversDirectory, withIntermediateDirectories: true)
-        let name = "\(bookID.uuidString)-\(Int(Date().timeIntervalSince1970 * 1000)).jpg"
+        let name = "\(bookID.uuidString)-\(UUID().uuidString).jpg"
         let url = coversDirectory.appendingPathComponent(name)
         try data.write(to: url, options: .atomic)
         return name

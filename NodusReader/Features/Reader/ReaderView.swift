@@ -475,6 +475,12 @@ struct ReaderView: View {
             : 0
     }
 
+    private var bookmarkMatchTolerance: Double {
+        guard readerPages.indices.contains(pageIndex) else { return 0.015 }
+        let pages = readerPages[pageIndex].pagesInChapter
+        return min(0.015, 0.45 / Double(max(pages - 1, 1)))
+    }
+
     private var isCurrentPageBookmarked: Bool {
         if book.format == .pdf {
             return book.bookmarks.contains { $0.locator.pageIndex == pdfPageIndex }
@@ -484,7 +490,7 @@ struct ReaderView: View {
         let fraction = currentPageFraction
         return book.bookmarks.contains {
             $0.locator.chapterIndex == chapter &&
-            abs($0.locator.scrollFraction - fraction) < 0.015
+            abs($0.locator.scrollFraction - fraction) < bookmarkMatchTolerance
         }
     }
 
@@ -497,7 +503,7 @@ struct ReaderView: View {
         if book.format != .pdf, let page = readerPages.indices.contains(pageIndex) ? readerPages[pageIndex] : nil,
            let existing = book.bookmarks.first(where: {
                $0.locator.chapterIndex == page.chapterIndex &&
-               abs($0.locator.scrollFraction - currentPageFraction) < 0.015
+               abs($0.locator.scrollFraction - currentPageFraction) < bookmarkMatchTolerance
            }) {
             library.deleteBookmark(existing)
             return

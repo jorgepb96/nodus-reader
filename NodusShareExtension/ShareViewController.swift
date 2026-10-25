@@ -137,6 +137,11 @@ final class ShareImportModel {
                 guard supportedExtension(actualName, type: attachment.type) else {
                     throw SharedInboxError.unsupported(actualName)
                 }
+                let size = (try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? NSNumber)?
+                    .int64Value ?? 0
+                guard size <= 250 * 1024 * 1024 else {
+                    throw SharedInboxError.unsupported("\(actualName) (larger than 250 MB)")
+                }
                 let item = try SharedImportInbox.stage(
                     fileURL: file,
                     fileName: actualName,
@@ -185,7 +190,8 @@ final class ShareImportModel {
     }
 
     private func loadFile(provider: NSItemProvider, type: UTType, name: String) async throws -> URL {
-        try await withCheckedThrowingContinuation { continuation in
+        let preferredExtension = type.preferredFilenameExtension
+        return try await withCheckedThrowingContinuation { continuation in
             provider.loadFileRepresentation(forTypeIdentifier: type.identifier) { url, error in
                 guard let url else {
                     continuation.resume(throwing: error ?? SharedInboxError.unreadableItem(name))
@@ -195,7 +201,13 @@ final class ShareImportModel {
                     .appendingPathComponent(UUID().uuidString, isDirectory: true)
                 do {
                     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-                    let fileName = url.lastPathComponent.isEmpty ? name : url.lastPathComponent
+                    let rawName = url.lastPathComponent.isEmpty ? name : url.lastPathComponent
+                    let fileName: String
+                    if (rawName as NSString).pathExtension.isEmpty, let preferredExtension {
+                        fileName = "\(rawName).\(preferredExtension)"
+                    } else {
+                        fileName = rawName
+                    }
                     let destination = directory.appendingPathComponent(SharedImportInbox.sanitized(fileName))
                     try FileManager.default.copyItem(at: url, to: destination)
                     continuation.resume(returning: destination)
@@ -254,7 +266,8 @@ final class ShareImportModel {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var coordinationError: NSError?
         var copyError: Error?
-        let fileName = url.lastPathComponent.isEmpty ? name : url.lastPathComponent
+        let rawName = url.lastPathComponent.isEmpty ? name : url.lastPathComponent
+        let fileName = rawName
         let destination = directory.appendingPathComponent(SharedImportInbox.sanitized(fileName))
         NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &coordinationError) { readURL in
             do { try FileManager.default.copyItem(at: readURL, to: destination) }
