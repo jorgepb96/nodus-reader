@@ -219,7 +219,9 @@ final class NodusReaderUITests: XCTestCase {
         let pause = app.buttons["Pause narration"].firstMatch
         XCTAssertTrue(pause.waitForExistence(timeout: 180),
                       "Neural narration never started")
-        XCTAssertTrue(app.staticTexts["Phonon"].firstMatch.waitForExistence(timeout: 10))
+        // The player names the voice's model ("Phonon 31M").
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Phonon'"))
+            .firstMatch.waitForExistence(timeout: 10))
         snap("iPhone-18-NeuralNarration")
 
         let progressed = app.staticTexts.matching(

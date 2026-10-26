@@ -635,3 +635,18 @@ downloaded model and voice set with its pinned revision and licence. The notices
 `MODEL_LICENSES.md`, `README.md` and both Phonon 40M cards in the app now say plainly
 that models keep their own licences, separate from Nodus Reader's AGPL-3.0, and that
 Phonon 40M Spanish and Multilingual are CC BY-NC 4.0, non-commercial use only.
+
+## Voices from every installed model (2026-10-26)
+
+The Voices screen listed only the selected engine's voices, and its Model filter only
+that engine, so other downloaded models could not be tried. It now lists the voices of
+every installed model (`VoiceCatalog.installedNeuralVoices`), the Model filter offers
+System and each downloaded model by name, and the language filter covers them all. The
+reader and player still offer the selected engine's voices. Playing a sample works for
+any installed model: voice IDs name their model (`phonon-40m-es:Alba`,
+`phonon-40m-multilingual:Alba`; 31M keeps `phonon:` and Kokoro `kokoro:`), and
+`ModelManager.synthesize` loads the voice's own model (one Phonon checkpoint at a time;
+an idle engine is released first). Choosing a voice from another model makes that model
+the voice engine without moving the filters. Voice IDs saved by builds 7–11 for 40M
+Spanish (`phonon:<name>`) still resolve. Tests: `voicesOfEveryInstalledModelAreListedAndRoutedToTheirModel`
+and, with real models on the Mac, a Phonon voice speaking while Kokoro is selected.

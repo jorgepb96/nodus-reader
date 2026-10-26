@@ -235,7 +235,8 @@ final class ModelManager {
             sizeText: String(localized: "About 150 MB download"),
             license: "CC BY-NC 4.0",
             source: PhononOnDeviceConversion.multilingual.page,
-            voices: PhononOnDeviceConversion.multilingual.voices.map(ModelManager.voice(from:)),
+            voices: PhononOnDeviceConversion.multilingual.voices
+                .map { ModelManager.voice(from: $0, modelID: ModelManager.phonon40MultilingualID) },
             availability: .available,
             requiresAcceptedLicense: true,
             phononLanguage: .english,
@@ -662,28 +663,29 @@ final class ModelManager {
     func kokoroEngine() -> KokoroTTS? { kokoro }
 
     /// One sentence of neural speech (mono Float PCM) from an installed
-    /// engine, loading it first if this launch has not used it yet.
+    /// engine. The voice decides the model, selected or not (the Voices screen
+    /// previews any installed model); its engine is loaded if needed.
     func synthesize(_ text: String, voiceID: String, engine: Engine) async throws -> (samples: [Float], sampleRate: Double) {
+        beginSynthesis()
+        defer { endSynthesis() }
+        let target = model(forVoiceID: voiceID)
+            ?? selectedModel.flatMap { model in
+                // An ID this build does not know: try the selected model with
+                // the name after the prefix.
+                let name = voiceID.split(separator: ":", maxSplits: 1).last.map(String.init) ?? voiceID
+                return model.engine == engine ? (model, name) : nil
+            }
+        guard let (model, name) = target, model.engine == engine, isInstalled(model) else {
+            throw NeuralNarrationError.engineNotLoaded(engine == .kokoro ? "Kokoro" : "Phonon")
+        }
+        try await ensureLoaded(model)
         switch engine {
         case .kokoro:
-            beginSynthesis()
-            defer { endSynthesis() }
-            if kokoro == nil { await loadInstalledEnginesIfNeeded() }
             guard let kokoro else { throw NeuralNarrationError.engineNotLoaded("Kokoro") }
-            let raw = voiceID.hasPrefix("kokoro:") ? String(voiceID.dropFirst("kokoro:".count)) : voiceID
-            let audio = try await kokoro.synthesize(text, voice: KokoroVoiceID(raw))
+            let audio = try await kokoro.synthesize(text, voice: KokoroVoiceID(name))
             return (audio.samples, Double(audio.sampleRate))
         case .phonon:
-            beginSynthesis()
-            defer { endSynthesis() }
-            // The loaded checkpoint must be the selected one (English 31M or
-            // Spanish 40M); a switch drops the other and loads this one.
-            if let selected = selectedModel, selected.engine == .phonon, phononModelID != selected.id {
-                phonon = nil
-            }
-            if phonon == nil { await loadInstalledEnginesIfNeeded() }
             guard let phonon else { throw NeuralNarrationError.engineNotLoaded("Phonon") }
-            let name = voiceID.hasPrefix("phonon:") ? String(voiceID.dropFirst("phonon:".count)) : voiceID
             // Voice names come from the bundle's file names, which the file system
             // may store decomposed ("e" + accent): match by Unicode equivalence
             // and pass Phonon the exact name it knows.
@@ -692,13 +694,35 @@ final class ModelManager {
             }
             // A multilingual checkpoint normalizes text in the voice's language
             // (numbers, abbreviations): a French voice reads French.
-            if selectedModel?.id == Self.phonon40MultilingualID,
-               let voice = selectedModel?.voices.first(where: { $0.id == "phonon:\(name)" || $0.name == name }),
+            if model.id == Self.phonon40MultilingualID,
+               let voice = model.voices.first(where: { $0.name == name }),
                let language = PhononTTS.Language(rawValue: String(voice.language.prefix(2))),
                phonon.language != language {
                 try await phonon.setLanguage(language)
             }
             return (try await phonon.synthesize(text), Phonon.sampleRate)
+        }
+    }
+
+    /// Loads `model`'s engine if it is not the one in memory. Only one Phonon
+    /// checkpoint is kept; trying another engine drops the idle one.
+    private func ensureLoaded(_ model: Model) async throws {
+        switch model.engine {
+        case .kokoro:
+            guard kokoro == nil else { return }
+            if !narrationInUse { releaseEngines(keeping: .kokoro) }
+            #if targetEnvironment(simulator)
+            throw NeuralNarrationError.engineNotLoaded("Kokoro")
+            #else
+            kokoro = try await KokoroTTS.load(resources: KokoroResourceProvider.directory(Self.kokoroCacheDirectory))
+            #endif
+        case .phonon:
+            guard phonon == nil || phononModelID != model.id else { return }
+            if !narrationInUse { releaseEngines(keeping: .phonon) }
+            phonon = nil
+            let loaded = try await Phonon.load(models: directory(for: model), language: model.phononLanguage)
+            phonon = loaded
+            phononModelID = model.id
         }
     }
 
@@ -870,29 +894,55 @@ final class ModelManager {
     }
 
     private func publishVoices() {
-        guard !isSystemSelected,
-              let model = selectedModel,
-              model.isAvailable,
-              isInstalled(model) else {
-            voices.setNeuralVoices([])
+        let installedKokoro = Self.installedKokoroVoiceIDs()
+        func catalogVoices(for model: Model) -> [VoiceCatalog.Voice] {
+            let available = model.engine == .kokoro
+                ? model.voices.filter { installedKokoro.contains(String($0.id.dropFirst("kokoro:".count))) }
+                : model.voices
+            return available.map { voice in
+                VoiceCatalog.Voice(
+                    id: voice.id,
+                    name: voice.name,
+                    language: voice.language,
+                    languageName: VoiceCatalog.variantName(for: voice.language),
+                    quality: 3,
+                    gender: nil,
+                    engineRaw: voice.engine.rawValue,
+                    modelID: model.id,
+                    modelName: model.name
+                )
+            }
+        }
+        let installed = models.filter { $0.isAvailable && isInstalled($0) }.flatMap(catalogVoices(for:))
+        guard !isSystemSelected, let model = selectedModel, model.isAvailable, isInstalled(model) else {
+            voices.setNeuralVoices([], installed: installed)
             return
         }
-        let installedKokoro = model.engine == .kokoro ? Self.installedKokoroVoiceIDs() : []
-        let available = model.engine == .kokoro
-            ? model.voices.filter { installedKokoro.contains(String($0.id.dropFirst("kokoro:".count))) }
-            : model.voices
-        let neural = available.map { voice in
-            VoiceCatalog.Voice(
-                id: voice.id,
-                name: voice.name,
-                language: voice.language,
-                languageName: VoiceCatalog.variantName(for: voice.language),
-                quality: 3,
-                gender: nil,
-                engineRaw: voice.engine.rawValue
-            )
+        voices.setNeuralVoices(catalogVoices(for: model), installed: installed)
+    }
+
+    /// The installed model a voice ID belongs to and the voice's name inside
+    /// it. "phonon:" is the 31M English checkpoint; books whose voice was
+    /// chosen with an earlier build of 40M Spanish ("phonon:Alba") resolve to it.
+    func model(forVoiceID voiceID: String) -> (model: Model, name: String)? {
+        if voiceID.hasPrefix("kokoro:"), let kokoro = models.first(where: { $0.engine == .kokoro }) {
+            return (kokoro, String(voiceID.dropFirst("kokoro:".count)))
         }
-        voices.setNeuralVoices(neural)
+        for model in models where model.engine == .phonon && model.id != "phonon-31m-en" {
+            if voiceID.hasPrefix("\(model.id):") { return (model, String(voiceID.dropFirst(model.id.count + 1))) }
+        }
+        if voiceID.hasPrefix("phonon:") {
+            let name = String(voiceID.dropFirst("phonon:".count))
+            if let english = models.first(where: { $0.id == "phonon-31m-en" }),
+               english.voices.contains(where: { $0.id == voiceID }) {
+                return (english, name)
+            }
+            if let spanish = models.first(where: { $0.id == Self.phonon40SpanishID }),
+               spanish.voices.contains(where: { $0.name == name }) {
+                return (spanish, name)
+            }
+        }
+        return nil
     }
 
     private static func excludeFromBackup(_ url: URL) {
@@ -1028,10 +1078,13 @@ final class ModelManager {
 
     /// Gradium's Spanish voices (gradium/phonon-voices, Apache-2.0), as exported into the
     /// converted Phonon 40M Spanish bundle under these names.
-    static let phonon40SpanishVoices: [Voice] = PhononOnDeviceConversion.spanish.voices.map(voice(from:))
+    static let phonon40SpanishVoices: [Voice] = PhononOnDeviceConversion.spanish.voices
+        .map { voice(from: $0, modelID: phonon40SpanishID) }
 
-    nonisolated static func voice(from file: PhononVoiceFile) -> Voice {
-        Voice(id: "phonon:\(file.name)", name: file.name, language: file.language, engine: .phonon)
+    /// 40M voices are prefixed with their model ("phonon-40m-es:Alba"), so the
+    /// same voice in the Spanish and Multilingual checkpoints stays distinct.
+    nonisolated static func voice(from file: PhononVoiceFile, modelID: String) -> Voice {
+        Voice(id: "\(modelID):\(file.name)", name: file.name, language: file.language, engine: .phonon)
     }
 
     private static let phononVoices: [Voice] = [

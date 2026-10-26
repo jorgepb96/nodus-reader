@@ -30,13 +30,20 @@ struct VoicesView: View {
     @State private var isSigningIn = false
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showBundleImporter = false
+    /// Choosing a voice in the list switches the model without moving the
+    /// filters under the user's finger.
+    @State private var keepFiltersOnModelChange = false
 
     private var filteredVoices: [VoiceCatalog.Voice] {
-        voices.voices.filter { voice in
+        // Every installed model, not only the selected one, so any voice can
+        // be tried and chosen.
+        voices.allInstalledVoices.filter { voice in
             if let languageFilter, let code = VoiceCatalog.languageCode(languageFilter),
                !voice.language.lowercased().hasPrefix(code) { return false }
             if let qualityFilter, voice.quality != qualityFilter { return false }
-            if let engineFilter, voice.engineRaw != engineFilter { return false }
+            if let engineFilter {
+                if engineFilter == "system" ? !voice.isSystem : voice.modelID != engineFilter { return false }
+            }
             let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty {
                 return voice.name.localizedCaseInsensitiveContains(trimmed)
@@ -56,7 +63,7 @@ struct VoicesView: View {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
                     DisplayTitle("Voices")
-                    Text("Voices available on this \(DeviceInfo.platformName). Only the selected voice engine is shown; nothing is synced to iCloud.")
+                    Text("Voices of every model on this \(DeviceInfo.platformName). Play any of them to try it; choosing one from another model makes that model the voice engine. Nothing is synced to iCloud.")
                         .font(.footnote)
                         .foregroundStyle(palette.muted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -89,8 +96,12 @@ struct VoicesView: View {
         .navigationBarBackground(palette.background)
         .onChange(of: models.selectedModelID) { _, _ in
             guard didSetInitialLanguage else { return }
+            if keepFiltersOnModelChange {
+                keepFiltersOnModelChange = false
+                return
+            }
             if let model = models.selectedModel {
-                engineFilter = model.engine.rawValue
+                engineFilter = model.id
                 if let first = model.voices.first {
                     languageFilter = first.language
                 }
@@ -122,7 +133,7 @@ struct VoicesView: View {
                         voices.voices.contains { $0.isSystem && $0.language.lowercased().hasPrefix(prefix) }
                     } ?? false
                     engineFilter = modelSupportsLanguage || !systemSupportsLanguage
-                        ? model.engine.rawValue
+                        ? model.id
                         : "system"
                 } else {
                     engineFilter = "system"
@@ -233,6 +244,15 @@ struct VoicesView: View {
             .accessibilityLabel("Play sample, \(voice.name)")
 
             Button {
+                // A voice from a model other than the selected one switches the
+                // narration engine to that model, then becomes the default.
+                if let modelID = voice.modelID, modelID != models.selectedModelID {
+                    keepFiltersOnModelChange = true
+                    models.selectModel(modelID)
+                } else if voice.isSystem, !models.isSystemSelected {
+                    keepFiltersOnModelChange = true
+                    models.selectModel(ModelManager.systemModelID)
+                }
                 voices.setDefault(voice)
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
@@ -374,7 +394,7 @@ struct VoicesView: View {
     private func engineRow(id: String, title: String, detail: String, systemImage: String) -> some View {
         Button {
             models.selectModel(id)
-            engineFilter = id == ModelManager.systemModelID ? "system" : models.selectedModel?.engine.rawValue
+            engineFilter = id == ModelManager.systemModelID ? "system" : models.selectedModel?.id
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: systemImage)
@@ -507,7 +527,7 @@ struct VoicesView: View {
                 } else {
                     Button("Use this model") {
                         models.selectModel(model)
-                        engineFilter = model.engine.rawValue
+                        engineFilter = model.id
                     }
                     .font(.footnote.weight(.semibold))
                     .buttonStyle(.plain)
@@ -790,19 +810,15 @@ struct VoicesView: View {
         ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 
-    /// The installed Phonon checkpoint whose voices are listed (English 31M
-    /// or Spanish 40M): the selected one.
-    private var phononModelName: String {
-        if let model = models.selectedModel, model.engine == .phonon { return model.name }
-        return "Phonon"
+    private var installedModels: [ModelManager.Model] {
+        models.models.filter { $0.isAvailable && models.isInstalled($0) }
     }
 
     private func engineLabel(for engine: String?) -> String {
         switch engine {
+        case nil: String(localized: "All")
         case "system": String(localized: "System")
-        case "kokoro": String(localized: "Kokoro 82M")
-        case "phonon": phononModelName
-        default: String(localized: "All")
+        case let id?: models.models.first { $0.id == id }?.name ?? String(localized: "All")
         }
     }
 
@@ -825,11 +841,9 @@ struct VoicesView: View {
             Button("All models") { engineFilter = nil }
             Divider()
             Button("System") { engineFilter = "system" }
-            if voices.voices.contains(where: { $0.engineRaw == "kokoro" }) {
-                Button("Kokoro 82M") { engineFilter = "kokoro" }
-            }
-            if voices.voices.contains(where: { $0.engineRaw == "phonon" }) {
-                Button(phononModelName) { engineFilter = "phonon" }
+            // Each downloaded model, selected or not.
+            ForEach(installedModels) { model in
+                Button(model.name) { engineFilter = model.id }
             }
         }
     }
@@ -840,7 +854,7 @@ struct VoicesView: View {
                    isActive: languageFilter != nil) {
             Button("All languages") { languageFilter = nil }
             Divider()
-            ForEach(voices.languages, id: \.self) { language in
+            ForEach(VoiceCatalog.baseLanguages(of: voices.allInstalledVoices), id: \.self) { language in
                 Button(voices.languageName(for: language)) { languageFilter = language }
             }
         }

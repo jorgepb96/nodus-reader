@@ -15,6 +15,10 @@ public final class VoiceCatalog {
         public var quality: Int
         public var gender: String?
         public var engineRaw: String
+        /// The neural model this voice belongs to (nil for system voices), and
+        /// its display name: two Phonon checkpoints can share a voice name.
+        public var modelID: String? = nil
+        public var modelName: String? = nil
 
         public var qualityLabel: String {
             switch quality {
@@ -27,10 +31,11 @@ public final class VoiceCatalog {
         public var displayName: String { name }
 
         public var engineLabel: String {
+            if let modelName { return modelName }
             switch engineRaw {
-            case "kokoro": "Kokoro"
-            case "phonon": "Phonon"
-            default: "System"
+            case "kokoro": return "Kokoro"
+            case "phonon": return "Phonon"
+            default: return "System"
             }
         }
 
@@ -38,6 +43,10 @@ public final class VoiceCatalog {
     }
 
     public private(set) var voices: [Voice] = []
+    /// Voices of every installed neural model, selected or not. The Voices
+    /// screen lists them so any model can be tried; `voices` (what the reader
+    /// and player offer) holds the system voices and the selected model's.
+    public private(set) var installedNeuralVoices: [Voice] = []
     public private(set) var favorites: Set<String> = []
     public private(set) var isLoading = true
     public var defaultVoiceID: String
@@ -107,7 +116,8 @@ public final class VoiceCatalog {
 
     /// Replaces the neural voices while leaving the system catalogue untouched.
     /// Called when a model is installed, deleted or loaded at launch.
-    public func setNeuralVoices(_ neural: [Voice]) {
+    public func setNeuralVoices(_ neural: [Voice], installed: [Voice]? = nil) {
+        installedNeuralVoices = installed ?? neural
         voices.removeAll { !$0.isSystem }
         voices.append(contentsOf: neural)
         if !defaultVoiceID.isEmpty, !voices.contains(where: { $0.id == defaultVoiceID }) {
@@ -123,7 +133,12 @@ public final class VoiceCatalog {
     public func voice(withID id: String?,
                       engine: String? = nil) -> Voice? {
         guard let id else { return nil }
-        return voices.first { $0.id == id && (engine == nil || $0.engineRaw == engine) }
+        return (voices + installedNeuralVoices).first { $0.id == id && (engine == nil || $0.engineRaw == engine) }
+    }
+
+    /// System voices plus the voices of every installed neural model.
+    public var allInstalledVoices: [Voice] {
+        voices.filter(\.isSystem) + installedNeuralVoices
     }
 
     /// Resolves a saved per-book voice ID to a real entry in this catalogue.

@@ -1082,6 +1082,43 @@ func huggingFaceTokenResponseBecomesARefreshableSession() throws {
     }
 }
 
+// MARK: - Voices across models
+
+@Test @MainActor
+func voicesOfEveryInstalledModelAreListedAndRoutedToTheirModel() throws {
+    let suite = "nodus.tests.voice-routing.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+
+    // Each voice ID names its model, so a voice of an unselected model plays with it.
+    #expect(manager.model(forVoiceID: "phonon:Harper")?.model.id == "phonon-31m-en")
+    #expect(manager.model(forVoiceID: "phonon-40m-es:Alba")?.model.id == "phonon-40m-es")
+    #expect(manager.model(forVoiceID: "phonon-40m-multilingual:Alba")?.model.id == "phonon-40m-multilingual")
+    #expect(manager.model(forVoiceID: "phonon-40m-multilingual:Alba")?.name == "Alba")
+    #expect(manager.model(forVoiceID: "kokoro:bm_george")?.name == "bm_george")
+    // Saved by builds where 40M Spanish voices were "phonon:<name>".
+    #expect(manager.model(forVoiceID: "phonon:Lucía-Sol")?.model.id == "phonon-40m-es")
+    // The same voice in two checkpoints stays two voices.
+    let spanish = try #require(manager.models.first { $0.id == "phonon-40m-es" })
+    let multilingual = try #require(manager.models.first { $0.id == "phonon-40m-multilingual" })
+    #expect(Set(spanish.voices.map(\.id)).isDisjoint(with: multilingual.voices.map(\.id)))
+
+    // The Voices screen lists every installed model; the reader keeps the selected one.
+    let catalog = VoiceCatalog(defaults: defaults)
+    func voice(_ id: String, model: String) -> VoiceCatalog.Voice {
+        VoiceCatalog.Voice(id: id, name: id, language: "es-ES", languageName: "Spanish", quality: 3,
+                           gender: nil, engineRaw: "phonon", modelID: model, modelName: model)
+    }
+    let selected = voice("phonon-40m-es:Alba", model: "phonon-40m-es")
+    let other = voice("phonon-40m-multilingual:Alba", model: "phonon-40m-multilingual")
+    catalog.setNeuralVoices([selected], installed: [selected, other])
+    #expect(catalog.voices.contains { $0.id == selected.id })
+    #expect(!catalog.voices.contains { $0.id == other.id })
+    #expect(catalog.allInstalledVoices.contains { $0.id == other.id })
+    #expect(catalog.voice(withID: other.id) != nil)
+}
+
 // MARK: - Voice engine memory
 
 @Test @MainActor
@@ -1117,14 +1154,16 @@ func modelDownloadsSynthesizeAndAlignWithText() async throws {
     let suite = "nodus.tests.models.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
-    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let catalog = VoiceCatalog(defaults: defaults)
+    let manager = ModelManager(voices: catalog, defaults: defaults)
 
     let sentence = "Call me Ishmael, and listen closely to every single word."
     var words: [NSRange] = []
     (sentence as NSString).enumerateSubstrings(in: NSRange(location: 0, length: (sentence as NSString).length),
                                                options: .byWords) { _, range, _, _ in words.append(range) }
 
-    let downloadable = manager.models.filter(\.isAvailable)
+    // Public models only; the gated 40M checkpoints have their own opt-in test.
+    let downloadable = manager.models.filter { $0.isAvailable && !$0.requiresAcceptedLicense }
     #expect(!downloadable.isEmpty)
     for model in downloadable {
         if !manager.isInstalled(model) {
@@ -1173,6 +1212,17 @@ func modelDownloadsSynthesizeAndAlignWithText() async throws {
         let reloaded = try await manager.synthesize(sentence, voiceID: voice.id, engine: model.engine)
         #expect(reloaded.samples.count > 0)
         #expect(manager.loadedEngines == [model.engine])
+    }
+
+    // Any installed model can be tried from the Voices screen, not only the
+    // selected one: with one engine selected, a voice of the other still speaks.
+    let installed = downloadable.filter { manager.isInstalled($0) }
+    if let first = installed.first, let second = installed.dropFirst().first,
+       let otherVoice = second.voices.first {
+        manager.selectModel(first)
+        let audio = try await manager.synthesize(sentence, voiceID: otherVoice.id, engine: second.engine)
+        #expect(audio.samples.contains { abs($0) > 0.01 }, "\(second.name) did not speak while \(first.name) was selected")
+        #expect(catalog.allInstalledVoices.contains { $0.id == otherVoice.id })
     }
 }
 

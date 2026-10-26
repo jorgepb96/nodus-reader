@@ -2552,16 +2552,6 @@
         }
       }
     },
-    "Kokoro 82M": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kokoro 82M"
-          }
-        }
-      }
-    },
     "Kokoro's English phonemizer uses MLX, which needs a Metal GPU. The Simulator does not provide one. Install Kokoro on an iPhone, iPad or Mac; Phonon and system voices work in the Simulator.": {
       "localizations": {
         "es": {
@@ -3032,32 +3022,12 @@
         }
       }
     },
-    "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Licence CC BY-NC 4.0: non-commercial use.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más arriba). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 130 MB de descarga y 200 MB instalado. Licencia CC BY-NC 4.0: uso no comercial."
-          }
-        }
-      }
-    },
     "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más arriba). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 150 MB de descarga y 230 MB instalado. Cada voz lee en su propio idioma. Gradium distribuye este modelo con licencia CC BY-NC 4.0, solo para uso no comercial; esa licencia se aplica por separado, con independencia de la AGPL-3.0 de Nodus Reader."
-          }
-        }
-      }
-    },
-    "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Licence CC BY-NC 4.0: non-commercial use.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más arriba). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 150 MB de descarga y 230 MB instalado. Cada voz lee en su propio idioma. Licencia CC BY-NC 4.0: uso no comercial."
           }
         }
       }
@@ -6152,12 +6122,12 @@
         }
       }
     },
-    "Voices available on this %@. Only the selected voice engine is shown; nothing is synced to iCloud.": {
+    "Voices of every model on this %@. Play any of them to try it; choosing one from another model makes that model the voice engine. Nothing is synced to iCloud.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Voces disponibles en este %@. Solo se muestra el motor de voz seleccionado; no se sincroniza nada con iCloud."
+            "value": "Voces de todos los modelos de este %@. Reproduce cualquiera para probarla; si eliges una de otro modelo, ese modelo pasa a ser el motor de voz. No se sincroniza nada con iCloud."
           }
         }
       }
