@@ -105,6 +105,8 @@ public enum DocumentExtractor {
                 title = heading
             }
             body = MarkdownText.plainText(raw)
+        } else {
+            body = PlainText.paragraphs(raw)
         }
 
         let normalized = HTMLText.normalize(body)
@@ -152,7 +154,7 @@ public enum DocumentExtractor {
         guard let attributed = try? NSAttributedString(data: data, options: options, documentAttributes: nil) else {
             throw ImportError.unreadableDocument(url.lastPathComponent)
         }
-        let text = HTMLText.normalize(attributed.string)
+        let text = PlainText.paragraphs(attributed.string)
         guard !text.isEmpty else {
             throw ImportError.emptyDocument(url.lastPathComponent)
         }
@@ -163,16 +165,254 @@ public enum DocumentExtractor {
 }
 
 public enum MarkdownText {
+    /// Markdown to clean reading text. Soft line breaks inside a paragraph are
+    /// joined, list items stay one per line, and code keeps its line breaks.
+    /// The reader displays this text; the original Markdown is not rendered.
     public static func plainText(_ source: String) -> String {
-        var text = source
-        text = text.replacingOccurrences(of: "(?m)^#{1,6}\\s*", with: "", options: .regularExpression)
-        text = text.replacingOccurrences(of: "(?m)^\\s*[-*+]\\s+", with: "• ", options: .regularExpression)
-        text = text.replacingOccurrences(of: "!\\[([^\\]]*)\\]\\([^\\)]*\\)", with: "$1", options: .regularExpression)
-        text = text.replacingOccurrences(of: "\\[([^\\]]+)\\]\\([^\\)]*\\)", with: "$1", options: .regularExpression)
-        text = text.replacingOccurrences(of: "(\\*\\*|__)(.*?)\\1", with: "$2", options: .regularExpression)
-        text = text.replacingOccurrences(of: "(\\*|_)(.*?)\\1", with: "$2", options: .regularExpression)
-        text = text.replacingOccurrences(of: "`{1,3}", with: "", options: .regularExpression)
-        text = text.replacingOccurrences(of: "(?m)^>\\s?", with: "", options: .regularExpression)
-        return text
+        let lines = source
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .components(separatedBy: "\n")
+
+        var blocks: [String] = []
+        var paragraph: [String] = []
+        var listItems: [(ordered: Bool, text: String)] = []
+        var quote: [String] = []
+        var tableRows: [[String]] = []
+        var code: [String] = []
+        var inCode = false
+        var index = 0
+
+        func flushParagraph() {
+            guard !paragraph.isEmpty else { return }
+            let text = inline(paragraph.joined(separator: " "))
+            if !text.isEmpty { blocks.append(text) }
+            paragraph = []
+        }
+
+        func flushList() {
+            guard !listItems.isEmpty else { return }
+            var rendered: [String] = []
+            var number = 1
+            for item in listItems {
+                if item.ordered {
+                    rendered.append("\(number). \(item.text)")
+                    number += 1
+                } else {
+                    rendered.append("• \(item.text)")
+                }
+            }
+            blocks.append(rendered.joined(separator: "\n"))
+            listItems = []
+        }
+
+        func flushQuote() {
+            guard !quote.isEmpty else { return }
+            let text = inline(quote.joined(separator: " "))
+            if !text.isEmpty { blocks.append(text) }
+            quote = []
+        }
+
+        func flushTable() {
+            guard !tableRows.isEmpty else { return }
+            blocks.append(tableRows.map { $0.joined(separator: " | ") }.joined(separator: "\n"))
+            tableRows = []
+        }
+
+        func flushCode() {
+            guard !code.isEmpty else { return }
+            blocks.append(code.joined(separator: "\n"))
+            code = []
+        }
+
+        func flushAll() {
+            flushParagraph()
+            flushList()
+            flushQuote()
+            flushTable()
+            flushCode()
+        }
+
+        while index < lines.count {
+            let raw = lines[index]
+            let trimmed = raw.trimmingCharacters(in: .whitespaces)
+
+            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
+                if inCode {
+                    inCode = false
+                    flushCode()
+                } else {
+                    flushParagraph()
+                    flushList()
+                    flushQuote()
+                    flushTable()
+                    inCode = true
+                    code = []
+                }
+                index += 1
+                continue
+            }
+            if inCode {
+                code.append(raw)
+                index += 1
+                continue
+            }
+            if trimmed.isEmpty {
+                flushAll()
+                index += 1
+                continue
+            }
+            if isHorizontalRule(trimmed) {
+                flushAll()
+                index += 1
+                continue
+            }
+            if trimmed.range(of: #"^\[[^\]]+\]:\s+\S+"#, options: .regularExpression) != nil,
+               !trimmed.hasPrefix("[^") {
+                // A link-reference definition is metadata, not prose.
+                flushAll()
+                index += 1
+                continue
+            }
+            if trimmed.hasPrefix("#") {
+                flushAll()
+                let heading = trimmed.drop(while: { $0 == "#" })
+                    .trimmingCharacters(in: .whitespaces)
+                    .replacingOccurrences(of: "#+$", with: "", options: .regularExpression)
+                let text = inline(heading)
+                if !text.isEmpty { blocks.append(text) }
+                index += 1
+                continue
+            }
+            if index + 1 < lines.count, isSetextUnderline(lines[index + 1]) {
+                flushAll()
+                blocks.append(inline(trimmed))
+                index += 2
+                continue
+            }
+            if trimmed.hasPrefix(">") {
+                flushParagraph()
+                flushList()
+                flushTable()
+                quote.append(String(trimmed.dropFirst()).trimmingCharacters(in: .whitespaces))
+                index += 1
+                continue
+            }
+            if let item = listMarker(trimmed) {
+                flushParagraph()
+                flushQuote()
+                flushTable()
+                if !listItems.isEmpty, listItems.last?.ordered != item.ordered {
+                    flushList()
+                }
+                listItems.append((item.ordered, inline(item.text)))
+                index += 1
+                continue
+            }
+            if isTableRow(trimmed) {
+                flushParagraph()
+                flushList()
+                flushQuote()
+                if isTableSeparator(trimmed) {
+                    index += 1
+                    continue
+                }
+                tableRows.append(tableCells(trimmed).map(inline))
+                index += 1
+                continue
+            }
+            // A non-marker line after a list is a wrapped list item. A line
+            // after a quote continues the quote.
+            if !listItems.isEmpty {
+                let last = listItems.count - 1
+                listItems[last].text = inline(listItems[last].text + " " + trimmed)
+                index += 1
+                continue
+            }
+            if !quote.isEmpty {
+                quote.append(trimmed)
+                index += 1
+                continue
+            }
+            flushList()
+            flushTable()
+            paragraph.append(trimmed)
+            index += 1
+        }
+        flushAll()
+        return blocks
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .joined(separator: "\n\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func listMarker(_ line: String) -> (ordered: Bool, text: String)? {
+        if let range = line.range(of: #"^[-*+]\s+"#, options: .regularExpression) {
+            return (false, String(line[range.upperBound...]).trimmingCharacters(in: .whitespaces))
+        }
+        if let range = line.range(of: #"^\d{1,3}[.)]\s+"#, options: .regularExpression) {
+            return (true, String(line[range.upperBound...]).trimmingCharacters(in: .whitespaces))
+        }
+        return nil
+    }
+
+    private static func isHorizontalRule(_ line: String) -> Bool {
+        line.range(of: #"^\s*(?:[-*_]\s*){3,}$"#, options: .regularExpression) != nil
+    }
+
+    private static func isSetextUnderline(_ line: String) -> Bool {
+        line.range(of: #"^\s*(?:=+|-+)\s*$"#, options: .regularExpression) != nil
+    }
+
+    private static func isTableRow(_ line: String) -> Bool {
+        let pipes = line.filter { $0 == "|" }.count
+        return pipes >= 2 || (pipes >= 1 && (line.hasPrefix("|") || line.hasSuffix("|")))
+    }
+
+    private static func isTableSeparator(_ line: String) -> Bool {
+        line.range(of: #"^\s*\|?\s*:?-{2,}:?\s*(?:\|\s*:?-{2,}:?\s*)+\|?\s*$"#,
+                   options: .regularExpression) != nil
+    }
+
+    private static func tableCells(_ line: String) -> [String] {
+        var value = line.trimmingCharacters(in: .whitespaces)
+        if value.hasPrefix("|") { value.removeFirst() }
+        if value.hasSuffix("|") { value.removeLast() }
+        return value.components(separatedBy: "|").map {
+            $0.trimmingCharacters(in: .whitespaces)
+        }
+    }
+
+    /// Inline Markdown to readable text: images become their alt text, links
+    /// their label, emphasis and code markers disappear.
+    private static func inline(_ source: String) -> String {
+        var value = source
+        value = value.replacingOccurrences(of: #"!\[([^\]]*)\]\([^)]*\)"#, with: "$1",
+                                           options: .regularExpression)
+        value = value.replacingOccurrences(of: #"\[([^\]]+)\]\([^)]*\)"#, with: "$1",
+                                           options: .regularExpression)
+        value = value.replacingOccurrences(of: #"\[([^\]]+)\]\[[^\]]*\]"#, with: "$1",
+                                           options: .regularExpression)
+        value = value.replacingOccurrences(of: #"\[\^[^\]]+\]"#, with: "", options: .regularExpression)
+        value = value.replacingOccurrences(of: #"\*\*(.+?)\*\*"#, with: "$1", options: .regularExpression)
+        value = value.replacingOccurrences(of: #"__(.+?)__"#, with: "$1", options: .regularExpression)
+        value = value.replacingOccurrences(of: #"\*(.+?)\*"#, with: "$1", options: .regularExpression)
+        value = value.replacingOccurrences(of: #"`+([^`]+)`+"#, with: "$1", options: .regularExpression)
+        value = value.replacingOccurrences(of: #"~~(.+?)~~"#, with: "$1", options: .regularExpression)
+        value = value.replacingOccurrences(of: #"(?i)<br\s*/?>"#, with: " ", options: .regularExpression)
+        value = value.replacingOccurrences(of: #"<[^>]+>"#, with: "", options: .regularExpression)
+        value = value.replacingOccurrences(of: #"\\([\\`*_{}\[\]()#+.!-])"#, with: "$1",
+                                           options: .regularExpression)
+        let entities = [
+            "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"", "&#39;": "'",
+            "&nbsp;": " ", "&mdash;": "—", "&ndash;": "–", "&hellip;": "…",
+            "&aacute;": "á", "&eacute;": "é", "&iacute;": "í", "&oacute;": "ó",
+            "&uacute;": "ú", "&ntilde;": "ñ"
+        ]
+        for (entity, replacement) in entities {
+            value = value.replacingOccurrences(of: entity, with: replacement)
+        }
+        value = value.replacingOccurrences(of: "[ ]{2,}", with: " ", options: .regularExpression)
+        return value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

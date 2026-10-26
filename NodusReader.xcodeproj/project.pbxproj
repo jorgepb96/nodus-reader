@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0260B3F1B3B3E791FB3BAF64 /* TextNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CB154C66B6E41F300D19A73 /* TextNormalizer.swift */; };
 		02D9DFDE059401714F063D22 /* ReaderAppearanceControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACBFFB317D2132D98EFDA315 /* ReaderAppearanceControls.swift */; };
 		07A5245681E1BD9A675CF23E /* TextPaginator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A8F93563EA3D8A11EFB29B /* TextPaginator.swift */; };
 		0802E556B9ABA14117D10227 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5510E74AD69D8D4AC80C34D8 /* Assets.xcassets */; };
@@ -72,6 +73,7 @@
 		C6AE3EF01BF6C2203D01DE43 /* ReaderContentsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390305E758451EF6E06B5D1A /* ReaderContentsSheet.swift */; };
 		CF5F0A39E4882E6C4AA6E75D /* NodusReaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CFF6B8EDA004F101CAF1458 /* NodusReaderApp.swift */; };
 		D02EFDFD40DDFDE3B10B2DFB /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 127F30309ABDCA01F50B7751 /* MLX */; };
+		D0E873D730D51FDB14F1F4A7 /* DocumentParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615B234B48E1D96011BAADA0 /* DocumentParserTests.swift */; };
 		D29D48D11AE77ACE6EF3453D /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FF7CBF9CFCF8E117C3191309 /* Localizable.xcstrings */; };
 		D45E6022A985F00EEA2F542E /* SearchResultsContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E62F2F972274F54CF57BEE33 /* SearchResultsContent.swift */; };
 		D4BB0B652DA9BA54E98A519B /* StorageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEA231B6036008AC4763DC43 /* StorageSettingsView.swift */; };
@@ -182,6 +184,7 @@
 		5766A5530202F6E711E0850B /* SyncedPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncedPreferences.swift; sourceTree = "<group>"; };
 		5CFF6B8EDA004F101CAF1458 /* NodusReaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodusReaderApp.swift; sourceTree = "<group>"; };
 		5FC7158911830A319D83B1AE /* IOSReaderPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSReaderPageView.swift; sourceTree = "<group>"; };
+		615B234B48E1D96011BAADA0 /* DocumentParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentParserTests.swift; sourceTree = "<group>"; };
 		638DEE4E57C7085D36B92FB0 /* MacRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacRootView.swift; sourceTree = "<group>"; };
 		656FC1AC67F05FB48653DA27 /* ImportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportCoordinator.swift; sourceTree = "<group>"; };
 		65C9336485C3D5CAD0206176 /* ReaderPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPage.swift; sourceTree = "<group>"; };
@@ -193,6 +196,7 @@
 		8374C8CF82EADFE4C61847B6 /* ReaderNavigationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderNavigationSheet.swift; sourceTree = "<group>"; };
 		84215C3B2D70610707C931B2 /* ICloudDocumentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudDocumentStore.swift; sourceTree = "<group>"; };
 		8538AACCC8B86BBCBB64F210 /* CloudSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncService.swift; sourceTree = "<group>"; };
+		8CB154C66B6E41F300D19A73 /* TextNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextNormalizer.swift; sourceTree = "<group>"; };
 		8F18D1B82C968F1449459E2A /* PDFPageText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPageText.swift; sourceTree = "<group>"; };
 		8FC3CCAB5516F1CC4ED19C9F /* HTMLText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLText.swift; sourceTree = "<group>"; };
 		92566F3CFEA02A9CC4062A6B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -363,6 +367,7 @@
 				C7E1602D5595F5D3887F7D92 /* SpanishPhonemizer.swift */,
 				C1079D52B6E17772F269D44B /* SpeechWordAligner.swift */,
 				103016A574B8EB8D2FB618A3 /* StorageJanitor.swift */,
+				8CB154C66B6E41F300D19A73 /* TextNormalizer.swift */,
 				F9B64BBE71DDC847CBDFB58A /* VoiceCatalog.swift */,
 			);
 			path = Services;
@@ -438,6 +443,7 @@
 		8F5ACEEAA8522CA2F4EF6BDC /* NodusReaderTests */ = {
 			isa = PBXGroup;
 			children = (
+				615B234B48E1D96011BAADA0 /* DocumentParserTests.swift */,
 				2D2FEAF26A6FAC1835AD1D28 /* NodusReaderTests.swift */,
 			);
 			path = NodusReaderTests;
@@ -832,6 +838,7 @@
 				D4BB0B652DA9BA54E98A519B /* StorageSettingsView.swift in Sources */,
 				BB4314423E68948DDF1B8D99 /* SyncJournal.swift in Sources */,
 				DE3C74A0A0088D2D8ED24673 /* SyncedPreferences.swift in Sources */,
+				0260B3F1B3B3E791FB3BAF64 /* TextNormalizer.swift in Sources */,
 				07A5245681E1BD9A675CF23E /* TextPaginator.swift in Sources */,
 				99D2734F6F871C9CA3EABA92 /* ThemePicker.swift in Sources */,
 				68BC4B6B98AE208B59C91A2B /* VoiceCatalog.swift in Sources */,
@@ -843,6 +850,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D0E873D730D51FDB14F1F4A7 /* DocumentParserTests.swift in Sources */,
 				4412BA092D7B5B51CA1FB90D /* NodusReaderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

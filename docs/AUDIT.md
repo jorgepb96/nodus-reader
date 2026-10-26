@@ -809,3 +809,59 @@ Tests: `recognisedWordsTimeTheReadAlongHighlight`, `wordAlignmentMatchesTextRang
 Tests: `reflowKeepsFootnotesAndContentsApart`, the opt-in
 `kokoroSpeaksWordsOutsideItsDictionary`, and `testPDFIntelligentReading` now starts
 Read & Listen from the reflow.
+
+## PDF and document parsing, paragraphs, contents and Markdown (2026-10-27)
+
+- **Line geometry instead of line boxes.** PDFKit exposes the font of every run,
+  so the reflow now uses point size, weight, baseline and indentation. A 12 pt
+  heading no longer has to beat a 22 % line-height threshold; it is a heading
+  because it is larger than the body text. Numbered sections ("1 Introduction",
+  "2.1 Methods") and chapter/appendix labels are headings even when the publisher
+  kept the body size.
+- **One visual line, not several fragments.** PDFKit sometimes returns one line as
+  two selections when the font changes ("application-level" + "protocol for
+  distributed,"). Fragments on the same baseline with a small gap are joined
+  before grouping. A wide gutter (a real two-column page) is left alone.
+- **Paragraphs.** Lines are joined with a font-aware baseline lead. First-line
+  indents, an extra leading, a column change and a font-size change start a new
+  paragraph; a hyphen at the end of a line is resolved by the system spell
+  checker ("exam-" + "ple" → "example", "English-to-" + "German" →
+  "English-to-German"). A paragraph that continues on the next page, or in the
+  next column, carries `continuesPrevious`; Markdown joins the halves and keeps
+  figures after the completed paragraph.
+- **Contents and indexes.** A conservative contents test recognises numbered
+  entries, dot leaders and chapter/appendix labels, never a body line that merely
+  ends in a year. The state runs across pages, so a contents section that starts
+  on one page and continues on the next keeps one entry per line. Index entries
+  ("Markdown 4, 7, 9") become "Markdown · 4, 7, 9". A page with a real contents
+  heading followed by prose switches back to normal body layout at the prose.
+- **Running heads, feet and folios.** Page numbers, bare folios in the margin,
+  repeated running heads, vertical arXiv stamps and front-matter metadata are
+  kept out of the body and out of Markdown. A sentence that begins at the top of
+  a page is not mistaken for a header. Footnotes in smaller type at the foot are
+  set apart and skipped by narration.
+- **Figures and sidebars.** A cluster of tiny, scattered labels with no prose is
+  cropped as a figure image instead of being emitted as dozens of false headings;
+  its caption stays as a caption and does not absorb the paragraph that follows.
+- **Markdown.** `PDFReflowDocument.markdown()` emits headings, paragraphs, lists,
+  quotes and image references, with blank lines between blocks; `readingText()`
+  is the same content without Markdown punctuation for the reader. A caption is
+  italic and never becomes the target of a paragraph continuation.
+- **Other formats.** Markdown import joins soft-wrapped lines and keeps list,
+  quote, code and table structure in readable text; HTML extraction adds list
+  bullets/numbers and table cell separators and drops `footer`, `nav`, `aside`
+  and form boilerplate; TXT/RTF join wrapped lines and keep blank-line paragraphs.
+
+Tests: `pdfParserKeepsParagraphsContentsAndRunningHeadsApart`,
+`markdownImportProducesCleanReadingText`,
+`htmlImportKeepsListsAndTablesAndDropsBoilerplate`,
+`plainTextJoinsWrappedLinesAndKeepsParagraphs`,
+`hyphenationKeepsCompoundsAndJoinsBrokenWords`, and the opt-in
+`realPDFCorpusParsesCleanly` (Wikipedia, arXiv and RFC PDFs).
+
+Tools: `tools/parser-probe` builds a parser-only macOS CLI that prints blocks and
+writes Markdown; `tools/parser-corpus/fetch.sh` downloads the public corpus. The
+corpus and probe build are git-ignored. Remaining limits: web-to-PDF text layers
+that merge a floating infobox into an article can still leave a stray fragment or
+a sidebar heading; OCR figures remain images; a two-column page whose text layer
+does not separate its columns relies on geometry and may differ font to font.
