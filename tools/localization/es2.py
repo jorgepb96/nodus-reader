@@ -409,3 +409,8 @@ ES.update({
     "Search in book": "Buscar en el libro",
     "Searching…": "Buscando…",
 })
+
+ES.update({
+    "No installed voice matches these filters. Show every voice, or download another model in Settings › Voices & Models.": "Ninguna voz instalada coincide con estos filtros. Muestra todas las voces o descarga otro modelo en Ajustes › Voces y modelos.",
+    "Show all voices": "Mostrar todas las voces",
+})

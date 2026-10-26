@@ -703,3 +703,13 @@ Tests: `spanishPhonemesFollowEspeak`, `spanishNumbersAbbreviationsAndRomanNumera
 `kokoroSpanishPiecesFitTheModelAndKeepEveryWord`, `readerSearchIgnoresCaseAndAccentsAndStartsAtTheReadingPosition`,
 `readerSearchStepsWrapAround`, `sheetsOverTheReaderUseTheReaderThemeColours`, the opt-in
 `kokoroNarratesSpanish`, and the UI test `testReaderSearchStepsThroughMatches`.
+
+## Model filter in the book's voice picker (2026-10-26)
+
+The "Voice for this book" sheet listed only the selected engine's voices and filtered
+by language alone. It now lists the voices of every installed model, with Model and
+Language filter chips (the same `VoiceFilterMenu` as the Voices screen). Choosing a
+voice of a model that is not the voice engine makes that model the engine, so the book
+really narrates with it instead of falling back to a system voice. The sheet uses the
+palette it is presented with. UI test: `testVoicePickerStartsWithBookLanguage` now
+also filters by model.

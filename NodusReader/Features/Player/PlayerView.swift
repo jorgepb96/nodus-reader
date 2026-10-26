@@ -539,12 +539,15 @@ struct NarrationScrubber: View {
 
 struct VoicePickerSheet: View {
     @Environment(VoiceCatalog.self) private var voices
+    @Environment(ModelManager.self) private var models
     @Environment(PlaybackController.self) private var playback
     @Environment(\.dismiss) private var dismiss
     @Environment(\.nodusPalette) private var palette
 
     @State private var searchText = ""
     @State private var languageFilter: String?
+    /// "system" or an installed model's ID; nil shows every model.
+    @State private var modelFilter: String?
     @State private var didSetInitialLanguage = false
 
     /// The per-book voice syncs, but voices and models are installed per
@@ -554,11 +557,32 @@ struct VoicePickerSheet: View {
         playback.preferredVoiceIsMissing
     }
 
+    /// System voices and the voices of every installed model, not only the
+    /// selected engine's: choosing one from another model switches to it.
+    private var allVoices: [VoiceCatalog.Voice] {
+        voices.allInstalledVoices
+    }
+
+    private var installedModels: [ModelManager.Model] {
+        models.models.filter { $0.isAvailable && models.isInstalled($0) }
+    }
+
+    private var modelLabel: String? {
+        switch modelFilter {
+        case nil: nil
+        case "system": String(localized: "System")
+        case let id?: installedModels.first { $0.id == id }?.name
+        }
+    }
+
     private var filtered: [VoiceCatalog.Voice] {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let language = VoiceCatalog.languageCode(languageFilter)
-        return voices.voices.filter { voice in
+        return allVoices.filter { voice in
             if let language, !voice.language.lowercased().hasPrefix(language) { return false }
+            if let modelFilter {
+                if modelFilter == "system" ? !voice.isSystem : voice.modelID != modelFilter { return false }
+            }
             guard !trimmed.isEmpty else { return true }
             return voice.name.localizedCaseInsensitiveContains(trimmed)
                 || voice.languageName.localizedCaseInsensitiveContains(trimmed)
@@ -567,16 +591,41 @@ struct VoicePickerSheet: View {
     }
 
     private var availableLanguages: [String] {
-        VoiceCatalog.baseLanguages(of: voices.voices)
-    }
-
-    private var languageLabel: String {
-        languageFilter.map { voices.languageName(for: $0) } ?? String(localized: "All languages")
+        VoiceCatalog.baseLanguages(of: allVoices)
     }
 
     /// One section per language; regional variants are shown on each row.
     private var groupedLanguages: [String] {
         VoiceCatalog.baseLanguages(of: filtered)
+    }
+
+    /// Model and language filters, as on the Voices screen.
+    private var filterRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                VoiceFilterMenu(title: String(localized: "Model"), systemImage: "cpu",
+                                value: modelLabel, isActive: modelFilter != nil) {
+                    Button("All models") { modelFilter = nil }
+                    Divider()
+                    Button("System") { modelFilter = "system" }
+                    ForEach(installedModels) { model in
+                        Button(model.name) { modelFilter = model.id }
+                    }
+                }
+                VoiceFilterMenu(title: String(localized: "Language"), systemImage: "globe",
+                                value: languageFilter.map { voices.languageName(for: $0) },
+                                isActive: languageFilter != nil) {
+                    Button("All languages") { languageFilter = nil }
+                    Divider()
+                    ForEach(availableLanguages, id: \.self) { language in
+                        Button(voices.languageName(for: language)) { languageFilter = language }
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+        .background(palette.background)
     }
 
     var body: some View {
@@ -601,22 +650,28 @@ struct VoicePickerSheet: View {
                             }
                         }
                         .padding(.vertical, 6)
+                        .listRowBackground(palette.panel)
                     }
                 }
                 if filtered.isEmpty {
                     Section {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("No voices in this language")
+                            Text("No voices match")
                                 .font(.system(.headline, design: .serif))
-                            Text("The selected engine has no installed voice for \(languageLabel). Search all languages or choose another model in Settings.")
+                            Text("No installed voice matches these filters. Show every voice, or download another model in Settings › Voices & Models.")
                                 .font(.caption)
                                 .foregroundStyle(palette.muted)
                                 .fixedSize(horizontal: false, vertical: true)
-                            Button("Show all languages") { languageFilter = nil }
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(palette.accent)
+                            Button("Show all voices") {
+                                languageFilter = nil
+                                modelFilter = nil
+                                searchText = ""
+                            }
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(palette.accent)
                         }
                         .padding(.vertical, 6)
+                        .listRowBackground(palette.panel)
                     }
                 }
 
@@ -624,6 +679,12 @@ struct VoicePickerSheet: View {
                     Section(voices.languageName(for: language)) {
                         ForEach(filtered.filter { VoiceCatalog.languageCode($0.language) == language }) { voice in
                             Button {
+                                // A voice of a model that is not the voice
+                                // engine makes that model the engine, so it
+                                // really narrates instead of falling back.
+                                if let modelID = voice.modelID, modelID != models.selectedModelID {
+                                    models.selectModel(modelID)
+                                }
                                 playback.setVoice(voice)
                                 dismiss()
                             } label: {
@@ -643,26 +704,20 @@ struct VoicePickerSheet: View {
                                 }
                             }
                             .buttonStyle(.plain)
+                            .listRowBackground(palette.panel)
                         }
                     }
                 }
+            }
+            .scrollContentBackground(.hidden)
+            .background(palette.background)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                filterRow
             }
             .searchable(text: $searchText, prompt: "Search voices")
             .navigationTitle("Voice for this book")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Menu {
-                        Button(String(localized: "All languages")) { languageFilter = nil }
-                        Divider()
-                        ForEach(availableLanguages, id: \.self) { language in
-                            Button(voices.languageName(for: language)) { languageFilter = language }
-                        }
-                    } label: {
-                        Label(languageLabel, systemImage: "globe")
-                            .font(.footnote)
-                    }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
@@ -672,7 +727,7 @@ struct VoicePickerSheet: View {
                 let bookLanguage = VoiceCatalog.languageCode(playback.activeBook?.language)
                 let fallback = VoiceCatalog.languageCode(voices.defaultVoice?.language)
                 if let code = bookLanguage ?? fallback,
-                   voices.voices.contains(where: { $0.language.lowercased().hasPrefix(code) }) {
+                   allVoices.contains(where: { $0.language.lowercased().hasPrefix(code) }) {
                     languageFilter = code
                 }
                 didSetInitialLanguage = true

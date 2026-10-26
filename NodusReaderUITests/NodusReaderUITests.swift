@@ -311,6 +311,16 @@ final class NodusReaderUITests: XCTestCase {
         ).firstMatch
         XCTAssertFalse(englishNeural.waitForExistence(timeout: 2),
                        "English neural voices were shown before the Spanish book voices")
+
+        // The model filter sits next to the language filter.
+        let modelFilter = app.buttons["Filter by Model"].firstMatch
+        XCTAssertTrue(modelFilter.waitForExistence(timeout: 5))
+        modelFilter.tap()
+        let systemOnly = app.buttons["System"].firstMatch
+        XCTAssertTrue(systemOnly.waitForExistence(timeout: 5))
+        systemOnly.tap()
+        XCTAssertEqual(app.buttons["Filter by Model"].firstMatch.value as? String, "System")
+        XCTAssertTrue(spanishSection.waitForExistence(timeout: 5))
     }
 
     func testICloudAndStorage() throws {

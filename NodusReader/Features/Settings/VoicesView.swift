@@ -898,8 +898,42 @@ struct VoicesView: View {
     private func filterMenu<Content: View>(title: String, systemImage: String, value: String?,
                                            isActive: Bool,
                                            @ViewBuilder content: () -> Content) -> some View {
+        VoiceFilterMenu(title: title, systemImage: systemImage, value: value, isActive: isActive,
+                        content: content)
+    }
+
+    private func qualityLabel(for quality: Int?) -> String {
+        switch quality {
+        case 3: String(localized: "Premium")
+        case 2: String(localized: "Enhanced")
+        case 1: String(localized: "Standard")
+        default: String(localized: "All")
+        }
+    }
+}
+
+/// A filter chip with a menu (Model, Language, Quality), shared by the Voices
+/// screen and the book's voice picker.
+struct VoiceFilterMenu<Content: View>: View {
+    let title: String
+    let systemImage: String
+    let value: String?
+    let isActive: Bool
+    let content: Content
+    @Environment(\.nodusPalette) private var palette
+
+    init(title: String, systemImage: String, value: String?, isActive: Bool,
+         @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.systemImage = systemImage
+        self.value = value
+        self.isActive = isActive
+        self.content = content()
+    }
+
+    var body: some View {
         Menu {
-            content()
+            content
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: systemImage).font(.system(size: 12, weight: .semibold))
@@ -917,14 +951,5 @@ struct VoicesView: View {
         .menuIndicator(.hidden)
         .accessibilityLabel(Text("Filter by \(title)"))
         .accessibilityValue(value ?? String(localized: "All"))
-    }
-
-    private func qualityLabel(for quality: Int?) -> String {
-        switch quality {
-        case 3: String(localized: "Premium")
-        case 2: String(localized: "Enhanced")
-        case 1: String(localized: "Standard")
-        default: String(localized: "All")
-        }
     }
 }
