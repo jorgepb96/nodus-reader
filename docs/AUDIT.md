@@ -609,3 +609,17 @@ make it downloadable and why.
 - Opt-in test `phonon40ConvertsOnDevice` converts both checkpoints and speaks Spanish
   (and, for Multilingual, French and English) on the Mac (79 s) and in the iPhone
   simulator (72 s).
+
+## Page curl (2026-10-26)
+
+- **White page backs.** The curl was single-sided, so UIKit drew every page's back as a
+  white wash. It is now double-sided: each page has a back in the reader theme's paper
+  colour with the page's text faintly mirrored through it (forward turns), so a dark or
+  sepia theme stays dark or sepia while turning. With the spine at the edge UIKit is
+  given only the page at rest and asks the data source for the back while it turns.
+- **Shaking during the turn.** A page that redraws while it curls is captured again by
+  UIKit mid-animation. Nothing redraws now unless it changed: the text view relayouts
+  only on a size change, highlights compare before redrawing, configuration updates are
+  ignored while a page is turning (highlights catch up when it ends), and reading
+  progress is saved 0.7 s after the reader settles instead of on every turn, so the
+  database save no longer lands at the start of the next curl.

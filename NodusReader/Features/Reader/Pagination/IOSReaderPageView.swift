@@ -51,8 +51,12 @@ final class ReaderSelectableTextView: UIView, UITextViewDelegate {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        textView.frame = bounds.inset(by: contentInsets)
-        overlay.frame = textView.frame
+        // Only a real size change relayouts and redraws: a page in a curl
+        // animation that redraws is re-captured mid-turn and visibly shakes.
+        let frame = bounds.inset(by: contentInsets)
+        guard textView.frame != frame else { return }
+        textView.frame = frame
+        overlay.frame = frame
         overlay.setNeedsDisplay()
     }
 
@@ -157,15 +161,49 @@ final class ReaderPageHostController: UIViewController {
     }
 
     func updateHighlights(_ highlights: ReaderPageHighlights) {
+        guard highlights != self.highlights else { return }
         self.highlights = highlights
         content.setHighlights(highlights)
+    }
+}
+
+/// The back of a page while it curls: the theme's paper with the page's text
+/// faintly showing through, mirrored, as on printed paper. UIKit's own back
+/// is a white wash whatever the theme.
+final class ReaderPageBackController: UIViewController {
+    let front: ReaderPageHostController
+    private let style: ReaderPageStyle
+
+    init(front: ReaderPageHostController, style: ReaderPageStyle) {
+        self.front = front
+        self.style = style
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = style.background
+        view.isUserInteractionEnabled = false
+        view.accessibilityElementsHidden = true
+        // Only a page already on screen can be captured (turning forward);
+        // turning back, the paper alone is shown.
+        if front.isViewLoaded, front.view.window != nil,
+           let showThrough = front.view.snapshotView(afterScreenUpdates: false) {
+            showThrough.alpha = style.isDark ? 0.10 : 0.07
+            showThrough.transform = CGAffineTransform(scaleX: -1, y: 1)
+            showThrough.frame = view.bounds
+            showThrough.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            view.addSubview(showThrough)
+        }
     }
 }
 
 /// Draws sentence, word and annotation tint behind the text: it is a sibling
 /// placed below the clear text view, so glyphs are always drawn on top.
 final class ReaderHighlightOverlayView: UIView {
-    struct Span {
+    struct Span: Equatable {
         var range: NSRange
         var fill: UIColor
         var underline: UIColor?
@@ -175,7 +213,7 @@ final class ReaderHighlightOverlayView: UIView {
 
     weak var textView: UITextView?
     var spans: [Span] = [] {
-        didSet { setNeedsDisplay() }
+        didSet { if spans != oldValue { setNeedsDisplay() } }
     }
 
     override func draw(_ rect: CGRect) {

@@ -6,7 +6,7 @@ import AppKit
 import UIKit
 #endif
 
-struct ReaderPageHighlightSpan {
+struct ReaderPageHighlightSpan: Equatable {
     var range: NSRange
     var fill: PlatformColor
     var underline: PlatformColor?
@@ -14,7 +14,7 @@ struct ReaderPageHighlightSpan {
     var rounded: Bool
 }
 
-struct ReaderPageHighlights {
+struct ReaderPageHighlights: Equatable {
     var spans: [ReaderPageHighlightSpan] = []
 }
 

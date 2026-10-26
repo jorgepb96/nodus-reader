@@ -38,6 +38,7 @@ struct ReaderView: View {
     /// that fits on the first page must not become Finished just by opening.
     @State private var hasTurnedPage = false
     @State private var chromeVisible = true
+    @State private var progressSaveTask: Task<Void, Never>?
     @State private var showContents = false
     @State private var showAppearance = false
     @State private var showAppearanceSheet = false
@@ -118,7 +119,10 @@ struct ReaderView: View {
         .tint((theme.isDark ? NodusPalette.dark : NodusPalette.light).accent)
         .animation(.easeInOut(duration: 0.2), value: chromeVisible)
         .task { await load() }
-        .onDisappear { saveProgress() }
+        .onDisappear {
+            progressSaveTask?.cancel()
+            saveProgress()
+        }
         .onChange(of: pageInfo) { old, new in
             // Same pagination, different page: the reader turned a page (or
             // Read & Listen followed the narration). A new page count is a
@@ -126,7 +130,14 @@ struct ReaderView: View {
             if old.pageCount > 0, old.pageCount == new.pageCount, old.pageIndex != new.pageIndex {
                 hasTurnedPage = true
             }
-            saveProgress()
+            // Saved once the reader settles: a database save on every turn
+            // lands right as the next curl starts and makes it stutter.
+            progressSaveTask?.cancel()
+            progressSaveTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(700))
+                guard !Task.isCancelled else { return }
+                saveProgress()
+            }
         }
         .onChange(of: pdfPageIndex) { _, _ in saveProgress() }
         .sheet(isPresented: $showContents) {

@@ -14,6 +14,10 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
     private var onNote: ((Int, NSRange) -> Void)?
     private var onPageChanged: ((Int) -> Void)?
     private var hosts: [Int: ReaderPageHostController] = [:]
+    private var backs: [Int: ReaderPageBackController] = [:]
+    /// Page curl draws a real back for every page (the theme's paper); slide
+    /// and vertical scroll have none.
+    private let curlHasBacks: Bool
     private var generation = UUID()
     private(set) var currentIndex = 0
     private var transitioning = false
@@ -26,6 +30,7 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
          highlightsProvider: @escaping (ReaderPage) -> ReaderPageHighlights) {
         self.style = style
         self.highlightsProvider = highlightsProvider
+        self.curlHasBacks = turn == .curl
         super.init(transitionStyle: turn == .curl ? .pageCurl : .scroll,
                    navigationOrientation: turn == .vertical ? .vertical : .horizontal,
                    options: turn == .curl
@@ -33,7 +38,7 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
                        : [.interPageSpacing: 0])
         dataSource = self
         delegate = self
-        isDoubleSided = false
+        isDoubleSided = curlHasBacks
         view.backgroundColor = style.background
     }
 
@@ -42,7 +47,7 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
     override func viewDidLoad() {
         super.viewDidLoad()
         if let first = host(at: 0) {
-            setViewControllers([first], direction: .forward, animated: false)
+            setViewControllers(spread(first, index: 0), direction: .forward, animated: false)
         }
     }
 
@@ -67,18 +72,25 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
         view.backgroundColor = style.background
 
         guard !pages.isEmpty else {
-            setViewControllers([UIViewController()], direction: .forward, animated: false)
+            let blank = UIViewController()
+            blank.view.backgroundColor = style.background
+            setViewControllers([blank], direction: .forward, animated: false)
             return
         }
 
         let target = min(max(requestedIndex, 0), pages.count - 1)
         if pagesChanged {
             hosts.removeAll()
+            backs.removeAll()
             self.currentIndex = target
             if let targetHost = host(at: target) {
-                setViewControllers([targetHost], direction: .forward, animated: false)
+                setViewControllers(spread(targetHost, index: target), direction: .forward, animated: false)
             }
-        } else if target != self.currentIndex, !transitioning {
+        } else if transitioning {
+            // A page is mid-curl: touching its views now re-captures it and
+            // makes it shake. Highlights catch up when the turn ends.
+            return
+        } else if target != self.currentIndex {
             setPage(target, animated: false)
         } else {
             refreshHighlights()
@@ -95,7 +107,7 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
         guard let targetHost = host(at: target) else { return }
         let direction: UIPageViewController.NavigationDirection = target > currentIndex ? .forward : .reverse
         currentIndex = target
-        setViewControllers([targetHost], direction: direction, animated: animated)
+        setViewControllers(spread(targetHost, index: target), direction: direction, animated: animated)
         trimHosts()
         refreshHighlights()
     }
@@ -107,6 +119,7 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
         hosts = hosts.filter { index, host in
             abs(index - currentIndex) <= 2 || visible.contains(host.page.id)
         }
+        backs = backs.filter { index, _ in abs(index - currentIndex) <= 2 }
     }
 
     func refreshHighlights() {
@@ -129,21 +142,52 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
         return host
     }
 
+    /// The controllers shown at rest: just the page. With the spine at the
+    /// edge, UIKit asks the data source for each back while it turns.
+    private func spread(_ front: ReaderPageHostController, index: Int) -> [UIViewController] {
+        [front]
+    }
+
+    private func back(at index: Int, front: ReaderPageHostController) -> ReaderPageBackController {
+        if let existing = backs[index], existing.front === front { return existing }
+        let back = ReaderPageBackController(front: front, style: style)
+        backs[index] = back
+        return back
+    }
+
+    private func index(of controller: UIViewController) -> Int? {
+        let page: ReaderPage
+        if let host = controller as? ReaderPageHostController {
+            page = host.page
+        } else if let back = controller as? ReaderPageBackController {
+            page = back.front.page
+        } else {
+            return nil
+        }
+        return pages.firstIndex { $0.id == page.id }
+    }
+
     // MARK: UIPageViewControllerDataSource
 
+    // Double-sided order: page 0, back 0, page 1, back 1, …
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllerBefore viewController: UIViewController) -> UIViewController? {
-        guard let pageHost = viewController as? ReaderPageHostController,
-              let index = pages.firstIndex(where: { $0.id == pageHost.page.id }),
-              index > 0 else { return nil }
-        return host(at: index - 1)
+        guard let index = index(of: viewController) else { return nil }
+        if curlHasBacks, viewController is ReaderPageBackController {
+            return host(at: index)
+        }
+        guard index > 0, let previous = host(at: index - 1) else { return nil }
+        return curlHasBacks ? back(at: index - 1, front: previous) : previous
     }
 
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllerAfter viewController: UIViewController) -> UIViewController? {
-        guard let pageHost = viewController as? ReaderPageHostController,
-              let index = pages.firstIndex(where: { $0.id == pageHost.page.id }),
-              index + 1 < pages.count else { return nil }
+        guard let index = index(of: viewController) else { return nil }
+        if curlHasBacks, let front = viewController as? ReaderPageHostController {
+            // The back exists only if there is a next page to turn to.
+            return index + 1 < pages.count ? back(at: index, front: front) : nil
+        }
+        guard index + 1 < pages.count else { return nil }
         return host(at: index + 1)
     }
 
@@ -160,8 +204,12 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
                             transitionCompleted completed: Bool) {
         transitioning = false
         guard completed,
-              let host = pageViewController.viewControllers?.first as? ReaderPageHostController,
-              let index = pages.firstIndex(where: { $0.id == host.page.id }) else { return }
+              let host = pageViewController.viewControllers?.first(where: { $0 is ReaderPageHostController })
+                  as? ReaderPageHostController,
+              let index = pages.firstIndex(where: { $0.id == host.page.id }) else {
+            refreshHighlights()
+            return
+        }
         currentIndex = index
         trimHosts()
         refreshHighlights()
