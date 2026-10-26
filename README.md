@@ -120,7 +120,7 @@ xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader \
 - iCloud sync is optional and off by default; it uses only your personal iCloud account.
 - Original code: AGPL-3.0-only (see [LICENSE](LICENSE)).
 - NodusMark reused under MIT from Nodus Drift; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-- No model weights are bundled. See [MODEL_LICENSES.md](MODEL_LICENSES.md).
+- No model weights are bundled. Narration models are **not** covered by the AGPL-3.0: each keeps its own licence. Phonon 40M Spanish and Multilingual are CC BY-NC 4.0 (non-commercial use only), independently of Nodus Reader's licence. See [MODEL_LICENSES.md](MODEL_LICENSES.md).
 - Read [PRIVACY.md](PRIVACY.md) for the data-flow details.
 
 Nodus Reader is not affiliated with Apple. EPUB is a registered trademark of the IDPF/W3C; PDF is a trademark of Adobe.

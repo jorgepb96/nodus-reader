@@ -224,7 +224,7 @@ final class ModelManager {
             availability: .available,
             requiresAcceptedLicense: true,
             phononLanguage: .spanish,
-            installNote: String(localized: "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Licence CC BY-NC 4.0: non-commercial use.")
+            installNote: String(localized: "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.")
         ),
         Model(
             id: ModelManager.phonon40MultilingualID,
@@ -239,7 +239,7 @@ final class ModelManager {
             availability: .available,
             requiresAcceptedLicense: true,
             phononLanguage: .english,
-            installNote: String(localized: "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Licence CC BY-NC 4.0: non-commercial use.")
+            installNote: String(localized: "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.")
         )
     ]
 

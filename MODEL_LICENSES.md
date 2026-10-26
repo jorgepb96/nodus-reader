@@ -1,5 +1,10 @@
 # Model and Voice Licences
 
+> **Models are not covered by the AGPL-3.0.** Nodus Reader's code is AGPL-3.0-only;
+> each model and voice keeps only its own licence. Phonon 40M Spanish and Multilingual
+> are CC BY-NC 4.0 (Gradium): non-commercial use only, whatever the app's licence, and
+> the same applies to the Core ML files converted from them on a user's device.
+
 Nodus Reader does not bundle or redistribute neural model weights or voice
 embeddings. Models are downloaded on the user's device, after an explicit action, and
 remain local. This file records the verified licences for the engines that ship in

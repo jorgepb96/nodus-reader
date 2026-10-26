@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-Nodus Reader is licensed as a whole under **AGPL-3.0-only** (see `LICENSE`). The following third-party components and assets are used under their own licences. This file must be kept accurate before distribution.
+Nodus Reader's own code is licensed under **AGPL-3.0-only** (see `LICENSE`). The following third-party components and assets are used under their own licences, which the AGPL-3.0 does not replace. Narration models in particular keep their own terms, including non-commercial ones (see *Narration models and voices*). This file must be kept accurate before distribution.
 
 ## NodusMark
 
@@ -37,50 +37,68 @@ SOFTWARE.
 
 No changes were made to the original Nodus Drift repository.
 
-## ZIPFoundation
+## Swift packages compiled into the app
 
-- **Component:** ZIP/ZIP64 archive reading and writing used by the EPUB importer.
-- **Source:** <https://github.com/weichsel/ZIPFoundation>.
-- **Version:** resolved through Swift Package Manager from 0.9.19.
-- **Licence:** MIT.
-- **Copyright:** © 2017 Thomas Zoechling.
-- The MIT permission notice is the same as above, with Thomas Zoechling's copyright line.
+Resolved versions are pinned in
+`NodusReader.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`.
 
-## Kokoro Core ML SDK and G2P
+| Package | Source | Version | Licence | Use |
+|---|---|---|---|---|
+| ZIPFoundation | <https://github.com/weichsel/ZIPFoundation> | 0.9.20 | MIT, © 2017-2025 Thomas Zoechling | EPUB reading, EPUB folder packages, fixtures |
+| KokoroTTS (`kokoro-coreml`) | <https://github.com/mattmireles/kokoro-coreml> | revision `43ef023` | Apache-2.0 | Kokoro Core ML pipeline and English G2P (`KokoroG2P`, derived from FluidAudio v0.17.4, Apache-2.0) |
+| MisakiSwift | <https://github.com/mattmireles/MisakiSwift> | revision `3a27756` | Apache-2.0 | Kokoro English phonemizer |
+| MLX Swift | <https://github.com/ml-explore/mlx-swift> | 0.31.4 | MIT, © 2023 ml-explore | MisakiSwift's fallback network; also linked directly to clear its GPU cache when voice engines unload |
+| MLXUtilsLibrary | <https://github.com/mlalma/MLXUtilsLibrary> | 0.0.6 | Apache-2.0 | MisakiSwift dependency |
+| Swift Numerics | <https://github.com/apple/swift-numerics> | 1.1.1 | Apache-2.0 with Runtime Library Exception | MLX Swift dependency |
+| NemoTextProcessing (binary) | <https://github.com/FluidInference/text-processing-rs> | v0.3.1 | Apache-2.0 | English text normalization for Kokoro |
+| `ptts` / PhononTTS | <https://github.com/gradium-ai/xn-ptts> | v0.4.1 (Swift sources vendored in `Modules/PhononTTS/`) | MIT OR Apache-2.0 | Phonon narration |
+| PhononCore (binary, **modified**) | xn-ptts v0.4.1, rebuilt by this project | `phononcore-0.4.1-nodus.1` release of this repository | MIT OR Apache-2.0 | Phonon runtime; see below |
 
-- **Component:** `KokoroTTS`, `KokoroPipeline`, `KokoroG2P`.
-- **Source:** <https://github.com/mattmireles/kokoro-coreml>, pinned at revision
-  `43ef0237306c3c1ea0138098c9f92930ae4cf3f7`; product `KokoroTTS`.
-- **Licence:** Apache-2.0.
-- **Model:** Kokoro-82M by hexgrad, Apache-2.0; hosted starter bundle from
-  `mattmireles/kokoro-coreml` at revision `034f7741bf938fd6b4b9c75c22bc72cd795f908a`.
-- **G2P:** MisakiSwift (`https://github.com/mattmireles/MisakiSwift`, Apache-2.0),
-  MLX Swift (`https://github.com/ml-explore/mlx-swift`, MIT), FluidAudio-derived
-  English G2P (Apache-2.0) and the NemoTextProcessing binary
-  (`https://github.com/FluidInference/text-processing-rs` v0.3.1, Apache-2.0).
-- **Use:** downloaded and executed only on the user's device. The app never bundles
-  weights. The pinned SDK verifies the hosted manifest and every file hash.
+The MIT notices keep their copyright lines; the Apache-2.0 licence text is at
+<https://www.apache.org/licenses/LICENSE-2.0>. Each package's full licence ships in its
+source checkout.
 
-## Phonon Core ML SDK
+### Modified PhononCore
 
-- **Component:** `ptts` Swift package / `PhononTTS` / `PhononCore.xcframework`.
-- **Source:** <https://github.com/gradium-ai/xn-ptts> release v0.4.1. The package is
-  vendored under `Modules/PhononTTS/`; it declares Apache-2.0 and also includes an
-  MIT licence for parts of the runtime.
-- **Model:** Phonon 31M English by Gradium, Apache-2.0, from
-  `https://huggingface.co/gradium/phonon-31m-en`. Core ML bundle
-  `https://huggingface.co/mosiah/phonon-31m-en-coreml`, pinned revision
-  `0a2596e9154f0340005b6445514fdd57f7bc9ddb`.
-- **Voices:** `https://huggingface.co/gradium/phonon-voices`, Apache-2.0.
-- **Use:** downloaded on request, verified by `bundle.json` size and SHA-256, and run
-  locally. No weights are distributed in this repository.
-- **Not used:** the gated, CC BY-NC 4.0 Phonon 40M Spanish and multilingual
-  checkpoints. They have no published Core ML bundle and the app does not offer them
-  for download.
+`PhononCore.xcframework` is Gradium's compiled Phonon core rebuilt from xn-ptts
+v0.4.1 with one change, made by Nodus Reader in 2026: `ptts_export_coreml`, which moves
+Gradium's own `ptts/examples/export_coreml.rs` exporter into `ptts-ffi` so a checkpoint
+can be converted to Core ML on the device. The change is
+`Modules/PhononTTS/engine/0001-ptts-ffi-export-coreml.patch`, built with
+`Modules/PhononTTS/engine/build-phononcore.sh`. The binary contains no model weights.
+
+## Narration models and voices (downloaded on the device, never bundled)
+
+> **Models keep their own licences.** Nodus Reader's code is AGPL-3.0-only, but that
+> licence does **not** apply to the narration models or voices. Each one is governed
+> only by its own licence, listed below, whatever licence the app has. In particular,
+> **Phonon 40M Spanish and Phonon 40M Multilingual are licensed by Gradium under
+> CC BY-NC 4.0: non-commercial use only.** Using Nodus Reader does not grant any right
+> to use those models commercially, and the AGPL-3.0 does not extend to them or to
+> the Core ML files converted from them. Anyone who downloads them accepts Gradium's
+> conditions on Hugging Face themselves.
+
+No model weights or voices are stored in this repository or in the app. Each is
+downloaded on request, checked against pinned sizes and SHA-256 hashes, and run only on
+the device that downloaded it.
+
+| Model or voices | Source | Licence | How the app gets it |
+|---|---|---|---|
+| Kokoro-82M by hexgrad | Core ML bundle and 28 voices from <https://huggingface.co/mattmireles/kokoro-coreml> at `034f774` | Apache-2.0 | Downloaded and verified by the KokoroTTS SDK |
+| Phonon 31M English by Gradium, built on Kyutai's Pocket TTS | Core ML bundle <https://huggingface.co/mosiah/phonon-31m-en-coreml> at `0a2596e`, from <https://huggingface.co/gradium/phonon-31m-en> | Apache-2.0 | Downloaded, verified by `bundle.json` |
+| Phonon voices by Gradium | <https://huggingface.co/gradium/phonon-voices> at `0ee1720` (9 English voices with 31M; 25 Spanish voices with 40M Spanish; all 102 with 40M Multilingual) | Apache-2.0 | Downloaded and hash-checked |
+| Phonon 40M Spanish by Gradium | <https://huggingface.co/gradium/phonon-40m-es> at `f0d2f39` | CC BY-NC 4.0, gated | Downloaded with **the user's own** Hugging Face access after they accept Gradium's conditions, converted to Core ML on the device, weights deleted after conversion |
+| Phonon 40M Multilingual by Gradium | <https://huggingface.co/gradium/phonon-40m-multilingual> at `1537ce4` | CC BY-NC 4.0, gated | Same as Phonon 40M Spanish |
+
+Phonon 40M models: the Core ML conversion is an adaptation of the original weights made
+on the user's device for non-commercial use, as CC BY-NC 4.0
+(<https://creativecommons.org/licenses/by-nc/4.0/>) allows. Nodus Reader is free and
+carries no advertising. The converted files are not shared or synced. See
+`MODEL_LICENSES.md` for details.
 
 ## Apple frameworks
 
-The app links Apple SDK frameworks including SwiftUI, Foundation, SwiftData, CloudKit, PDFKit, AVFoundation, MediaPlayer, PhotosUI, CoreGraphics, CoreText, ImageIO, Vision and UniformTypeIdentifiers. These frameworks are provided with the Apple SDK and are not redistributed as part of this repository. Their use is governed by the Apple Developer Program License Agreement and the Xcode licence.
+The app links Apple SDK frameworks including SwiftUI, Foundation, SwiftData, CloudKit, PDFKit, AVFoundation, MediaPlayer, PhotosUI, CoreGraphics, CoreText, ImageIO, Vision, Core ML, Accelerate, CryptoKit, Security, AuthenticationServices and UniformTypeIdentifiers. These frameworks are provided with the Apple SDK and are not redistributed as part of this repository. Their use is governed by the Apple Developer Program License Agreement and the Xcode licence.
 
 System voices used by `AVSpeechSynthesizer` are part of the operating system and are not distributed by Nodus Reader.
 
@@ -104,6 +122,13 @@ attribution here.
 
 No font files are bundled. Display and reading text use the Apple system serif (New York) and SF Pro; the HTML design references Newsreader/Inter only as web stand-ins.
 
+## Services the app can contact
+
+Only at the user's request: Hugging Face (model and voice downloads, optional sign-in
+through Hugging Face's own OAuth page), jsDelivr (serves this repository's OAuth client
+metadata, `oauth/huggingface-client.json`, which Hugging Face reads), Apple iCloud
+(optional sync) and the web pages a user shares to the app. See `PRIVACY.md`.
+
 ## Trademarks
 
-EPUB is a registered trademark of the IDPF/W3C. PDF is a trademark of Adobe. Apple, iPhone, iPad, Mac, iCloud, App Store and TestFlight are trademarks of Apple Inc. Nodus Reader is not affiliated with or endorsed by Apple.
+EPUB is a registered trademark of the IDPF/W3C. PDF is a trademark of Adobe. Apple, iPhone, iPad, Mac, iCloud, App Store and TestFlight are trademarks of Apple Inc. Hugging Face is a trademark of Hugging Face, Inc. Nodus Reader is not affiliated with or endorsed by Apple, Hugging Face, Gradium, Kyutai or hexgrad.

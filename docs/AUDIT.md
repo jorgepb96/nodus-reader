@@ -623,3 +623,15 @@ make it downloadable and why.
   ignored while a page is turning (highlights catch up when it ends), and reading
   progress is saved 0.7 s after the reader settles instead of on every turn, so the
   database save no longer lands at the start of the next curl.
+
+## Third-party notices and model licences (2026-10-26)
+
+`THIRD_PARTY_NOTICES.md` was out of date: it listed Phonon 40M as unused, missed
+MLX Swift linked directly, MLXUtilsLibrary and Swift Numerics, did not say the
+PhononCore binary is modified, and omitted the Kokoro voices, the 102 Phonon voices and
+the services the app contacts. It now lists every compiled package at its resolved
+version and licence, describes the PhononCore change (Apache-2.0 §4), and lists each
+downloaded model and voice set with its pinned revision and licence. The notices,
+`MODEL_LICENSES.md`, `README.md` and both Phonon 40M cards in the app now say plainly
+that models keep their own licences, separate from Nodus Reader's AGPL-3.0, and that
+Phonon 40M Spanish and Multilingual are CC BY-NC 4.0, non-commercial use only.
