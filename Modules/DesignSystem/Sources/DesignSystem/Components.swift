@@ -442,3 +442,34 @@ public struct NodusEmptyState: View {
         .padding(32)
     }
 }
+
+/// A ring that turns around a round button while something it starts is
+/// getting ready (a voice model loading into memory, a sentence being made).
+/// With Reduce Motion it is a still, full ring.
+public struct LoadingRing: View {
+    let color: Color
+    let lineWidth: CGFloat
+    @State private var turning = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    public init(color: Color, lineWidth: CGFloat = 3) {
+        self.color = color
+        self.lineWidth = lineWidth
+    }
+
+    public var body: some View {
+        ZStack {
+            Circle().stroke(color.opacity(0.25), lineWidth: lineWidth)
+            if !reduceMotion {
+                Circle()
+                    .trim(from: 0, to: 0.3)
+                    .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                    .rotationEffect(.degrees(turning ? 360 : 0))
+                    .animation(.linear(duration: 0.9).repeatForever(autoreverses: false), value: turning)
+                    .onAppear { turning = true }
+            }
+        }
+        .padding(lineWidth / 2)
+        .accessibilityHidden(true)
+    }
+}

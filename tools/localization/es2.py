@@ -423,3 +423,10 @@ ES.update({
     "Neural voices are timed word by word with Apple's on-device speech recognition, so the read-along highlight follows the audio. iOS may download its speech model for the book's language once. The audio never leaves this device.": "Las voces neuronales se sincronizan palabra a palabra con el reconocimiento de voz de Apple en el dispositivo, para que el resaltado siga al audio. iOS puede descargar una vez su modelo de voz para el idioma del libro. El audio nunca sale de este dispositivo.",
     "Precise word timing": "Sincronización precisa de palabras",
 })
+
+ES.update({
+    "Footnote": "Nota al pie",
+    "Loading the voice model on this device…": "Cargando el modelo de voz en este dispositivo…",
+    "Preparing the voice…": "Preparando la voz…",
+    "Skip headers, footnotes & page numbers": "Omitir encabezados, notas al pie y números de página",
+})

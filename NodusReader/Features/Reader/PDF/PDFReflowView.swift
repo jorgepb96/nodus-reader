@@ -33,6 +33,8 @@ struct PDFReaderContainer: View {
     /// Reading, where notes are shown.
     @Binding var mode: PDFReadingMode
     var search: ReaderSearchModel?
+    /// Starts Read & Listen at (page, offset in the page's canonical text).
+    var onStartNarration: (Int, Int) -> Void = { _, _ in }
     var onAnnotate: (Int, NSRange, String, AnnotationColor) -> Void = { _, _, _, _ in }
 
     var body: some View {
@@ -59,6 +61,7 @@ struct PDFReaderContainer: View {
             case .intelligent:
                 PDFReflowView(book: book, url: url, theme: theme,
                               pdfPageIndex: $pdfPageIndex, jumpToPage: $jumpToPage,
+                              onStartNarration: onStartNarration,
                               onAnnotate: onAnnotate)
             }
         }
@@ -76,6 +79,7 @@ private func scroll(_ proxy: ScrollViewProxy, to page: Int, in document: PDFRefl
 struct PDFReflowView: View {
     @Environment(LibraryService.self) private var library
     @Environment(ReaderPreferences.self) private var preferences
+    @Environment(PlaybackController.self) private var playback
 
     let book: Book
     let url: URL
@@ -83,6 +87,8 @@ struct PDFReflowView: View {
     @Binding var pdfPageIndex: Int
     /// Contents, bookmarks and "go to page" requests from the reader chrome.
     @Binding var jumpToPage: Int?
+    /// Tap a word: Read & Listen from there (page, canonical offset).
+    var onStartNarration: (Int, Int) -> Void = { _, _ in }
     /// A highlight or note on (original page, canonical range, quote, colour).
     var onAnnotate: (Int, NSRange, String, AnnotationColor) -> Void = { _, _, _, _ in }
 
@@ -143,6 +149,11 @@ struct PDFReflowView: View {
         }
         .background(theme.background)
         .task { await loadReflow() }
+        // Read & Listen turns to the page being read.
+        .onChange(of: playback.chapterIndex) { _, page in
+            guard isNarratingHere, playback.mode == .readAndListen, page != pdfPageIndex else { return }
+            jumpToPage = page
+        }
         .sheet(isPresented: $showSourceSheet) {
             NavigationStack {
                 if let document = job.document {
@@ -283,9 +294,36 @@ struct PDFReflowView: View {
     }
 
     /// Saved highlights for one original page, located in its canonical text.
+    /// This book is being narrated (listening or Read & Listen).
+    private var isNarratingHere: Bool {
+        playback.activeBook?.id == book.id && playback.mode != .read
+    }
+
+    /// The narrated sentence and word on `page`, when narration reads this
+    /// page's reflowed text (same length as the canonical text).
+    private func narrationSpans(page: Int, text: String) -> [ReaderPageHighlightSpan] {
+        guard isNarratingHere, playback.chapterIndex == page,
+              playback.chapters.indices.contains(page),
+              (playback.chapters[page].text as NSString).length == (text as NSString).length else { return [] }
+        var spans: [ReaderPageHighlightSpan] = []
+        if let sentence = playback.currentSentenceChapterRange {
+            spans.append(ReaderPageHighlightSpan(range: sentence, fill: PlatformColor(theme.narration),
+                                                 underline: nil, underlineWidth: 0, rounded: true))
+        }
+        if let word = playback.currentWordChapterRange {
+            spans.append(ReaderPageHighlightSpan(
+                range: word,
+                fill: theme.isDark ? PlatformColor(hex: NodusHex.lavender, alpha: 0.55)
+                    : PlatformColor(hex: NodusHex.violet, alpha: 0.38),
+                underline: theme.isDark ? PlatformColor(hex: NodusHex.lavender) : PlatformColor(hex: NodusHex.violet),
+                underlineWidth: 2, rounded: true))
+        }
+        return spans
+    }
+
     private func pageHighlights(page: Int, text: String) -> ReaderPageHighlights {
         let isDark = theme.isDark
-        let spans = book.annotations.filter { $0.chapterIndex == page }.compactMap { annotation -> ReaderPageHighlightSpan? in
+        let spans = narrationSpans(page: page, text: text) + book.annotations.filter { $0.chapterIndex == page }.compactMap { annotation -> ReaderPageHighlightSpan? in
             guard let range = ReflowAnnotationAnchor.resolve(start: annotation.startOffset,
                                                              end: annotation.endOffset,
                                                              quote: annotation.quote,
@@ -315,6 +353,7 @@ struct PDFReflowView: View {
                 ?? ReaderTextMapping(anchorOffset: { _ in nil }, localRange: { _ in nil }),
             highlights: highlights,
             accessibilityLabel: nil,
+            onWordTap: { offset in onStartNarration(pageIndex, offset) },
             onHighlight: { range, color in
                 onAnnotate(pageIndex, range, quote(range, in: pageText), color)
             },
@@ -551,7 +590,7 @@ struct PDFSourcePanel: View {
 
                 Toggle("Show images", isOn: $showImages)
                     .font(.footnote)
-                Toggle("Skip headers & page numbers", isOn: $skipHeaders)
+                Toggle("Skip headers, footnotes & page numbers", isOn: $skipHeaders)
                     .font(.footnote)
 
                 if let page {

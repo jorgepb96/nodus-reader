@@ -25,12 +25,14 @@ actor NarrationAudioCache {
     private let fileManager: FileManager
     private let root: URL
 
-    init(fileManager: FileManager = .default) {
+    /// `root` is for tests, which run in parallel and must not share (or
+    /// empty) the app's cache.
+    init(fileManager: FileManager = .default, root: URL? = nil) {
         self.fileManager = fileManager
         let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.temporaryDirectory
-        self.root = base.appendingPathComponent("NodusReader/Audio", isDirectory: true)
-        try? fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        self.root = root ?? base.appendingPathComponent("NodusReader/Audio", isDirectory: true)
+        try? fileManager.createDirectory(at: self.root, withIntermediateDirectories: true)
         var values = URLResourceValues()
         values.isExcludedFromBackup = true
         var mutable = self.root

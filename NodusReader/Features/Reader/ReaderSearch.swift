@@ -133,7 +133,15 @@ struct ReaderSearchBar: View {
                     .textInputAutocapitalization(.never)
                     .submitLabel(.search)
                     #endif
-                    .onSubmit { model.next() }
+                    .onSubmit {
+                        #if os(macOS)
+                        model.next()
+                        #else
+                        // The Search key shows the results: the keyboard
+                        // would cover half the page. The arrows step on.
+                        focused = false
+                        #endif
+                    }
                     .accessibilityIdentifier("ReaderSearchField")
                 Text(counter)
                     .font(.system(size: 12))

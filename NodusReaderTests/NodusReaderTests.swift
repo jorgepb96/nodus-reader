@@ -1129,7 +1129,8 @@ func voicesOfEveryInstalledModelAreListedAndRoutedToTheirModel() throws {
 
 @Test
 func narrationCacheStoresCompressedAudioWithTheSameLength() async throws {
-    let cache = NarrationAudioCache()
+    let cache = NarrationAudioCache(root: FileManager.default.temporaryDirectory
+        .appendingPathComponent("nodus-audio-\(UUID().uuidString)", isDirectory: true))
     let book = UUID()
     defer { Task { await cache.deleteBook(bookID: book) } }
     let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 24_000, channels: 1))
@@ -1161,7 +1162,8 @@ func narrationCacheStoresCompressedAudioWithTheSameLength() async throws {
 @Test @MainActor
 func deletingCachesBooksAndModelsFreesTheirFiles() async throws {
     // Narration audio: one book's cache goes, another's stays; "delete all" empties it.
-    let cache = NarrationAudioCache()
+    let cache = NarrationAudioCache(root: FileManager.default.temporaryDirectory
+        .appendingPathComponent("nodus-audio-\(UUID().uuidString)", isDirectory: true))
     let kept = UUID(), removed = UUID()
     let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 24_000, channels: 1))
     let buffer = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 2_400))
@@ -1764,4 +1766,90 @@ func recognisedWordsTimeTheReadAlongHighlight() throws {
     let wrong: [SpeechWordAligner.RecognizedWord] = [.init(text: "otra", start: 0, end: 1),
                                                       .init(text: "cosa", start: 1, end: 2)]
     #expect(SpeechWordAligner.place(words: words, recognized: wrong, duration: 2.5) == nil)
+}
+
+/// Words missing from Kokoro's English dictionary go through MisakiSwift's
+/// fallback network, which runs on MLX — on the CPU since the background fix.
+/// Opt in with `TEST_RUNNER_NODUS_MODEL_DOWNLOAD_TESTS=1` and Kokoro installed.
+@Test(.enabled(if: ProcessInfo.processInfo.environment["NODUS_MODEL_DOWNLOAD_TESTS"] == "1"),
+      .timeLimit(.minutes(5)))
+@MainActor
+func kokoroSpeaksWordsOutsideItsDictionary() async throws {
+    let suite = "nodus.tests.kokoro-oov.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let kokoro = try #require(manager.models.first { $0.engine == .kokoro })
+    try #require(manager.isInstalled(kokoro))
+    manager.selectModel(kokoro)
+    let audio = try await manager.synthesize("The glorptastic snarfblats zibbled past Vexmoor and Quindarel.",
+                                             voiceID: "kokoro:af_heart", engine: .kokoro)
+    #expect(Double(audio.samples.count) / audio.sampleRate > 2)
+    #expect(audio.samples.contains { abs($0) > 0.01 })
+}
+
+/// Footnote reference marks, footnotes and a table of contents in a PDF with
+/// a real text layer: the reflow keeps the body clean, sets the footnote
+/// apart and keeps one contents entry per line; narration skips the footnote.
+@Test @MainActor
+func reflowKeepsFootnotesAndContentsApart() throws {
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent("footnotes-\(UUID().uuidString).pdf")
+    defer { try? FileManager.default.removeItem(at: url) }
+    var mediaBox = CGRect(x: 0, y: 0, width: 612, height: 792)
+    let pdf = try #require(CGContext(url as CFURL, mediaBox: &mediaBox, nil))
+    func draw(_ runs: [(String, CGFloat)], at point: CGPoint) {
+        let line = NSMutableAttributedString()
+        for (text, size) in runs {
+            line.append(NSAttributedString(string: text, attributes: [
+                NSAttributedString.Key(kCTFontAttributeName as String): CTFontCreateWithName("Times New Roman" as CFString, size, nil)
+            ]))
+        }
+        pdf.textPosition = point
+        CTLineDraw(CTLineCreateWithAttributedString(line), pdf)
+    }
+    // Page 1: contents.
+    pdf.beginPDFPage(nil)
+    let entries = ["Introduction", "The early years", "Method and sources", "Results", "Discussion", "Conclusions"]
+    for (index, entry) in entries.enumerated() {
+        draw([("\(entry) .................................... \(index * 12 + 3)", 14)],
+             at: CGPoint(x: 72, y: 700 - CGFloat(index) * 30))
+    }
+    pdf.endPDFPage()
+    // Page 2: body with reference marks, and a footnote at the bottom.
+    pdf.beginPDFPage(nil)
+    let body = ["The archive was reorganised in the spring of that year,", "when the society moved to its new building",
+                "and the collection was catalogued again by hand.", "Several boxes were lost during the move,",
+                "although most letters survived in good condition."]
+    for (index, text) in body.enumerated() {
+        var runs: [(String, CGFloat)] = [(text, 14)]
+        if index == 1 { runs = [("when the society", 14), ("12", 8), (" moved to its new building", 14)] }
+        draw(runs, at: CGPoint(x: 72, y: 700 - CGFloat(index) * 22))
+    }
+    draw([("12 See the annual report of the society for that year, page 4.", 9)], at: CGPoint(x: 72, y: 90))
+    pdf.endPDFPage()
+    pdf.closePDF()
+
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent("reflow-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: root) }
+    let store = PDFReflowStore(fileStore: FileStore(root: root))
+    let reflow = try PDFReflowExtractor.extract(url: url, bookID: UUID(), contentHash: "test", store: store)
+
+    let contents = reflow.pages[0].blocks
+    #expect(contents.filter { $0.kind == .list }.count == entries.count)
+    #expect(contents.first?.text == "Introduction · 3")
+
+    let page = reflow.pages[1]
+    let bodyText = page.blocks.filter { !$0.isHeaderFooter }.map(\.text).joined(separator: " ")
+    #expect(bodyText.contains("when the society moved"), "Body: \(bodyText)")
+    #expect(!bodyText.contains("annual report"))
+    let footnote = try #require(page.blocks.first { $0.text.contains("annual report") })
+    #expect(footnote.isHeaderFooter)
+    // Narration reads the body, not the footnote, at the same offsets.
+    let narration = page.narrationText
+    #expect((narration as NSString).length == (page.canonicalLayout.text as NSString).length)
+    #expect(narration.contains("moved to its new building") && !narration.contains("annual report"))
+
+    #expect(PDFReflowExtractor.contentsEntry("Chapter 2. Sources .......... 41", onContentsPage: false)
+        == "Chapter 2. Sources · 41")
+    #expect(PDFReflowExtractor.contentsEntry("It happened in 1936", onContentsPage: false) == nil)
 }

@@ -783,3 +783,29 @@ starts about 0.2 s in, so every sentence began ahead of the audio.
   iOS may download its speech model for the language; the audio stays on the device.
 
 Tests: `recognisedWordsTimeTheReadAlongHighlight`, `wordAlignmentMatchesTextRangesAndMonotonicTimes`.
+
+## Voice not starting, model loading ring, Read & Listen in Intelligent Reading (2026-10-26)
+
+- **Voice did not start (build 16).** With precise word timing on (the default), the
+  first sentence waited for iOS to download its speech model and for recognition
+  before playing, inside the synthesis gate. Narration now never waits for the
+  download (it is requested in the background and used once installed), and
+  recognition is raced against a 2.5 s limit without waiting for a recognition that
+  does not end. Checked in the Simulator with precise timing on: Phonon and system
+  narration start. Pressing play while the selected engine is still loading since
+  launch now waits for that load instead of loading a second copy.
+- **Loading ring.** The play buttons (player, reader capsule, mini player, Mac bar)
+  show a turning ring while the voice is prepared; the player says whether the model
+  is loading into memory or the voice is being prepared.
+- **Read & Listen in PDF Intelligent Reading.** Tapping a word starts narration there;
+  the narrated sentence and word are highlighted and the reflow follows the page.
+  Narration for a PDF reads one chapter per page (empty pages too, so chapter N is
+  page N) from the reflow's text with headers, page numbers and footnotes blanked out.
+- **Cleaner reflow.** Footnotes (smaller text in the lower part of a page) are set
+  apart like headers and skipped by narration; footnote reference marks set smaller
+  than the line ("society¹²") are dropped; table-of-contents entries keep one line
+  each, without the dot leaders ("Introduction · 3"). Cache version 4.
+
+Tests: `reflowKeepsFootnotesAndContentsApart`, the opt-in
+`kokoroSpeaksWordsOutsideItsDictionary`, and `testPDFIntelligentReading` now starts
+Read & Listen from the reflow.

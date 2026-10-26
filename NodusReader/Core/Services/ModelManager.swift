@@ -109,6 +109,9 @@ final class ModelManager {
     private(set) var storage = StorageSummary()
     private(set) var selectedModelID: String
     private(set) var errorMessage: String?
+    /// The engine being loaded into memory for narration, shown on the play
+    /// buttons (the first load of a model can take several seconds).
+    private(set) var loadingEngine: Engine?
 
     private let voices: VoiceCatalog
     private let audioCache: NarrationAudioCache
@@ -746,6 +749,13 @@ final class ModelManager {
     /// Loads `model`'s engine if it is not the one in memory. Only one Phonon
     /// checkpoint is kept; trying another engine drops the idle one.
     private func ensureLoaded(_ model: Model) async throws {
+        // The selected engine may already be loading since launch: wait for
+        // it rather than load a second copy of the same model.
+        if let launching = engineLoadTask {
+            loadingEngine = model.engine
+            await launching.value
+        }
+        defer { loadingEngine = nil }
         switch model.engine {
         case .kokoro:
             // In the background the Metal placement is refused: reload on the
@@ -756,6 +766,7 @@ final class ModelManager {
             #if targetEnvironment(simulator)
             throw NeuralNarrationError.engineNotLoaded("Kokoro")
             #else
+            loadingEngine = .kokoro
             kokoro = try await KokoroTTS.load(resources: KokoroResourceProvider.directory(Self.kokoroCacheDirectory),
                                               computePolicy: kokoroComputePolicy)
             kokoroIsCPUOnly = isInBackground
@@ -764,6 +775,7 @@ final class ModelManager {
             guard phonon == nil || phononModelID != model.id else { return }
             if !narrationInUse { releaseEngines(keeping: .phonon) }
             phonon = nil
+            loadingEngine = .phonon
             let loaded = try await Phonon.load(models: directory(for: model), language: model.phononLanguage)
             phonon = loaded
             phononModelID = model.id

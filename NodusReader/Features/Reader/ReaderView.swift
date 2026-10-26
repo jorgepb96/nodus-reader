@@ -247,6 +247,7 @@ struct ReaderView: View {
                 jumpToPage: $pdfJumpPage,
                 mode: $pdfMode,
                 search: search,
+                onStartNarration: { page, offset in startNarration(chapter: page, offset: offset) },
                 onAnnotate: { page, range, quote, color in
                     presentPDFAnnotation(page: page, range: range, quote: quote, color: color)
                 }
@@ -758,18 +759,17 @@ struct ReaderNarrationCapsule: View {
             Button {
                 playback.toggle()
             } label: {
-                Group {
-                    if playback.isLoading {
-                        ProgressView().tint(playForeground)
-                    } else {
-                        Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 17, weight: .semibold))
-                            .offset(x: playback.isPlaying ? 0 : 1)
+                Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 17, weight: .semibold))
+                    .offset(x: playback.isPlaying ? 0 : 1)
+                    .foregroundStyle(playForeground)
+                    .frame(width: 52, height: 52)
+                    .background(theme.accent, in: Circle())
+                    .overlay {
+                        if playback.isLoading {
+                            LoadingRing(color: playForeground, lineWidth: 3).padding(3)
+                        }
                     }
-                }
-                .foregroundStyle(playForeground)
-                .frame(width: 52, height: 52)
-                .background(theme.accent, in: Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(playback.isPlaying ? "Pause narration" : "Play narration")

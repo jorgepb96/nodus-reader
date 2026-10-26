@@ -36,18 +36,17 @@ struct MacPlayerBar: View {
                     Button {
                         playback.toggle()
                     } label: {
-                        Group {
-                            if playback.isLoading {
-                                ProgressView().controlSize(.small).tint(palette.onAccent)
-                            } else {
-                                Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .offset(x: playback.isPlaying ? 0 : 1)
+                        Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .offset(x: playback.isPlaying ? 0 : 1)
+                            .foregroundStyle(palette.onAccent)
+                            .frame(width: 36, height: 36)
+                            .background(palette.accent, in: Circle())
+                            .overlay {
+                                if playback.isLoading {
+                                    LoadingRing(color: palette.onAccent, lineWidth: 2.5).padding(2)
+                                }
                             }
-                        }
-                        .foregroundStyle(palette.onAccent)
-                        .frame(width: 36, height: 36)
-                        .background(palette.accent, in: Circle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(playback.isPlaying ? "Pause" : "Play")

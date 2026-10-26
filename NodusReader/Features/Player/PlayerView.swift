@@ -4,6 +4,7 @@ import SwiftUI
 
 struct PlayerView: View {
     @Environment(PlaybackController.self) private var playback
+    @Environment(ModelManager.self) private var models
     @Environment(\.dismiss) private var dismiss
 
     @State private var showVoicePicker = false
@@ -20,6 +21,13 @@ struct PlayerView: View {
                 coverAndText
                 scrubber
                 transport
+                if playback.isLoading {
+                    Text(loadingText)
+                        .font(.caption)
+                        .foregroundStyle(palette.muted)
+                        .padding(.top, 8)
+                        .accessibilityIdentifier("PlayerLoadingText")
+                }
                 controlGrid
                 audioCacheCard
                 footer
@@ -268,6 +276,14 @@ struct PlayerView: View {
         .padding(.top, 18)
     }
 
+    /// What the play button is waiting for: the model loading into memory
+    /// (the first time, several seconds) or the next sentence being made.
+    private var loadingText: String {
+        models.loadingEngine != nil
+            ? String(localized: "Loading the voice model on this device…")
+            : String(localized: "Preparing the voice…")
+    }
+
     private var transport: some View {
         HStack {
             transportButton("backward.end", label: "Previous chapter") { playback.previousChapter() }
@@ -277,21 +293,21 @@ struct PlayerView: View {
             Button {
                 playback.toggle()
             } label: {
-                Group {
-                    if playback.isLoading {
-                        ProgressView().tint(palette.onAccent)
-                    } else {
-                        Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 27, weight: .semibold))
-                            .offset(x: playback.isPlaying ? 0 : 2)
+                Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 27, weight: .semibold))
+                    .offset(x: playback.isPlaying ? 0 : 2)
+                    .foregroundStyle(palette.onAccent)
+                    .frame(width: 76, height: 76)
+                    .background(palette.accent, in: Circle())
+                    .overlay {
+                        if playback.isLoading {
+                            LoadingRing(color: palette.onAccent, lineWidth: 3.5).padding(5)
+                        }
                     }
-                }
-                .foregroundStyle(palette.onAccent)
-                .frame(width: 76, height: 76)
-                .background(palette.accent, in: Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(playback.isPlaying ? "Pause" : "Play")
+            .accessibilityValue(playback.isLoading ? loadingText : "")
             transportButton("goforward", label: "Next sentence") { playback.nextSentence() }
                 .frame(maxWidth: .infinity)
             transportButton("forward.end", label: "Next chapter") { playback.nextChapter() }

@@ -15,7 +15,9 @@ import UIKit
 
 struct PDFReflowDocument: Codable, Sendable {
     /// 3: pages whose text layer is garbled are read with OCR.
-    static let schemaVersion = 3
+    /// 4: footnotes are set apart, superscript reference marks are dropped and
+    ///    table-of-contents entries stay one per line.
+    static let schemaVersion = 4
 
     var version: Int = PDFReflowDocument.schemaVersion
     var contentHash: String
@@ -236,9 +238,10 @@ enum PDFReflowExtractor {
         var lines: [Line] = []
         ns.enumerateSubstrings(in: NSRange(location: 0, length: ns.length),
                                options: [.byLines, .substringNotRequired]) { _, range, _, _ in
-            let text = ns.substring(with: range).trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty,
-                  let selection = page.selection(for: range) else { return }
+            guard let selection = page.selection(for: range) else { return }
+            let text = withoutReferenceMarks(selection.attributedString)
+                ?? ns.substring(with: range).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { return }
             let lineBounds = selection.bounds(for: page)
             guard lineBounds.width > 1, lineBounds.height > 1 else { return }
             let normalized = normalize(lineBounds, in: bounds)
@@ -248,6 +251,52 @@ enum PDFReflowExtractor {
                               rawBounds: lineBounds))
         }
         return lines
+    }
+
+    /// The line without footnote reference marks: digits, asterisks and
+    /// daggers set clearly smaller than the line's text ("sociedad¹²").
+    /// Narration would read them as numbers in the middle of a sentence.
+    private static func withoutReferenceMarks(_ attributed: NSAttributedString?) -> String? {
+        guard let attributed, attributed.length > 0 else { return nil }
+        var sizes: [CGFloat: Int] = [:]
+        attributed.enumerateAttribute(.font, in: NSRange(location: 0, length: attributed.length)) { value, range, _ in
+            if let font = value as? PlatformFont { sizes[font.pointSize, default: 0] += range.length }
+        }
+        guard let bodySize = sizes.max(by: { $0.value < $1.value })?.key, bodySize > 0 else { return nil }
+        var result = ""
+        let ns = attributed.string as NSString
+        attributed.enumerateAttribute(.font, in: NSRange(location: 0, length: attributed.length)) { value, range, _ in
+            let piece = ns.substring(with: range)
+            if let font = value as? PlatformFont, font.pointSize < bodySize * 0.8,
+               piece.trimmingCharacters(in: .whitespaces).allSatisfy({ $0.isNumber || "*†‡§,".contains($0) }),
+               !piece.trimmingCharacters(in: .whitespaces).isEmpty {
+                return
+            }
+            result += piece
+        }
+        let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// A table-of-contents entry: text, a leader of dots and a page number,
+    /// or text ending in a page number on a page made of such lines.
+    static func contentsEntry(_ text: String, onContentsPage: Bool) -> String? {
+        let pattern = #"^(.*?\S)\s*(?:(?:\.\s?){3,}|…+|_{3,})\s*(\d{1,4}|[ivxlcdmIVXLCDM]{1,6})$"#
+        if let match = text.range(of: pattern, options: .regularExpression) {
+            let line = String(text[match])
+            let title = line.replacingOccurrences(of: #"\s*(?:(?:\.\s?){3,}|…+|_{3,})\s*(\d{1,4}|[ivxlcdmIVXLCDM]{1,6})$"#,
+                                                  with: "", options: .regularExpression)
+            let number = line.range(of: #"(\d{1,4}|[ivxlcdmIVXLCDM]{1,6})$"#, options: .regularExpression)
+                .map { String(line[$0]) } ?? ""
+            return "\(title) · \(number)"
+        }
+        if onContentsPage, let match = text.range(of: #"^(.*\D)\s+(\d{1,4})$"#, options: .regularExpression) {
+            let line = String(text[match])
+            let number = line.range(of: #"\d{1,4}$"#, options: .regularExpression).map { String(line[$0]) } ?? ""
+            let title = line.replacingOccurrences(of: #"\s+\d{1,4}$"#, with: "", options: .regularExpression)
+            return "\(title) · \(number)"
+        }
+        return nil
     }
 
     private static func visionLines(page: PDFPage, bounds: CGRect) throws -> [Line] {
@@ -295,26 +344,45 @@ enum PDFReflowExtractor {
 
         var blocks: [PDFReflowBlock] = []
         var currentLines: [Line] = []
+        // A contents page: most of its lines end in a page number.
+        let numbered = ordered.filter { $0.text.range(of: #"\s\d{1,4}$"#, options: .regularExpression) != nil }
+        let isContentsPage = numbered.count >= 5 && numbered.count * 2 >= ordered.count
 
-        func flushCurrent() {
+        func flushCurrent(kind override: PDFReflowBlock.Kind? = nil) {
             guard !currentLines.isEmpty else { return }
             let text = merge(currentLines)
             guard !text.isEmpty else { currentLines = []; return }
             let rect = union(currentLines.map(\.rect))
-            let isHeading = currentLines.count <= 2 &&
+            let averageHeight = currentLines.map(\.height).reduce(0, +) / CGFloat(currentLines.count)
+            let isHeading = override == nil && currentLines.count <= 2 &&
                 (currentLines.first?.height ?? 0) > bodyThreshold
-            let kind: PDFReflowBlock.Kind = isHeading ? .heading1 : .body
+            // Footnotes: smaller text in the lower part of the page. Set apart
+            // like headers, so reading and narration go on with the body.
+            let isFootnote = override == nil && !isHeading && rect.minY > 0.55 &&
+                averageHeight < medianHeight * 0.88
+            let kind: PDFReflowBlock.Kind = override ?? (isHeading ? .heading1 : .body)
             let block = PDFReflowBlock(id: UUID(), kind: kind, text: text, rect: rect,
                                        pageIndex: index, imageFileName: nil,
-                                       isHeaderFooter: isHeaderFooter(rect) && !isHeading,
+                                       isHeaderFooter: (isHeaderFooter(rect) && !isHeading) || isFootnote,
                                        usedOCR: usedOCR)
             blocks.append(block)
-            regions.append(PDFReflowRegion(id: UUID(), kind: isHeading ? .heading : .text,
-                                           rect: rect, label: isHeading ? String(localized: "Heading") : String(localized: "Text")))
+            regions.append(PDFReflowRegion(id: UUID(),
+                                           kind: isHeading ? .heading : (isFootnote ? .headerFooter : .text),
+                                           rect: rect,
+                                           label: isHeading ? String(localized: "Heading")
+                                               : (isFootnote ? String(localized: "Footnote") : String(localized: "Text"))))
             currentLines = []
         }
 
-        for line in ordered {
+        for var line in ordered {
+            // Contents entries are not merged into paragraphs.
+            if let entry = contentsEntry(line.text, onContentsPage: isContentsPage) {
+                flushCurrent()
+                line.text = entry
+                currentLines = [line]
+                flushCurrent(kind: .list)
+                continue
+            }
             if let previous = currentLines.last {
                 let gap = line.rect.minY - previous.rect.maxY
                 let sameHeading = (line.height > bodyThreshold) == (previous.height > bodyThreshold)
@@ -508,6 +576,22 @@ extension PDFReflowPage {
             text += block.text
         }
         return (text, bases)
+    }
+
+    /// The canonical text with headers, page numbers and footnotes blanked
+    /// out (same length, so narration offsets are canonical offsets and the
+    /// read-along highlight lands on the same words).
+    var narrationText: String {
+        let layout = canonicalLayout
+        let ns = NSMutableString(string: layout.text)
+        for block in blocks where block.isAnnotatableText && block.isHeaderFooter {
+            guard let base = layout.bases[block.id] else { continue }
+            let length = (block.text as NSString).length
+            guard base + length <= ns.length else { continue }
+            ns.replaceCharacters(in: NSRange(location: base, length: length),
+                                 with: String(repeating: " ", count: length))
+        }
+        return ns as String
     }
 }
 

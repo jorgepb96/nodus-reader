@@ -66,18 +66,17 @@ struct MiniPlayerBar: View {
             Button {
                 playback.toggle()
             } label: {
-                Group {
-                    if playback.isLoading {
-                        ProgressView().tint(palette.onAccent)
-                    } else {
-                        Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 15, weight: .semibold))
-                            .offset(x: playback.isPlaying ? 0 : 1)
+                Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .offset(x: playback.isPlaying ? 0 : 1)
+                    .foregroundStyle(palette.onAccent)
+                    .frame(width: 42, height: 42)
+                    .background(palette.accent, in: Circle())
+                    .overlay {
+                        if playback.isLoading {
+                            LoadingRing(color: palette.onAccent, lineWidth: 2.5).padding(3)
+                        }
                     }
-                }
-                .foregroundStyle(palette.onAccent)
-                .frame(width: 42, height: 42)
-                .background(palette.accent, in: Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(playback.isPlaying ? "Pause narration" : "Play narration")

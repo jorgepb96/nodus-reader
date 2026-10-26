@@ -110,6 +110,140 @@ final class NodusReaderUITests: XCTestCase {
         app.buttons["Done"].tap()
     }
 
+    /// App Store screenshots of the sample library in English or Spanish, on
+    /// whichever simulator runs it (6.9" iPhone, 13" iPad). Opt in with
+    /// `TEST_RUNNER_NODUS_APPSTORE_LANG=en` or `es`; the images are attached to
+    /// the test result as "AppStore-…".
+    func testAppStoreScreenshots() throws {
+        guard let language = ProcessInfo.processInfo.environment["NODUS_APPSTORE_LANG"] else {
+            throw XCTSkip("Set TEST_RUNNER_NODUS_APPSTORE_LANG to en or es")
+        }
+        let spanish = language == "es"
+        func label(_ english: String, _ spanishText: String) -> String { spanish ? spanishText : english }
+        let app = XCUIApplication()
+        app.launchArguments = ["-NodusSampleLibrary", "-NodusResetReadingState",
+                               "-AppleLanguages", "(\(language))", "-AppleLocale", spanish ? "es_ES" : "en_US",
+                               "-nodus.narration.preciseWordTiming", "NO"]
+        app.launch()
+        let isPad = app.windows.firstMatch.frame.width >= 700
+        let device = isPad ? "iPad" : "iPhone"
+        func shot(_ name: String) {
+            sleep(2)
+            snap("AppStore-\(device)-\(language)-\(name)")
+        }
+
+        // The Spanish listing reads a Spanish book: opening it makes it the
+        // book to continue on Home.
+        if spanish {
+            if isPad {
+                XCTAssertTrue(app.staticTexts["Todos los libros"].firstMatch.waitForExistence(timeout: 60))
+                app.staticTexts["Todos los libros"].firstMatch.tap()
+            } else {
+                XCTAssertTrue(app.buttons["Leer"].firstMatch.waitForExistence(timeout: 60))
+                tapTab("Biblioteca", in: app)
+            }
+            let quijote = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Don Quijote de la Mancha'"))
+                .firstMatch
+            XCTAssertTrue(quijote.waitForExistence(timeout: 10))
+            quijote.tap()
+            XCTAssertTrue(app.textViews.firstMatch.waitForExistence(timeout: 20))
+            app.buttons["Volver a la biblioteca"].firstMatch.tap()
+            if !isPad { tapTab("Inicio", in: app) }
+        }
+
+        // Home and library.
+        if isPad {
+            let home = app.staticTexts[label("Home", "Inicio")].firstMatch
+            XCTAssertTrue(home.waitForExistence(timeout: 60))
+            sleep(4)
+            if !spanish { shot("02-Library") }
+            home.tap()
+        }
+        let read = app.buttons[label("Read", "Leer")].firstMatch
+        XCTAssertTrue(read.waitForExistence(timeout: 60))
+        sleep(3)
+        shot("01-Home")
+        if isPad, spanish {
+            app.staticTexts["Todos los libros"].firstMatch.tap()
+            app.swipeDown()
+            app.swipeDown()
+            shot("02-Library")
+            app.staticTexts["Inicio"].firstMatch.tap()
+        }
+        if !isPad {
+            tapTab(label("Library", "Biblioteca"), in: app)
+            // Back at the top after opening a book from the list.
+            app.swipeDown()
+            app.swipeDown()
+            shot("02-Library")
+            tapTab(label("Home", "Inicio"), in: app)
+        }
+
+        // Reading, search, Read & Listen and the player.
+        XCTAssertTrue(read.waitForExistence(timeout: 10))
+        read.tap()
+        let page = app.textViews.firstMatch
+        XCTAssertTrue(page.waitForExistence(timeout: 20))
+        shot("03-Reader")
+
+        app.buttons[label("Search in book", "Buscar en el libro")].firstMatch.tap()
+        let field = app.textFields["ReaderSearchField"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.typeText(spanish ? "hidalgo" : "whenever")
+        let counter = app.staticTexts["ReaderSearchCounter"]
+        let found = expectation(for: NSPredicate(format: "label CONTAINS %@", label(" of ", " de ")),
+                                evaluatedWith: counter)
+        wait(for: [found], timeout: 15)
+        // The keyboard's first-use tip, then the Search key hides the keyboard.
+        let tip = app.buttons[label("Continue", "Continuar")].firstMatch
+        if tip.waitForExistence(timeout: 2) { tip.tap() }
+        field.typeText("\n")
+        shot("04-Search")
+        app.buttons[label("Done", "OK")].firstMatch.tap()
+
+        page.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+        XCTAssertTrue(app.staticTexts[label("READ & LISTEN", "LEER Y ESCUCHAR")].waitForExistence(timeout: 25))
+        sleep(3)
+        shot("05-ReadAndListen")
+        let openPlayer = app.buttons[label("Open player", "Abrir reproductor")].firstMatch
+        if openPlayer.waitForExistence(timeout: 5) {
+            openPlayer.tap()
+            shot("06-Player")
+            app.buttons[label("Close player", "Cerrar reproductor")].firstMatch.tap()
+        }
+        app.buttons[label("Back to library", "Volver a la biblioteca")].firstMatch.tap()
+
+        // A PDF in Intelligent Reading.
+        if isPad {
+            app.staticTexts[label("All Books", "Todos los libros")].firstMatch.tap()
+        } else {
+            tapTab(label("Library", "Biblioteca"), in: app)
+        }
+        let pdf = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@",
+                                                   "Experiments in Plant Hybridization")).firstMatch
+        if !pdf.waitForExistence(timeout: 5) {
+            app.swipeUp()
+        }
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+        pdf.tap()
+        let intelligent = app.segmentedControls.buttons[label("Intelligent Reading", "Lectura inteligente")].firstMatch
+        XCTAssertTrue(intelligent.waitForExistence(timeout: 15))
+        intelligent.tap()
+        XCTAssertTrue(app.textViews.firstMatch.waitForExistence(timeout: 60))
+        shot("07-PDF")
+        app.buttons[label("Back to library", "Volver a la biblioteca")].firstMatch.tap()
+
+        // Settings: themes, voices, iCloud.
+        if isPad {
+            app.buttons[label("Settings", "Ajustes")].firstMatch.tap()
+        } else {
+            tapTab(label("Settings", "Ajustes"), in: app)
+        }
+        XCTAssertTrue(app.staticTexts[label("Voices & Models", "Voces y modelos")].firstMatch
+            .waitForExistence(timeout: 10))
+        shot("08-Settings")
+    }
+
     func testListenStartsNarration() throws {
         let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
@@ -373,6 +507,12 @@ final class NodusReaderUITests: XCTestCase {
         app.buttons["Done"].firstMatch.tap()
         let readerPage = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Page 2 of'")).firstMatch
         XCTAssertTrue(readerPage.waitForExistence(timeout: 5), "The reflow did not move to page 2")
+
+        // Tapping a word of the reflowed text starts Read & Listen.
+        let visibleText = try XCTUnwrap(app.textViews.allElementsBoundByIndex.first { $0.isHittable })
+        visibleText.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        XCTAssertTrue(app.staticTexts["READ & LISTEN"].waitForExistence(timeout: 25),
+                      "Read & Listen did not start from Intelligent Reading")
     }
 
     func testPDFReflowHighlightAndNote() throws {
@@ -529,10 +669,13 @@ final class NodusReaderUITests: XCTestCase {
         let app = XCUIApplication()
         // The tests read English labels; the app follows the device language
         // (Spanish or English), so pin it to English whatever the simulator uses.
-        app.launchArguments = ["-NodusSampleLibrary", "-AppleLanguages", "(en)", "-AppleLocale", "en_US",
-                               // Word timing from speech recognition may first download
-                               // the system's speech model; the tests use the estimate.
-                               "-nodus.narration.preciseWordTiming", "NO"]
+        app.launchArguments = ["-NodusSampleLibrary", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        // Word timing from speech recognition may first download the system's
+        // speech model; the tests use the estimate unless asked to check that
+        // narration still starts with it on (TEST_RUNNER_NODUS_PRECISE_TIMING=1).
+        if ProcessInfo.processInfo.environment["NODUS_PRECISE_TIMING"] != "1" {
+            app.launchArguments += ["-nodus.narration.preciseWordTiming", "NO"]
+        }
         if resetReadingState {
             app.launchArguments.append("-NodusResetReadingState")
         }

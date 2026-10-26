@@ -2042,6 +2042,16 @@
         }
       }
     },
+    "Footnote": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nota al pie"
+          }
+        }
+      }
+    },
     "Format": {
       "localizations": {
         "es": {
@@ -2798,6 +2808,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cargando voces del sistema…"
+          }
+        }
+      }
+    },
+    "Loading the voice model on this device…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando el modelo de voz en este dispositivo…"
           }
         }
       }
@@ -4172,6 +4192,16 @@
         }
       }
     },
+    "Preparing the voice…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando la voz…"
+          }
+        }
+      }
+    },
     "Preview": {
       "localizations": {
         "es": {
@@ -5118,6 +5148,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Omitir encabezados y números de página"
+          }
+        }
+      }
+    },
+    "Skip headers, footnotes & page numbers": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omitir encabezados, notas al pie y números de página"
           }
         }
       }

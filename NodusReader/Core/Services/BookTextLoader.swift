@@ -15,16 +15,19 @@ public enum BookTextLoader {
         let bookID = book.id
         let contentHash = book.contentHash
         return try await Task.detached(priority: .userInitiated) {
+            // One chapter per page (empty pages too): chapter N is page N,
+            // so narration starts on the page the reader shows.
             if format == .pdf,
                let reflow = PDFReflowStore(fileStore: fileStore).load(bookID: bookID, contentHash: contentHash),
                reflow.pageCount == reflow.totalPageCount {
-                let chapters = reflow.pages.compactMap { page -> ExtractedChapter? in
-                    let text = page.canonicalLayout.text
-                    guard !text.isEmpty else { return nil }
-                    return ExtractedChapter(id: page.pageIndex,
-                                            title: String(localized: "Page \(page.pageIndex + 1)"), text: text)
+                let pages = Dictionary(reflow.pages.map { ($0.pageIndex, $0) }, uniquingKeysWith: { first, _ in first })
+                let chapters = (0..<reflow.pageCount).map { index in
+                    ExtractedChapter(id: index, title: String(localized: "Page \(index + 1)"),
+                                     text: pages[index]?.narrationText ?? "")
                 }
-                if !chapters.isEmpty { return chapters }
+                if chapters.contains(where: { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
+                    return chapters
+                }
             }
             return try DocumentExtractor.extract(url: url, format: format, completeText: true).chapters
         }.value

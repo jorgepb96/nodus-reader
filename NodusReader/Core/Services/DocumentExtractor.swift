@@ -69,10 +69,10 @@ public enum DocumentExtractor {
             let layerReadable = !layer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && !PDFPageText.isGarbled(layer)
             if !layerReadable { ocrBudget -= 1 }
-            guard let text = PDFPageText.readableText(page: page, allowOCR: !layerReadable && ocrBudget >= 0)
-            else { continue }
+            let text = PDFPageText.readableText(page: page, allowOCR: !layerReadable && ocrBudget >= 0) ?? ""
             let cleaned = HTMLText.normalize(text)
-            guard !cleaned.isEmpty else { continue }
+            // Narration keeps empty pages so that chapter N stays page N.
+            guard !cleaned.isEmpty || completeText else { continue }
             chapters.append(ExtractedChapter(id: index, title: String(localized: "Page \(index + 1)"), text: cleaned))
             extractedCharacters += cleaned.count
             if !completeText, extractedCharacters > 500_000 { break }

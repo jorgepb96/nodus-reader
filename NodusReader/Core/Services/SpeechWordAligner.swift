@@ -20,15 +20,33 @@ enum SpeechWordAligner {
         UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true
     }
 
+    /// Longest a sentence may wait for recognition before playing with the
+    /// estimate instead. Recognition normally takes 0.15–0.5 s.
+    static let timeLimit: Duration = .milliseconds(2500)
+
     /// Timings for `text` spoken in `samples`, or nil when recognition is not
-    /// available or matched too few words to be trusted.
+    /// available, not installed yet, too slow, or matched too few words.
+    /// Narration never waits for the speech model to download: the download
+    /// is requested in the background and used once it is installed.
     static func align(text: String, samples: [Float], sampleRate: Double,
                       language: String) async -> [NarrationWordTiming]? {
         guard #available(iOS 26.0, macOS 26.0, *), isEnabled, !samples.isEmpty else { return nil }
         let words = AudioWordAligner.words(in: text)
         guard words.count > 1 else { return nil }
-        guard let recognized = try? await recognize(samples: samples, sampleRate: sampleRate,
-                                                    language: language) else { return nil }
+        // Whichever comes first: the recognition or the time limit. A task
+        // group would wait for a recognition that never ends; this does not.
+        let recognized: [RecognizedWord]? = await withCheckedContinuation { continuation in
+            let once = ResumeOnce(continuation)
+            let work = Task.detached(priority: .userInitiated) {
+                once.resume(try? await recognize(samples: samples, sampleRate: sampleRate, language: language))
+            }
+            Task.detached {
+                try? await Task.sleep(for: timeLimit)
+                work.cancel()
+                once.resume(nil)
+            }
+        }
+        guard let recognized, !recognized.isEmpty else { return nil }
         return place(words: words, recognized: recognized,
                      duration: Double(samples.count) / sampleRate)
     }
@@ -125,7 +143,49 @@ enum SpeechWordAligner {
             .filter { $0.isLetter || $0.isNumber }
     }
 
+    /// Resumes a continuation once; later results are dropped.
+    private final class ResumeOnce: @unchecked Sendable {
+        private let lock = NSLock()
+        private var continuation: CheckedContinuation<[RecognizedWord]?, Never>?
+
+        init(_ continuation: CheckedContinuation<[RecognizedWord]?, Never>) {
+            self.continuation = continuation
+        }
+
+        func resume(_ value: [RecognizedWord]?) {
+            lock.lock()
+            let pending = continuation
+            continuation = nil
+            lock.unlock()
+            pending?.resume(returning: value)
+        }
+    }
+
     // MARK: Recognition
+
+    private static let pendingInstalls = PendingInstalls()
+
+    private final class PendingInstalls: @unchecked Sendable {
+        let lock = NSLock()
+        var locales: Set<String> = []
+    }
+
+    @available(iOS 26.0, macOS 26.0, *)
+    private static func requestInstall(of transcriber: SpeechTranscriber, locale: Locale) {
+        let key = locale.identifier(.bcp47)
+        pendingInstalls.lock.lock()
+        let isNew = pendingInstalls.locales.insert(key).inserted
+        pendingInstalls.lock.unlock()
+        guard isNew else { return }
+        Task.detached(priority: .utility) {
+            if let request = try? await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
+                try? await request.downloadAndInstall()
+            }
+            pendingInstalls.lock.lock()
+            pendingInstalls.locales.remove(key)
+            pendingInstalls.lock.unlock()
+        }
+    }
 
     @available(iOS 26.0, macOS 26.0, *)
     private static func recognize(samples: [Float], sampleRate: Double,
@@ -134,9 +194,12 @@ enum SpeechWordAligner {
         guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: requested) else { return [] }
         let transcriber = SpeechTranscriber(locale: locale, transcriptionOptions: [],
                                             reportingOptions: [], attributeOptions: [.audioTimeRange])
-        // The system's speech model for the language, installed once per device.
-        if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
-            try await request.downloadAndInstall()
+        // The system's speech model for the language: requested once in the
+        // background, used from the next sentence after it is installed.
+        let installed = await SpeechTranscriber.installedLocales
+        guard installed.contains(where: { $0.identifier(.bcp47) == locale.identifier(.bcp47) }) else {
+            requestInstall(of: transcriber, locale: locale)
+            return []
         }
 
         let url = FileManager.default.temporaryDirectory
