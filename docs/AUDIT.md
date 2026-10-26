@@ -907,3 +907,52 @@ Tools: `tools/parser-corpus/fetch-epubs.sh` downloads the EPUB corpus into
 `TEST_RUNNER_NODUS_EPUB_CORPUS` at it. The Cervantes EPUB is fetched from the
 Wayback Machine because the live download sits behind a Cloudflare challenge;
 `lluisvives.com` exposes the same catalogue.
+
+## Import format pass: TXT, Markdown, HTML and RTF (2026-10-27)
+
+- **Text encoding.** `TextFileDecoder` tries UTF-8 (with or without BOM),
+  UTF-16 with BOM, UTF-16LE/BE without BOM (zero-byte heuristic), then
+  Windows-1252, ISO Latin-1 and Mac Roman. Windows smart quotes, the euro sign,
+  Spanish accents and Windows-generated UTF-16 files now import correctly.
+  The same decoder is used by HTML headings/titles and by `.txt`/Markdown.
+- **Plain text paragraphs.** Blank lines remain the primary paragraph signal.
+  Without blank lines, a short line that ends a sentence and is followed by an
+  upper-case line starts a new paragraph; headings (`CHAPTER I`, all-caps,
+  numbered/Roman) and list/quote blocks are kept apart; three or more short
+  lines with almost no terminal punctuation are treated as verse and keep
+  single line breaks. One-line prose paragraphs are also kept separate. Project
+  Gutenberg `.txt` headers, end markers and licence are stripped by the shared
+  publisher cleaner.
+- **Markdown.** YAML front matter is metadata, not body text; autolinks
+  (`<https://…>`) are preserved before raw HTML tags are stripped; footnote
+  definitions lose their `[^n]:` marker; a `>` blank line splits quote
+  paragraphs; task-list markers are removed; link-reference definitions stay
+  hidden; titles come from the first ATX heading.
+- **HTML.** Data uses the same decoder. List items and table rows use single
+  line breaks instead of blank lines, `<ol start>` is honoured, list bullets and
+  `Name | Value` tables survive, `footer`/`nav` boilerplate is skipped, and the
+  title prefers `<h1>`, then `<title>` (with a ` - Wikipedia` suffix removed),
+  then the first heading.
+- **RTF.** `NSAttributedString` paragraphs are preserved one per line instead of
+  being merged by the TXT line joiner; Unicode escapes (`áéíóú`, `ñ`, `€`) and
+  headings/lists survive. A table whose cells NSAttributedString concatenates
+  (`Alpha1`) gets a space between a letter and a digit (`Alpha 1`).
+
+Tests: `textImportJoinsWrappedLinesAndKeepsHeadingsListsAndVerse`,
+`textImportRecoversParagraphsWithoutBlankLines`,
+`textImportDecodesWindows1252AndUTF16`,
+`markdownImportStripsFrontMatterAndKeepsAutolinksAndFootnotes`,
+`htmlImportDecodesWindows1252AndKeepsListsTablesAndAutolinks`,
+`rtfImportKeepsParagraphsAndUnicode`, and the opt-in
+`realFormatCorpusParsesCleanly` (Gutenberg *Pride and Prejudice* `.txt`,
+RFC 9110 `.txt`, Wikipedia HTML for *The Great Gatsby*). The generated fixtures
+are written by the tests; no document from the machine is read.
+
+Tools: `tools/parser-corpus/fetch-formats.sh` downloads the three public
+samples into `tools/parser-corpus/formats` (git-ignored); point
+`TEST_RUNNER_NODUS_FORMAT_CORPUS` at it. The PDF and EPUB corpus tests continue
+to run in the same pass. Remaining limits: a raw `.txt` with no blank lines and
+unusual short lines can still merge or split a paragraph; RFC-style page headers
+remain in TXT; RTF table column boundaries are lost because NSAttributedString
+flattens cells; HTML superscript footnote markers and RTF table cells remain
+plain text.

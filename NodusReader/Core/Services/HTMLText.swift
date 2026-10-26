@@ -6,9 +6,7 @@ import Foundation
 /// thread during import.
 public enum HTMLText {
     public static func plainText(from data: Data) -> String {
-        let raw = String(data: data, encoding: .utf8)
-            ?? String(data: data, encoding: .isoLatin1)
-            ?? ""
+        let raw = TextFileDecoder.decode(data) ?? ""
         return plainText(from: raw)
     }
 
@@ -128,19 +126,20 @@ public enum HTMLText {
                         breakLine(2)
                     } else {
                         breakLine(2)
-                        listStack.append((name == "ol", 0))
+                        let start = Int(attribute(attributePattern("start"), in: body) ?? "") ?? 1
+                        listStack.append((name == "ol", max(0, start - 1)))
                     }
                     continue
                 }
                 if name == "li" {
                     if isClosing {
-                        breakLine(2)
+                        breakLine(1)
                     } else {
                         if listStack.isEmpty {
                             listStack.append((false, 0))
                         }
                         listStack[listStack.count - 1].count += 1
-                        breakLine(2)
+                        breakLine(1)
                         let item = listStack[listStack.count - 1]
                         let depth = max(0, listStack.count - 1)
                         let marker = item.ordered ? "\(item.count). " : "• "
@@ -156,7 +155,7 @@ public enum HTMLText {
                     continue
                 }
                 if name == "tr" {
-                    breakLine(2)
+                    breakLine(1)
                     if !isClosing { tableCells = 0 }
                     continue
                 }
@@ -236,11 +235,18 @@ public enum HTMLText {
         html.range(of: "(?i)<h[1-3][\\s>]", options: .regularExpression) != nil
     }
 
+    /// The document's `<h1>`, when it has one. Standalone HTML articles often
+    /// put the real title here while the first `<h2>` is only a section.
+    public static func firstH1(from data: Data) -> String? {
+        let html = TextFileDecoder.decode(data) ?? ""
+        guard let match = firstMatch("(?is)<h1[^>]*>(.*?)</h1>", in: html) else { return nil }
+        let cleaned = normalize(decodeEntities(stripTags(match)))
+        return cleaned.isEmpty ? nil : cleaned
+    }
+
     /// First heading or `<title>` in the document, used as the chapter label.
     public static func firstHeading(from data: Data) -> String? {
-        let html = String(data: data, encoding: .utf8)
-            ?? String(data: data, encoding: .isoLatin1)
-            ?? ""
+        let html = TextFileDecoder.decode(data) ?? ""
         for pattern in ["(?is)<h1[^>]*>(.*?)</h1>", "(?is)<h2[^>]*>(.*?)</h2>", "(?is)<title[^>]*>(.*?)</title>"] {
             if let match = firstMatch(pattern, in: html) {
                 let cleaned = normalize(decodeEntities(stripTags(match)))
@@ -252,9 +258,7 @@ public enum HTMLText {
 
     /// The document's `<title>`, without falling back to its headings.
     public static func documentTitle(from data: Data) -> String? {
-        let html = String(data: data, encoding: .utf8)
-            ?? String(data: data, encoding: .isoLatin1)
-            ?? ""
+        let html = TextFileDecoder.decode(data) ?? ""
         guard let match = firstMatch("(?is)<title[^>]*>(.*?)</title>", in: html) else { return nil }
         let cleaned = normalize(decodeEntities(stripTags(match)))
         return cleaned.isEmpty ? nil : cleaned

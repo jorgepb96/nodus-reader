@@ -492,57 +492,6 @@ struct ChapterBuilder {
 
 // MARK: - Boilerplate
 
-/// Project Gutenberg and Biblioteca Virtual Miguel de Cervantes add legal
-/// headers, footers and generated-licence pages to their EPUBs. They are not
-/// part of the book and must not become chapters or paragraphs.
-enum EPUBTextCleaner {
-    static func clean(_ text: String) -> String {
-        var value = text
-        value = stripProjectGutenberg(value)
-        value = stripCervantesVirtual(value)
-        return value.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private static func stripProjectGutenberg(_ text: String) -> String {
-        var value = text
-        let start = #"(?is)\*{2,3}\s*START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK.*?\*{2,3}"#
-        if let range = value.range(of: start, options: .regularExpression) {
-            value = String(value[range.upperBound...])
-        }
-        let end = #"(?is)\*{2,3}\s*END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK.*?\*{2,3}"#
-        if let range = value.range(of: end, options: .regularExpression) {
-            value = String(value[..<range.lowerBound])
-        }
-        let lower = value.lowercased()
-        if lower.contains("the project gutenberg ebook of"),
-           lower.contains("release date:"),
-           value.count < 5000 {
-            return ""
-        }
-        if lower.contains("the full project gutenberg"),
-           lower.contains("license") {
-            return ""
-        }
-        return value
-    }
-
-    private static func stripCervantesVirtual(_ text: String) -> String {
-        let lower = text.lowercased()
-        guard lower.contains("este archivo fue generado de forma automática")
-            || lower.contains("biblioteca virtual miguel de cervantes - universidad de alicante") else {
-            return text
-        }
-        let lines = text.components(separatedBy: "\n")
-        if let last = lines.lastIndex(where: {
-            let line = $0.lowercased()
-            return line.contains("creativecommons.org/licenses") || line.contains("licencia cc-by")
-        }) {
-            return lines[(last + 1)...].joined(separator: "\n")
-        }
-        return text
-    }
-}
-
 // MARK: - Navigation
 
 private enum NCXParser {

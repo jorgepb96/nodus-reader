@@ -30,3 +30,19 @@ books, plus *Don Quijote* from Biblioteca Virtual Miguel de Cervantes. The
 Cervantes EPUB is fetched from the Wayback Machine because the live download is
 behind a Cloudflare challenge; `lluisvives.com` exposes the same catalogue. See
 the test log for real-EPUB assertions.
+
+Plain text and HTML use a third directory:
+
+```bash
+./tools/parser-corpus/fetch-formats.sh
+TEST_RUNNER_NODUS_FORMAT_CORPUS="$PWD/tools/parser-corpus/formats" \
+  xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -only-testing:NodusReaderTests
+```
+
+That corpus has Gutenberg's *Pride and Prejudice* as `.txt`, RFC 9110 as `.txt`
+and the Wikipedia HTML for *The Great Gatsby*. The generated fixtures in the
+test suite cover Windows-1252, UTF-16, Markdown front matter/autolinks/footnotes,
+HTML lists and tables, and RTF paragraphs and Unicode; none of them reads a
+document from the machine.

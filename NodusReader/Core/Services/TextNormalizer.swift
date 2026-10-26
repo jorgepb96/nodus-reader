@@ -6,6 +6,52 @@ import AppKit
 import UIKit
 #endif
 
+/// Decodes a text document without assuming one encoding. UTF-8 is preferred;
+/// UTF-16 (with or without BOM) and Windows-1252/Latin-1/Mac Roman follow.
+public enum TextFileDecoder {
+    public static func decode(_ data: Data) -> String? {
+        guard !data.isEmpty else { return "" }
+        let bytes = [UInt8](data.prefix(4))
+        if bytes.starts(with: [0xEF, 0xBB, 0xBF]),
+           let text = String(data: data, encoding: .utf8) {
+            return clean(text)
+        }
+        if bytes.starts(with: [0xFF, 0xFE]),
+           let text = String(data: data, encoding: .utf16LittleEndian) {
+            return clean(text)
+        }
+        if bytes.starts(with: [0xFE, 0xFF]),
+           let text = String(data: data, encoding: .utf16BigEndian) {
+            return clean(text)
+        }
+
+        // UTF-16 without a BOM is common in Windows-generated .txt files.
+        let sample = [UInt8](data.prefix(2048))
+        if sample.count > 16 {
+            let evenZeros = stride(from: 0, to: sample.count, by: 2).filter { sample[$0] == 0 }.count
+            let oddZeros = stride(from: 1, to: sample.count, by: 2).filter { sample[$0] == 0 }.count
+            if oddZeros > sample.count / 8, evenZeros < oddZeros / 3,
+               let text = String(data: data, encoding: .utf16LittleEndian) {
+                return clean(text)
+            }
+            if evenZeros > sample.count / 8, oddZeros < evenZeros / 3,
+               let text = String(data: data, encoding: .utf16BigEndian) {
+                return clean(text)
+            }
+        }
+
+        if let text = String(data: data, encoding: .utf8) { return clean(text) }
+        for encoding in [String.Encoding.windowsCP1252, .isoLatin1, .macOSRoman] {
+            if let text = String(data: data, encoding: encoding) { return clean(text) }
+        }
+        return nil
+    }
+
+    private static func clean(_ text: String) -> String {
+        text.replacingOccurrences(of: "\u{FEFF}", with: "")
+    }
+}
+
 /// Normalisation shared by the document parsers. It repairs the small
 /// artefacts of PDF text layers (ligatures, soft hyphens, non-breaking spaces)
 /// without touching the words themselves.
@@ -253,25 +299,128 @@ public enum PlainText {
             .replacingOccurrences(of: "\r\n", with: "\n")
             .replacingOccurrences(of: "\r", with: "\n")
             .replacingOccurrences(of: "\u{00A0}", with: " ")
-        let blocks = normalized.replacingOccurrences(of: "\\n{2,}", with: "\u{0001}", options: .regularExpression)
+            .replacingOccurrences(of: "\u{000C}", with: "\n\n")
+        let blocks = normalized.replacingOccurrences(of: "\n{2,}", with: "\u{0001}", options: .regularExpression)
             .components(separatedBy: "\u{0001}")
         var result: [String] = []
         for block in blocks {
-            let rawLines = block.components(separatedBy: "\n")
-            let lines = rawLines.map { $0.trimmingCharacters(in: .whitespaces) }
+            let lines = block.components(separatedBy: "\n")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
                 .filter { !$0.isEmpty }
             guard !lines.isEmpty else { continue }
-            if lines.contains(where: { isListLine($0) || $0.hasPrefix(">") || $0.hasPrefix("    ") }) {
-                result.append(lines.joined(separator: "\n"))
-            } else {
-                result.append(TextNormalizer.joinLines(lines))
-            }
+            result.append(contentsOf: paragraphs(in: lines))
         }
         return result.joined(separator: "\n\n")
     }
 
-    private static func isListLine(_ line: String) -> Bool {
-        line.range(of: #"^(?:[-*+•]|\d{1,3}[.)])\s+\S"#, options: .regularExpression) != nil
+    /// RTF's attributed string already has one newline per paragraph. Joining
+    /// those lines would merge every paragraph in a Word-generated document.
+    public static func rtfParagraphs(_ text: String) -> String {
+        text.replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .map { $0.replacingOccurrences(of: #"(?<=[A-Za-z])(?=\d)"#, with: " ", options: .regularExpression) }
+            .joined(separator: "\n\n")
+    }
+
+    private static func paragraphs(in lines: [String]) -> [String] {
+        if lines.contains(where: isListOrQuote) {
+            return [lines.joined(separator: "\n")]
+        }
+        // A file whose paragraphs are one long line each.
+        if lines.count > 1, lines.allSatisfy({ $0.count >= 50 && endsSentence($0) }) {
+            return lines
+        }
+
+        var segments: [[String]] = []
+        var current: [String] = []
+        for line in lines {
+            if isHeading(line) {
+                if !current.isEmpty { segments.append(current); current = [] }
+                segments.append([line])
+            } else {
+                current.append(line)
+            }
+        }
+        if !current.isEmpty { segments.append(current) }
+
+        var result: [String] = []
+        for segment in segments {
+            if segment.count == 1 {
+                result.append(segment[0])
+            } else if isVerse(segment) {
+                // A single newline keeps the stanza together; blank lines only
+                // separate stanzas.
+                result.append(segment.joined(separator: "\n"))
+            } else {
+                result.append(contentsOf: splitProseLines(segment))
+            }
+        }
+        return result
+    }
+
+    /// Raw text without blank lines still often marks a new paragraph with a
+    /// short line: hard-wrapped prose fills the measure until the last line.
+    private static func splitProseLines(_ lines: [String]) -> [String] {
+        guard lines.count > 1 else { return lines }
+        let lengths = lines.map(\.count).sorted()
+        let median = lengths[lengths.count / 2]
+        guard median > 0 else { return [TextNormalizer.joinLines(lines)] }
+        var result: [String] = []
+        var current: [String] = []
+        for (index, line) in lines.enumerated() {
+            current.append(line)
+            guard index + 1 < lines.count else { continue }
+            let next = lines[index + 1]
+            let short = Double(line.count) < Double(median) * 0.9
+            if short, endsSentence(line), next.first?.isUppercase == true {
+                result.append(TextNormalizer.joinLines(current))
+                current = []
+            }
+        }
+        if !current.isEmpty { result.append(TextNormalizer.joinLines(current)) }
+        return result
+    }
+
+    private static func isListOrQuote(_ line: String) -> Bool {
+        line.range(of: #"^(?:[-*+•]|\d{1,3}[.)]|>)\s+\S"#, options: .regularExpression) != nil
+    }
+
+    private static func isHeading(_ line: String) -> Bool {
+        guard line.count <= 100 else { return false }
+        if line.range(of: #"(?i)^(chapter|capítulo|capitulo|part|parte|book|libro|act|acto|scene|escena)\b"#,
+                      options: .regularExpression) != nil {
+            return true
+        }
+        if line.range(of: #"^\d{1,3}\.?\s+\p{Lu}"#, options: .regularExpression) != nil {
+            return true
+        }
+        if line.range(of: #"^[IVXLCDM]{1,8}\.?$"#, options: .regularExpression) != nil {
+            return true
+        }
+        let letters = line.filter { $0.isLetter }
+        let allCaps = !letters.isEmpty && line == line.uppercased()
+        guard allCaps else { return false }
+        return line.last.map { !".?!,;:".contains($0) } ?? true
+    }
+
+    private static func isVerse(_ lines: [String]) -> Bool {
+        guard lines.count >= 3 else { return false }
+        let lengths = lines.map(\.count).sorted()
+        let median = lengths[lengths.count / 2]
+        guard median < 40 else { return false }
+        let terminal = lines.filter { line in
+            guard let last = line.last else { return false }
+            return ".?!".contains(last)
+        }.count
+        return terminal <= 1
+    }
+
+    private static func endsSentence(_ line: String) -> Bool {
+        guard let last = line.last else { return false }
+        return ".?!".contains(last)
     }
 }
 
@@ -296,5 +445,56 @@ public enum ParagraphJoiner {
             }
         }
         return result.joined(separator: "\n\n")
+    }
+}
+
+/// Project Gutenberg and Biblioteca Virtual Miguel de Cervantes add legal
+/// headers, footers and generated-licence pages to their EPUBs. They are not
+/// part of the book and must not become chapters or paragraphs.
+enum EPUBTextCleaner {
+    static func clean(_ text: String) -> String {
+        var value = text
+        value = stripProjectGutenberg(value)
+        value = stripCervantesVirtual(value)
+        return value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func stripProjectGutenberg(_ text: String) -> String {
+        var value = text
+        let start = #"(?is)\*{2,3}\s*START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK.*?\*{2,3}"#
+        if let range = value.range(of: start, options: .regularExpression) {
+            value = String(value[range.upperBound...])
+        }
+        let end = #"(?is)\*{2,3}\s*END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK.*?\*{2,3}"#
+        if let range = value.range(of: end, options: .regularExpression) {
+            value = String(value[..<range.lowerBound])
+        }
+        let lower = value.lowercased()
+        if lower.contains("the project gutenberg ebook of"),
+           lower.contains("release date:"),
+           value.count < 5000 {
+            return ""
+        }
+        if lower.contains("the full project gutenberg"),
+           lower.contains("license") {
+            return ""
+        }
+        return value
+    }
+
+    private static func stripCervantesVirtual(_ text: String) -> String {
+        let lower = text.lowercased()
+        guard lower.contains("este archivo fue generado de forma automática")
+            || lower.contains("biblioteca virtual miguel de cervantes - universidad de alicante") else {
+            return text
+        }
+        let lines = text.components(separatedBy: "\n")
+        if let last = lines.lastIndex(where: {
+            let line = $0.lowercased()
+            return line.contains("creativecommons.org/licenses") || line.contains("licencia cc-by")
+        }) {
+            return lines[(last + 1)...].joined(separator: "\n")
+        }
+        return text
     }
 }

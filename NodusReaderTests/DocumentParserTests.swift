@@ -474,3 +474,303 @@ func realEPUBCorpusParsesParagraphsCleanly() throws {
         #expect(shakespeare.chapters.count < 2_000)
     }
 }
+
+// MARK: - Every format
+
+private func temporaryFormatFile(_ name: String, data: Data) throws -> URL {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("NodusFormatTests", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let url = directory.appendingPathComponent("\(UUID().uuidString)-\(name)")
+    try data.write(to: url)
+    return url
+}
+
+@Test
+func textImportJoinsWrappedLinesAndKeepsHeadingsListsAndVerse() throws {
+    let source = """
+    THE NODUS FORMAT TEST
+    by Test Author
+
+    CHAPTER I. A BEGINNING
+
+    This is the first paragraph, hard-wrapped over
+    three lines so the reader must join them into
+    one paragraph.
+
+    This is a second paragraph after a blank line.
+
+    CHAPTER II. LISTS AND VERSES
+
+    - First item
+    - Second item
+    - Third item
+
+    The woods are lovely, dark and deep,
+    But I have promises to keep,
+    And miles to go before I sleep.
+
+    Final paragraph with accents: áéíóú ñ ¿Qué? ¡Hola!
+    """
+    let url = try temporaryFormatFile("formats.txt", data: Data(source.utf8))
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let extraction = try DocumentExtractor.extract(url: url, format: .txt)
+    let body = try #require(extraction.chapters.first).text
+    #expect(body.contains("THE NODUS FORMAT TEST\n\nby Test Author"))
+    #expect(body.contains("This is the first paragraph, hard-wrapped over three lines so the reader must join them into one paragraph."))
+    #expect(body.contains("- First item\n- Second item\n- Third item"))
+    #expect(body.contains("The woods are lovely, dark and deep,\nBut I have promises to keep"))
+    #expect(body.contains("áéíóú ñ ¿Qué? ¡Hola!"))
+}
+
+@Test
+func textImportDecodesWindows1252AndUTF16() throws {
+    let cp1252 = "“Smart quotes” — dash, ñ, á, and €uro.\n\nSecond paragraph with ‘single quotes’."
+    let cpData = try #require(cp1252.data(using: .windowsCP1252))
+    let cpURL = try temporaryFormatFile("cp1252.txt", data: cpData)
+    defer { try? FileManager.default.removeItem(at: cpURL) }
+
+    let cpExtraction = try DocumentExtractor.extract(url: cpURL, format: .txt)
+    let cpBody = try #require(cpExtraction.chapters.first).text
+    #expect(cpBody.contains("“Smart quotes” — dash, ñ, á, and €uro."))
+    #expect(cpBody.contains("Second paragraph with ‘single quotes’."))
+
+    let utf16 = "UTF-16 title\n\nFirst paragraph in UTF-16 with accents áéíóú.\n\nSecond paragraph."
+    let utf16Data = try #require(utf16.data(using: .utf16))
+    let utf16URL = try temporaryFormatFile("utf16.txt", data: utf16Data)
+    defer { try? FileManager.default.removeItem(at: utf16URL) }
+
+    let utf16Extraction = try DocumentExtractor.extract(url: utf16URL, format: .txt)
+    let utf16Body = try #require(utf16Extraction.chapters.first).text
+    #expect(utf16Body.contains("UTF-16 title"))
+    #expect(utf16Body.contains("First paragraph in UTF-16 with accents áéíóú."))
+    #expect(!utf16Body.contains("ÿþ"))
+    #expect(!utf16Body.contains("\0"))
+
+    // Windows often writes UTF-16LE without a BOM.
+    let noBOM = "No BOM title\n\nParagraph with áéíóú and ñ."
+    let noBOMData = try #require(noBOM.data(using: .utf16LittleEndian))
+    let noBOMURL = try temporaryFormatFile("utf16le.txt", data: noBOMData)
+    defer { try? FileManager.default.removeItem(at: noBOMURL) }
+    let noBOMExtraction = try DocumentExtractor.extract(url: noBOMURL, format: .txt)
+    let noBOMBody = try #require(noBOMExtraction.chapters.first).text
+    #expect(noBOMBody.contains("No BOM title"))
+    #expect(noBOMBody.contains("Paragraph with áéíóú and ñ."))
+}
+
+@Test
+func markdownImportStripsFrontMatterAndKeepsAutolinksAndFootnotes() throws {
+    let source = """
+    ---
+    title: "Markdown fixture"
+    author: Test Author
+    ---
+
+    # Main title
+
+    First paragraph hard-wrapped over
+    two source lines.
+
+    ## A section
+
+    - First item
+    - Second item with **bold** and *italic*
+      and a wrapped continuation.
+    - [ ] A task item
+
+    1. One
+    2. Two
+
+    > A quote that spans
+    > two lines.
+    >
+    > A second quote paragraph.
+
+    ```swift
+    let value = "áéíóú"
+    print(value)
+    ```
+
+    | Name | Value |
+    | :--- | ---: |
+    | Alpha | 1 |
+    | Beta | 2 |
+
+    A paragraph with a [link](https://example.com), an image ![Alt text](cover.png), an autolink <https://example.org>, and `code`.
+
+    [reference]: https://example.com/ref
+    [^1]: A footnote definition.
+
+    ---
+
+    Final paragraph after a rule.
+    """
+    let url = try temporaryFormatFile("formats.md", data: Data(source.utf8))
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let extraction = try DocumentExtractor.extract(url: url, format: .markdown)
+    let body = try #require(extraction.chapters.first).text
+    #expect(extraction.title == "Main title")
+    #expect(!body.contains("title:"))
+    #expect(!body.contains("author:"))
+    #expect(body.contains("A quote that spans two lines.\n\nA second quote paragraph."))
+    #expect(body.contains("• A task item"))
+    #expect(body.contains("let value = \"áéíóú\"\nprint(value)"))
+    #expect(body.contains("Name | Value\nAlpha | 1\nBeta | 2"))
+    #expect(body.contains("an autolink https://example.org, and code."))
+    #expect(body.contains("A footnote definition."))
+    #expect(!body.contains(": A footnote definition."))
+    #expect(!body.contains("```"))
+    #expect(!body.contains("---"))
+}
+
+@Test
+func htmlImportDecodesWindows1252AndKeepsListsTablesAndAutolinks() throws {
+    let source = """
+    <html><head><meta charset="windows-1252"><title>HTML fixture</title></head><body>
+    <h1>HTML fixture</h1>
+    <p>“Smart quotes” — dash, ñ, €uro.</p>
+    <ul><li>First</li><li>Second</li></ul>
+    <ol start="3"><li>Three</li><li>Four</li></ol>
+    <table><tr><th>Name</th><th>Value</th></tr><tr><td>Alpha</td><td>1</td></tr><tr><td>Beta</td><td>2</td></tr></table>
+    <p><a href="https://example.org">https://example.org</a></p>
+    <footer>Footer must go.</footer><nav>Navigation must go.</nav>
+    </body></html>
+    """
+    let data = try #require(source.data(using: .windowsCP1252))
+    let url = try temporaryFormatFile("formats.html", data: data)
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let extraction = try DocumentExtractor.extract(url: url, format: .html)
+    let body = try #require(extraction.chapters.first).text
+    #expect(extraction.title == "HTML fixture")
+    #expect(body.contains("“Smart quotes” — dash, ñ, €uro."))
+    #expect(body.contains("• First\n• Second"))
+    #expect(body.contains("3. Three\n4. Four"))
+    #expect(body.contains("Name | Value\nAlpha | 1\nBeta | 2"))
+    #expect(body.contains("https://example.org"))
+    #expect(!body.contains("Footer must go."))
+    #expect(!body.contains("Navigation must go."))
+}
+
+@Test
+func rtfImportKeepsParagraphsAndUnicode() throws {
+    let source = #"""
+    {\rtf1\ansi\ansicpg1252\deff0
+    {\fonttbl{\f0\froman Times New Roman;}{\f1\fswiss Arial;}}
+    \f1\b\fs32 Format RTF Test\b0\fs24\par
+    \par
+    \f0 This is the first paragraph of the RTF fixture. It has \b bold text\b0  and \i italic text\i0 .\par
+    This is the second paragraph with accents: \'e1\'e9\'ed\'f3\'fa and \u241? and \u8364?.\par
+    \par
+    \b A heading inside RTF\b0\par
+    - First list item\par
+    - Second list item\par
+    \par
+    Final paragraph with a table below.\par
+    \trowd\cellx3000\cellx6000
+    Alpha\cell 1\cell\row
+    Beta\cell 2\cell\row
+    }
+    """#
+    let url = try temporaryFormatFile("formats.rtf", data: Data(source.utf8))
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let extraction = try DocumentExtractor.extract(url: url, format: .rtf)
+    let body = try #require(extraction.chapters.first).text
+    #expect(body.contains("Format RTF Test\n\nThis is the first paragraph"))
+    #expect(body.contains("italic text.\n\nThis is the second paragraph"))
+    #expect(body.contains("áéíóú and ñ and €"))
+    #expect(body.contains("A heading inside RTF\n\n- First list item"))
+    #expect(body.contains("Alpha 1\n\nBeta 2"))
+}
+
+private func parserFormatCorpusPath() -> String? {
+    let environment = ProcessInfo.processInfo.environment
+    return environment["NODUS_FORMAT_CORPUS"]
+        ?? environment["TEST_RUNNER_NODUS_FORMAT_CORPUS"]
+}
+
+@Test(.enabled(if: parserFormatCorpusPath() != nil))
+func realFormatCorpusParsesCleanly() throws {
+    let root = URL(fileURLWithPath: try #require(parserFormatCorpusPath()))
+
+    let prideURL = root.appendingPathComponent("gutenberg-pride.txt")
+    if FileManager.default.fileExists(atPath: prideURL.path) {
+        let pride = try DocumentExtractor.extract(url: prideURL, format: .txt)
+        let text = pride.chapters.map(\.text).joined(separator: "\n\n")
+        #expect(text.lowercased().contains("it is a truth universally acknowledged"))
+        #expect(!text.contains("*** START OF THE PROJECT GUTENBERG"))
+        #expect(!text.contains("THE FULL PROJECT GUTENBERG"))
+    }
+
+    let rfcURL = root.appendingPathComponent("rfc9110.txt")
+    if FileManager.default.fileExists(atPath: rfcURL.path) {
+        let rfc = try DocumentExtractor.extract(url: rfcURL, format: .txt)
+        let text = rfc.chapters.map(\.text).joined(separator: "\n\n")
+        #expect(text.contains("HTTP Semantics"))
+        #expect(text.contains("Fielding"))
+    }
+
+    let wikiURL = root.appendingPathComponent("wikipedia-gatsby.html")
+    if FileManager.default.fileExists(atPath: wikiURL.path) {
+        let wiki = try DocumentExtractor.extract(url: wikiURL, format: .html)
+        #expect(wiki.title.contains("Great Gatsby"))
+        #expect(wiki.chapters.map(\.text).joined(separator: "\n\n").contains("Jay Gatsby"))
+    }
+}
+
+@Test
+func textImportRecoversParagraphsWithoutBlankLines() throws {
+    let source = """
+    The Nodus Text
+    by Test Author
+    CHAPTER I
+    This is the first paragraph, hard-wrapped over
+    three lines so the reader must join them.
+    This is the second paragraph of the same file.
+    CHAPTER II
+    Another paragraph that is long enough to be prose and should be separate from the chapter label.
+    """
+    let url = try temporaryFormatFile("no-blank-lines.txt", data: Data(source.utf8))
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let extraction = try DocumentExtractor.extract(url: url, format: .txt)
+    let body = try #require(extraction.chapters.first).text
+    #expect(body.contains("CHAPTER I\n\nThis is the first paragraph"))
+    #expect(body.contains("must join them.\n\nThis is the second paragraph"))
+    #expect(body.contains("CHAPTER II\n\nAnother paragraph"))
+}
+
+@Test
+func markdownTitleSkipsFrontMatterAndCodeFences() throws {
+    let source = """
+    ---
+    title: "Front matter"
+    ---
+
+    ```swift
+    # this is a code comment
+    ```
+
+    # Real title
+
+    Body paragraph.
+    """
+    let url = try temporaryFormatFile("title.md", data: Data(source.utf8))
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let extraction = try DocumentExtractor.extract(url: url, format: .markdown)
+    #expect(extraction.title == "Real title")
+    #expect(extraction.chapters.first?.text.contains("Body paragraph.") == true)
+}
+
+@Test
+func textImportRejectsAnEmptyDocument() throws {
+    let url = try temporaryFormatFile("empty.txt", data: Data())
+    defer { try? FileManager.default.removeItem(at: url) }
+    #expect(throws: ImportError.self) {
+        _ = try DocumentExtractor.extract(url: url, format: .txt)
+    }
+}

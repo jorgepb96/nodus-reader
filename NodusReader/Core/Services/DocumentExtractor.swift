@@ -94,9 +94,10 @@ public enum DocumentExtractor {
 
     private static func extractText(url: URL, format: BookFormat, fallbackTitle: String) throws -> DocumentExtraction {
         let data = try Data(contentsOf: url)
-        guard let raw = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
+        guard let decoded = TextFileDecoder.decode(data) else {
             throw ImportError.emptyDocument(url.lastPathComponent)
         }
+        let raw = EPUBTextCleaner.clean(decoded)
 
         var title = fallbackTitle
         var body = raw
@@ -119,8 +120,31 @@ public enum DocumentExtractor {
     }
 
     private static func firstMarkdownHeading(in text: String) -> String? {
-        for line in text.split(separator: "\n", omittingEmptySubsequences: false) {
+        let lines = text.replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .components(separatedBy: "\n")
+        var index = 0
+        if lines.first?.trimmingCharacters(in: .whitespaces) == "---" {
+            var closing = 1
+            while closing < lines.count {
+                let marker = lines[closing].trimmingCharacters(in: .whitespaces)
+                if marker == "---" || marker == "..." {
+                    if lines[1..<closing].contains(where: { $0.contains(":") }) {
+                        index = closing + 1
+                    }
+                    break
+                }
+                closing += 1
+            }
+        }
+        var inFence = false
+        for line in lines[index...] {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
+                inFence.toggle()
+                continue
+            }
+            if inFence { continue }
             if trimmed.hasPrefix("#") {
                 let title = trimmed.drop(while: { $0 == "#" }).trimmingCharacters(in: .whitespaces)
                 if !title.isEmpty { return String(title) }
@@ -133,11 +157,21 @@ public enum DocumentExtractor {
 
     private static func extractHTML(url: URL, fallbackTitle: String) throws -> DocumentExtraction {
         let data = try Data(contentsOf: url)
-        let text = ParagraphJoiner.join(HTMLText.plainText(from: data))
+        let text = ParagraphJoiner.join(EPUBTextCleaner.clean(HTMLText.plainText(from: data)))
         guard !text.isEmpty else {
             throw ImportError.emptyDocument(url.lastPathComponent)
         }
-        let title = HTMLText.firstHeading(from: data) ?? fallbackTitle
+        let documentTitle = HTMLText.documentTitle(from: data)
+        let wikipediaTitle = documentTitle.flatMap { title in
+            title.hasSuffix(" - Wikipedia")
+                ? title.replacingOccurrences(of: " - Wikipedia", with: "")
+                : nil
+        }
+        let title = HTMLText.firstH1(from: data)
+            ?? wikipediaTitle
+            ?? documentTitle
+            ?? HTMLText.firstHeading(from: data)
+            ?? fallbackTitle
         let chapter = ExtractedChapter(id: 0, title: title, text: text)
         return DocumentExtraction(title: title, author: "", language: LanguageDetector.detect(in: text),
                                   chapters: [chapter])
@@ -148,13 +182,12 @@ public enum DocumentExtractor {
     private static func extractRTF(url: URL, fallbackTitle: String) throws -> DocumentExtraction {
         let data = try Data(contentsOf: url)
         let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
-            .documentType: NSAttributedString.DocumentType.rtf,
-            .characterEncoding: String.Encoding.utf8.rawValue
+            .documentType: NSAttributedString.DocumentType.rtf
         ]
         guard let attributed = try? NSAttributedString(data: data, options: options, documentAttributes: nil) else {
             throw ImportError.unreadableDocument(url.lastPathComponent)
         }
-        let text = PlainText.paragraphs(attributed.string)
+        let text = PlainText.rtfParagraphs(attributed.string)
         guard !text.isEmpty else {
             throw ImportError.emptyDocument(url.lastPathComponent)
         }
@@ -182,6 +215,20 @@ public enum MarkdownText {
         var code: [String] = []
         var inCode = false
         var index = 0
+        if lines.first?.trimmingCharacters(in: .whitespaces) == "---" {
+            var closing = 1
+            while closing < lines.count {
+                let marker = lines[closing].trimmingCharacters(in: .whitespaces)
+                if marker == "---" || marker == "..." {
+                    let metadata = lines[1..<closing]
+                    if metadata.contains(where: { $0.contains(":") }) {
+                        index = closing + 1
+                    }
+                    break
+                }
+                closing += 1
+            }
+        }
 
         func flushParagraph() {
             guard !paragraph.isEmpty else { return }
@@ -262,6 +309,15 @@ public enum MarkdownText {
                 index += 1
                 continue
             }
+            if let range = trimmed.range(of: #"^\[\^[^\]]+\]:\s*"#, options: .regularExpression) {
+                flushParagraph()
+                flushList()
+                flushQuote()
+                flushTable()
+                paragraph = [String(trimmed[range.upperBound...])]
+                index += 1
+                continue
+            }
             if isHorizontalRule(trimmed) {
                 flushAll()
                 index += 1
@@ -294,7 +350,12 @@ public enum MarkdownText {
                 flushParagraph()
                 flushList()
                 flushTable()
-                quote.append(String(trimmed.dropFirst()).trimmingCharacters(in: .whitespaces))
+                let content = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespaces)
+                if content.isEmpty {
+                    flushQuote()
+                } else {
+                    quote.append(content)
+                }
                 index += 1
                 continue
             }
@@ -347,13 +408,19 @@ public enum MarkdownText {
     }
 
     private static func listMarker(_ line: String) -> (ordered: Bool, text: String)? {
+        var ordered = false
+        var text: String
         if let range = line.range(of: #"^[-*+]\s+"#, options: .regularExpression) {
-            return (false, String(line[range.upperBound...]).trimmingCharacters(in: .whitespaces))
+            text = String(line[range.upperBound...])
+        } else if let range = line.range(of: #"^\d{1,3}[.)]\s+"#, options: .regularExpression) {
+            ordered = true
+            text = String(line[range.upperBound...])
+        } else {
+            return nil
         }
-        if let range = line.range(of: #"^\d{1,3}[.)]\s+"#, options: .regularExpression) {
-            return (true, String(line[range.upperBound...]).trimmingCharacters(in: .whitespaces))
-        }
-        return nil
+        text = text.trimmingCharacters(in: .whitespaces)
+        text = text.replacingOccurrences(of: #"^\[[ xX]\]\s+"#, with: "", options: .regularExpression)
+        return (ordered, text)
     }
 
     private static func isHorizontalRule(_ line: String) -> Bool {
@@ -399,6 +466,9 @@ public enum MarkdownText {
         value = value.replacingOccurrences(of: #"\*(.+?)\*"#, with: "$1", options: .regularExpression)
         value = value.replacingOccurrences(of: #"`+([^`]+)`+"#, with: "$1", options: .regularExpression)
         value = value.replacingOccurrences(of: #"~~(.+?)~~"#, with: "$1", options: .regularExpression)
+        value = value.replacingOccurrences(
+            of: #"<((?:https?://|mailto:)[^>\s]+)>"#, with: "$1", options: .regularExpression
+        )
         value = value.replacingOccurrences(of: #"(?i)<br\s*/?>"#, with: " ", options: .regularExpression)
         value = value.replacingOccurrences(of: #"<[^>]+>"#, with: "", options: .regularExpression)
         value = value.replacingOccurrences(of: #"\\([\\`*_{}\[\]()#+.!-])"#, with: "$1",

@@ -29,3 +29,4 @@ Modules/PhononTTS/PhononCore.xcframework/
 tools/parser-corpus/pdfs/
 tools/parser-probe/.build/
 tools/parser-corpus/epubs/
+tools/parser-corpus/formats/
