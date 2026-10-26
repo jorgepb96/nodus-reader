@@ -32,6 +32,7 @@ struct PDFReaderContainer: View {
     /// Owned by the reader so opening a PDF note can switch to Intelligent
     /// Reading, where notes are shown.
     @Binding var mode: PDFReadingMode
+    var search: ReaderSearchModel?
     var onAnnotate: (Int, NSRange, String, AnnotationColor) -> Void = { _, _, _, _ in }
 
     var body: some View {
@@ -55,7 +56,7 @@ struct PDFReaderContainer: View {
             switch mode {
             case .original:
                 PDFKitReader(url: url, pageIndex: $pdfPageIndex, pageCount: $pdfPageCount,
-                             jumpToPage: $jumpToPage, background: theme.background)
+                             jumpToPage: $jumpToPage, background: theme.background, search: search)
                     .ignoresSafeArea(edges: .bottom)
             case .intelligent:
                 PDFReflowView(book: book, url: url, theme: theme,
@@ -156,7 +157,7 @@ struct PDFReflowView: View {
                         }
                 }
             }
-            .readerPresentation(isDark: theme.isDark)
+            .readerPresentation(theme)
         }
     }
 

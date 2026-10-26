@@ -88,7 +88,8 @@ fallback while the real cover loads. The interface is localized in English (base
 and Spanish through `NodusReader/Resources/Localizable.xcstrings`; see
 `tools/localization/README.md` before adding UI text.
 
-Kokoro is English-only and unavailable in the Simulator (MLX needs a Metal device).
+Kokoro speaks English (SDK phonemizer) and Spanish (`SpanishG2P`, rule-based, matching
+espeak-ng) and is unavailable in the Simulator (MLX needs a Metal device).
 Phonon 31M is English and downloads in the app. Phonon 40M Spanish and Multilingual
 (CC BY-NC, gated) are never hosted or shipped: the app downloads them with the user's own
 Hugging Face access and converts them to Core ML on the device (`PhononOnDeviceConversion`,
@@ -99,12 +100,12 @@ See `docs/ROADMAP.md`, `docs/ICLOUD.md` and `docs/NARRATION_SYNC.md`.
 
 ## Verification
 
-- 46 unit/integration tests (plus three opt-in model tests) cover EPUB/PDF import (chapter splitting at contents
+- 60 unit/integration tests (plus four opt-in model tests) cover EPUB/PDF import (chapter splitting at contents
   anchors, paragraph joining, folder packages, DRM detection), duplicate detection, collections,
   themes (including reader-follows-app), text utilities, pause-based word alignment,
   page-boundary highlight clipping, path-traversal defenses, language-aware voice
   choice and the durable sync outbox, including suspended remote saves.
-- 11 UI tests cover the phone screens, the reader appearance popover with continuous
+- 12 UI tests cover the phone screens, reader search, the reader appearance popover with continuous
   scrolling, PDF Intelligent Reading highlights and notes, reader, page turn, bookmarks, system
   narration, tap-a-word, PDF Intelligent Reading, Phonon narration (behavioural:
   progress past sentence 1), iCloud settings and the Spanish book-language voice

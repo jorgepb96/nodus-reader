@@ -204,8 +204,8 @@ final class ModelManager {
             id: "kokoro-82m",
             engine: .kokoro,
             name: "Kokoro 82M",
-            detail: String(localized: "Expressive American and British English narration with 28 voices."),
-            language: String(localized: "English"),
+            detail: String(localized: "Expressive narration in American and British English (28 voices) and Spanish (3 voices)."),
+            language: String(localized: "English, Spanish"),
             sizeText: String(localized: "About 210 MB download"),
             license: "Apache-2.0",
             source: URL(string: "https://huggingface.co/mattmireles/kokoro-coreml")!,
@@ -704,6 +704,11 @@ final class ModelManager {
         switch engine {
         case .kokoro:
             guard let kokoro else { throw NeuralNarrationError.engineNotLoaded("Kokoro") }
+            if KokoroSpanish.isSpanishVoice(name) {
+                let samples = try await KokoroSpanish.synthesize(text, voice: name, engine: kokoro,
+                                                                 bundle: Self.kokoroCacheDirectory)
+                return (samples, 24_000)
+            }
             let audio = try await kokoro.synthesize(text, voice: KokoroVoiceID(name))
             return (audio.samples, Double(audio.sampleRate))
         case .phonon:
@@ -871,7 +876,7 @@ final class ModelManager {
             guard kokoro == nil else { return }
             // Bundles installed before the full voice catalogue: add the
             // missing voices once (offline, this just finds nothing to add).
-            if Self.installedKokoroVoiceIDs().count < Self.kokoroVoiceCatalog.count {
+            if Self.installedKokoroVoiceIDs().count < Self.allKokoroVoiceFiles.count {
                 _ = await Self.installMissingKokoroVoices()
             }
             do {
@@ -1025,17 +1030,40 @@ final class ModelManager {
         ("bm_fable", "f889083196807b4adb15e9204252165f503b8d33d3982e681c52443c49d798f1"),
         ("bm_george", "c4b235a4c1f2cd3b939fed08b899ce9385638b763f7b73a59616c4fc9bd6c9bc"),
         ("bm_lewis", "b8f671cef828c30e66fdf0b0756a76bba58f6bb3398cbbf27058642acbcedb97"),
-
     ]
+
+    /// Kokoro's three Spanish voices (`e` = Spanish). The Core ML repository
+    /// hosts only English ones; these are the same raw float32 tables published
+    /// in onnx-community/Kokoro-82M-v1.0-ONNX (Apache-2.0, `af_heart.bin` there is
+    /// byte-identical to the Core ML repository's), pinned and verified.
+    nonisolated static let kokoroSpanishVoiceCatalog: [(id: String, sha256: String)] = [
+        ("ef_dora", "f66ec66bd295acb18372e37008533a9a3228483ccd294e7538d5d9294ac9a532"),
+        ("em_alex", "27809e9eafdcbcfff90a3016c697568676531de2a2c39cee29c96c7bd6b83e95"),
+        ("em_santa", "ad43b774e1ca24d05c6161297d8aeb770ac3d29bb95daf516727af5f7d543683")
+    ]
+
+    nonisolated static let kokoroSpanishVoiceBase = URL(string:
+        "https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/1939ad2a8e416c0acfeecc08a694d14ef25f2231/voices/"
+    )!
+
+    /// Every Kokoro voice the app installs, with where it comes from.
+    nonisolated static var allKokoroVoiceFiles: [(id: String, sha256: String, base: URL)] {
+        kokoroVoiceCatalog.map { ($0.id, $0.sha256, kokoroVoiceBase) }
+            + kokoroSpanishVoiceCatalog.map { ($0.id, $0.sha256, kokoroSpanishVoiceBase) }
+    }
 
     nonisolated static let kokoroVoiceBase = URL(string:
         "https://huggingface.co/mattmireles/kokoro-coreml/resolve/034f7741bf938fd6b4b9c75c22bc72cd795f908a/voices/"
     )!
 
-    private static let kokoroVoices: [Voice] = kokoroVoiceCatalog.map { entry in
+    static let kokoroVoices: [Voice] = allKokoroVoiceFiles.map { entry in
         let name = entry.id.split(separator: "_").last.map { $0.prefix(1).uppercased() + $0.dropFirst() } ?? entry.id
-        return Voice(id: "kokoro:\(entry.id)", name: name,
-                     language: entry.id.hasPrefix("b") ? "en-GB" : "en-US", engine: .kokoro)
+        let language = switch entry.id.prefix(1) {
+        case "b": "en-GB"
+        case "e": "es-ES"
+        default: "en-US"
+        }
+        return Voice(id: "kokoro:\(entry.id)", name: name, language: language, engine: .kokoro)
     }
 
     /// Voice files listed in the installed Kokoro runtime manifest.
@@ -1067,12 +1095,12 @@ final class ModelManager {
         try? FileManager.default.createDirectory(at: voicesDirectory, withIntermediateDirectories: true)
 
         var added = false
-        for voice in kokoroVoiceCatalog where !listed.contains("voices/\(voice.id).bin") {
+        for voice in allKokoroVoiceFiles where !listed.contains("voices/\(voice.id).bin") {
             if Task.isCancelled { break }
             let destination = voicesDirectory.appendingPathComponent("\(voice.id).bin")
             if !FileManager.default.fileExists(atPath: destination.path) {
                 guard let (temporary, response) = try? await URLSession.shared.download(
-                        from: kokoroVoiceBase.appendingPathComponent("\(voice.id).bin")),
+                        from: voice.base.appendingPathComponent("\(voice.id).bin")),
                       (response as? HTTPURLResponse)?.statusCode == 200 else { continue }
                 guard (try? ContentHash.sha256(of: temporary)) == voice.sha256 else {
                     try? FileManager.default.removeItem(at: temporary)

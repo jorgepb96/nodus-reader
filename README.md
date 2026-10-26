@@ -17,7 +17,7 @@ Nodus Reader is part of the Nodus Research ecosystem. It is not a web wrapper: t
 - Collections: unlimited nesting, rename, move, delete-without-deleting-documents, multiple memberships per book, manual order.
 - Reader: real EPUB text extraction and TextKit pagination with an iOS page-curl transition, macOS two-page spread, contents, bookmarks, highlights, notes and export, persistent progress, light/sepia/dark/OLED/high-contrast themes, custom themes, typography controls and justified text; an appearance popover with per-book settings; paged, continuous vertical and horizontal-column reading.
 - PDF: original PDFKit reading plus Intelligent Reading with reading-order reconstruction, multi-column detection, Vision OCR fallback, table crops, an original-page overlay, and highlights and notes on the reflowed text.
-- Narration: on-device system voices, plus optional Kokoro 82M (English) and Phonon 31M (English) Core ML engines downloaded from Hugging Face. Sentence and word highlighting, tap a word to start Read & Listen from that word, sentence-level audio cache (compressed AAC) with prefetch, progress, cancellation, deletion and automatic cleanup of unused books, player with transport, speed, voice, sleep timer and modes. Background audio, interruptions, headphone unplugging and lock-screen controls are wired for iOS.
+- Narration: on-device system voices, plus optional Kokoro 82M (English and Spanish) and Phonon 31M (English) Core ML engines downloaded from Hugging Face. Sentence and word highlighting, tap a word to start Read & Listen from that word, sentence-level audio cache (compressed AAC) with prefetch, progress, cancellation, deletion and automatic cleanup of unused books, player with transport, speed, voice, sleep timer and modes. Background audio, interruptions, headphone unplugging and lock-screen controls are wired for iOS.
 - Sync: optional personal iCloud sync through CloudKit and iCloud Drive, a durable outbox, tombstones, timestamp conflicts, cloud-only badges, download-on-open, `Remove Download` and `Delete from Library`.
 - Sharing: iOS Share Extension with an App Group inbox and collection selection.
 - Languages: English and Spanish. The app follows the device language: Spanish on a device set to Spanish, English everywhere else (or per app in Settings › Nodus Reader › Language).
@@ -39,10 +39,11 @@ The design source of truth is [`design/DESIGN.md`](design/DESIGN.md) and [`desig
 
 ## Known limitations
 
-- **Kokoro is English-only and Simulator-unavailable.** The pinned `KokoroTTS` SDK
-  ships English Misaki phonemization, and its MLX phonemizer needs a Metal device.
-  All 28 American and British English voices of the pinned bundle are installed
-  (the starter voice plus 27 voice files verified by SHA-256).
+- **Kokoro speaks English and Spanish, and is Simulator-unavailable.** English uses the
+  pinned SDK's Misaki phonemizer (MLX, which needs a Metal device); Spanish uses
+  Nodus Reader's own rule-based phonemizer, which reproduces the espeak-ng phonemes
+  the three Spanish voices were trained with. Kokoro's other languages are not
+  offered. All 28 English voices and the 3 Spanish voices are verified by SHA-256.
 - **Phonon 40M Spanish and Multilingual need your Hugging Face access.** They are gated
   CC BY-NC models with no published Core ML bundle: after you sign in with an account
   that accepted Gradium's conditions, the app downloads one (130–150 MB) and converts it

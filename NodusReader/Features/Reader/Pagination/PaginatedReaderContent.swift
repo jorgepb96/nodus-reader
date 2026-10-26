@@ -39,6 +39,9 @@ struct PaginatedReaderContent: View {
     let narrationChapterIndex: Int?
     let narrationSentenceRange: NSRange?
     let narrationWordRange: NSRange?
+    /// Find results by chapter, and the one the reader is on.
+    let searchRanges: [Int: [NSRange]]
+    let currentSearchMatch: ReaderSearchMatch?
     let columns: Int
     let followNarration: Bool
     var onWordTap: (Int, Int) -> Void
@@ -173,6 +176,9 @@ struct PaginatedReaderContent: View {
         }
         .onChange(of: followNarration) { _, _ in
             followNarrationIfNeeded()
+        }
+        .onChange(of: currentSearchMatch) { _, match in
+            showSearchMatch(match)
         }
         .onAppear {
             pageStep = visibleColumns
@@ -341,6 +347,18 @@ struct PaginatedReaderContent: View {
         }
     }
 
+    /// Turns to the page that holds the current find result.
+    private func showSearchMatch(_ match: ReaderSearchMatch?) {
+        guard let match, !pages.isEmpty else { return }
+        if let index = pages.firstIndex(where: { page in
+            page.chapterIndex == match.chapterIndex &&
+            match.range.location >= page.chapterStartOffset &&
+            match.range.location < max(page.chapterEndOffset, page.chapterStartOffset + 1)
+        }), index != pageIndex {
+            pageIndex = index
+        }
+    }
+
     private func pageContainsCurrentNarration() -> Bool {
         guard let narrationChapterIndex, let narrationSentenceRange,
               pages.indices.contains(pageIndex) else { return false }
@@ -362,6 +380,20 @@ struct PaginatedReaderContent: View {
                 fill: PlatformColor(hex: annotation.color.fillHex, alpha: style.isDark ? 0.45 : 0.65),
                 underline: PlatformColor(hex: annotation.color.underlineHex),
                 underlineWidth: 1.5,
+                rounded: true
+            ))
+        }
+
+        for range in searchRanges[page.chapterIndex] ?? []
+        where range.location < page.chapterEndOffset && NSMaxRange(range) > page.chapterStartOffset {
+            let isCurrent = currentSearchMatch == ReaderSearchMatch(chapterIndex: page.chapterIndex, range: range)
+            spans.append(ReaderPageHighlightSpan(
+                range: range,
+                fill: isCurrent
+                    ? PlatformColor(hex: NodusHex.searchCurrent, alpha: style.isDark ? 0.75 : 0.9)
+                    : PlatformColor(hex: NodusHex.searchMatch, alpha: style.isDark ? 0.35 : 0.55),
+                underline: isCurrent ? PlatformColor(hex: NodusHex.searchCurrentUnderline) : nil,
+                underlineWidth: isCurrent ? 2 : 0,
                 rounded: true
             ))
         }

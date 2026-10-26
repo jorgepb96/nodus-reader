@@ -282,6 +282,16 @@
         }
       }
     },
+    "%lld of %lld+": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld de %lld+"
+          }
+        }
+      }
+    },
     "%lld pt": {
       "localizations": {
         "es": {
@@ -1902,6 +1912,16 @@
         }
       }
     },
+    "English, Spanish": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inglés, español"
+          }
+        }
+      }
+    },
     "English, Spanish, French, German and Portuguese with 102 voices.": {
       "localizations": {
         "es": {
@@ -1932,12 +1952,12 @@
         }
       }
     },
-    "Expressive American and British English narration with 28 voices.": {
+    "Expressive narration in American and British English (28 voices) and Spanish (3 voices).": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Narración expresiva en inglés americano y británico con 28 voces."
+            "value": "Narración expresiva en inglés estadounidense y británico (28 voces) y en español (3 voces)."
           }
         }
       }
@@ -3202,6 +3222,16 @@
         }
       }
     },
+    "Next match": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siguiente coincidencia"
+          }
+        }
+      }
+    },
     "Next page": {
       "localizations": {
         "es": {
@@ -3348,6 +3378,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sin procesamiento remoto"
+          }
+        }
+      }
+    },
+    "No results": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin resultados"
           }
         }
       }
@@ -4142,6 +4182,16 @@
         }
       }
     },
+    "Previous match": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coincidencia anterior"
+          }
+        }
+      }
+    },
     "Previous page": {
       "localizations": {
         "es": {
@@ -4662,6 +4712,16 @@
         }
       }
     },
+    "Search in book": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar en el libro"
+          }
+        }
+      }
+    },
     "Search library": {
       "localizations": {
         "es": {
@@ -4688,6 +4748,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Buscar voces"
+          }
+        }
+      }
+    },
+    "Searching…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscando…"
           }
         }
       }

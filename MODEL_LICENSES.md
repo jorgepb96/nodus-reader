@@ -16,6 +16,8 @@ the app.
 |---|---|---|---|
 | Apple system voices (`AVSpeechSynthesizer`) | Operating system | Apple OS licence | No weights distributed by Nodus Reader |
 | Kokoro 82M Core ML | [mattmireles/kokoro-coreml](https://github.com/mattmireles/kokoro-coreml), pinned at `43ef0237306c3c1ea0138098c9f92930ae4cf3f7`; weights [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M), hosted bundle [mattmireles/kokoro-coreml](https://huggingface.co/mattmireles/kokoro-coreml) | Apache-2.0 | Downloaded from a pinned Hugging Face revision; starter bundle plus the 27 other English voice files of the same pinned revision (each verified against its published SHA-256), 28 voices, English |
+| Kokoro Spanish voices | `ef_dora`, `em_alex`, `em_santa` of [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M), downloaded as raw float32 tables from [onnx-community/Kokoro-82M-v1.0-ONNX](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX) at `1939ad2a8e416c0acfeecc08a694d14ef25f2231` | Apache-2.0 | Three files of 510 KB, each verified against its pinned SHA-256 and added to the installed bundle's manifest; Spanish (Spain) |
+| Kokoro Spanish G2P | `SpanishG2P` in this repository (rule-based, AGPL-3.0-only) | AGPL-3.0-only | Reproduces the espeak-ng phonemes the Spanish voices were trained with; espeak-ng itself (GPL-3.0) is not used or distributed |
 | Kokoro G2P | [mattmireles/MisakiSwift](https://github.com/mattmireles/MisakiSwift) pinned revision `3a27756a…`, MIT-licensed [mlx-swift](https://github.com/ml-explore/mlx-swift), Apache-2.0 FluidAudio-derived G2P and NemoTextProcessing | Apache-2.0 / MIT | Swift Package dependencies |
 | Phonon 31M Core ML | [gradium/phonon-31m-en](https://huggingface.co/gradium/phonon-31m-en) weights, Core ML bundle [mosiah/phonon-31m-en-coreml](https://huggingface.co/mosiah/phonon-31m-en-coreml), runtime [gradium-ai/xn-ptts](https://github.com/gradium-ai/xn-ptts) v0.4.1 | Apache-2.0 (`ptts` also offers MIT) | Downloaded from a pinned Hugging Face revision; English, nine voices |
 | Phonon voices | [gradium/phonon-voices](https://huggingface.co/gradium/phonon-voices) | Apache-2.0 | Included in the Phonon bundle |
@@ -56,8 +58,10 @@ Exact source, licence and attribution notices are in
   CloudKit, iCloud Drive, the library folder or logs.
 - Downloads are per device. A book's preferred voice ID may sync, but if the voice is
   absent the app falls back to an installed voice without breaking narration.
-- Kokoro Spanish voices are not advertised: the pinned SDK only performs English
-  raw-text phonemization. Phonon 40M Spanish and Multilingual run only from bundles
+- Kokoro speaks English through the SDK's own phonemizer and Spanish through
+  `SpanishG2P`. Its other trained languages (French, Italian, Portuguese, Hindi,
+  Japanese, Chinese) are not offered: they need espeak-ng or dictionary phonemizers
+  that are not part of this build. Phonon 40M Spanish and Multilingual run only from bundles
   converted on the user's device (or Mac) from the user's own download.
 - Re-check every upstream licence and model card before an App Store release. This
   file is not legal advice.

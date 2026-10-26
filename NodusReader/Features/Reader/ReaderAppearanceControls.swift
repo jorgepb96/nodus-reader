@@ -381,11 +381,11 @@ private struct CardIfFull: ViewModifier {
 /// labels on a dark background).
 struct ReaderAppearancePopover: View {
     let book: Book
-    let readerIsDark: Bool
+    let readerTheme: ReaderTheme
     var onMoreSettings: () -> Void
 
     private var palette: NodusPalette {
-        readerIsDark ? .dark : .light
+        NodusPalette.reader(readerTheme)
     }
 
     var body: some View {
@@ -398,6 +398,6 @@ struct ReaderAppearancePopover: View {
         // on iPhone the system limits it to the screen and the content scrolls.
         .frame(idealWidth: 340, maxWidth: 380, idealHeight: 860, maxHeight: 920)
         .background(palette.panelRaised)
-        .readerPresentation(isDark: readerIsDark)
+        .readerPresentation(readerTheme)
     }
 }

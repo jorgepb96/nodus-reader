@@ -9,12 +9,14 @@ extension View {
     /// segmented controls, popover material) through `preferredColorScheme`.
     /// Setting only one of them mixed a dark header with a white list, or dark
     /// labels on a dark panel, when the reader theme differs from the app's.
-    func readerPresentation(isDark: Bool) -> some View {
-        let palette: NodusPalette = isDark ? .dark : .light
+    /// The palette comes from the reader theme itself, so a sheet over a
+    /// sepia, dark or custom page has that page's colours.
+    func readerPresentation(_ theme: ReaderTheme) -> some View {
+        let palette = NodusPalette.reader(theme)
         return self
             .nodusPalette(palette)
             .tint(palette.accent)
-            .environment(\.colorScheme, isDark ? .dark : .light)
-            .preferredColorScheme(isDark ? .dark : .light)
+            .environment(\.colorScheme, theme.isDark ? .dark : .light)
+            .preferredColorScheme(theme.isDark ? .dark : .light)
     }
 }

@@ -398,3 +398,14 @@ ES.update({
     "OCR cache %@": "Caché OCR %@",
     "Unused books": "Libros sin usar",
 })
+
+ES.update({
+    "%lld of %lld+": "%lld de %lld+",
+    "English, Spanish": "Inglés, español",
+    "Expressive narration in American and British English (28 voices) and Spanish (3 voices).": "Narración expresiva en inglés estadounidense y británico (28 voces) y en español (3 voces).",
+    "Next match": "Siguiente coincidencia",
+    "No results": "Sin resultados",
+    "Previous match": "Coincidencia anterior",
+    "Search in book": "Buscar en el libro",
+    "Searching…": "Buscando…",
+})

@@ -44,6 +44,7 @@ struct ReaderView: View {
     @State private var showAppearanceSheet = false
     @State private var showPlayer = false
     @State private var annotationDraft: ReaderAnnotationDraft?
+    @State private var search = ReaderSearchModel()
 
     init(book: Book, onClose: @escaping () -> Void) {
         self.book = book
@@ -100,9 +101,14 @@ struct ReaderView: View {
         ZStack {
             theme.background.ignoresSafeArea()
             contentView(theme)
+                // The search keyboard covers the page instead of shrinking it:
+                // a smaller page would lay out the whole book again.
+                .ignoresSafeArea(.keyboard)
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if chromeVisible {
+            if search.isPresented {
+                ReaderSearchBar(model: search, theme: theme)
+            } else if chromeVisible {
                 topBar(theme)
             }
         }
@@ -119,6 +125,9 @@ struct ReaderView: View {
         .tint((theme.isDark ? NodusPalette.dark : NodusPalette.light).accent)
         .animation(.easeInOut(duration: 0.2), value: chromeVisible)
         .task { await load() }
+        .task(id: search.isPresented ? search.query : "") {
+            await runSearch()
+        }
         .onDisappear {
             progressSaveTask?.cancel()
             saveProgress()
@@ -171,19 +180,19 @@ struct ReaderView: View {
                 )
             }
             }
-            .readerPresentation(isDark: readerTheme.isDark)
+            .readerPresentation(readerTheme)
         }
         .sheet(isPresented: $showAppearanceSheet) {
             ReaderAppearanceSheet(book: book)
-                .readerPresentation(isDark: readerTheme.isDark)
+                .readerPresentation(readerTheme)
         }
         .sheet(isPresented: $showPlayer) {
             PlayerView().presentationDragIndicator(.hidden)
-                .readerPresentation(isDark: readerTheme.isDark)
+                .readerPresentation(readerTheme)
         }
         .sheet(item: $annotationDraft) { draft in
             AnnotationEditorSheet(book: book, draft: draft)
-                .readerPresentation(isDark: readerTheme.isDark)
+                .readerPresentation(readerTheme)
         }
         #if os(iOS)
         .statusBarHidden(true)
@@ -211,6 +220,8 @@ struct ReaderView: View {
                 narrationChapterIndex: narrationActive ? playback.chapterIndex : nil,
                 narrationSentenceRange: narrationActive ? playback.currentSentenceChapterRange : nil,
                 narrationWordRange: narrationActive ? playback.currentWordChapterRange : nil,
+                searchRanges: search.isPresented ? search.rangesByChapter : [:],
+                currentSearchMatch: search.isPresented ? search.currentMatch : nil,
                 columns: paginationColumns,
                 followNarration: playback.mode == .readAndListen,
                 onWordTap: { chapter, offset in startNarration(chapter: chapter, offset: offset) },
@@ -235,6 +246,7 @@ struct ReaderView: View {
                 pdfPageCount: $pdfPageCount,
                 jumpToPage: $pdfJumpPage,
                 mode: $pdfMode,
+                search: search,
                 onAnnotate: { page, range, quote, color in
                     presentPDFAnnotation(page: page, range: range, quote: quote, color: color)
                 }
@@ -281,6 +293,40 @@ struct ReaderView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // MARK: Search
+
+    private func openSearch() {
+        // PDFKit searches the original pages; Intelligent Reading shows the
+        // same text reflowed, so the search runs on the original.
+        if book.format == .pdf { pdfMode = .original }
+        search.isPresented = true
+    }
+
+    /// Finds the query in the chapters, off the main thread and a moment after
+    /// the last keystroke. PDFs are searched by PDFKit in the page view.
+    private func runSearch() async {
+        guard search.isPresented, book.format != .pdf else { return }
+        let query = search.query
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            search.setMatches([], startingAt: nil)
+            search.isSearching = false
+            return
+        }
+        search.isSearching = true
+        try? await Task.sleep(for: .milliseconds(250))
+        guard !Task.isCancelled else { return }
+        let texts = chapters.map(\.text)
+        let matches = await Task.detached(priority: .userInitiated) {
+            ReaderSearch.matches(for: query, in: texts)
+        }.value
+        guard !Task.isCancelled else { return }
+        let offset = readerPages.indices.contains(pageIndex) ? readerPages[pageIndex].chapterStartOffset : 0
+        search.setMatches(matches, startingAt: ReaderSearch.firstIndex(in: matches,
+                                                                        fromChapter: pageInfo.chapterIndex,
+                                                                        offset: offset))
+        search.isSearching = false
+    }
+
     // MARK: Bars
 
     private func topBar(_ theme: ReaderTheme) -> some View {
@@ -311,6 +357,19 @@ struct ReaderView: View {
             .accessibilityElement(children: .combine)
 
             Spacer(minLength: 2)
+
+            Button {
+                openSearch()
+            } label: {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 17))
+                    .foregroundStyle(theme.text)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut("f", modifiers: .command)
+            .accessibilityLabel("Search in book")
+            .accessibilityIdentifier("ReaderSearchButton")
 
             Button {
                 showContents = true
@@ -345,7 +404,7 @@ struct ReaderView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Appearance and typography")
             .popover(isPresented: $showAppearance, arrowEdge: .top) {
-                ReaderAppearancePopover(book: book, readerIsDark: theme.isDark) {
+                ReaderAppearancePopover(book: book, readerTheme: theme) {
                     showAppearance = false
                     // Present the sheet once the popover has gone.
                     Task { @MainActor in
@@ -353,7 +412,7 @@ struct ReaderView: View {
                         showAppearanceSheet = true
                     }
                 }
-                .readerPresentation(isDark: theme.isDark)
+                .readerPresentation(theme)
                 #if os(iOS)
                 .presentationCompactAdaptation(.popover)
                 #endif

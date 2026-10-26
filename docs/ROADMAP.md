@@ -82,7 +82,7 @@ limitations.
 
 | Area | Limitation | Reason |
 |---|---|---|
-| Kokoro languages | English raw text only | The pinned `KokoroTTS` SDK ships English Misaki phonemization in V1; Spanish voice embeddings exist but are rejected |
+| Kokoro languages | English and Spanish | English through the SDK's Misaki phonemizer, Spanish through `SpanishG2P`; French, Italian, Portuguese, Hindi, Japanese and Chinese would need espeak-ng (GPL) or dictionary phonemizers |
 | Kokoro in Simulator | Not offered | The SDK's phonemizer uses MLX, which requires a Metal device; the Simulator aborts in MLX |
 | Phonon Spanish/Multilingual | Listed as unavailable, no download | The CC BY-NC 40M checkpoints are gated and no Core ML bundle is published; Nodus Reader does not offer downloads it cannot run |
 | iCloud live validation | Build must be signed with the `iCloud.ai.nodus.reader` container | Unsigned builds deliberately report iCloud unavailable instead of crashing |

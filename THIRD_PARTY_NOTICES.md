@@ -85,6 +85,7 @@ the device that downloaded it.
 | Model or voices | Source | Licence | How the app gets it |
 |---|---|---|---|
 | Kokoro-82M by hexgrad | Core ML bundle and 28 voices from <https://huggingface.co/mattmireles/kokoro-coreml> at `034f774` | Apache-2.0 | Downloaded and verified by the KokoroTTS SDK |
+| Kokoro-82M Spanish voices by hexgrad (`ef_dora`, `em_alex`, `em_santa`) | Voice tables from <https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX> at `1939ad2` (the same voices as [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M), as raw float32 tables) | Apache-2.0 | Downloaded on request and verified against pinned SHA-256 values; never bundled |
 | Phonon 31M English by Gradium, built on Kyutai's Pocket TTS | Core ML bundle <https://huggingface.co/mosiah/phonon-31m-en-coreml> at `0a2596e`, from <https://huggingface.co/gradium/phonon-31m-en> | Apache-2.0 | Downloaded, verified by `bundle.json` |
 | Phonon voices by Gradium | <https://huggingface.co/gradium/phonon-voices> at `0ee1720` (9 English voices with 31M; 25 Spanish voices with 40M Spanish; all 102 with 40M Multilingual) | Apache-2.0 | Downloaded and hash-checked |
 | Phonon 40M Spanish by Gradium | <https://huggingface.co/gradium/phonon-40m-es> at `f0d2f39` | CC BY-NC 4.0, gated | Downloaded with **the user's own** Hugging Face access after they accept Gradium's conditions, converted to Core ML on the device, weights deleted after conversion |

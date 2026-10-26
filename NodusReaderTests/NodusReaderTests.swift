@@ -4,6 +4,7 @@ import DesignSystem
 import Foundation
 import SwiftData
 import PhononTTS
+import SwiftUI
 import Testing
 #if canImport(UIKit)
 import UIKit
@@ -1311,6 +1312,64 @@ func modelDownloadsSynthesizeAndAlignWithText() async throws {
     }
 }
 
+/// Kokoro narrating Spanish with its three Spanish voices: the voice files are
+/// downloaded and verified into an installed bundle, the text goes through
+/// `SpanishG2P`, and the audio aligns with the words for the read-along
+/// highlight. With `TEST_RUNNER_NODUS_KOKORO_ES_OUT=<folder>` the audio is also
+/// written there as WAV, to be checked with a speech recognizer. Opt in with
+/// `TEST_RUNNER_NODUS_MODEL_DOWNLOAD_TESTS=1` and a Kokoro bundle installed under
+/// `TEST_RUNNER_CFFIXED_USER_HOME`.
+@Test(.enabled(if: ProcessInfo.processInfo.environment["NODUS_MODEL_DOWNLOAD_TESTS"] == "1"),
+      .timeLimit(.minutes(20)))
+@MainActor
+func kokoroNarratesSpanish() async throws {
+    let suite = "nodus.tests.kokoro-es.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let catalog = VoiceCatalog(defaults: defaults)
+    let manager = ModelManager(voices: catalog, defaults: defaults)
+    let kokoro = try #require(manager.models.first { $0.engine == .kokoro })
+    try #require(manager.isInstalled(kokoro), "Install Kokoro first (modelDownloadsSynthesizeAndAlignWithText)")
+    _ = await ModelManager.installMissingKokoroVoices()
+    manager.selectModel(kokoro)
+
+    let spanishVoices = kokoro.voices.filter { $0.language == "es-ES" }
+    #expect(spanishVoices.map(\.name) == ["Dora", "Alex", "Santa"])
+    let sentences = [
+        "En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo.",
+        "La biblioteca abre a las nueve y media; el señor García llegó tarde porque llovía muchísimo.",
+        "Cuando era niña, mi abuela me contaba historias sobre el pueblo donde había nacido.",
+        "El tren salió de la estación con veinte minutos de retraso y nadie supo explicar por qué.",
+        "¿Sabes cuántos libros has leído este año? Yo, sinceramente, he perdido la cuenta."
+    ]
+    let output = ProcessInfo.processInfo.environment["NODUS_KOKORO_ES_OUT"].map { URL(fileURLWithPath: $0) }
+    for voice in spanishVoices {
+        for (index, sentence) in sentences.enumerated() {
+            let audio = try await manager.synthesize(sentence, voiceID: voice.id, engine: .kokoro)
+            let duration = Double(audio.samples.count) / audio.sampleRate
+            #expect(duration > 2.5 && duration < 20, "\(voice.name) produced \(duration) s for sentence \(index + 1)")
+            #expect(audio.samples.contains { abs($0) > 0.01 }, "\(voice.name) produced silence")
+            let timings = AudioWordAligner.align(text: sentence, samples: audio.samples, sampleRate: audio.sampleRate)
+            var words = 0
+            (sentence as NSString).enumerateSubstrings(in: NSRange(location: 0, length: (sentence as NSString).length),
+                                                       options: .byWords) { _, _, _, _ in words += 1 }
+            #expect(timings.count == words)
+            if let output {
+                let format = try #require(AVAudioFormat(standardFormatWithSampleRate: audio.sampleRate, channels: 1))
+                let buffer = try #require(AVAudioPCMBuffer(pcmFormat: format,
+                                                           frameCapacity: AVAudioFrameCount(audio.samples.count)))
+                buffer.frameLength = AVAudioFrameCount(audio.samples.count)
+                audio.samples.withUnsafeBufferPointer { source in
+                    buffer.floatChannelData![0].update(from: source.baseAddress!, count: audio.samples.count)
+                }
+                let url = output.appendingPathComponent("kokoro_\(voice.name.lowercased())_\(index + 1).wav")
+                let file = try AVAudioFile(forWriting: url, settings: format.settings)
+                try file.write(from: buffer)
+            }
+        }
+    }
+}
+
 /// A Phonon 40M Spanish bundle converted on a Mac (see docs/MODEL_LICENSES.md):
 /// installed through Install from file, selected, and narrating Spanish. Opt in
 /// with `TEST_RUNNER_NODUS_PHONON40_ES_BUNDLE=<folder>`.
@@ -1455,4 +1514,94 @@ func interruptedModelConversionsAreRemoved() throws {
     #expect(ModelManager.removeInterruptedConversions(in: root) == 1)
     #expect(!FileManager.default.fileExists(atPath: work.deletingLastPathComponent().path))
     #expect(FileManager.default.fileExists(atPath: installed.appendingPathComponent("bundle.json").path))
+}
+
+/// Kokoro's Spanish voices were trained on espeak-ng phonemes (with misaki's
+/// tie mapping). Every expected string below is espeak-ng 1.52 output for the
+/// same text.
+@Test(arguments: [
+    ("Hola, ¿qué tal estás?", "ˈola, kˈe tˈal estˈas?"),
+    ("En un lugar de la Mancha, de cuyo nombre no quiero acordarme.",
+     "en ˈun luɣˈaɾ ðe la mˈanʧa, de kˈuʝo nˈombɾe nˈo kjˈeɾo ˌakoɾðˈaɾme."),
+    ("La biblioteca abre a las nueve y media", "la βˌiβliotˈeka ˈaβɾe a las nwˈeβe i mˈeðja"),
+    ("Rápidamente, desde el puente, vimos un hielo enorme y un huevo",
+     "rˈapiðamˈente, dˌesðe el pwˈɛnte, bˈimos ˈun jˈelo enˈoɾme i ˈun wˈeβo"),
+    ("Tengo un perro y una gata", "tˈɛŋɡo ˈum pˈero i ˈuna ɣˈata"),
+    ("Muy bien", "mˈuj βjˈen"),
+    ("Ruido, patria y lluvia", "ruˈiðo, pˈatɾia i ʎˈuβja"),
+    ("Llueve en Gijón; el chico baila con agua, guerra, pingüino y Ximena",
+     "ʎuˈeβe eŋ xixˈon; el ʧˈiko βˈIla kon ˈaɣwa, ɡˈera, pˌiŋɡuˈino i simˈena"),
+    ("Cuidado con el rey", "kwiðˈaðo kon el rˈA"),
+    ("Habéis llegado a Europa", "aβˈeis ʎeɣˈaðo a eʊɾˈopa"),
+    ("Verdad", "beɾðˈad")
+])
+func spanishPhonemesFollowEspeak(text: String, expected: String) {
+    #expect(SpanishG2P.phonemize(text) == expected)
+}
+
+@Test
+func spanishNumbersAbbreviationsAndRomanNumeralsAreSpelledOut() {
+    let numbers = SpanishG2P.phonemize("Llegó en 1605 con el 25%.")
+    #expect(numbers.contains("mˈil sAsθjˈɛntos θˈinko"))
+    #expect(numbers.contains("poɾ θjˈɛnto"))
+    #expect(SpanishG2P.phonemize("El Sr. García") == "el seɲˈoɾ ɣaɾθˈia")
+    #expect(SpanishG2P.phonemize("Capítulo IV") == "kapˈitulo kwˈatɾo")
+    // A word that only looks like a numeral stays a word.
+    #expect(SpanishTextNormalizer.romanNumerals(in: "MI casa") == "MI casa")
+    #expect(SpanishTextNormalizer.romanValue("XIV") == 14)
+    #expect(SpanishTextNormalizer.romanValue("IIII") == nil)
+}
+
+@Test
+func kokoroSpanishPiecesFitTheModelAndKeepEveryWord() {
+    let text = Array(repeating: "Frisaba la edad de nuestro hidalgo con los cincuenta años, era de complexión recia,",
+                     count: 6).joined(separator: " ") + " seco de carnes y enjuto de rostro."
+    let pieces = KokoroSpanish.pieces(of: text)
+    #expect(pieces.count > 1)
+    #expect(pieces.allSatisfy { $0.phonemes.count <= KokoroSpanish.maxPhonemes })
+    let words = { (string: String) in string.split(whereSeparator: { !$0.isLetter }).map(String.init) }
+    #expect(pieces.flatMap { words($0.text) } == words(text))
+    #expect(KokoroSpanish.isSpanishVoice("ef_dora") && KokoroSpanish.isSpanishVoice("em_santa"))
+    #expect(!KokoroSpanish.isSpanishVoice("af_heart"))
+    #expect(ModelManager.kokoroVoices.filter { $0.language == "es-ES" }.map(\.id)
+        == ["kokoro:ef_dora", "kokoro:em_alex", "kokoro:em_santa"])
+}
+
+@Test
+func readerSearchIgnoresCaseAndAccentsAndStartsAtTheReadingPosition() {
+    let chapters = ["La acción empieza.", "Otra ACCION aquí y otra acción allí."]
+    let matches = ReaderSearch.matches(for: "accion", in: chapters)
+    #expect(matches.map(\.chapterIndex) == [0, 1, 1])
+    #expect(matches.map(\.range.location) == [3, 5, 24])
+    #expect(ReaderSearch.matches(for: "  ", in: chapters).isEmpty)
+    #expect(ReaderSearch.firstIndex(in: matches, fromChapter: 1, offset: 10) == 2)
+    // Past the last match the search starts again from the first.
+    #expect(ReaderSearch.firstIndex(in: matches, fromChapter: 1, offset: 30) == 0)
+}
+
+@Test @MainActor
+func readerSearchStepsWrapAround() {
+    let model = ReaderSearchModel()
+    model.setMatches([ReaderSearchMatch(chapterIndex: 0, range: NSRange(location: 0, length: 1)),
+                      ReaderSearchMatch(chapterIndex: 2, range: NSRange(location: 4, length: 1))],
+                     startingAt: 1)
+    #expect(model.rangesByChapter.keys.sorted() == [0, 2])
+    model.next()
+    #expect(model.current == 0)
+    model.previous()
+    #expect(model.current == 1)
+    model.dismiss()
+    #expect(!model.isPresented && model.count == 0 && model.currentMatch == nil)
+}
+
+@Test
+func sheetsOverTheReaderUseTheReaderThemeColours() {
+    let dark = ReaderTheme.resolve(.dark, colorScheme: .dark)
+    let palette = NodusPalette.reader(dark)
+    #expect(palette.background == dark.background)
+    #expect(palette.text == dark.text)
+    #expect(palette.isDark)
+    let sepia = NodusPalette.reader(ReaderTheme.resolve(.sepia, colorScheme: .light))
+    #expect(sepia.background == NodusPalette.sepia.background)
+    #expect(!sepia.isDark)
 }

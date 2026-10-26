@@ -203,6 +203,38 @@ public struct NodusPalette {
         isHighContrast: true
     )
 
+    /// The palette for everything shown over the reader (player, sheets,
+    /// popovers): the reader theme's own colours on the structure of the
+    /// matching app palette, so a sheet never shows a different background
+    /// from the page behind it. Panels of the dark and custom themes are drawn
+    /// from their text colour, which keeps them a step lighter or darker than
+    /// the reader's own background.
+    public static func reader(_ theme: ReaderTheme) -> NodusPalette {
+        var palette: NodusPalette
+        switch theme.id {
+        case .light?: palette = .light
+        case .sepia?: palette = .sepia
+        case .oled?: palette = .oled
+        case .highContrast?: palette = .highContrast
+        case .dark?, .system?, nil: palette = theme.isDark ? .dark : .light
+        }
+        palette.background = theme.background
+        palette.text = theme.text
+        palette.muted = theme.muted
+        palette.accent = theme.accent
+        palette.line = theme.line
+        if theme.id == .dark || theme.id == nil {
+            palette.panel = theme.text.opacity(0.06)
+            palette.panelRaised = theme.text.opacity(0.09)
+            palette.input = theme.text.opacity(0.08)
+            palette.sidebar = theme.background
+            palette.selection = theme.accent.opacity(0.16)
+            palette.violet = theme.accent
+            palette.onAccent = theme.background
+        }
+        return palette
+    }
+
     public static func palette(for theme: NodusAppTheme, colorScheme: ColorScheme) -> NodusPalette {
         switch theme {
         case .system:

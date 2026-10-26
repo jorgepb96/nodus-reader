@@ -674,3 +674,32 @@ ever removed unless the user deleted it. Changes, all local:
 Tests: `narrationCacheStoresCompressedAudioWithTheSameLength`,
 `deletingCachesBooksAndModelsFreesTheirFiles`,
 `storageCleanupFreesOnlyWhatTheRulesAllow`, `interruptedModelConversionsAreRemoved`.
+
+## Kokoro in Spanish, reader search, player theme (2026-10-26)
+
+- **Kokoro Spanish.** The pinned SDK phonemizes English only and rejects other voices.
+  `SpanishG2P` reproduces the espeak-ng (`es`) phonemes plus misaki's tie mapping that
+  Kokoro's Spanish voices were trained on. On 605 sentences of Don Quijote (16,055
+  words) it matches espeak-ng 1.52 on 99.6% of words. `KokoroSpanish` cuts text into
+  pieces of up to 120 phonemes and runs them through the SDK's `synthesizePrepared`.
+  The three voices (`ef_dora`, `em_alex`, `em_santa`, Apache-2.0) are downloaded from a
+  pinned revision and verified by SHA-256. Checked on a Mac with real models
+  (`kokoroNarratesSpanish`): Whisper large-v3-turbo transcribed 15 of 15 test sentences
+  word for word, and word alignment covers every word.
+- **Pocket TTS (Kyutai) not integrated.** Measured on an M2: the Spanish 24L variant
+  runs at 1.4–2.4× real time with 1.4 GB of memory, and its Neural Engine build returns
+  broken audio; the 6L variant made recognizable errors in 4 of 5 test sentences and
+  looped once. Neither meets the bar for live narration on iPhone.
+- **Reader search.** A find bar (⌘F) with a result counter and previous/next (⌘G,
+  ⇧⌘G), case- and accent-insensitive, highlights every match and turns to the current
+  one. PDFs are searched by PDFKit; Intelligent Reading switches to the original page.
+  The page keeps its size when the keyboard opens, so the book is not laid out again.
+- **Player and reader sheets follow the theme.** Sheets over the reader use the reader
+  theme's own colours (`NodusPalette.reader`), not the generic dark or light palette.
+  The player uses the palette of the screen it covers and no longer forces dark
+  (its "Offline audio" title was dark on dark in light reader themes).
+
+Tests: `spanishPhonemesFollowEspeak`, `spanishNumbersAbbreviationsAndRomanNumeralsAreSpelledOut`,
+`kokoroSpanishPiecesFitTheModelAndKeepEveryWord`, `readerSearchIgnoresCaseAndAccentsAndStartsAtTheReadingPosition`,
+`readerSearchStepsWrapAround`, `sheetsOverTheReaderUseTheReaderThemeColours`, the opt-in
+`kokoroNarratesSpanish`, and the UI test `testReaderSearchStepsThroughMatches`.

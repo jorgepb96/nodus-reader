@@ -22,13 +22,6 @@ public enum NodusColors {
     public static let coverBadgeText = Color(hex: 0xF2EFE8)
     public static let coverBadgeFill = Color(hex: 0x0E0D14, opacity: 0.82)
 
-    // Player (keeps the cinematic dark chrome of iPhone-NowPlaying)
-    public static let playerTile = Color(hex: 0x1A1724)
-    public static let playerBackgroundTop = Color(hex: 0x16131F)
-    public static let playerBackgroundBottom = Color(hex: 0x110F18)
-    public static let playerContextText = Color(hex: 0x7F7A8C)
-    public static let playerCurrentText = Color(hex: 0xF2EFE8)
-
     // App-icon card (dark icon background, DESIGN.md §2)
     public static let iconBackgroundTop = Color(hex: 0x1D1929)
     public static let iconBackgroundBottom = Color(hex: 0x110F18)
@@ -43,4 +36,8 @@ public enum NodusHex {
     public static let lightPaper: UInt32 = 0xFBF8F1
     public static let lightInk: UInt32 = 0x1D1B22
     public static let deepViolet: UInt32 = 0x6D28D9
+    /// Find in book: every match, and the one being shown.
+    public static let searchMatch: UInt32 = 0xFDE68A
+    public static let searchCurrent: UInt32 = 0xFB923C
+    public static let searchCurrentUnderline: UInt32 = 0xEA580C
 }

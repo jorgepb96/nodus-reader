@@ -184,6 +184,46 @@ final class NodusReaderUITests: XCTestCase {
         snap("iPhone-15-Bookmarks")
     }
 
+    func testReaderSearchStepsThroughMatches() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let width = app.windows.firstMatch.frame.width
+        try XCTSkipIf(width >= 700, "This test runs on iPhone")
+
+        app.buttons["Read"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Loomings"].firstMatch.waitForExistence(timeout: 15))
+        let page = app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'Page 1 of'")).firstMatch
+        XCTAssertTrue(page.waitForExistence(timeout: 15))
+
+        app.buttons["Search in book"].tap()
+        let field = app.textFields["ReaderSearchField"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        // Three times in the sample's first chapter.
+        field.typeText("whenever")
+
+        let counter = app.staticTexts["ReaderSearchCounter"]
+        func waitForCounter(_ format: String, _ argument: String) {
+            let matched = expectation(for: NSPredicate(format: format, argument), evaluatedWith: counter)
+            wait(for: [matched], timeout: 15)
+        }
+        waitForCounter("label BEGINSWITH %@", "1 of ")
+        let total = counter.label.components(separatedBy: " of ").last ?? ""
+        XCTAssertGreaterThanOrEqual(Int(total) ?? 0, 3)
+
+        app.buttons["Next match"].tap()
+        waitForCounter("label BEGINSWITH %@", "2 of ")
+        app.buttons["Previous match"].tap()
+        waitForCounter("label BEGINSWITH %@", "1 of ")
+        // Before the first match comes the last one.
+        app.buttons["Previous match"].tap()
+        waitForCounter("label == %@", "\(total) of \(total)")
+        snap("iPhone-21-ReaderSearch")
+
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Search in book"].waitForExistence(timeout: 5))
+        XCTAssertFalse(field.exists)
+    }
+
     func testNeuralVoiceNarration() throws {
         let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
@@ -280,7 +320,9 @@ final class NodusReaderUITests: XCTestCase {
         try XCTSkipIf(width >= 700, "This test runs on iPhone")
 
         tapTab("Settings", in: app)
-        app.staticTexts["iCloud & Storage"].firstMatch.tap()
+        let storage = app.staticTexts["iCloud & Storage"].firstMatch
+        XCTAssertTrue(storage.waitForExistence(timeout: 10))
+        storage.tap()
         XCTAssertTrue(app.staticTexts["iCloud"].firstMatch.waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["Sync with iCloud"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Sync is off"].waitForExistence(timeout: 5))

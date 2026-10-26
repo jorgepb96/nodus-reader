@@ -8,9 +8,9 @@ struct PlayerView: View {
 
     @State private var showVoicePicker = false
 
-    /// The player keeps its cinematic dark chrome regardless of the app theme,
-    /// matching design/screens/iPhone-NowPlaying.png.
-    private let palette = NodusPalette.dark
+    /// The app theme's palette, or the reader theme's when the player is
+    /// opened from the reader: the player matches the screen it covers.
+    @Environment(\.nodusPalette) private var palette
 
     var body: some View {
         ScrollView {
@@ -30,13 +30,17 @@ struct PlayerView: View {
             .padding(.bottom, 56)
         }
         .scrollIndicators(.hidden)
+        .foregroundStyle(palette.text)
         .background(playerBackground)
         .nodusPalette(palette)
-        .preferredColorScheme(.dark)
+        .environment(\.colorScheme, palette.isDark ? .dark : .light)
+        .preferredColorScheme(palette.isDark ? .dark : .light)
         .sheet(isPresented: $showVoicePicker) {
             VoicePickerSheet()
                 .nodusPalette(palette)
-                .preferredColorScheme(.dark)
+                .tint(palette.accent)
+                .environment(\.colorScheme, palette.isDark ? .dark : .light)
+                .preferredColorScheme(palette.isDark ? .dark : .light)
         }
         .overlay {
             if let error = playback.errorMessage {
@@ -55,6 +59,7 @@ struct PlayerView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Offline audio")
                         .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(palette.text)
                     Text(playback.audioCacheBytes > 0
                          ? "\(ByteCountFormatter.string(fromByteCount: playback.audioCacheBytes, countStyle: .file)) cached on this device"
                          : "Cached sentence by sentence as you listen")
@@ -109,7 +114,7 @@ struct PlayerView: View {
             }
         }
         .padding(12)
-        .background(NodusColors.playerTile, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(palette.panel, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(palette.line, lineWidth: 1)
@@ -118,14 +123,13 @@ struct PlayerView: View {
     }
 
     private var playerBackground: some View {
-        LinearGradient(colors: [NodusColors.playerBackgroundTop, NodusColors.playerBackgroundBottom],
-                       startPoint: .top, endPoint: .bottom)
+        palette.background
             .ignoresSafeArea()
     }
 
     private var handle: some View {
         Capsule()
-            .fill(Color.white.opacity(0.25))
+            .fill(palette.text.opacity(0.25))
             .frame(width: 38, height: 5)
             .padding(.top, 10)
             .padding(.bottom, 12)
@@ -223,16 +227,16 @@ struct PlayerView: View {
         var attributed = AttributedString()
         if let previous = playback.previousSentenceText {
             var part = AttributedString("…\(previous.suffix(48)) ")
-            part.foregroundColor = NodusColors.playerContextText
+            part.foregroundColor = palette.muted
             attributed.append(part)
         }
         var current = AttributedString(playback.currentSentence)
-        current.foregroundColor = NodusColors.playerCurrentText
+        current.foregroundColor = palette.text
         current.font = .system(size: 17, design: .serif).weight(.medium)
         attributed.append(current)
         if let next = playback.nextSentenceText {
             var part = AttributedString(" \(next.prefix(48))…")
-            part.foregroundColor = NodusColors.playerContextText
+            part.foregroundColor = palette.muted
             attributed.append(part)
         }
         return Text(attributed)
@@ -405,7 +409,7 @@ struct PlayerView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 56)
-        .background(highlighted ? palette.selection : NodusColors.playerTile,
+        .background(highlighted ? palette.selection : palette.panel,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -429,7 +433,7 @@ struct PlayerView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 56)
-        .background(highlighted ? palette.selection : NodusColors.playerTile,
+        .background(highlighted ? palette.selection : palette.panel,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -495,11 +499,11 @@ struct NarrationScrubber: View {
             let width = proxy.size.width
             let thumbSize: CGFloat = 16
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.white.opacity(0.12)).frame(height: 6)
+                Capsule().fill(palette.text.opacity(0.12)).frame(height: 6)
                 Capsule().fill(palette.accent)
                     .frame(width: max(0, width * fraction), height: 6)
                 Circle()
-                    .fill(NodusColors.playerCurrentText)
+                    .fill(palette.text)
                     .frame(width: thumbSize, height: thumbSize)
                     .offset(x: max(0, min(width - thumbSize, width * fraction - thumbSize / 2)))
             }
