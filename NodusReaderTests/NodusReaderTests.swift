@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import AVFoundation
 import DesignSystem
 import Foundation
 import SwiftData
@@ -1119,6 +1120,90 @@ func voicesOfEveryInstalledModelAreListedAndRoutedToTheirModel() throws {
     #expect(catalog.voice(withID: other.id) != nil)
 }
 
+// MARK: - Space: compressed narration audio
+
+@Test
+func narrationCacheStoresCompressedAudioWithTheSameLength() async throws {
+    let cache = NarrationAudioCache()
+    let book = UUID()
+    defer { Task { await cache.deleteBook(bookID: book) } }
+    let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 24_000, channels: 1))
+    let frames: AVAudioFrameCount = 24_000 * 10
+    let buffer = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames))
+    buffer.frameLength = frames
+    let channel = try #require(buffer.floatChannelData?[0])
+    for index in 0..<Int(frames) {
+        // A voice-like signal: a gliding tone with a syllable envelope.
+        let time = Double(index) / 24_000
+        channel[index] = Float(0.4 * sin(2 * .pi * (180 + 40 * sin(time)) * time) * abs(sin(.pi * time * 3)))
+    }
+    let words = [NarrationWordTiming(location: 0, length: 4, start: 0, end: 10)]
+
+    let stored = await cache.save(bookID: book, key: "k", buffer: buffer, words: words)
+    let pcmBytes = Int64(frames) * 4
+    #expect(stored > 0)
+    #expect(stored < pcmBytes / 8, "\(stored) bytes is not compressed (PCM would be \(pcmBytes))")
+
+    let loaded = try #require(await cache.load(bookID: book, key: "k"))
+    #expect(loaded.buffer.format.sampleRate == 24_000)
+    // Word timings depend on the decoded length matching the original.
+    #expect(abs(Int(loaded.buffer.frameLength) - Int(frames)) <= 24, "decoded \(loaded.buffer.frameLength) of \(frames) frames")
+    #expect(loaded.words == words)
+}
+
+// MARK: - Space: deleting caches, books and models
+
+@Test @MainActor
+func deletingCachesBooksAndModelsFreesTheirFiles() async throws {
+    // Narration audio: one book's cache goes, another's stays; "delete all" empties it.
+    let cache = NarrationAudioCache()
+    let kept = UUID(), removed = UUID()
+    let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 24_000, channels: 1))
+    let buffer = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 2_400))
+    buffer.frameLength = 2_400
+    for book in [kept, removed] {
+        #expect(await cache.save(bookID: book, key: "k", buffer: buffer, words: []) > 0)
+    }
+    await cache.deleteBook(bookID: removed)
+    #expect(await cache.bytes(for: removed) == 0)
+    #expect(await cache.bytes(for: kept) > 0)
+    await cache.deleteBook(bookID: kept)
+    #expect(await cache.bytes(for: kept) == 0)
+
+    // Deleting a book removes its document, cover and PDF reflow/OCR cache.
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let url = try SampleLibrary.makeEPUB(sampleSpec())
+    defer { try? FileManager.default.removeItem(at: url) }
+    let result = await fixture.service.importFiles([url]) { _ in }
+    let book = try #require(result.imported.first)
+    let reflow = fixture.root.appendingPathComponent("Reflow/\(book.id.uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: reflow, withIntermediateDirectories: true)
+    try Data("ocr".utf8).write(to: reflow.appendingPathComponent("manifest.json"))
+    let document = fixture.fileStore.documentURL(for: book)
+    let cover = fixture.fileStore.coverURL(for: book.coverFileName)
+    #expect(FileManager.default.fileExists(atPath: document.path))
+    fixture.service.delete(book)
+    #expect(!FileManager.default.fileExists(atPath: document.path))
+    #expect(!FileManager.default.fileExists(atPath: reflow.path))
+    if let cover { #expect(!FileManager.default.fileExists(atPath: cover.path)) }
+
+    // Deleting a model removes only its own folder.
+    let suite = "nodus.tests.space.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let multilingual = try #require(manager.models.first { $0.id == ModelManager.phonon40MultilingualID })
+    let folder = ModelManager.directory(forModelID: multilingual.id, engine: .phonon)
+    let english = ModelManager.directory(forModelID: "phonon-31m-en", engine: .phonon)
+    let englishExisted = FileManager.default.fileExists(atPath: english.path)
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    try Data(repeating: 1, count: 1_000).write(to: folder.appendingPathComponent("model.bin"))
+    manager.delete(multilingual)
+    #expect(!FileManager.default.fileExists(atPath: folder.path))
+    #expect(FileManager.default.fileExists(atPath: english.path) == englishExisted)
+}
+
 // MARK: - Voice engine memory
 
 @Test @MainActor
@@ -1315,4 +1400,59 @@ func localStoreNeverUsesSwiftDataCloudKitOrTheAppGroup() {
     let configuration = Persistence.configuration()
     #expect(configuration.cloudKitContainerIdentifier == nil)
     #expect(configuration.groupAppContainerIdentifier == nil)
+}
+
+@Test
+func storageCleanupFreesOnlyWhatTheRulesAllow() {
+    let now = Date(timeIntervalSince1970: 2_000_000_000)
+    let day: TimeInterval = 24 * 60 * 60
+    let mb: Int64 = 1_000_000
+    func book(_ daysAgo: Double?, finished: Bool = false, audio: Int64 = 10 * mb, ocr: Int64 = 0)
+        -> StorageJanitor.Candidate {
+        StorageJanitor.Candidate(id: UUID(), lastOpened: daysAgo.map { now.addingTimeInterval(-$0 * day) },
+                                 finished: finished, audioBytes: audio, ocrBytes: ocr)
+    }
+    let recent = book(2)
+    let stale = book(31, ocr: 5 * mb)
+    let finishedLastWeek = book(8, finished: true)
+    let finishedYesterday = book(1, finished: true)
+    let neverOpened = book(nil)
+    let empty = book(400, audio: 0)
+    let active = book(60)
+    let all = [recent, stale, finishedLastWeek, finishedYesterday, neverOpened, empty, active]
+    let policy = StorageJanitor.Policy()
+
+    let freed = Set(StorageJanitor.plan(all, policy: policy, protected: [active.id], now: now))
+    #expect(freed == [stale.id, finishedLastWeek.id, neverOpened.id])
+
+    // "Never" and the finished toggle switch their rules off.
+    let lenient = StorageJanitor.Policy(unusedDays: 0, deleteFinished: false)
+    #expect(StorageJanitor.plan(all, policy: lenient, protected: [active.id], now: now).isEmpty)
+
+    // Over the audio cap, the books opened longest ago go first; the protected
+    // book counts towards the cap but is never deleted.
+    let capped = StorageJanitor.Policy(unusedDays: 0, deleteFinished: false, audioCapBytes: 25 * mb)
+    let older = book(20)
+    let newer = book(3)
+    let playing = book(90)
+    let order = StorageJanitor.plan([newer, older, playing], policy: capped,
+                                    protected: [playing.id], now: now)
+    #expect(order == [older.id])
+}
+
+@Test
+func interruptedModelConversionsAreRemoved() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("nodus-models-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let work = root.appendingPathComponent(".phonon-40m-es-conversion/checkpoint", isDirectory: true)
+    let installed = root.appendingPathComponent("Phonon-40m-es", isDirectory: true)
+    try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: installed, withIntermediateDirectories: true)
+    try Data("weights".utf8).write(to: work.appendingPathComponent("model.safetensors"))
+    try Data("{}".utf8).write(to: installed.appendingPathComponent("bundle.json"))
+
+    #expect(ModelManager.removeInterruptedConversions(in: root) == 1)
+    #expect(!FileManager.default.fileExists(atPath: work.deletingLastPathComponent().path))
+    #expect(FileManager.default.fileExists(atPath: installed.appendingPathComponent("bundle.json").path))
 }

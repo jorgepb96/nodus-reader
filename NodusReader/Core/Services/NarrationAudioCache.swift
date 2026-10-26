@@ -83,8 +83,12 @@ actor NarrationAudioCache {
         let temporaryMeta = directory.appendingPathComponent("\(key).tmp.json")
         do {
             try? fileManager.removeItem(at: temporaryAudio)
+            // AAC: speech at ~20 MB per hour instead of ~350 MB as float PCM.
+            // The CAF container records encoder priming, so the decoded length
+            // (and the word timings) match the original. Caches written as PCM
+            // by earlier builds still read the same way.
             let file = try AVAudioFile(forWriting: temporaryAudio,
-                                       settings: buffer.format.settings,
+                                       settings: Self.compressedSettings(for: buffer.format),
                                        commonFormat: .pcmFormatFloat32,
                                        interleaved: false)
             try file.write(from: buffer)
@@ -119,6 +123,16 @@ actor NarrationAudioCache {
         return Int64(audioSize + metaSize)
     }
 
+    nonisolated static func compressedSettings(for format: AVAudioFormat) -> [String: Any] {
+        [
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVSampleRateKey: format.sampleRate,
+            AVNumberOfChannelsKey: format.channelCount,
+            AVEncoderBitRateKey: 48_000,
+            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+        ]
+    }
+
     func deleteBook(bookID: UUID) {
         try? fileManager.removeItem(at: bookDirectory(bookID: bookID))
     }
@@ -126,6 +140,12 @@ actor NarrationAudioCache {
     func deleteAll() {
         try? fileManager.removeItem(at: root)
         try? fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+    }
+
+    /// Books with a cache folder, including books no longer in the library.
+    func cachedBookIDs() -> [UUID] {
+        let names = (try? fileManager.contentsOfDirectory(atPath: root.path)) ?? []
+        return names.compactMap(UUID.init(uuidString:))
     }
 
     func totalBytes() -> Int64 {

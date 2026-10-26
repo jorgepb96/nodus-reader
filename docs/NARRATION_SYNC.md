@@ -102,8 +102,18 @@ Application Support/NodusReader/Audio/
 - Automatically populated as sentences are played.
 - **Generate for this book** iterates every sentence of the open book with progress
   and cancellation. Already cached sentences are skipped.
+- Audio is stored as AAC (48 kbps, mono) inside the `.caf`: about 22 MB per hour
+  of narration instead of about 350 MB as 32-bit PCM. Caches written as PCM by
+  earlier builds still play.
 - **Delete cache** removes the current book only; **Delete generated audio** in
   iCloud & Storage removes every cached narration.
+- Automatic cleanup (`StorageJanitor`, at launch and when the app goes to the
+  background, or **Free space now**) deletes a book's audio and OCR cache when it
+  has not been opened for 30 days (7, 30, 90 days or never), 7 days after a
+  finished book was last opened (can be turned off), and keeps the audio under
+  2 GB by freeing the books opened longest ago first. The book being narrated and
+  the book opened last are never touched, nor are documents, annotations or models.
+  Caches of books no longer in the library are removed too.
 - `Remove Download` (iCloud document) and `Delete from Library` are separate actions
   and do not touch this cache unless the book is deleted from the library.
 

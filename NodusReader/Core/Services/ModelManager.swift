@@ -151,6 +151,25 @@ final class ModelManager {
         .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("NodusReader/Models/Phonon-40m-multilingual", isDirectory: true)
 
+    nonisolated private static let modelsDirectory = FileManager.default
+        .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("NodusReader/Models", isDirectory: true)
+
+    /// Removes the work folders (`.<model>-conversion`) of on-device conversions
+    /// that did not finish, such as when the app was closed mid-conversion. Only
+    /// called when no install is running.
+    @discardableResult
+    nonisolated static func removeInterruptedConversions(in root: URL) -> Int {
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []
+        var removed = 0
+        for name in names where name.hasPrefix(".") && name.hasSuffix("-conversion") {
+            if (try? FileManager.default.removeItem(at: root.appendingPathComponent(name))) != nil {
+                removed += 1
+            }
+        }
+        return removed
+    }
+
     static let phonon40SpanishID = "phonon-40m-es"
     static let phonon40MultilingualID = "phonon-40m-multilingual"
 
@@ -255,6 +274,9 @@ final class ModelManager {
         Self.excludeFromBackup(Self.phononDirectory)
         Self.excludeFromBackup(Self.phonon40SpanishDirectory)
         Self.excludeFromBackup(Self.phonon40MultilingualDirectory)
+        // Nothing is installing yet: any conversion folder was left by an
+        // interrupted one.
+        Self.removeInterruptedConversions(in: Self.modelsDirectory)
         refreshStates()
         validateSelection()
         publishVoices()

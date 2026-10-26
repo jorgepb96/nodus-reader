@@ -18,6 +18,7 @@ struct NodusReaderApp: App {
     @State private var playback: PlaybackController
     @State private var sync: CloudSyncService
     @State private var models: ModelManager
+    @State private var janitor: StorageJanitor
 
     init() {
         let container: ModelContainer
@@ -40,6 +41,7 @@ struct NodusReaderApp: App {
         _playback = State(initialValue: PlaybackController(library: library, voices: voices,
                                                            models: models))
         _models = State(initialValue: models)
+        _janitor = State(initialValue: StorageJanitor(library: library, cache: models.narrationCache))
         let sync = CloudSyncService(context: container.mainContext, library: library, journal: journal)
         let theme = ThemeManager()
         #if DEBUG
@@ -70,6 +72,7 @@ struct NodusReaderApp: App {
                 .environment(playback)
                 .environment(sync)
                 .environment(models)
+                .environment(janitor)
                 .modelContainer(container)
         }
         #if os(macOS)
@@ -97,6 +100,7 @@ struct NodusReaderApp: App {
             .environment(playback)
             .environment(sync)
             .environment(models)
+            .environment(janitor)
             .modelContainer(container)
         }
         .defaultSize(width: 1180, height: 920)
@@ -115,6 +119,7 @@ struct NodusReaderApp: App {
             .environment(playback)
             .environment(sync)
             .environment(models)
+            .environment(janitor)
             .modelContainer(container)
             .frame(minWidth: 560, minHeight: 640)
         }

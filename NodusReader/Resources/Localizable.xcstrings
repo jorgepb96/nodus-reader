@@ -702,6 +702,16 @@
         }
       }
     },
+    "After %lld days": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tras %lld días"
+          }
+        }
+      }
+    },
     "All": {
       "localizations": {
         "es": {
@@ -1652,6 +1662,26 @@
         }
       }
     },
+    "Delete their audio and OCR cache": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borrar su audio y caché OCR"
+          }
+        }
+      }
+    },
+    "Delete their audio and OCR cache a week after you last opened them": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borrar su audio y caché OCR una semana después de abrirlos por última vez"
+          }
+        }
+      }
+    },
     "Description": {
       "localizations": {
         "es": {
@@ -1982,12 +2012,42 @@
         }
       }
     },
+    "Finished books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libros terminados"
+          }
+        }
+      }
+    },
     "Format": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Formato"
+          }
+        }
+      }
+    },
+    "Free space now": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liberar espacio ahora"
+          }
+        }
+      }
+    },
+    "Freed %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liberados %@"
           }
         }
       }
@@ -2982,6 +3042,16 @@
         }
       }
     },
+    "Narration audio is limited to %@: beyond that, the books you opened longest ago go first. The book you are reading or listening to is always kept. Documents, notes, highlights and voice models are never deleted automatically; audio is generated again when you listen.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El audio de narración se limita a %@: por encima, se borra primero el de los libros que abriste hace más tiempo. El libro que lees o escuchas siempre se conserva. Los documentos, notas, subrayados y modelos de voz nunca se borran automáticamente; el audio se vuelve a generar cuando escuchas."
+          }
+        }
+      }
+    },
     "Narration position": {
       "localizations": {
         "es": {
@@ -3038,6 +3108,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Motores neuronales"
+          }
+        }
+      }
+    },
+    "Never": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nunca"
           }
         }
       }
@@ -3488,6 +3568,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "No se está reproduciendo nada"
+          }
+        }
+      }
+    },
+    "Nothing to free": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nada que liberar"
+          }
+        }
+      }
+    },
+    "OCR cache %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caché OCR %@"
           }
         }
       }
@@ -5928,6 +6028,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sin título"
+          }
+        }
+      }
+    },
+    "Unused books": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libros sin usar"
           }
         }
       }

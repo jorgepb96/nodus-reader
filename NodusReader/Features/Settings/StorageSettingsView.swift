@@ -8,14 +8,19 @@ struct StorageSettingsView: View {
     @Environment(CloudSyncService.self) private var sync
     @Environment(ModelManager.self) private var models
     @Environment(PlaybackController.self) private var playback
+    @Environment(StorageJanitor.self) private var janitor
     @Environment(\.nodusPalette) private var palette
     @Query private var books: [Book]
 
     @State private var booksBytes: Int64 = 0
     @State private var coversBytes: Int64 = 0
+    @State private var ocrBytes: Int64 = 0
+    @State private var isFreeingSpace = false
+    /// The result of Free Space Now, shown only after the user asked for it.
+    @State private var freedReport: StorageJanitor.Report?
 
     private var totalBytes: Int64 {
-        booksBytes + coversBytes + modelBytes + audioBytes
+        booksBytes + coversBytes + modelBytes + audioBytes + ocrBytes
     }
 
     private var modelBytes: Int64 {
@@ -90,11 +95,13 @@ struct StorageSettingsView: View {
                             legend(color: palette.muted.opacity(0.6),
                                    text: "Audio cache \(ByteCountFormatter.string(fromByteCount: audioBytes, countStyle: .file))")
                         }
+                        legend(color: palette.accent.opacity(0.4),
+                               text: "OCR cache \(ByteCountFormatter.string(fromByteCount: ocrBytes, countStyle: .file))")
                         if audioBytes > 0 {
                             Button("Delete generated audio") {
                                 Task {
                                     await playback.deleteAllNarrationCaches()
-                                    await models.refreshStorage()
+                                    await refreshAll()
                                 }
                             }
                             .font(.caption.weight(.semibold))
@@ -105,6 +112,8 @@ struct StorageSettingsView: View {
                     .padding(14)
                 }
                 .panelCard(radius: 20)
+
+                cleanupCard
 
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "lock")
@@ -170,14 +179,106 @@ struct StorageSettingsView: View {
         .refreshable {
             await sync.refreshAvailability()
             await sync.syncNow()
-            await models.refreshStorage()
-            await refreshStorage()
+            await refreshAll()
         }
         .task {
-            await refreshStorage()
-            await models.refreshStorage()
+            await refreshAll()
             await sync.refreshAvailability()
         }
+    }
+
+    /// The automatic cleanup rules. They only delete what can be generated
+    /// again: narration audio and OCR results.
+    private var cleanupCard: some View {
+        @Bindable var janitor = janitor
+        return VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Unused books")
+                        .font(.body)
+                    Text("Delete their audio and OCR cache")
+                        .font(.caption2)
+                        .foregroundStyle(palette.muted)
+                }
+                Spacer(minLength: 8)
+                Picker("Unused books", selection: $janitor.unusedDays) {
+                    ForEach(StorageJanitor.unusedDaysOptions, id: \.self) { days in
+                        if days == 0 {
+                            Text("Never").tag(days)
+                        } else {
+                            Text("After \(days) days").tag(days)
+                        }
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .tint(palette.accent)
+            }
+            .padding(.horizontal, 14)
+            .frame(minHeight: 60)
+
+            Divider().overlay(palette.line)
+
+            Toggle(isOn: $janitor.deleteFinished) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Finished books")
+                        .font(.body)
+                    Text("Delete their audio and OCR cache a week after you last opened them")
+                        .font(.caption2)
+                        .foregroundStyle(palette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .tint(palette.accent)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 60)
+
+            Divider().overlay(palette.line)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Narration audio is limited to \(ByteCountFormatter.string(fromByteCount: StorageJanitor.Policy().audioCapBytes, countStyle: .file)): beyond that, the books you opened longest ago go first. The book you are reading or listening to is always kept. Documents, notes, highlights and voice models are never deleted automatically; audio is generated again when you listen.")
+                    .font(.caption)
+                    .foregroundStyle(palette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 10) {
+                    Button {
+                        Task { await freeSpace() }
+                    } label: {
+                        Text("Free space now")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(palette.accent)
+                    }
+                    .buttonStyle(.plain)
+                    .frame(minHeight: 44)
+                    .disabled(isFreeingSpace)
+                    if isFreeingSpace {
+                        ProgressView().controlSize(.small)
+                    } else if let report = freedReport {
+                        Text(report.freedBytes > 0
+                             ? "Freed \(ByteCountFormatter.string(fromByteCount: report.freedBytes, countStyle: .file))"
+                             : "Nothing to free")
+                            .font(.caption)
+                            .foregroundStyle(palette.muted)
+                    }
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .panelCard(radius: 20)
+    }
+
+    private func freeSpace() async {
+        isFreeingSpace = true
+        freedReport = await janitor.run(protected: Set([playback.activeBook?.id].compactMap { $0 }))
+        await refreshAll()
+        isFreeingSpace = false
+    }
+
+    private func refreshAll() async {
+        await refreshStorage()
+        await models.refreshStorage()
+        ocrBytes = await janitor.ocrBytes()
     }
 
     private var syncCard: some View {
@@ -408,6 +509,8 @@ struct StorageSettingsView: View {
                     .frame(width: width * CGFloat(modelBytes) / CGFloat(total))
                 Rectangle().fill(palette.muted.opacity(0.55))
                     .frame(width: width * CGFloat(audioBytes) / CGFloat(total))
+                Rectangle().fill(palette.accent.opacity(0.4))
+                    .frame(width: width * CGFloat(ocrBytes) / CGFloat(total))
             }
             .clipShape(Capsule())
         }

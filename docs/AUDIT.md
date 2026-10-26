@@ -650,3 +650,27 @@ an idle engine is released first). Choosing a voice from another model makes tha
 the voice engine without moving the filters. Voice IDs saved by builds 7–11 for 40M
 Spanish (`phonon:<name>`) still resolve. Tests: `voicesOfEveryInstalledModelAreListedAndRoutedToTheirModel`
 and, with real models on the Mac, a Phonon voice speaking while Kokoro is selected.
+
+## Storage: compressed audio and automatic cleanup (2026-10-26)
+
+Measured narration audio was about 350 MB per hour as 32-bit PCM, and nothing was
+ever removed unless the user deleted it. Changes, all local:
+
+- `NarrationAudioCache` writes AAC at 48 kbps (about 22 MB per hour); PCM caches from
+  earlier builds still load.
+- `StorageJanitor` runs at launch, when the app goes to the background and from
+  **Free space now**. It deletes narration audio and PDF Intelligent Reading (OCR)
+  results only: for books not opened in 30 days (Settings: 7, 30, 90 days or never),
+  for finished books 7 days after they were last opened (toggle), and beyond a 2 GB
+  audio cap, oldest-opened first. The book being narrated and the last opened book
+  are kept. Documents, covers, notes, highlights and models are never deleted
+  automatically. PDF highlights re-anchor by their quoted text when OCR is rebuilt.
+  Caches of books deleted on another device are removed.
+- `ModelManager` removes `.<model>-conversion` work folders left by an interrupted
+  on-device conversion at launch.
+- iCloud & Storage shows the OCR cache size (counted in the total) and the
+  cleanup settings.
+
+Tests: `narrationCacheStoresCompressedAudioWithTheSameLength`,
+`deletingCachesBooksAndModelsFreesTheirFiles`,
+`storageCleanupFreesOnlyWhatTheRulesAllow`, `interruptedModelConversionsAreRemoved`.

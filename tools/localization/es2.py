@@ -384,3 +384,17 @@ ES.update({
 ES.update({
 "Voices of every model on this %@. Play any of them to try it; choosing one from another model makes that model the voice engine. Nothing is synced to iCloud.": "Voces de todos los modelos de este %@. Reproduce cualquiera para probarla; si eliges una de otro modelo, ese modelo pasa a ser el motor de voz. No se sincroniza nada con iCloud.",
 })
+
+ES.update({
+    "After %lld days": "Tras %lld días",
+    "Delete their audio and OCR cache": "Borrar su audio y caché OCR",
+    "Delete their audio and OCR cache a week after you last opened them": "Borrar su audio y caché OCR una semana después de abrirlos por última vez",
+    "Finished books": "Libros terminados",
+    "Free space now": "Liberar espacio ahora",
+    "Freed %@": "Liberados %@",
+    "Narration audio is limited to %@: beyond that, the books you opened longest ago go first. The book you are reading or listening to is always kept. Documents, notes, highlights and voice models are never deleted automatically; audio is generated again when you listen.": "El audio de narración se limita a %@: por encima, se borra primero el de los libros que abriste hace más tiempo. El libro que lees o escuchas siempre se conserva. Los documentos, notas, subrayados y modelos de voz nunca se borran automáticamente; el audio se vuelve a generar cuando escuchas.",
+    "Never": "Nunca",
+    "Nothing to free": "Nada que liberar",
+    "OCR cache %@": "Caché OCR %@",
+    "Unused books": "Libros sin usar",
+})

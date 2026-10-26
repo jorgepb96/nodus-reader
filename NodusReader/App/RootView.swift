@@ -9,6 +9,8 @@ struct RootView: View {
     @Environment(LibraryService.self) private var library
     @Environment(CloudSyncService.self) private var sync
     @Environment(ModelManager.self) private var models
+    @Environment(StorageJanitor.self) private var janitor
+    @Environment(PlaybackController.self) private var playback
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
     /// Per window (Mac) or scene (iPad multitasking): two library windows no
@@ -79,6 +81,7 @@ struct RootView: View {
                 await imports.consumeSharedInbox()
                 await sync.start()
                 await models.loadInstalledEnginesIfNeeded()
+                await cleanUpStorage()
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
@@ -87,8 +90,15 @@ struct RootView: View {
                         await sync.refreshAvailability()
                         await sync.syncNow()
                     }
+                } else if phase == .background {
+                    Task { await cleanUpStorage() }
                 }
             }
+    }
+
+    /// Frees narration audio and OCR results the storage rules no longer keep.
+    private func cleanUpStorage() async {
+        await janitor.run(protected: Set([playback.activeBook?.id].compactMap { $0 }))
     }
 
     @ViewBuilder
