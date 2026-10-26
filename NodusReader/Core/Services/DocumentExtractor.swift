@@ -133,7 +133,7 @@ public enum DocumentExtractor {
 
     private static func extractHTML(url: URL, fallbackTitle: String) throws -> DocumentExtraction {
         let data = try Data(contentsOf: url)
-        let text = HTMLText.plainText(from: data)
+        let text = ParagraphJoiner.join(HTMLText.plainText(from: data))
         guard !text.isEmpty else {
             throw ImportError.emptyDocument(url.lastPathComponent)
         }

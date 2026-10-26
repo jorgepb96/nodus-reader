@@ -106,9 +106,15 @@ public enum EPUBParser {
             builder.add(conversion, points: points, heading: HTMLText.firstHeading(from: chapterData),
                         documentTitle: HTMLText.documentTitle(from: chapterData),
                         hasSectionHeading: HTMLText.hasSectionHeading(raw))
-            if builder.chapters.count >= 500 { break }
+            if builder.chapters.count >= 2000 { break }
         }
-        let chapters = builder.chapters
+        let extractedChapters = builder.chapters
+        var chapters: [ExtractedChapter] = extractedChapters.compactMap { chapter in
+            let text = ParagraphJoiner.join(EPUBTextCleaner.clean(chapter.text))
+            guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+            return ExtractedChapter(id: 0, title: ChapterBuilder.cleanTitle(chapter.title), text: text)
+        }
+        for index in chapters.indices { chapters[index].id = index }
 
         guard !chapters.isEmpty else {
             throw ImportError.emptyDocument(url.lastPathComponent)
@@ -365,8 +371,8 @@ struct ChapterBuilder {
     }
 
     private mutating func append(title: String?, text: String) {
-        let title = title.map(HTMLText.normalize) ?? ""
-        let body = Self.removingHeading(title, from: text)
+        let title = Self.resolvedTitle(title ?? "", text: text)
+        let body = ParagraphJoiner.join(Self.removingHeading(title, from: text))
         guard body.count > 10 else { return }
         chapters.append(ExtractedChapter(id: chapters.count,
                                          title: title.isEmpty ? String(localized: "Chapter \(chapters.count + 1)") : title,
@@ -386,12 +392,13 @@ struct ChapterBuilder {
     /// otherwise its first line when that line is short enough to be one.
     private static func pageTitle(_ documentTitle: String?, text: String) -> String? {
         if let documentTitle,
+           documentTitle.count <= 160,
            !documentTitle.lowercased().hasSuffix(".html"), !documentTitle.lowercased().hasSuffix(".xhtml"),
            !documentTitle.lowercased().hasSuffix(".htm") {
-            return documentTitle
+            return Self.cleanTitle(documentTitle)
         }
         let firstLine = text.prefix { $0 != "\n" }
-        return firstLine.count <= 80 ? String(firstLine) : nil
+        return firstLine.count <= 80 ? Self.cleanTitle(String(firstLine)) : nil
     }
 
     private static func slice(_ text: NSString, from start: Int, to end: Int) -> String {
@@ -401,16 +408,138 @@ struct ChapterBuilder {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// If the navigation label is only an illustration caption, the chapter
+    /// marker is still present in the heading at the start of the slice. Use
+    /// that marker as the chapter label.
+    static func resolvedTitle(_ raw: String, text: String) -> String {
+        let cleaned = cleanTitle(raw)
+        let lower = cleaned.lowercased()
+        let frontMatter = [
+            "contents", "table of contents", "index", "preface", "foreword",
+            "illustrations", "list of illustrations", "introduction",
+            "índice", "contenido", "prólogo"
+        ]
+        if frontMatter.contains(lower) || hasChapterMarker(cleaned) { return cleaned }
+        let head = String(text.prefix(160))
+        if let range = head.range(
+            of: #"(?i)\b(?:chapter|capítulo|capitulo|part|parte|book|libro|act|acto|scene|escena)[\s:.]*(?:[IVXLCDM]+|\d+)\b[^\n]*"#,
+            options: .regularExpression
+        ), range.lowerBound.utf16Offset(in: head) <= 100 {
+            return cleanTitle(String(head[range]))
+        }
+        return cleaned
+    }
+
+    private static func hasChapterMarker(_ text: String) -> Bool {
+        text.range(
+            of: #"(?i)\b(?:chapter|capítulo|capitulo|part|parte|book|libro|act|acto|scene|escena)[\s:.]*(?:[IVXLCDM]+|\d+)\b"#,
+            options: .regularExpression
+        ) != nil
+    }
+
+    /// A navigation label can include an illustration caption before the
+    /// chapter marker ("I hope Mr. Bingley will like it. CHAPTER II."). Keep
+    /// the chapter/section label, not the caption.
+    static func cleanTitle(_ raw: String) -> String {
+        var value = HTMLText.normalize(raw)
+        value = value.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        value = value.replacingOccurrences(
+            of: #"(?i)^(?:the )?project gutenberg (?:ebook|e-book) of\s+"#,
+            with: "", options: .regularExpression
+        )
+        guard !value.isEmpty else { return "" }
+        value = value.replacingOccurrences(
+            of: #"(?i)\b(chapter|capítulo|capitulo|part|parte|book|libro|act|acto|scene|escena)[\s:.]*([IVXLCDM]+|\d+)\b"#,
+            with: "$1 $2", options: .regularExpression
+        )
+        if let range = value.range(
+            of: #"(?i)\b(?:chapter|capítulo|capitulo|part|parte|book|libro|act|acto|scene|escena)\s+(?:[IVXLCDM]+|\d+)\b.*$"#,
+            options: .regularExpression
+        ) {
+            value = String(value[range.lowerBound...])
+        }
+        return value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     /// Drops the chapter label when the text opens with it, so the heading is
-    /// not shown (or narrated) twice. Only a whole heading line is removed: a
-    /// title such as "I" or "A" must not eat the first letter of "It was…",
-    /// and a heading that continues on the next line is kept whole.
+    /// not shown (or narrated) twice. A title such as "I" must not eat the
+    /// first letter of "It was…"; matching is per whole line and allows the
+    /// source's line breaks inside a heading ("PRIDE.\nand\nPREJUDICE").
+    /// When an illustration caption precedes the chapter line, the caption is
+    /// dropped with the heading.
     static func removingHeading(_ title: String, from text: String) -> String {
-        guard !title.isEmpty,
-              let range = text.range(of: title, options: [.anchored, .caseInsensitive]) else { return text }
-        let remainder = text[range.upperBound...]
-        guard remainder.isEmpty || remainder.hasPrefix("\n\n") else { return text }
-        return String(remainder).trimmingCharacters(in: .whitespacesAndNewlines)
+        let title = cleanTitle(title)
+        guard !title.isEmpty else { return text }
+        let words = title.split(whereSeparator: \.isWhitespace)
+            .map { NSRegularExpression.escapedPattern(for: String($0)) }
+            .joined(separator: "\\s*")
+        guard !words.isEmpty else { return text }
+        let pattern = "(?m)^\\s*" + words + "\\s*$"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+            return text
+        }
+        let ns = text as NSString
+        let searchRange = NSRange(location: 0, length: min(ns.length, 600))
+        guard let match = regex.firstMatch(in: text, options: [], range: searchRange) else {
+            return text
+        }
+        let prefix = ns.substring(to: match.range.location)
+        guard prefix.count <= 220 else { return text }
+        let remainder = ns.substring(from: NSMaxRange(match.range))
+        return remainder.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+// MARK: - Boilerplate
+
+/// Project Gutenberg and Biblioteca Virtual Miguel de Cervantes add legal
+/// headers, footers and generated-licence pages to their EPUBs. They are not
+/// part of the book and must not become chapters or paragraphs.
+enum EPUBTextCleaner {
+    static func clean(_ text: String) -> String {
+        var value = text
+        value = stripProjectGutenberg(value)
+        value = stripCervantesVirtual(value)
+        return value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func stripProjectGutenberg(_ text: String) -> String {
+        var value = text
+        let start = #"(?is)\*{2,3}\s*START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK.*?\*{2,3}"#
+        if let range = value.range(of: start, options: .regularExpression) {
+            value = String(value[range.upperBound...])
+        }
+        let end = #"(?is)\*{2,3}\s*END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK.*?\*{2,3}"#
+        if let range = value.range(of: end, options: .regularExpression) {
+            value = String(value[..<range.lowerBound])
+        }
+        let lower = value.lowercased()
+        if lower.contains("the project gutenberg ebook of"),
+           lower.contains("release date:"),
+           value.count < 5000 {
+            return ""
+        }
+        if lower.contains("the full project gutenberg"),
+           lower.contains("license") {
+            return ""
+        }
+        return value
+    }
+
+    private static func stripCervantesVirtual(_ text: String) -> String {
+        let lower = text.lowercased()
+        guard lower.contains("este archivo fue generado de forma automática")
+            || lower.contains("biblioteca virtual miguel de cervantes - universidad de alicante") else {
+            return text
+        }
+        let lines = text.components(separatedBy: "\n")
+        if let last = lines.lastIndex(where: {
+            let line = $0.lowercased()
+            return line.contains("creativecommons.org/licenses") || line.contains("licencia cc-by")
+        }) {
+            return lines[(last + 1)...].joined(separator: "\n")
+        }
+        return text
     }
 }
 

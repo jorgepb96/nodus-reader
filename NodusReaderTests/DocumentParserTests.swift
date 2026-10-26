@@ -289,3 +289,188 @@ func realPDFCorpusParsesCleanly() throws {
         #expect(!markdown.contains("Page 3"))
     }
 }
+
+// MARK: - EPUB
+
+@MainActor
+private func makeParserEPUB() throws -> URL {
+    let container = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+      <rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles>
+    </container>
+    """
+    let opf = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id">
+      <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+        <dc:identifier id="id">urn:uuid:\(UUID().uuidString)</dc:identifier>
+        <dc:title>Fixture Book</dc:title>
+        <dc:creator>Test Author</dc:creator>
+        <dc:language>en</dc:language>
+      </metadata>
+      <manifest>
+        <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+        <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+        <item id="ch1" href="ch1.xhtml" media-type="application/xhtml+xml"/>
+      </manifest>
+      <spine toc="ncx"><itemref idref="ch1"/></spine>
+    </package>
+    """
+    let ncx = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+      <navMap>
+        <navPoint id="n1"><navLabel><text>I hope Mr. Bingley will like it. CHAPTER II.</text></navLabel><content src="ch1.xhtml#chap2"/></navPoint>
+        <navPoint id="n2"><navLabel><text>delighted to see their dear friend again.</text></navLabel><content src="ch1.xhtml#chap3"/></navPoint>
+      </navMap>
+    </ncx>
+    """
+    let nav = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+    <body><nav epub:type="toc"><ol>
+      <li><a href="ch1.xhtml#chap2">I hope Mr. Bingley will like it. CHAPTER II.</a></li>
+      <li><a href="ch1.xhtml#chap3">delighted to see their dear friend again.</a></li>
+    </ol></nav></body></html>
+    """
+    let chapter = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <html xmlns="http://www.w3.org/1999/xhtml"><head><title>Fixture Book</title></head><body>
+    <p>This is the first part of a long paragraph that ends with the word connection and it is long enough to be prose rather than a verse line, so the parser can tell that it is not finished</p>
+    <div class="figcenter"><span id="img_images_i_1.jpg"></span><div class="caption"><p>“A Caption”</p><p>[Copyright 1894]</p></div></div>
+    <p class="nind">and continues after the illustration with the rest of the paragraph, which is also long enough to be prose and starts in lower case on purpose.</p>
+    <h2 id="chap2"><span class="caption">I hope Mr. Bingley will like it.</span><br/><br/>CHAPTER II.</h2>
+    <p>MR. BENNET was among the earliest of those who waited on Mr. Bingley, and this paragraph is long enough to be prose and to keep its own line.</p>
+    <h2 id="chap3"><span class="caption">delighted to see their dear friend again.</span><br/><br/>CHAPTERXXVII.</h2>
+    <p>This is the third chapter paragraph, long enough not to be considered verse and with ordinary sentences inside it.</p>
+    </body></html>
+    """
+    return try SampleLibrary.makeArchive([
+        ("mimetype", "application/epub+zip"),
+        ("META-INF/container.xml", container),
+        ("OEBPS/content.opf", opf),
+        ("OEBPS/toc.ncx", ncx),
+        ("OEBPS/nav.xhtml", nav),
+        ("OEBPS/ch1.xhtml", chapter)
+    ])
+}
+
+@Test @MainActor
+func epubCleansTitlesAndJoinsParagraphsAcrossIllustrations() throws {
+    let url = try makeParserEPUB()
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let extraction = try EPUBParser.parse(url: url, fallbackTitle: "Fallback")
+    #expect(extraction.title == "Fixture Book")
+    let allText = extraction.chapters.map(\.text).joined(separator: "\n\n")
+    #expect(!allText.contains("A Caption"))
+    #expect(!allText.contains("Copyright 1894"))
+    #expect(allText.contains("not finished and continues after the illustration"),
+            "Text:\n\(allText)")
+
+    let titles = extraction.chapters.map(\.title)
+    #expect(titles.contains("CHAPTER II."), "Titles: \(titles)")
+    #expect(titles.contains("CHAPTER XXVII."), "Titles: \(titles)")
+    #expect(!titles.contains { $0.contains("I hope Mr. Bingley") })
+    #expect(!titles.contains { $0.contains("delighted to see") })
+
+    let chapter2 = try #require(extraction.chapters.first { $0.title == "CHAPTER II." })
+    #expect(chapter2.text.hasPrefix("MR. BENNET was among"))
+}
+
+@Test
+func epubTitleCleanerHandlesIllustrationCaptionsAndGutenbergPrefixes() {
+    #expect(ChapterBuilder.cleanTitle("I hope Mr. Bingley will like it. CHAPTER XXVII.")
+        == "CHAPTER XXVII.")
+    #expect(ChapterBuilder.cleanTitle("CHAPTERXXVII.") == "CHAPTER XXVII.")
+    #expect(ChapterBuilder.cleanTitle("The Project Gutenberg eBook of Beowulf")
+        == "Beowulf")
+}
+
+@Test
+func epubCleanerRemovesProjectGutenbergHeaderAndLicence() {
+    let text = """
+    The Project Gutenberg eBook of Test
+
+    *** START OF THE PROJECT GUTENBERG EBOOK TEST ***
+
+    The actual book starts here.
+
+    *** END OF THE PROJECT GUTENBERG EBOOK TEST ***
+
+    THE FULL PROJECT GUTENBERG™ LICENSE
+    """
+    #expect(EPUBTextCleaner.clean(text) == "The actual book starts here.")
+}
+
+@Test
+func epubCleanerRemovesCervantesVirtualGeneratedLicence() {
+    let text = """
+    Este archivo fue generado de forma automática el 29/06/2022.
+    Biblioteca Virtual Miguel de Cervantes - Universidad de Alicante
+    http://www.cervantesvirtual.com/obra/example/
+    I.S.B.N. 978-84-1143-550-5
+    Licencia CC-BY-NC
+    https://creativecommons.org/licenses/by-nc/4.0/deed.es_ES
+
+    Miguel de Cervantes Saavedra
+    """
+    #expect(EPUBTextCleaner.clean(text) == "Miguel de Cervantes Saavedra")
+}
+
+private func parserEPUBCorpusPath() -> String? {
+    let environment = ProcessInfo.processInfo.environment
+    return environment["NODUS_EPUB_CORPUS"]
+        ?? environment["TEST_RUNNER_NODUS_EPUB_CORPUS"]
+}
+
+@Test(.enabled(if: parserEPUBCorpusPath() != nil))
+@MainActor
+func realEPUBCorpusParsesParagraphsCleanly() throws {
+    let root = URL(fileURLWithPath: try #require(parserEPUBCorpusPath()))
+
+    let prideURL = root.appendingPathComponent("gutenberg-pride-and-prejudice.epub")
+    if FileManager.default.fileExists(atPath: prideURL.path) {
+        let pride = try EPUBParser.parse(url: prideURL, fallbackTitle: "Fallback")
+        #expect(pride.title == "Pride and Prejudice")
+        let text = pride.chapters.map(\.text).joined(separator: "\n\n")
+        #expect(text.lowercased().contains("it is a truth universally acknowledged"))
+        #expect(text.contains("his being gone to London"))
+        #expect(!text.contains("The Project Gutenberg eBook of"))
+        #expect(!text.contains("THE FULL PROJECT GUTENBERG"))
+        let chapter2 = try #require(pride.chapters.first { $0.title == "CHAPTER II." })
+        #expect(chapter2.text.hasPrefix("MR. BENNET was among"))
+        #expect(!chapter2.text.hasPrefix("I hope Mr. Bingley"))
+    }
+
+    let quijoteURL = root.appendingPathComponent("cervantes-quijote.epub")
+    if FileManager.default.fileExists(atPath: quijoteURL.path) {
+        let quijote = try EPUBParser.parse(url: quijoteURL, fallbackTitle: "Fallback")
+        #expect(quijote.title.contains("Quijote"))
+        let text = quijote.chapters.map(\.text).joined(separator: "\n\n")
+        #expect(text.contains("En un lugar de la Mancha"))
+        #expect(!text.contains("Este archivo fue generado"))
+        #expect(quijote.chapters.contains { $0.title == "Capítulo I" })
+    }
+
+    let aliceURL = root.appendingPathComponent("gutenberg-alice.epub")
+    if FileManager.default.fileExists(atPath: aliceURL.path) {
+        let alice = try EPUBParser.parse(url: aliceURL, fallbackTitle: "Fallback")
+        #expect(alice.chapters.contains { $0.title == "Contents" })
+        #expect(alice.chapters.filter { $0.title.hasPrefix("CHAPTER I.") }.count == 1)
+    }
+
+    let beowulfURL = root.appendingPathComponent("gutenberg-beowulf.epub")
+    if FileManager.default.fileExists(atPath: beowulfURL.path) {
+        let beowulf = try EPUBParser.parse(url: beowulfURL, fallbackTitle: "Fallback")
+        #expect(!beowulf.title.contains("Project Gutenberg"))
+    }
+
+    let shakespeareURL = root.appendingPathComponent("gutenberg-shakespeare.epub")
+    if FileManager.default.fileExists(atPath: shakespeareURL.path) {
+        let shakespeare = try EPUBParser.parse(url: shakespeareURL, fallbackTitle: "Fallback")
+        #expect(shakespeare.chapters.count > 500)
+        #expect(shakespeare.chapters.count < 2_000)
+    }
+}

@@ -865,3 +865,45 @@ corpus and probe build are git-ignored. Remaining limits: web-to-PDF text layers
 that merge a floating infobox into an article can still leave a stray fragment or
 a sidebar heading; OCR figures remain images; a two-column page whose text layer
 does not separate its columns relies on geometry and may differ font to font.
+
+## EPUB paragraphs, chapter labels and publisher boilerplate (2026-10-27)
+
+- **A paragraph split by an illustration.** Gutenberg EPUBs often put a
+  `div.figcenter`/`div.caption` in the middle of a prose paragraph and resume the
+  paragraph in a lower-case `<p class="nind">`. The figure wrappers are skipped
+  (the text reader has no image) and `ParagraphJoiner` reattaches a long
+  lower-case prose fragment when the previous long paragraph ends in a letter.
+  Project Gutenberg's *Pride and Prejudice* now reads “his being gone to London”
+  in one paragraph instead of two. Short verse lines are below the join
+  threshold and stay separate.
+- **Navigation labels that are illustration captions.** Some NCX labels read
+  "I hope Mr. Bingley will like it. CHAPTER II."; `ChapterBuilder.cleanTitle`
+  keeps the chapter marker, normalises `CHAPTERXXVII.` to `CHAPTER XXVII.` and
+  strips "The Project Gutenberg eBook of …". When the label is only a caption,
+  `resolvedTitle` takes the marker from the heading at the start of the slice.
+  The heading, including the caption inside the `<h2>`, is removed from the body.
+- **Publisher boilerplate.** Project Gutenberg `*** START/END … ***` markers,
+  its generated header and the full licence chapter are removed; the generated
+  *Biblioteca Virtual Miguel de Cervantes* licence page ("Este archivo fue
+  generado de forma automática…") is removed too. These are per chapter, so a
+  header file with no marker is also dropped when it is only title/credits.
+- **Long books.** The chapter cap is 2,000 instead of 500: the complete
+  Shakespeare EPUB now imports 906 chapters instead of stopping at 500.
+- **Front matter and verse.** Title pages, prefaces, contents pages and front
+  matter are kept as chapters (they are real book content, not publisher
+  boilerplate). Sonnets, plays and stage directions remain line-by-line; the
+  text is complete, but verse lines are separated like paragraphs because the
+  app's chapter text has no separate "line" block.
+
+Tests: `epubCleansTitlesAndJoinsParagraphsAcrossIllustrations`,
+`epubTitleCleanerHandlesIllustrationCaptionsAndGutenbergPrefixes`,
+`epubCleanerRemovesProjectGutenbergHeaderAndLicence`,
+`epubCleanerRemovesCervantesVirtualGeneratedLicence`, and the opt-in
+`realEPUBCorpusParsesParagraphsCleanly` (Gutenberg prose, drama, poetry and
+illustrated books, plus *Don Quijote* from Cervantes Virtual).
+
+Tools: `tools/parser-corpus/fetch-epubs.sh` downloads the EPUB corpus into
+`tools/parser-corpus/epubs` (git-ignored); point
+`TEST_RUNNER_NODUS_EPUB_CORPUS` at it. The Cervantes EPUB is fetched from the
+Wayback Machine because the live download sits behind a Cloudflare challenge;
+`lluisvives.com` exposes the same catalogue.

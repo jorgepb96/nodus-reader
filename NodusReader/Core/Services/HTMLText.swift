@@ -25,7 +25,7 @@ public enum HTMLText {
     }
 
     private static let skippedTags: Set<String> = [
-        "footer", "nav", "aside", "noscript", "form", "button", "svg"
+        "footer", "nav", "noscript", "form", "button", "svg"
     ]
 
     private static let blockTags: Set<String> = [
@@ -97,6 +97,16 @@ public enum HTMLText {
                     continue
                 }
                 if !isClosing, skippedTags.contains(name), !selfClosing {
+                    skipTag = name
+                    skipDepth = 1
+                    continue
+                }
+                if !isClosing, name == "div",
+                   let classes = attribute(classPattern, in: body)?.lowercased(),
+                   classes.split(whereSeparator: { $0 == " " || $0 == "\t" })
+                       .contains(where: { $0 == "figcenter" || $0 == "caption" }) {
+                    // Illustration wrappers and their captions are not prose.
+                    // The image itself is not rendered by the text reader.
                     skipTag = name
                     skipDepth = 1
                     continue
@@ -201,6 +211,7 @@ public enum HTMLText {
     }
 
     private static let idPattern = attributePattern("id")
+    private static let classPattern = attributePattern("class")
     private static let namePattern = attributePattern("name")
 
     private static func attributePattern(_ name: String) -> NSRegularExpression? {

@@ -274,3 +274,27 @@ public enum PlainText {
         line.range(of: #"^(?:[-*+•]|\d{1,3}[.)])\s+\S"#, options: .regularExpression) != nil
     }
 }
+
+/// Repairs a paragraph that an illustration or a page-level wrapper split in
+/// two. The source fragment starts in lower case and both halves are long
+/// enough to be prose; short verse lines are left untouched.
+public enum ParagraphJoiner {
+    public static func join(_ text: String) -> String {
+        let paragraphs = text.components(separatedBy: "\n\n")
+        var result: [String] = []
+        for raw in paragraphs {
+            let paragraph = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !paragraph.isEmpty else { continue }
+            if let last = result.last,
+               last.count >= 80,
+               paragraph.count >= 80,
+               let lastCharacter = last.last, lastCharacter.isLetter,
+               let firstCharacter = paragraph.first, firstCharacter.isLowercase {
+                result[result.count - 1] = last + " " + paragraph
+            } else {
+                result.append(paragraph)
+            }
+        }
+        return result.joined(separator: "\n\n")
+    }
+}
