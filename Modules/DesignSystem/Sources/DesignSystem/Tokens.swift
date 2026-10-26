@@ -38,6 +38,7 @@ public enum NodusHex {
     public static let deepViolet: UInt32 = 0x6D28D9
     /// Find in book: every match, and the one being shown.
     public static let searchMatch: UInt32 = 0xFDE68A
+    public static let searchMatchDark: UInt32 = 0xB45309
     public static let searchCurrent: UInt32 = 0xFB923C
     public static let searchCurrentUnderline: UInt32 = 0xEA580C
 }

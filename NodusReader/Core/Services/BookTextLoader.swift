@@ -2,7 +2,9 @@
 import Foundation
 
 /// Loads readable text for the reader, narration and search fallback.
-/// EPUB is parsed with the import parser; PDF text comes from PDFKit.
+/// EPUB is parsed with the import parser. PDF text comes from the Intelligent
+/// Reading cache when it exists (its OCR is already done), otherwise from
+/// PDFKit, with OCR for pages whose text layer is missing or garbled.
 public enum BookTextLoader {
     public static func loadChapters(for book: Book, fileStore: FileStore = .shared) async throws -> [ExtractedChapter] {
         let url = fileStore.documentURL(for: book)
@@ -10,8 +12,21 @@ public enum BookTextLoader {
             throw ImportError.fileAccessDenied(book.fileName)
         }
         let format = book.format
+        let bookID = book.id
+        let contentHash = book.contentHash
         return try await Task.detached(priority: .userInitiated) {
-            try DocumentExtractor.extract(url: url, format: format, completeText: true).chapters
+            if format == .pdf,
+               let reflow = PDFReflowStore(fileStore: fileStore).load(bookID: bookID, contentHash: contentHash),
+               reflow.pageCount == reflow.totalPageCount {
+                let chapters = reflow.pages.compactMap { page -> ExtractedChapter? in
+                    let text = page.canonicalLayout.text
+                    guard !text.isEmpty else { return nil }
+                    return ExtractedChapter(id: page.pageIndex,
+                                            title: String(localized: "Page \(page.pageIndex + 1)"), text: text)
+                }
+                if !chapters.isEmpty { return chapters }
+            }
+            return try DocumentExtractor.extract(url: url, format: format, completeText: true).chapters
         }.value
     }
 

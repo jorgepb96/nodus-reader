@@ -3132,6 +3132,16 @@
         }
       }
     },
+    "Neural voices are timed word by word with Apple's on-device speech recognition, so the read-along highlight follows the audio. iOS may download its speech model for the book's language once. The audio never leaves this device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las voces neuronales se sincronizan palabra a palabra con el reconocimiento de voz de Apple en el dispositivo, para que el resaltado siga al audio. iOS puede descargar una vez su modelo de voz para el idioma del libro. El audio nunca sale de este dispositivo."
+          }
+        }
+      }
+    },
     "Never": {
       "localizations": {
         "es": {
@@ -3458,16 +3468,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "No hay ninguna voz disponible para este documento."
-          }
-        }
-      }
-    },
-    "No voices in this language": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No hay voces en este idioma"
           }
         }
       }
@@ -4138,6 +4138,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opciones del reproductor"
+          }
+        }
+      }
+    },
+    "Precise word timing": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronización precisa de palabras"
           }
         }
       }
@@ -4922,16 +4932,6 @@
         }
       }
     },
-    "Show all languages": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mostrar todos los idiomas"
-          }
-        }
-      }
-    },
     "Show all voices": {
       "localizations": {
         "es": {
@@ -5182,12 +5182,12 @@
         }
       }
     },
-    "Some pages had no text layer and were read with on-device OCR. OCR can make mistakes; compare with the original page.": {
+    "Some pages had no readable text layer and were read with on-device OCR. OCR can make mistakes; compare with the original page.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Algunas páginas no tenían capa de texto y se han leído con OCR en el dispositivo. El OCR puede cometer errores; compáralo con la página original."
+            "value": "Algunas páginas no tenían una capa de texto legible y se han leído con OCR en el dispositivo. El OCR puede equivocarse; compáralo con la página original."
           }
         }
       }
@@ -5658,16 +5658,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "El lector sigue la apariencia de la app."
-          }
-        }
-      }
-    },
-    "The selected engine has no installed voice for %@. Search all languages or choose another model in Settings.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El motor seleccionado no tiene voces instaladas para %@. Busca en todos los idiomas o elige otro modelo en Ajustes."
           }
         }
       }

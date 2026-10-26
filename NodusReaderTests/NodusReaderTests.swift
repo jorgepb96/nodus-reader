@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import AVFoundation
+import CoreText
+import KokoroTTS
+import PDFKit
 import DesignSystem
 import Foundation
 import SwiftData
@@ -308,7 +311,8 @@ func wordAlignmentMatchesTextRangesAndMonotonicTimes() throws {
     let timings = AudioWordAligner.align(text: text, samples: samples, sampleRate: sampleRate)
     #expect(timings.count == 4)
     #expect(timings.map(\.location) == [0, 4, 8, 14])
-    #expect(timings[0].start == 0)
+    // The first word starts with the voice (0.1 s), not in the silence before.
+    #expect(abs(timings[0].start - 0.1) < 0.001)
     #expect(abs(timings[3].end - 1.3) < 0.001)
     for index in 1..<timings.count {
         #expect(timings[index].start >= timings[index - 1].start)
@@ -1604,4 +1608,160 @@ func sheetsOverTheReaderUseTheReaderThemeColours() {
     let sepia = NodusPalette.reader(ReaderTheme.resolve(.sepia, colorScheme: .light))
     #expect(sepia.background == NodusPalette.sepia.background)
     #expect(!sepia.isDark)
+}
+
+@Test(arguments: [
+    "6ïQkq_’QXKXnXqnNK’%Q»»KMfKnóKï5¿K 2K5;»%KXnXqn7;jKïQXKXq’nXqn4—»qX— Nqï%_—nXqn,’%;XQ—’nXqnNK’%Q»»KMfK-nóKï5¿Kn",
+    "ab202SyuóáuGsV aa if5(5df5396 Gᵒᵒᵒ S1 zy+0,n( +,9nI6+06,üy y°S1 +V2V,fn—3ff,gVn,.(3gy.V 4—»qX—LnHFHJ ,’%Kn%q’Q’nX—5%—_K»n’qn¿Kn_qK»Q”KX"
+])
+func garbledPDFTextLayersAreRecognised(text: String) {
+    #expect(PDFPageText.isGarbled(text))
+}
+
+@Test(arguments: [
+    "En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo.",
+    "Table 3. Results (n = 120): 45.2% ± 3.1, p < 0.05; see Smith et al. (2019), pp. 12–14, and the NASA report.",
+    "La tesis doctoral analiza el período 1936–1939 en el marco de la historiografía española contemporánea.",
+    "Short"
+])
+func readablePDFTextLayersAreKept(text: String) {
+    #expect(!PDFPageText.isGarbled(text))
+}
+
+/// A page that shows Spanish text drawn as an image, with a text layer of
+/// garbage on top: what a PDF whose fonts have no Unicode map looks like to
+/// PDFKit. Import, narration and Intelligent Reading must read the page.
+@Test @MainActor
+func pdfWithAGarbledTextLayerIsReadWithOCR() throws {
+    let lines = ["En un lugar de la Mancha, de cuyo nombre",
+                 "no quiero acordarme, no ha mucho tiempo",
+                 "que vivía un hidalgo de los de lanza en",
+                 "astillero, adarga antigua y galgo corredor."]
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent("garbled-\(UUID().uuidString).pdf")
+    defer { try? FileManager.default.removeItem(at: url) }
+    try writeGarbledPDF(lines: lines, to: url)
+
+    let pdf = try #require(PDFDocument(url: url))
+    let page = try #require(pdf.page(at: 0))
+    let layer = page.string ?? ""
+    #expect(PDFPageText.isGarbled(layer), "The fixture's text layer should be garbage: \(layer)")
+    let readable = PDFPageText.readableText(page: page, allowOCR: true) ?? ""
+    #expect(readable.contains("Mancha") && readable.contains("hidalgo"), "OCR read: \(readable)")
+
+    let extraction = try DocumentExtractor.extract(url: url, format: .pdf, completeText: true)
+    let text = extraction.chapters.map(\.text).joined(separator: " ")
+    #expect(text.contains("Mancha") && !text.contains("QXKX"))
+    #expect(extraction.language.hasPrefix("es"))
+
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent("reflow-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: root) }
+    let store = PDFReflowStore(fileStore: FileStore(root: root))
+    let reflow = try PDFReflowExtractor.extract(url: url, bookID: UUID(), contentHash: "test", store: store)
+    let reflowText = reflow.pages.flatMap(\.blocks).map(\.text).joined(separator: " ")
+    #expect(reflow.usedOCR)
+    #expect(reflowText.contains("Mancha") && !reflowText.contains("QXKX"), "Reflow read: \(reflowText)")
+}
+
+private func writeGarbledPDF(lines: [String], to url: URL) throws {
+    var mediaBox = CGRect(x: 0, y: 0, width: 612, height: 792)
+    // The visible text, rasterised so that it is not in the text layer.
+    let scale: CGFloat = 2
+    let bitmap = try #require(CGContext(data: nil, width: Int(mediaBox.width * scale),
+                                        height: Int(mediaBox.height * scale), bitsPerComponent: 8,
+                                        bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+                                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+    bitmap.setFillColor(CGColor(gray: 1, alpha: 1))
+    bitmap.fill(CGRect(x: 0, y: 0, width: mediaBox.width * scale, height: mediaBox.height * scale))
+    bitmap.scaleBy(x: scale, y: scale)
+    let font = CTFontCreateWithName("Times New Roman" as CFString, 22, nil)
+    for (index, line) in lines.enumerated() {
+        let attributed = NSAttributedString(string: line, attributes: [
+            NSAttributedString.Key(kCTFontAttributeName as String): font,
+            NSAttributedString.Key(kCTForegroundColorAttributeName as String): CGColor(gray: 0, alpha: 1)
+        ])
+        bitmap.textPosition = CGPoint(x: 60, y: 700 - CGFloat(index) * 34)
+        CTLineDraw(CTLineCreateWithAttributedString(attributed), bitmap)
+    }
+    let image = try #require(bitmap.makeImage())
+
+    let pdf = try #require(CGContext(url as CFURL, mediaBox: &mediaBox, nil))
+    pdf.beginPDFPage(nil)
+    pdf.draw(image, in: mediaBox)
+    // The text layer: invisible garbage where the words are drawn.
+    pdf.setTextDrawingMode(.invisible)
+    let garbage = ["6ïQkq_’QXKXnXqnNK’%Q»»KMfKnóKï5¿K", "2K5;»%KXnXqn7;jKïQXKXq’nXqn4—»qX—",
+                   "Nqï%_—nXqn,’%;XQ—’nXqnNK’%Q»»KMfK", "nóKï5¿Kn ab202SyuóáuGsV if5(5df5396"]
+    for (index, line) in garbage.enumerated() {
+        let attributed = NSAttributedString(string: line, attributes: [
+            NSAttributedString.Key(kCTFontAttributeName as String): font
+        ])
+        pdf.textPosition = CGPoint(x: 60, y: 700 - CGFloat(index) * 34)
+        CTLineDraw(CTLineCreateWithAttributedString(attributed), pdf)
+    }
+    pdf.endPDFPage()
+    pdf.closePDF()
+}
+
+/// How fast Kokoro runs on the CPU only, the only placement iOS allows while a
+/// locked phone narrates in the background (no Metal). Opt in with
+/// `TEST_RUNNER_NODUS_KOKORO_CPU_BENCH=1` and a Kokoro bundle installed under
+/// `TEST_RUNNER_CFFIXED_USER_HOME`.
+@Test(.enabled(if: ProcessInfo.processInfo.environment["NODUS_KOKORO_CPU_BENCH"] == "1"),
+      .timeLimit(.minutes(10)))
+func kokoroCPUOnlySpeed() async throws {
+    let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("NodusReader/Models/Kokoro", isDirectory: true)
+    let text = "It is a way I have of driving off the spleen and regulating the circulation, whenever I find myself growing grim about the mouth."
+    for (name, policy) in [("default", KokoroComputePolicy.gistDefault), ("cpuOnly", KokoroComputePolicy.cpuOnly)] {
+        let engine = try await KokoroTTS.load(resources: .directory(directory), computePolicy: policy)
+        _ = try await engine.synthesize("Warm up.", voice: KokoroVoiceID("af_heart"))
+        let start = Date()
+        let audio = try await engine.synthesize(text, voice: KokoroVoiceID("af_heart"))
+        let elapsed = Date().timeIntervalSince(start)
+        print("KOKORO \(name): \(String(format: "%.2f", elapsed)) s for \(String(format: "%.2f", audio.durationSeconds)) s, RTF \(String(format: "%.2f", elapsed / audio.durationSeconds))")
+        #expect(audio.durationSeconds > 3)
+    }
+}
+
+/// Light text over a pastel highlight is unreadable; dark themes use each
+/// colour's deep tone, translucent, instead.
+@Test(arguments: AnnotationColor.allCases)
+func highlightsStayReadableInDarkThemes(color: AnnotationColor) {
+    let dark = color.pageFill(isDark: true)
+    let light = color.pageFill(isDark: false)
+    #expect(dark.hex == color.underlineHex && dark.alpha < 0.5)
+    #expect(light.hex == color.fillHex)
+    // Relative luminance of the deep tone stays well below the pastel's.
+    func luminance(_ hex: UInt32) -> Double {
+        let channels = [(hex >> 16) & 0xFF, (hex >> 8) & 0xFF, hex & 0xFF].map { Double($0) / 255 }
+        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+    }
+    #expect(luminance(dark.hex) < luminance(light.hex) - 0.2)
+}
+
+/// Recognised words carry the measured times; words heard differently ("9"
+/// for "nueve") are placed between their matched neighbours.
+@Test
+func recognisedWordsTimeTheReadAlongHighlight() throws {
+    let text = "La biblioteca abre a las nueve y media."
+    let words = AudioWordAligner.words(in: text)
+    let heard: [SpeechWordAligner.RecognizedWord] = [
+        .init(text: "La", start: 0.20, end: 0.32), .init(text: "biblioteca", start: 0.32, end: 0.95),
+        .init(text: "abre", start: 0.95, end: 1.25), .init(text: "a", start: 1.25, end: 1.32),
+        .init(text: "las", start: 1.32, end: 1.50), .init(text: "9", start: 1.50, end: 1.80),
+        .init(text: "y", start: 1.80, end: 1.88), .init(text: "media.", start: 1.88, end: 2.30)
+    ]
+    let timings = try #require(SpeechWordAligner.place(words: words, recognized: heard, duration: 2.5))
+    #expect(timings.map(\.location) == words.map(\.range.location))
+    #expect(timings[1].start == 0.32)            // biblioteca, matched
+    #expect(timings[5].start == 1.50)            // nueve: between "las" and "y"
+    #expect(timings[6].start == 1.80)            // y, matched
+    #expect(timings.last?.end == 2.5)
+    #expect(zip(timings, timings.dropFirst()).allSatisfy { $0.start <= $1.start })
+    #expect(SpeechWordAligner.normalize("Acción,") == "accion")
+
+    // Recognition that matches too little is not trusted.
+    let wrong: [SpeechWordAligner.RecognizedWord] = [.init(text: "otra", start: 0, end: 1),
+                                                      .init(text: "cosa", start: 1, end: 2)]
+    #expect(SpeechWordAligner.place(words: words, recognized: wrong, duration: 2.5) == nil)
 }

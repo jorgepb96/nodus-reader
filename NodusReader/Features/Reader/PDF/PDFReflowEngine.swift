@@ -14,7 +14,8 @@ import UIKit
 // MARK: - Models
 
 struct PDFReflowDocument: Codable, Sendable {
-    static let schemaVersion = 2
+    /// 3: pages whose text layer is garbled are read with OCR.
+    static let schemaVersion = 3
 
     var version: Int = PDFReflowDocument.schemaVersion
     var contentHash: String
@@ -170,13 +171,17 @@ enum PDFReflowExtractor {
 
             var lines = textLines(page: page, bounds: bounds)
             var ocrPage = false
-            if lines.count < 3 {
-                if let ocr = try? visionLines(page: page, bounds: bounds) {
-                    if ocr.count > lines.count {
-                        lines = ocr
-                        ocrPage = true
-                        usedOCR = true
-                    }
+            // A text layer that does not read as words (fonts without a
+            // Unicode map) is replaced by OCR of what the page shows.
+            let garbled = PDFPageText.isGarbled(lines.map(\.text).joined(separator: " "))
+            if lines.count < 3 || garbled {
+                let ocr = (try? visionLines(page: page, bounds: bounds)) ?? []
+                if !ocr.isEmpty, garbled || ocr.count > lines.count {
+                    lines = ocr
+                    ocrPage = true
+                    usedOCR = true
+                } else if garbled {
+                    lines = []
                 }
             }
 
@@ -246,20 +251,9 @@ enum PDFReflowExtractor {
     }
 
     private static func visionLines(page: PDFPage, bounds: CGRect) throws -> [Line] {
-        guard let image = render(page: page, bounds: bounds, scale: 2) else { return [] }
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = true
-        request.automaticallyDetectsLanguage = true
-        let handler = VNImageRequestHandler(cgImage: image, options: [:])
-        try handler.perform([request])
-        let observations = request.results ?? []
-
-        return observations.compactMap { observation -> Line? in
-            guard let candidate = observation.topCandidates(1).first else { return nil }
-            let text = candidate.string.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty else { return nil }
-            let box = observation.boundingBox // normalized, bottom-left origin
+        try PDFPageText.recognizeLines(page: page).map { recognized -> Line in
+            let text = recognized.text
+            let box = recognized.box // normalized, bottom-left origin
             let normalized = CGRect(x: box.minX, y: 1 - box.maxY,
                                     width: box.width, height: box.height)
             let raw = CGRect(x: bounds.minX + box.minX * bounds.width,
@@ -458,19 +452,7 @@ enum PDFReflowExtractor {
     }
 
     private static func render(page: PDFPage, bounds: CGRect, scale: CGFloat) -> CGImage? {
-        let width = Int(bounds.width * scale)
-        let height = Int(bounds.height * scale)
-        guard width > 1, height > 1,
-              let context = CGContext(data: nil, width: width, height: height,
-                                      bitsPerComponent: 8, bytesPerRow: 0,
-                                      space: CGColorSpaceCreateDeviceRGB(),
-                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
-        context.setFillColor(CGColor(gray: 1, alpha: 1))
-        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
-        context.scaleBy(x: scale, y: scale)
-        context.translateBy(x: -bounds.minX, y: -bounds.minY)
-        page.draw(with: .cropBox, to: context)
-        return context.makeImage()
+        PDFPageText.render(page: page, bounds: bounds, scale: scale)
     }
 
     private static func crop(_ image: CGImage, normalized rect: CGRect) -> CGImage? {

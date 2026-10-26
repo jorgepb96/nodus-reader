@@ -58,9 +58,19 @@ public enum DocumentExtractor {
         var chapters: [ExtractedChapter] = []
         var extractedCharacters = 0
         let pageLimit = completeText ? document.pageCount : min(document.pageCount, 80)
+        // Import reads a few pages with OCR when their text layer is garbled
+        // or missing (enough for the language and search); narration reads
+        // them all.
+        var ocrBudget = completeText ? Int.max : 6
         for index in 0..<pageLimit {
             if completeText, Task.isCancelled { break }
-            guard let page = document.page(at: index), let text = page.string else { continue }
+            guard let page = document.page(at: index) else { continue }
+            let layer = page.string ?? ""
+            let layerReadable = !layer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && !PDFPageText.isGarbled(layer)
+            if !layerReadable { ocrBudget -= 1 }
+            guard let text = PDFPageText.readableText(page: page, allowOCR: !layerReadable && ocrBudget >= 0)
+            else { continue }
             let cleaned = HTMLText.normalize(text)
             guard !cleaned.isEmpty else { continue }
             chapters.append(ExtractedChapter(id: index, title: String(localized: "Page \(index + 1)"), text: cleaned))

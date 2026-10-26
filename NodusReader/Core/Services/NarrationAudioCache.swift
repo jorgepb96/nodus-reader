@@ -239,9 +239,11 @@ enum AudioWordAligner {
             }
 
         var timings: [NarrationWordTiming] = []
-        var previous: TimeInterval = 0
+        // The first word starts where the voice does, not at the leading
+        // silence (Kokoro: about 0.2 s), or the highlight runs ahead.
+        var previous: TimeInterval = min(pauseCandidates.speechStart, duration)
         for (index, word) in words.enumerated() {
-            let start = index == 0 ? 0 : previous
+            let start = previous
             let end = index == words.count - 1 ? duration : chosen[index]
             let timing = NarrationWordTiming(location: word.range.location,
                                              length: word.range.length,

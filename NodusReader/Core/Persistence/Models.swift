@@ -469,6 +469,13 @@ public enum AnnotationColor: String, Codable, CaseIterable, Identifiable, Sendab
         }
     }
 
+    /// The highlight behind text on the page. Light themes use the pastel at
+    /// full strength under dark text; dark themes a translucent deep tone, so
+    /// light text stays readable (a pastel under light text washes it out).
+    public func pageFill(isDark: Bool) -> (hex: UInt32, alpha: CGFloat) {
+        isDark ? (underlineHex, 0.38) : (fillHex, 0.65)
+    }
+
     public var underlineHex: UInt32 {
         switch self {
         case .yellow: 0xD4A72C

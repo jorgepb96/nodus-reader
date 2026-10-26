@@ -713,3 +713,73 @@ voice of a model that is not the voice engine makes that model the engine, so th
 really narrates with it instead of falling back to a system voice. The sheet uses the
 palette it is presented with. UI test: `testVoicePickerStartsWithBookLanguage` now
 also filters by model.
+
+## PDFs with a garbled text layer (2026-10-26)
+
+A user's thesis PDF showed text like `6ïQkq_'QXKXnXqn…` in Intelligent Reading, and the
+same garbage reached narration and search. Its fonts are drawn correctly but embedded
+without a Unicode map, so PDFKit extracts nonsense. The reflow only used OCR when a
+page had fewer than three text lines, so it trusted the garbage.
+
+- `PDFPageText.isGarbled` recognises such a layer: most letters are in tokens that do
+  not look like words (digits or symbols inside words, mixed case inside words, Latin
+  words without a vowel). Numbers and lone symbols are ignored, so tables and formulas
+  do not trip it.
+- Intelligent Reading, narration and search then use Vision OCR of the rendered page;
+  if OCR finds nothing the garbage is dropped. Import OCRs up to six such pages (for
+  the language and search); narration reads the Intelligent Reading cache when there
+  is one, otherwise it OCRs every unreadable page. The reflow cache version is now 3,
+  so documents imported before are analysed again.
+- The PDF mode selector is centred. The original page panel's arrows now move the
+  reflow to that page (they only changed the panel), and the current page comes from
+  the page on screen instead of an estimate from the scroll fraction.
+
+Tests: `garbledPDFTextLayersAreRecognised`, `readablePDFTextLayersAreKept`,
+`pdfWithAGarbledTextLayerIsReadWithOCR` (a generated PDF with text drawn as an image
+and an invisible garbage text layer), and `testPDFIntelligentReading` now uses the
+panel's arrows.
+
+## Narration with the phone locked, pauses between sentences, background crash, dark highlights (2026-10-26)
+
+- **Pauses between sentences.** Neural narration made each sentence only when the
+  previous one ended, so every sentence waited for its own synthesis. The two next
+  sentences are now made while one plays (`schedulePrefetch`); the cache is checked
+  again inside the synthesis gate, so a sentence is never made twice.
+- **Locked phone stopped generating.** The audio engine was paused at every sentence
+  change; with nothing playing while the next sentence was made, iOS suspended the
+  app in the background. The engine now keeps running between sentences, and each
+  synthesis holds a background-time request that is always ended.
+- **Background crash.** Two paths could close the app in the background: playing a
+  node on an engine that failed to start (another app holding the audio) raises an
+  exception, and MLX (Kokoro's English fallback phonemizer) stops the app when iOS
+  refuses its Metal work. The engine start is now checked (narration pauses instead),
+  MLX runs on the CPU, and Kokoro reloads on the CPU only when it must synthesize in
+  the background (0.24× real time on an M2; Metal is refused there). The crash report
+  from the device was not available, so these are the identified causes, not a
+  confirmed one.
+- **Highlights in dark themes.** User highlights used the pastel fill under light
+  text. Dark themes now use each colour's deep tone, translucent; search matches too.
+
+Tests: `highlightsStayReadableInDarkThemes`, the opt-in `kokoroCPUOnlySpeed`, and the UI
+narration tests (Phonon narrating past the first sentence) exercise the prefetch path.
+
+## Word timing for neural voices (2026-10-26)
+
+The read-along highlight for neural voices came from an estimate: pauses in the audio
+plus syllable counts. Measured on five Kokoro Spanish sentences against Whisper word
+timestamps (first word excluded, Whisper places it at 0 s), it was off by 0.16 s on
+average and up to 0.78 s. It also started the first word at 0 s although the voice
+starts about 0.2 s in, so every sentence began ahead of the audio.
+
+- `SpeechWordAligner` (iOS 26 / macOS 26) transcribes each synthesized sentence with
+  Apple's on-device `SpeechTranscriber` and takes each word's measured time range;
+  recognised words are matched to the text in order, and words heard differently
+  (numbers read out) are placed between their matched neighbours. Same sentences:
+  0.12 s on average, at most 0.24 s (part of that is Whisper's own error). It costs
+  about 0.15–0.2 s per sentence on an M2, absorbed by the prefetch. If recognition is
+  unavailable or matches under half the words, the estimate is used.
+- The estimate now starts the first word where the voice starts.
+- Voices & Models › Precise word timing (on by default) turns it off. The first time,
+  iOS may download its speech model for the language; the audio stays on the device.
+
+Tests: `recognisedWordsTimeTheReadAlongHighlight`, `wordAlignmentMatchesTextRangesAndMonotonicTimes`.

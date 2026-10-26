@@ -37,16 +37,14 @@ struct PDFReaderContainer: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Picker("PDF reading mode", selection: $mode) {
-                    ForEach(PDFReadingMode.allCases) { mode in
-                        Text(LocalizedStringKey(mode.rawValue)).tag(mode)
-                    }
+            Picker("PDF reading mode", selection: $mode) {
+                ForEach(PDFReadingMode.allCases) { mode in
+                    Text(LocalizedStringKey(mode.rawValue)).tag(mode)
                 }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 360)
-                Spacer(minLength: 0)
             }
+            .pickerStyle(.segmented)
+            .frame(maxWidth: 360)
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .background(theme.background)
@@ -92,6 +90,9 @@ struct PDFReflowView: View {
     @State private var showImages = true
     @State private var skipHeaders = true
     @State private var showSourceSheet = false
+    /// Original pages whose reflow is on screen; the first one is the page
+    /// shown in the reader bar and the original page panel.
+    @State private var visiblePages: Set<Int> = []
 
     /// The book's own typography when it has one, the global one otherwise.
     private var typography: ReaderTypography {
@@ -114,9 +115,10 @@ struct PDFReflowView: View {
                         book: book,
                         url: url,
                         document: document,
-                        pageIndex: $pdfPageIndex,
+                        pageIndex: pdfPageIndex,
                         showImages: $showImages,
-                        skipHeaders: $skipHeaders
+                        skipHeaders: $skipHeaders,
+                        onGoToPage: { jumpToPage = $0 }
                     )
                     .frame(width: 300)
                 }
@@ -145,9 +147,10 @@ struct PDFReflowView: View {
             NavigationStack {
                 if let document = job.document {
                     PDFSourcePanel(book: book, url: url, document: document,
-                                   pageIndex: $pdfPageIndex,
+                                   pageIndex: pdfPageIndex,
                                    showImages: $showImages,
-                                   skipHeaders: $skipHeaders)
+                                   skipHeaders: $skipHeaders,
+                                   onGoToPage: { jumpToPage = $0 })
                         .navigationTitle("Original page")
                         .inlineNavigationTitle()
                         .toolbar {
@@ -203,6 +206,17 @@ struct PDFReflowView: View {
                         ForEach(document.pages) { page in
                             pageView(page)
                                 .id(page.pageIndex)
+                                .onScrollVisibilityChange(threshold: 0.15) { visible in
+                                    if visible {
+                                        visiblePages.insert(page.pageIndex)
+                                    } else {
+                                        visiblePages.remove(page.pageIndex)
+                                    }
+                                    // The topmost page on screen is the current one.
+                                    if let first = visiblePages.min(), first != pdfPageIndex {
+                                        pdfPageIndex = first
+                                    }
+                                }
                         }
                         if document.pageCount < document.totalPageCount {
                             Text("This build has analysed the first \(document.pageCount) of \(document.totalPageCount) pages. The original PDF remains available in full.")
@@ -211,7 +225,7 @@ struct PDFReflowView: View {
                                 .padding(.top, 20)
                         }
                         if document.usedOCR {
-                            Text("Some pages had no text layer and were read with on-device OCR. OCR can make mistakes; compare with the original page.")
+                            Text("Some pages had no readable text layer and were read with on-device OCR. OCR can make mistakes; compare with the original page.")
                                 .font(.caption2)
                                 .foregroundStyle(theme.muted)
                                 .padding(.top, 6)
@@ -224,24 +238,14 @@ struct PDFReflowView: View {
                     .padding(.bottom, 60)
                 }
                 .scrollIndicators(.hidden)
-                .onScrollGeometryChange(for: Double.self) { geometry in
-                    let scrollable = max(geometry.contentSize.height - geometry.containerSize.height, 1)
-                    return min(max(geometry.contentOffset.y / scrollable, 0), 1)
-                } action: { _, fraction in
-                    // Map to the original page id: pages without text are not
-                    // in the reflow, so an array index is not a page number.
-                    guard !document.pages.isEmpty else { return }
-                    let index = min(document.pages.count - 1,
-                                    Int(fraction * Double(document.pages.count)))
-                    let page = document.pages[max(0, index)].pageIndex
-                    if page != pdfPageIndex { pdfPageIndex = page }
-                }
                 .onAppear {
                     // Switching from Original keeps the reading position.
                     scroll(proxy, to: pdfPageIndex, in: document)
                 }
                 .onChange(of: jumpToPage) { _, target in
                     guard let target else { return }
+                    // Pages scrolled past in a jump may not report leaving.
+                    visiblePages = [target]
                     scroll(proxy, to: target, in: document)
                     pdfPageIndex = target
                     jumpToPage = nil
@@ -288,7 +292,8 @@ struct PDFReflowView: View {
                                                              in: text) else { return nil }
             return ReaderPageHighlightSpan(
                 range: range,
-                fill: PlatformColor(hex: annotation.color.fillHex, alpha: isDark ? 0.45 : 0.65),
+                fill: PlatformColor(hex: annotation.color.pageFill(isDark: isDark).hex,
+                                    alpha: annotation.color.pageFill(isDark: isDark).alpha),
                 underline: PlatformColor(hex: annotation.color.underlineHex),
                 underlineWidth: 1.5,
                 rounded: true
@@ -466,9 +471,12 @@ struct PDFSourcePanel: View {
     let book: Book
     let url: URL
     let document: PDFReflowDocument
-    @Binding var pageIndex: Int
+    /// The page on screen in the reflow.
+    let pageIndex: Int
     @Binding var showImages: Bool
     @Binding var skipHeaders: Bool
+    /// Turns the reflow to an original page; the panel follows it.
+    var onGoToPage: (Int) -> Void
 
     @State private var image: PlatformImage?
     @State private var isLoading = true
@@ -514,22 +522,30 @@ struct PDFSourcePanel: View {
 
                 HStack(spacing: 8) {
                     Button {
-                        pageIndex = max(0, pageIndex - 1)
+                        onGoToPage(max(0, pageIndex - 1))
                     } label: {
-                        Image(systemName: "chevron.left").frame(width: 32, height: 28)
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .disabled(pageIndex <= 0)
+                    .accessibilityLabel("Previous page")
                     Spacer()
                     Text((page?.regions.count ?? 0) == 0 ? "No regions" : "\(page?.regions.count ?? 0) regions")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     Spacer()
                     Button {
-                        pageIndex = min(document.totalPageCount - 1, pageIndex + 1)
+                        onGoToPage(min(document.pageCount - 1, pageIndex + 1))
                     } label: {
-                        Image(systemName: "chevron.right").frame(width: 32, height: 28)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
-                    .disabled(pageIndex >= document.totalPageCount - 1)
+                    .disabled(pageIndex >= document.pageCount - 1)
+                    .accessibilityLabel("Next page")
                 }
                 .buttonStyle(.plain)
 

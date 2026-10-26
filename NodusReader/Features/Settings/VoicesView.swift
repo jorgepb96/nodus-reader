@@ -33,6 +33,7 @@ struct VoicesView: View {
     /// Choosing a voice in the list switches the model without moving the
     /// filters under the user's finger.
     @State private var keepFiltersOnModelChange = false
+    @AppStorage(SpeechWordAligner.enabledKey) private var preciseWordTiming = true
 
     private var filteredVoices: [VoiceCatalog.Voice] {
         // Every installed model, not only the selected one, so any voice can
@@ -308,6 +309,23 @@ struct VoicesView: View {
             .padding(.top, 2)
 
         engineSelectionCard
+
+        if #available(iOS 26.0, macOS 26.0, *) {
+            Toggle(isOn: $preciseWordTiming) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Precise word timing")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(palette.text)
+                    Text("Neural voices are timed word by word with Apple's on-device speech recognition, so the read-along highlight follows the audio. iOS may download its speech model for the book's language once. The audio never leaves this device.")
+                        .font(.caption)
+                        .foregroundStyle(palette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .tint(palette.accent)
+            .padding(14)
+            .panelCard(radius: 16)
+        }
 
         Eyebrow("Neural engines")
             .padding(.top, 8)

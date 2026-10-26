@@ -377,7 +377,8 @@ struct PaginatedReaderContent: View {
             guard range.length > 0 else { continue }
             spans.append(ReaderPageHighlightSpan(
                 range: range,
-                fill: PlatformColor(hex: annotation.color.fillHex, alpha: style.isDark ? 0.45 : 0.65),
+                fill: PlatformColor(hex: annotation.color.pageFill(isDark: style.isDark).hex,
+                                    alpha: annotation.color.pageFill(isDark: style.isDark).alpha),
                 underline: PlatformColor(hex: annotation.color.underlineHex),
                 underlineWidth: 1.5,
                 rounded: true
@@ -390,8 +391,9 @@ struct PaginatedReaderContent: View {
             spans.append(ReaderPageHighlightSpan(
                 range: range,
                 fill: isCurrent
-                    ? PlatformColor(hex: NodusHex.searchCurrent, alpha: style.isDark ? 0.75 : 0.9)
-                    : PlatformColor(hex: NodusHex.searchMatch, alpha: style.isDark ? 0.35 : 0.55),
+                    ? PlatformColor(hex: NodusHex.searchCurrent, alpha: style.isDark ? 0.55 : 0.9)
+                    : PlatformColor(hex: style.isDark ? NodusHex.searchMatchDark : NodusHex.searchMatch,
+                                    alpha: style.isDark ? 0.45 : 0.55),
                 underline: isCurrent ? PlatformColor(hex: NodusHex.searchCurrentUnderline) : nil,
                 underlineWidth: isCurrent ? 2 : 0,
                 rounded: true

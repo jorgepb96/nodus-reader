@@ -414,3 +414,12 @@ ES.update({
     "No installed voice matches these filters. Show every voice, or download another model in Settings › Voices & Models.": "Ninguna voz instalada coincide con estos filtros. Muestra todas las voces o descarga otro modelo en Ajustes › Voces y modelos.",
     "Show all voices": "Mostrar todas las voces",
 })
+
+ES.update({
+    "Some pages had no readable text layer and were read with on-device OCR. OCR can make mistakes; compare with the original page.": "Algunas páginas no tenían una capa de texto legible y se han leído con OCR en el dispositivo. El OCR puede equivocarse; compáralo con la página original.",
+})
+
+ES.update({
+    "Neural voices are timed word by word with Apple's on-device speech recognition, so the read-along highlight follows the audio. iOS may download its speech model for the book's language once. The audio never leaves this device.": "Las voces neuronales se sincronizan palabra a palabra con el reconocimiento de voz de Apple en el dispositivo, para que el resaltado siga al audio. iOS puede descargar una vez su modelo de voz para el idioma del libro. El audio nunca sale de este dispositivo.",
+    "Precise word timing": "Sincronización precisa de palabras",
+})

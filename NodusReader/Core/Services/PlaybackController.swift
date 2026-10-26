@@ -94,6 +94,11 @@ public final class PlaybackController {
     @ObservationIgnored private let timePitch = AVAudioUnitTimePitch()
     @ObservationIgnored private let neuralFormat = AVAudioFormat(standardFormatWithSampleRate: 24_000, channels: 1)
     @ObservationIgnored private var neuralTask: Task<Void, Never>?
+    /// Sentences made ahead of the one playing (by index, with the voice that
+    /// made them), so the next sentence starts without waiting for synthesis.
+    @ObservationIgnored private var prefetched: [Int: (voiceID: String, narration: CachedNarration)] = [:]
+    @ObservationIgnored private var prefetchTask: Task<Void, Never>?
+    private static let prefetchDepth = 2
     @ObservationIgnored private var neuralProgressTask: Task<Void, Never>?
     @ObservationIgnored private var cacheTask: Task<Void, Never>?
     @ObservationIgnored private var samplePlayer: AVAudioPlayer?
@@ -419,6 +424,7 @@ public final class PlaybackController {
             }
             chapters = loaded
             sentences = Self.buildSentences(from: loaded)
+            resetPrefetch()
             guard !sentences.isEmpty else {
                 throw ImportError.emptyDocument(book.title)
             }
@@ -522,7 +528,10 @@ public final class PlaybackController {
         configureAudioSession()
         if isNeuralVoice {
             if neuralPaused {
-                startNeuralEngine()
+                guard startNeuralEngine() else {
+                    audioUnavailable()
+                    return
+                }
                 audioPlayer.play()
                 neuralPaused = false
                 isPlaying = true
@@ -561,6 +570,7 @@ public final class PlaybackController {
         activeBook = nil
         chapters = []
         sentences = []
+        resetPrefetch()
         currentIndex = 0
         chapterIndex = 0
         mode = .listen
@@ -590,6 +600,7 @@ public final class PlaybackController {
             activeBook = nil
             chapters = []
             sentences = []
+            resetPrefetch()
             currentIndex = 0
             chapterIndex = 0
             mode = .listen
@@ -827,7 +838,8 @@ public final class PlaybackController {
                         guard token == self.cacheToken else { break }
                         let words = await Self.alignWords(text: sentence.text,
                                                           samples: audio.samples,
-                                                          sampleRate: audio.sampleRate)
+                                                          sampleRate: audio.sampleRate,
+                                                          language: voice.language)
                         try Task.checkCancellation()
                         guard token == self.cacheToken else { break }
                         if let buffer = self.makeBuffer(samples: audio.samples,
@@ -891,9 +903,16 @@ public final class PlaybackController {
 
     // MARK: Internals
 
-    private static func alignWords(text: String, samples: [Float],
-                                   sampleRate: Double) async -> [NarrationWordTiming] {
-        await Task.detached(priority: .userInitiated) {
+    /// Word timings for the read-along highlight: measured by on-device
+    /// speech recognition where the system offers it, otherwise estimated from
+    /// the pauses in the audio.
+    private static func alignWords(text: String, samples: [Float], sampleRate: Double,
+                                   language: String) async -> [NarrationWordTiming] {
+        if let measured = await SpeechWordAligner.align(text: text, samples: samples,
+                                                        sampleRate: sampleRate, language: language) {
+            return measured
+        }
+        return await Task.detached(priority: .userInitiated) {
             AudioWordAligner.align(text: text, samples: samples, sampleRate: sampleRate)
         }.value
     }
@@ -971,7 +990,9 @@ public final class PlaybackController {
 
     private func speakNeuralCurrent(voice: VoiceCatalog.Voice, fromOffset offset: Int) {
         guard let book = activeBook, sentences.indices.contains(currentIndex) else { return }
-        stopAudio()
+        // The engine keeps running between sentences: with nothing playing
+        // while the next one is made, iOS suspends a locked phone's app.
+        stopAudio(keepingEngine: true)
         let sentence = sentences[currentIndex]
         let text = sentence.text
         let requested = max(offset, 0)
@@ -988,39 +1009,26 @@ public final class PlaybackController {
 
         let token = UUID()
         neuralPlaybackToken = token
+        let index = currentIndex
         neuralTask = Task { [weak self] in
             guard let self else { return }
-            await self.prepareNeuralSentence(text: text, voice: voice,
+            await self.prepareNeuralSentence(index: index, text: text, voice: voice,
                                              chapterIndex: sentence.chapterIndex,
                                              offset: clamped, token: token)
         }
     }
 
-    private func prepareNeuralSentence(text: String, voice: VoiceCatalog.Voice,
+    private func prepareNeuralSentence(index: Int, text: String, voice: VoiceCatalog.Voice,
                                        chapterIndex: Int, offset: Int, token: UUID) async {
         guard let book = activeBook else { return }
-        let cache = models.narrationCache
-        let key = cache.key(text: text, engine: voice.engineRaw, voice: voice.id)
-        var cached = await cache.load(bookID: book.id, key: key)
+        var cached: CachedNarration?
+        if let ready = prefetched[index], ready.voiceID == voice.id {
+            cached = ready.narration
+        }
+        prefetched = prefetched.filter { $0.key > index && $0.value.voiceID == voice.id }
         if cached == nil {
             do {
-                let audio = try await synthesize(text: text, voice: voice)
-                // Phonon returns the partial audio it managed to produce when
-                // a task is cancelled. Never cache that as a complete sentence.
-                try Task.checkCancellation()
-                guard token == neuralPlaybackToken else { return }
-                let words = await Self.alignWords(text: text, samples: audio.samples,
-                                                  sampleRate: audio.sampleRate)
-                try Task.checkCancellation()
-                guard token == neuralPlaybackToken else { return }
-                guard let buffer = makeBuffer(samples: audio.samples,
-                                              sampleRate: audio.sampleRate) else {
-                    throw NeuralNarrationError.invalidAudio
-                }
-                let saved = await cache.save(bookID: book.id, key: key, buffer: buffer, words: words)
-                if activeBook?.id == book.id { audioCacheBytes += saved }
-                cached = CachedNarration(buffer: buffer, words: words,
-                                         duration: Double(audio.samples.count) / max(audio.sampleRate, 1))
+                cached = try await narration(for: text, voice: voice, book: book)
             } catch {
                 if !Task.isCancelled, token == neuralPlaybackToken {
                     isPlaying = false
@@ -1045,7 +1053,10 @@ public final class PlaybackController {
         neuralBufferDuration = Double(buffer.frameLength) / cached.buffer.format.sampleRate
 
         configureAudioSession()
-        startNeuralEngine()
+        guard startNeuralEngine() else {
+            audioUnavailable()
+            return
+        }
         audioPlayer.stop()
         audioPlayer.scheduleBuffer(buffer, at: nil, options: []) { [weak self] in
             Task { @MainActor [weak self] in
@@ -1061,6 +1072,86 @@ public final class PlaybackController {
         }
         startNeuralProgress()
         updateNowPlaying()
+        schedulePrefetch(after: index, voice: voice)
+    }
+
+    /// The sentence's audio: from the cache, or synthesized now and cached.
+    /// The cache is checked again once synthesis is free, so a sentence a
+    /// prefetch has just made is not made twice.
+    private func narration(for text: String, voice: VoiceCatalog.Voice,
+                           book: Book) async throws -> CachedNarration {
+        let cache = models.narrationCache
+        let key = cache.key(text: text, engine: voice.engineRaw, voice: voice.id)
+        if let cached = await cache.load(bookID: book.id, key: key) { return cached }
+        return try await synthesisGate.run {
+            if let cached = await cache.load(bookID: book.id, key: key) { return cached }
+            let audio = try await self.withBackgroundTime {
+                try await self.synthesizeUnlocked(text: text, voice: voice)
+            }
+            // Phonon returns the partial audio it managed to produce when a
+            // task is cancelled. Never cache that as a complete sentence.
+            try Task.checkCancellation()
+            let words = await Self.alignWords(text: text, samples: audio.samples,
+                                              sampleRate: audio.sampleRate, language: voice.language)
+            try Task.checkCancellation()
+            guard let buffer = self.makeBuffer(samples: audio.samples, sampleRate: audio.sampleRate) else {
+                throw NeuralNarrationError.invalidAudio
+            }
+            let saved = await cache.save(bookID: book.id, key: key, buffer: buffer, words: words)
+            if self.activeBook?.id == book.id { self.audioCacheBytes += saved }
+            return CachedNarration(buffer: buffer, words: words,
+                                   duration: Double(audio.samples.count) / max(audio.sampleRate, 1))
+        }
+    }
+
+    /// Makes the next sentences while this one plays.
+    private func schedulePrefetch(after index: Int, voice: VoiceCatalog.Voice) {
+        guard let book = activeBook else { return }
+        let last = min(index + Self.prefetchDepth, sentences.count - 1)
+        guard last > index else { return }
+        prefetchTask?.cancel()
+        prefetchTask = Task { [weak self] in
+            for target in (index + 1)...last {
+                guard let self, !Task.isCancelled,
+                      self.activeBook?.id == book.id, self.sentences.indices.contains(target) else { return }
+                if let ready = self.prefetched[target], ready.voiceID == voice.id { continue }
+                let text = self.sentences[target].text
+                guard let made = try? await self.narration(for: text, voice: voice, book: book),
+                      !Task.isCancelled, self.activeBook?.id == book.id else { return }
+                self.prefetched[target] = (voice.id, made)
+            }
+        }
+    }
+
+    private func resetPrefetch() {
+        prefetchTask?.cancel()
+        prefetchTask = nil
+        prefetched = [:]
+    }
+
+    /// The audio engine could not start (another app holds the audio, or iOS
+    /// refused in the background). Pause cleanly: playing a node on a stopped
+    /// engine raises an exception that closes the app.
+    private func audioUnavailable() {
+        audioPlayer.stop()
+        neuralProgressTask?.cancel()
+        neuralProgressTask = nil
+        neuralPaused = false
+        isPlaying = false
+        isLoading = false
+        restartOnResume = true
+        saveProgress()
+        updateNowPlaying()
+    }
+
+    /// Asks iOS for time to finish a synthesis if the app goes to the
+    /// background meanwhile; the request always ends, even when iOS expires it.
+    private func withBackgroundTime<T>(_ work: () async throws -> T) async rethrows -> T {
+        #if os(iOS)
+        let task = BackgroundTimeRequest()
+        defer { task.end() }
+        #endif
+        return try await work()
     }
 
     private struct NeuralAudio {
@@ -1130,11 +1221,14 @@ public final class PlaybackController {
         return sentences[currentIndex].text
     }
 
-    private func startNeuralEngine() {
-        guard neuralFormat != nil else { return }
+    /// Starts the engine if needed and says whether it is running.
+    @discardableResult
+    private func startNeuralEngine() -> Bool {
+        guard neuralFormat != nil else { return false }
         if !audioEngine.isRunning {
             try? audioEngine.start()
         }
+        return audioEngine.isRunning
     }
 
     private func startNeuralProgress() {
@@ -1211,7 +1305,7 @@ public final class PlaybackController {
         speakCurrent()
     }
 
-    private func stopAudio() {
+    private func stopAudio(keepingEngine: Bool = false) {
         activeUtterance = nil
         synthesizer.stopSpeaking(at: .immediate)
         neuralTask?.cancel()
@@ -1219,7 +1313,7 @@ public final class PlaybackController {
         neuralProgressTask?.cancel()
         neuralProgressTask = nil
         audioPlayer.stop()
-        if audioEngine.isRunning { audioEngine.pause() }
+        if !keepingEngine, audioEngine.isRunning { audioEngine.pause() }
         neuralPaused = false
         neuralWords = []
         neuralBufferDuration = 0
@@ -1515,3 +1609,25 @@ private actor SynthesisGate {
         }
     }
 }
+
+#if os(iOS)
+/// A background-time request that is always ended: by its owner when the work
+/// is done, or by iOS's expiration handler. An unended request gets the app
+/// killed in the background.
+@MainActor
+private final class BackgroundTimeRequest {
+    private var identifier: UIBackgroundTaskIdentifier = .invalid
+
+    init() {
+        identifier = UIApplication.shared.beginBackgroundTask(withName: "Narration") { [weak self] in
+            MainActor.assumeIsolated { self?.end() }
+        }
+    }
+
+    func end() {
+        guard identifier != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(identifier)
+        identifier = .invalid
+    }
+}
+#endif

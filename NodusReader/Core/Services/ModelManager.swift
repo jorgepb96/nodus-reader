@@ -119,6 +119,8 @@ final class ModelManager {
     @ObservationIgnored private var engineLoadToken = UUID()
 
     @ObservationIgnored private var kokoro: KokoroTTS?
+    /// The loaded Kokoro runs on the CPU only (see `kokoroComputePolicy`).
+    @ObservationIgnored private var kokoroIsCPUOnly = false
     @ObservationIgnored private var phonon: Phonon? {
         didSet { if phonon == nil { phononModelID = nil } }
     }
@@ -270,6 +272,13 @@ final class ModelManager {
         self.audioCache = audioCache
         self.defaults = defaults
         self.selectedModelID = defaults.string(forKey: "nodus.models.selected") ?? Self.systemModelID
+        #if !targetEnvironment(simulator)
+        // MLX runs only Kokoro's English fallback phonemizer (a small model for
+        // words missing from its dictionary). On the GPU it is refused while
+        // the app narrates in the background with the phone locked, and MLX
+        // stops the app when a Metal command buffer fails. The CPU is enough.
+        Device.setDefault(device: .cpu)
+        #endif
         Self.excludeFromBackup(Self.kokoroCacheDirectory)
         Self.excludeFromBackup(Self.phononDirectory)
         Self.excludeFromBackup(Self.phonon40SpanishDirectory)
@@ -505,7 +514,8 @@ final class ModelManager {
                 try Task.checkCancellation()
                 Self.excludeFromBackup(Self.kokoroCacheDirectory)
                 states[model.id] = .loading
-                let loaded = try await KokoroTTS.load(resources: resources)
+                let loaded = try await KokoroTTS.load(resources: resources, computePolicy: kokoroComputePolicy)
+                kokoroIsCPUOnly = isInBackground
                 try Task.checkCancellation()
                 try await loaded.prewarm(text: "Nodus Reader is ready to narrate.", voice: .afHeart)
                 try Task.checkCancellation()
@@ -642,7 +652,9 @@ final class ModelManager {
             Self.excludeFromBackup(destination)
             switch engine {
             case .kokoro:
-                kokoro = try await KokoroTTS.load(resources: KokoroResourceProvider.directory(destination))
+                kokoro = try await KokoroTTS.load(resources: KokoroResourceProvider.directory(destination),
+                                                  computePolicy: kokoroComputePolicy)
+                kokoroIsCPUOnly = isInBackground
             case .phonon:
                 phonon = try await Phonon.load(models: destination, language: model.phononLanguage)
                 phononModelID = model.id
@@ -736,12 +748,17 @@ final class ModelManager {
     private func ensureLoaded(_ model: Model) async throws {
         switch model.engine {
         case .kokoro:
+            // In the background the Metal placement is refused: reload on the
+            // CPU (prefetched sentences cover the reload).
+            if kokoro != nil, isInBackground, !kokoroIsCPUOnly { kokoro = nil }
             guard kokoro == nil else { return }
             if !narrationInUse { releaseEngines(keeping: .kokoro) }
             #if targetEnvironment(simulator)
             throw NeuralNarrationError.engineNotLoaded("Kokoro")
             #else
-            kokoro = try await KokoroTTS.load(resources: KokoroResourceProvider.directory(Self.kokoroCacheDirectory))
+            kokoro = try await KokoroTTS.load(resources: KokoroResourceProvider.directory(Self.kokoroCacheDirectory),
+                                              computePolicy: kokoroComputePolicy)
+            kokoroIsCPUOnly = isInBackground
             #endif
         case .phonon:
             guard phonon == nil || phononModelID != model.id else { return }
@@ -754,6 +771,22 @@ final class ModelManager {
     }
 
     func phononEngine() -> Phonon? { phonon }
+
+    /// iOS refuses GPU (Metal) work from an app in the background, which is
+    /// where a locked phone narrates. Kokoro's measured placement uses Metal;
+    /// on the CPU alone it still runs about four times faster than real time
+    /// (M2: 0.24 s per second of speech), so the background uses that.
+    private var isInBackground: Bool {
+        #if os(iOS)
+        UIApplication.shared.applicationState == .background
+        #else
+        false
+        #endif
+    }
+
+    private var kokoroComputePolicy: KokoroComputePolicy {
+        isInBackground ? .cpuOnly : .gistDefault
+    }
 
     // MARK: Memory
 
@@ -884,9 +917,10 @@ final class ModelManager {
                 // would fetch HostedManifest.json on every launch, breaking
                 // offline narration and adding a network request per start.
                 let resources = KokoroResourceProvider.directory(Self.kokoroCacheDirectory)
-                let loaded = try await KokoroTTS.load(resources: resources)
+                let loaded = try await KokoroTTS.load(resources: resources, computePolicy: kokoroComputePolicy)
                 guard token == engineLoadToken, selectedModelID == model.id else { return }
                 kokoro = loaded
+                kokoroIsCPUOnly = isInBackground
                 states[model.id] = .installed
             } catch {
                 guard token == engineLoadToken, selectedModelID == model.id else { return }

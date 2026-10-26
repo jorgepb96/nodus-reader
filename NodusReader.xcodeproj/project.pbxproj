@@ -34,10 +34,12 @@
 		59E2649B0917D2CB38172E65 /* PDFReflowEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40A191E547B3FA244E030216 /* PDFReflowEngine.swift */; };
 		5A981BAEFC424C1C36349E09 /* ContinuousReaderContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E693CDEB62AE25BFAAD0B0E2 /* ContinuousReaderContent.swift */; };
 		610DE11A27D5B824C82CDFED /* EPUBParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3252C65DAC3AB8067A57173E /* EPUBParser.swift */; };
+		648061CC4A17889CB5ADBBDC /* SpeechWordAligner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1079D52B6E17772F269D44B /* SpeechWordAligner.swift */; };
 		65AA4F18D40C7D764BBEF98D /* MacPlayerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1EB4C689D1D5603D9AB919 /* MacPlayerBar.swift */; };
 		67F386AD47DD382F646DF469 /* HTMLText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC3CCAB5516F1CC4ED19C9F /* HTMLText.swift */; };
 		68BC4B6B98AE208B59C91A2B /* VoiceCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9B64BBE71DDC847CBDFB58A /* VoiceCatalog.swift */; };
 		68D02092B6F58A6181F70CFA /* KokoroSpanish.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A948B31F01AEE2881D6EFA /* KokoroSpanish.swift */; };
+		6B330722FB01CE6F58CCD77A /* PDFPageText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F18D1B82C968F1449459E2A /* PDFPageText.swift */; };
 		6BAF600273BDA0BF69E66AB3 /* ReaderNavigationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8374C8CF82EADFE4C61847B6 /* ReaderNavigationSheet.swift */; };
 		6DC4D3ED190B8EA6E4E6A49A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FF7CBF9CFCF8E117C3191309 /* Localizable.xcstrings */; };
 		760428D786B438C27B4A5133 /* ReaderPageStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECD64B338813C089B0F2DEE /* ReaderPageStyle.swift */; };
@@ -191,6 +193,7 @@
 		8374C8CF82EADFE4C61847B6 /* ReaderNavigationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderNavigationSheet.swift; sourceTree = "<group>"; };
 		84215C3B2D70610707C931B2 /* ICloudDocumentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudDocumentStore.swift; sourceTree = "<group>"; };
 		8538AACCC8B86BBCBB64F210 /* CloudSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncService.swift; sourceTree = "<group>"; };
+		8F18D1B82C968F1449459E2A /* PDFPageText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPageText.swift; sourceTree = "<group>"; };
 		8FC3CCAB5516F1CC4ED19C9F /* HTMLText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLText.swift; sourceTree = "<group>"; };
 		92566F3CFEA02A9CC4062A6B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		96C2916DCF1FCAA262923B78 /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
@@ -207,6 +210,7 @@
 		BDA4078C3A4418A89E6CF014 /* ReaderWindowHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderWindowHost.swift; sourceTree = "<group>"; };
 		BE2978B146AAED77C4B24049 /* MacPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPageView.swift; sourceTree = "<group>"; };
 		C0718A04E3BF758DD77A430C /* PadLibraryContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PadLibraryContentView.swift; sourceTree = "<group>"; };
+		C1079D52B6E17772F269D44B /* SpeechWordAligner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechWordAligner.swift; sourceTree = "<group>"; };
 		C7E1602D5595F5D3887F7D92 /* SpanishPhonemizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpanishPhonemizer.swift; sourceTree = "<group>"; };
 		C806DB43DAD23FFE67FBBA3F /* SidebarComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarComponents.swift; sourceTree = "<group>"; };
 		C82CE5961581728B2A01BA11 /* JustifiedText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JustifiedText.swift; sourceTree = "<group>"; };
@@ -353,9 +357,11 @@
 				57311E698E2CF61276C51600 /* LibraryService.swift */,
 				0FF11796AFA1C10FDA90101D /* ModelManager.swift */,
 				9A134492B2262FE0AB703EA4 /* NarrationAudioCache.swift */,
+				8F18D1B82C968F1449459E2A /* PDFPageText.swift */,
 				09340C49F00362F5D266FA01 /* PhononOnDeviceConversion.swift */,
 				F9D8968A724911866F8AC36D /* PlaybackController.swift */,
 				C7E1602D5595F5D3887F7D92 /* SpanishPhonemizer.swift */,
+				C1079D52B6E17772F269D44B /* SpeechWordAligner.swift */,
 				103016A574B8EB8D2FB618A3 /* StorageJanitor.swift */,
 				F9B64BBE71DDC847CBDFB58A /* VoiceCatalog.swift */,
 			);
@@ -787,6 +793,7 @@
 				E2D347656C8707229567EE90 /* NavigationModel.swift in Sources */,
 				CF5F0A39E4882E6C4AA6E75D /* NodusReaderApp.swift in Sources */,
 				E2F3437CC4FD4D787583C9FF /* PDFKitReader.swift in Sources */,
+				6B330722FB01CE6F58CCD77A /* PDFPageText.swift in Sources */,
 				59E2649B0917D2CB38172E65 /* PDFReflowEngine.swift in Sources */,
 				929712516E9DE65D25C8D69B /* PDFReflowView.swift in Sources */,
 				EDD19D020AF4FA6DC7E180F7 /* PadLibraryContentView.swift in Sources */,
@@ -820,6 +827,7 @@
 				FF6D045C01A22F0D80285A59 /* SharedImportInbox.swift in Sources */,
 				22136E4536823900286B418B /* SidebarComponents.swift in Sources */,
 				81DB4B80C39C5EAD80A08D48 /* SpanishPhonemizer.swift in Sources */,
+				648061CC4A17889CB5ADBBDC /* SpeechWordAligner.swift in Sources */,
 				78B55073F0CE914B8ECD0877 /* StorageJanitor.swift in Sources */,
 				D4BB0B652DA9BA54E98A519B /* StorageSettingsView.swift in Sources */,
 				BB4314423E68948DDF1B8D99 /* SyncJournal.swift in Sources */,
@@ -934,7 +942,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1000,7 +1008,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;

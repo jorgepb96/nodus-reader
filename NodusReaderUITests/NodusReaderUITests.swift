@@ -363,6 +363,16 @@ final class NodusReaderUITests: XCTestCase {
         app.buttons["Original page panel"].tap()
         XCTAssertTrue(app.staticTexts["Original page"].firstMatch.waitForExistence(timeout: 10))
         snap("iPhone-17-PDFSource")
+
+        // The panel's arrows turn the reflow too, and the panel follows it.
+        let pageCounter = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '1 / '")).firstMatch
+        XCTAssertTrue(pageCounter.waitForExistence(timeout: 5))
+        app.buttons["Next page"].firstMatch.tap()
+        let secondPage = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '2 / '")).firstMatch
+        XCTAssertTrue(secondPage.waitForExistence(timeout: 5))
+        app.buttons["Done"].firstMatch.tap()
+        let readerPage = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Page 2 of'")).firstMatch
+        XCTAssertTrue(readerPage.waitForExistence(timeout: 5), "The reflow did not move to page 2")
     }
 
     func testPDFReflowHighlightAndNote() throws {
@@ -519,7 +529,10 @@ final class NodusReaderUITests: XCTestCase {
         let app = XCUIApplication()
         // The tests read English labels; the app follows the device language
         // (Spanish or English), so pin it to English whatever the simulator uses.
-        app.launchArguments = ["-NodusSampleLibrary", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchArguments = ["-NodusSampleLibrary", "-AppleLanguages", "(en)", "-AppleLocale", "en_US",
+                               // Word timing from speech recognition may first download
+                               // the system's speech model; the tests use the estimate.
+                               "-nodus.narration.preciseWordTiming", "NO"]
         if resetReadingState {
             app.launchArguments.append("-NodusResetReadingState")
         }
