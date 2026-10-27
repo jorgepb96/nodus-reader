@@ -116,8 +116,9 @@ Nodus Reader opens EPUB and PDF books and documents and reads them aloud with th
 **Descripción de la beta** (español):
 Nodus Reader abre libros y documentos EPUB y PDF y los lee en voz alta con las voces de tu dispositivo o con voces neuronales que funcionan en el dispositivo. Importa archivos desde Archivos y desde el botón Compartir, organiza una biblioteca con colecciones, ofrece varios temas de lectura, marcadores, subrayados, notas y búsqueda, reconstruye los PDF para leerlos con reconocimiento de texto en el dispositivo y puede sincronizar la biblioteca con tu propia cuenta de iCloud. No se envía nada a un servidor de Nodus.
 
-**What to test** (build 22):
-• On a fresh install, the voice setup screen should appear; check it in English and Spanish, and that “Choose a voice model” opens Models.
+**What to test** (build 23):
+• On a fresh install, the mandatory voice setup should appear; check it in English and Spanish and that “Choose a voice model” opens Models. There is no “Not now” escape.
+• The Nodus N sits alone, centred, without a circular halo.
 • Confirm there is no system-voice option in Voices, the player picker or Models.
 • Import a document and check that the confirmation banner is readable in light and dark themes and that the imported book opens directly in the reader.
 • Open a two-column paper (arXiv) in Intelligent Reading: paragraphs should stay in their column and not alternate left/right.

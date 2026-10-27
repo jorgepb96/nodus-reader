@@ -18,7 +18,7 @@ struct RootView: View {
     @State private var navigation = NavigationModel()
     @State private var importedBook: Book?
     @State private var showVoiceSetup = false
-    @AppStorage("nodus.voices.setup.completed") private var voiceSetupCompleted = false
+    @State private var voiceSetupBypassed = false
 
     private var palette: NodusPalette {
         theme.palette(colorScheme: colorScheme)
@@ -97,10 +97,10 @@ struct RootView: View {
                 #endif
                 #if DEBUG
                 if ProcessInfo.processInfo.arguments.contains("-NodusSkipVoiceSetup") {
-                    voiceSetupCompleted = true
+                    voiceSetupBypassed = true
                 }
                 if ProcessInfo.processInfo.arguments.contains("-NodusResetVoiceSetup") {
-                    voiceSetupCompleted = false
+                    voiceSetupBypassed = false
                     showVoiceSetup = true
                 }
                 #endif
@@ -112,10 +112,7 @@ struct RootView: View {
                 await cleanUpStorage()
             }
             .onChange(of: models.hasInstalledModel) { _, installed in
-                if installed {
-                    voiceSetupCompleted = true
-                    showVoiceSetup = false
-                }
+                showVoiceSetup = !installed && !voiceSetupBypassed
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
@@ -131,19 +128,11 @@ struct RootView: View {
     }
 
     private var voiceSetup: some View {
-        VoiceSetupView {
-            voiceSetupCompleted = true
-            showVoiceSetup = false
-        }
+        VoiceSetupView()
     }
 
     private func updateVoiceSetup() {
-        if models.hasInstalledModel {
-            voiceSetupCompleted = true
-            showVoiceSetup = false
-        } else if !voiceSetupCompleted {
-            showVoiceSetup = true
-        }
+        showVoiceSetup = !models.hasInstalledModel && !voiceSetupBypassed
     }
 
     private func openPendingImportedBook() {
