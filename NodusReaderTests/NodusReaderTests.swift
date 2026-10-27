@@ -655,6 +655,8 @@ func concurrentImportRequestsAreQueuedInsteadOfDropped() async throws {
 
     #expect(fixture.service.allBooks().count == 2)
     #expect(!coordinator.isImporting)
+    #expect(coordinator.bookToOpen != nil,
+            "A successful import should request the reader presentation")
 }
 
 @Test @MainActor
@@ -680,6 +682,7 @@ func importingAFolderImportsSupportedFilesRecursively() async throws {
 
     #expect(fixture.service.allBooks().count == 2)
     #expect(coordinator.lastResult?.failures.isEmpty == true)
+    #expect(coordinator.bookToOpen != nil)
 }
 
 @Test @MainActor

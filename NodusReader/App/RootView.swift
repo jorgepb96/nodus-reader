@@ -16,6 +16,7 @@ struct RootView: View {
     /// Per window (Mac) or scene (iPad multitasking): two library windows no
     /// longer mirror each other's sidebar selection and navigation.
     @State private var navigation = NavigationModel()
+    @State private var importedBook: Book?
 
     private var palette: NodusPalette {
         theme.palette(colorScheme: colorScheme)
@@ -31,6 +32,10 @@ struct RootView: View {
             .tint(palette.accent)
             .preferredColorScheme(theme.appTheme.preferredColorScheme)
             .background(palette.background)
+            .readerCover(item: $importedBook)
+            .onChange(of: imports.bookToOpen?.id) { _, _ in
+                openPendingImportedBook()
+            }
             .onOpenURL { url in
                 imports.handleOpenURLs([url])
             }
@@ -79,6 +84,7 @@ struct RootView: View {
                 }
                 #endif
                 await imports.consumeSharedInbox()
+                openPendingImportedBook()
                 await sync.start()
                 await models.loadInstalledEnginesIfNeeded()
                 await cleanUpStorage()
@@ -94,6 +100,12 @@ struct RootView: View {
                     Task { await cleanUpStorage() }
                 }
             }
+    }
+
+    private func openPendingImportedBook() {
+        guard let book = imports.bookToOpen else { return }
+        importedBook = book
+        imports.bookToOpen = nil
     }
 
     /// Frees narration audio and OCR results the storage rules no longer keep.

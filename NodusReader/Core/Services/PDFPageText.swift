@@ -69,18 +69,23 @@ public enum PDFPageText {
 
     /// Text lines Vision reads on the rendered page, in its reading order.
     public static func recognizeLines(page: PDFPage) throws -> [RecognizedLine] {
-        let bounds = page.bounds(for: .cropBox)
-        guard let image = render(page: page, bounds: bounds, scale: 2) else { return [] }
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = true
-        request.automaticallyDetectsLanguage = true
-        try VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
-        return (request.results ?? []).compactMap { observation in
-            guard let candidate = observation.topCandidates(1).first else { return nil }
-            let text = candidate.string.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty else { return nil }
-            return RecognizedLine(text: text, box: observation.boundingBox)
+        // Vision and PDFKit create large temporary images. Drain them after
+        // each page; otherwise a long scanned book can exhaust the process
+        // and later pages return only a handful of lines.
+        try autoreleasepool {
+            let bounds = page.bounds(for: .cropBox)
+            guard let image = render(page: page, bounds: bounds, scale: 2) else { return [] }
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .accurate
+            request.usesLanguageCorrection = true
+            request.automaticallyDetectsLanguage = true
+            try VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
+            return (request.results ?? []).compactMap { observation in
+                guard let candidate = observation.topCandidates(1).first else { return nil }
+                let text = candidate.string.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !text.isEmpty else { return nil }
+                return RecognizedLine(text: text, box: observation.boundingBox)
+            }
         }
     }
 

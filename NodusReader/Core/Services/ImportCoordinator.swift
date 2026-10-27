@@ -36,6 +36,8 @@ public final class ImportCoordinator {
     public var isImporting = false
     public var progress: ImportProgress?
     public var lastResult: ImportResult?
+    /// The first newly imported document; the app opens it in the reader.
+    public var bookToOpen: Book?
     public var toast: String?
     public var alert: LibraryAlert?
 
@@ -78,6 +80,9 @@ public final class ImportCoordinator {
                 self?.progress = progress
             }
             lastResult = result
+            if let first = result.imported.first {
+                bookToOpen = first
+            }
 
             if !result.failures.isEmpty {
                 alert = LibraryAlert(
@@ -164,6 +169,7 @@ public final class ImportCoordinator {
         var imported = 0
         var duplicates = 0
         var failures: [ImportFailure] = []
+        var firstImported: Book?
         for (index, item) in pending.enumerated() {
             progress = ImportProgress(current: index + 1, total: pending.count, fileName: item.fileName)
             guard let url = SharedImportInbox.fileURL(for: item, root: root) else {
@@ -174,6 +180,7 @@ public final class ImportCoordinator {
                 self?.progress = update
             }
             imported += result.imported.count
+            if firstImported == nil { firstImported = result.imported.first }
             duplicates += result.duplicates.count
             failures.append(contentsOf: result.failures)
             // Each payload is attempted and reported once. Keeping a failed
@@ -196,6 +203,7 @@ public final class ImportCoordinator {
         }
         isImporting = false
         progress = nil
+        if let firstImported { bookToOpen = firstImported }
         // Picker results or drops that arrived while the inbox was imported.
         await drainQueuedImports()
     }

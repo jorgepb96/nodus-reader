@@ -13,6 +13,8 @@ import Testing
 func textNormalizerRepairsLigaturesAndPageNumbers() {
     #expect(TextNormalizer.cleanLine("e\u{FB00}ect and \u{FB01}ne") == "effect and fine")
     #expect(TextNormalizer.cleanLine("a\u{00A0}b\u{200B}c") == "a bc")
+    #expect(TextNormalizer.cleanLine("confl ictivos y signifi cado") == "conflictivos y significado")
+    #expect(TextNormalizer.cleanLine("fi ables y defi nirlos") == "fiables y definirlos")
     #expect(TextNormalizer.isPageNumber("Page 12"))
     #expect(TextNormalizer.isPageNumber("12 of 90"))
     #expect(TextNormalizer.isPageNumber("Fielding, et al. Page 1"))

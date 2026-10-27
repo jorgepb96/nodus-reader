@@ -1023,3 +1023,24 @@ Limits: in Original view a search result navigates to the page, but a garbled
 text layer cannot show the word highlight; only Intelligent Reading can highlight
 it. A PDF that has never been reflowed may need a full on-device OCR pass before
 its first search, so the find bar shows "Searching…" until that cache is ready.
+
+## 50-paper corpus and import UX (2026-10-27)
+
+- Reflow corpus: 27 arXiv papers, 22 OpenAlex humanities/social-science PDFs
+  and the accessible Vínculos de Historia paper by Jorge Pérez Burgueño.
+  Documents and Markdown stay in the external corpus; see `docs/PDF_CORPUS.md`.
+- Reading order: no block sort after table detection, median column edges,
+  bounded fragment gaps, centred-line handling and paragraph continuations.
+- Headings: short size/numbered/all-caps rules; repeated bold body lines are
+  suppressed; wrapped titles merge only with the same font size.
+- Notes: page-level footnote runs (numbered note + continuation) are excluded
+  from Markdown; numbered reference blocks are split one per entry.
+- Text: split fi/fl ligatures are rejoined; leftover table rows after a table
+  image are removed.
+- Import: the banner text follows the palette; the first successful import is
+  presented in the reader automatically, including documents delivered through
+  the Share Extension inbox.
+
+The 50-document run produced Markdown for every file without a crash. Short
+fragments remain concentrated in formula-heavy papers and reference lists;
+OCR-only books still depend on Vision quality and are checked separately.
