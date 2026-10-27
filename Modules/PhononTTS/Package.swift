@@ -14,7 +14,7 @@ let package = Package(
         // export); source change and build script in engine/.
         .binaryTarget(
             name: "PhononCore",
-            url: "https://github.com/jorgepb96/nodus-reader-mobile/releases/download/phononcore-0.4.1-nodus.1/PhononCore.xcframework.zip",
+            url: "https://github.com/jorgepb96/nodus-reader/releases/download/phononcore-0.4.1-nodus.1/PhononCore.xcframework.zip",
             checksum: "58083b754f4d4c9d87e18007446bf5a671722dde82f68cc0884294a6e78bbc3b"
         ),
         .target(

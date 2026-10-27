@@ -14,9 +14,9 @@ App Store Connect in step.
 | Secondary category | Education |
 | Content rights | Does not contain, show or access third-party content (the user imports their own files; sample texts are public domain) |
 | Age rating | 4+ (every questionnaire answer "None" / "No") |
-| Support URL | https://github.com/jorgepb96/nodus-reader-mobile |
+| Support URL | https://github.com/jorgepb96/nodus-reader |
 | Marketing URL | https://nodusresearch.com/ |
-| Privacy policy URL | https://github.com/jorgepb96/nodus-reader-mobile/blob/main/PRIVACY.md |
+| Privacy policy URL | https://github.com/jorgepb96/nodus-reader/blob/main/PRIVACY.md |
 | Copyright | 2026 Jorge Pérez Burgueño |
 | App privacy | Data Not Collected |
 
@@ -60,7 +60,7 @@ SYNC (OPTIONAL)
 
 PRIVACY
 • No data is collected: no analytics, no tracking, no ads.
-• The source code is public under the AGPL-3.0 licence: github.com/jorgepb96/nodus-reader-mobile
+• The source code is public under the AGPL-3.0 licence: github.com/jorgepb96/nodus-reader
 
 Neural voice models are published by their authors under their own licences, and some allow non-commercial use only. Books protected with DRM cannot be opened.
 
@@ -104,7 +104,7 @@ SINCRONIZACIÓN (OPCIONAL)
 
 PRIVACIDAD
 • No se recopila ningún dato: sin analíticas, sin seguimiento, sin anuncios.
-• El código fuente es público con licencia AGPL-3.0: github.com/jorgepb96/nodus-reader-mobile
+• El código fuente es público con licencia AGPL-3.0: github.com/jorgepb96/nodus-reader
 
 Los modelos de voz neuronales los publican sus autores con sus propias licencias, y algunas solo permiten el uso no comercial. Los libros protegidos con DRM no se pueden abrir.
 
@@ -116,7 +116,7 @@ Nodus Reader opens EPUB and PDF books and documents and reads them aloud with th
 **Descripción de la beta** (español):
 Nodus Reader abre libros y documentos EPUB y PDF y los lee en voz alta con las voces de tu dispositivo o con voces neuronales que funcionan en el dispositivo. Importa archivos desde Archivos y desde el botón Compartir, organiza una biblioteca con colecciones, ofrece varios temas de lectura, marcadores, subrayados, notas y búsqueda, reconstruye los PDF para leerlos con reconocimiento de texto en el dispositivo y puede sincronizar la biblioteca con tu propia cuenta de iCloud. No se envía nada a un servidor de Nodus.
 
-**What to test** (build 23):
+**What to test** (build 24):
 • On a fresh install, the mandatory voice setup should appear; check it in English and Spanish and that “Choose a voice model” opens Models. There is no “Not now” escape.
 • The Nodus N sits alone, centred, without a circular halo.
 • Confirm there is no system-voice option in Voices, the player picker or Models.

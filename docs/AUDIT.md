@@ -521,7 +521,7 @@ check a **signed** build before uploading.
   through the system authentication session; tokens and refresh tokens are kept in
   the device Keychain and refreshed when they expire. The client id is a Client ID
   Metadata Document in this repository (`oauth/huggingface-client.json`) served as
-  JSON by jsDelivr at the `hf-oauth-v1` tag, so no app is registered on anyone's
+  JSON by jsDelivr at the new `hf-oauth-v2` tag, so no app is registered on anyone's
   account; it must stay at that tag. Verified that Hugging Face accepts the client
   (its sign-in page opens in the app) and that cancelling is silent; unit tests
   cover PKCE (RFC 7636 vector), the callback checks and token decoding. The full
@@ -1057,3 +1057,13 @@ OCR-only books still depend on Vision quality and are checked separately.
 - Existing selections stored as `system` migrate to the first installed neural
   model, or to no selection when no model is present. A missing model always
   brings the mandatory setup back.
+
+## Repository rename (2026-10-27)
+
+- Repository moved from `jorgepb96/nodus-reader-mobile` to `jorgepb96/nodus-reader`.
+- Updated the Phonon binary-target release URL, the Hugging Face OAuth Client ID
+  Metadata Document URL and its `client_uri`, and every in-app source/licence link.
+- The new `hf-oauth-v2` tag is created at the rename commit so jsDelivr serves the
+  document with the new `client_id`; the old `hf-oauth-v1` tag stays untouched for
+  existing builds. The Phonon asset was downloaded from the
+  new release URL and its checksum verified by SwiftPM.

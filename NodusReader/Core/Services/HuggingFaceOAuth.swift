@@ -12,7 +12,7 @@ import Security
 /// account. The browser step runs in the system's authentication session; the
 /// app only receives the authorization code on `nodusreader://oauth/huggingface`.
 enum HuggingFaceOAuth {
-    static let clientID = "https://cdn.jsdelivr.net/gh/jorgepb96/nodus-reader-mobile@hf-oauth-v1/oauth/huggingface-client.json"
+    static let clientID = "https://cdn.jsdelivr.net/gh/jorgepb96/nodus-reader@hf-oauth-v2/oauth/huggingface-client.json"
     static let callbackScheme = "nodusreader"
     static let redirectURI = "nodusreader://oauth/huggingface"
     /// Profile for "Signed in as …" and read access to public gated models
