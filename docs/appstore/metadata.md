@@ -111,10 +111,10 @@ Los modelos de voz neuronales los publican sus autores con sus propias licencias
 ## TestFlight
 
 **Beta app description** (English):
-Nodus Reader opens EPUB and PDF books and documents and reads them aloud with the voices of your device or with neural voices that run on the device. It imports files from Files and from the Share button, keeps a library with collections, offers several reading themes, bookmarks, highlights, notes and search, rebuilds PDFs for reading with on-device text recognition, and can sync your library through your own iCloud account. Nothing is sent to a Nodus server.
+Nodus Reader opens EPUB and PDF books and documents and reads them aloud with neural voices that run entirely on the device. It imports files from Files and from the Share button, keeps a library with collections, offers several reading themes, bookmarks, highlights, notes and search, rebuilds PDFs for reading with on-device text recognition, and can sync your library through your own iCloud account. Nothing is sent to a Nodus server.
 
 **Descripción de la beta** (español):
-Nodus Reader abre libros y documentos EPUB y PDF y los lee en voz alta con las voces de tu dispositivo o con voces neuronales que funcionan en el dispositivo. Importa archivos desde Archivos y desde el botón Compartir, organiza una biblioteca con colecciones, ofrece varios temas de lectura, marcadores, subrayados, notas y búsqueda, reconstruye los PDF para leerlos con reconocimiento de texto en el dispositivo y puede sincronizar la biblioteca con tu propia cuenta de iCloud. No se envía nada a un servidor de Nodus.
+Nodus Reader abre libros y documentos EPUB y PDF y los lee en voz alta con voces neuronales que funcionan íntegramente en el dispositivo. Importa archivos desde Archivos y desde el botón Compartir, organiza una biblioteca con colecciones, ofrece varios temas de lectura, marcadores, subrayados, notas y búsqueda, reconstruye los PDF para leerlos con reconocimiento de texto en el dispositivo y puede sincronizar la biblioteca con tu propia cuenta de iCloud. No se envía nada a un servidor de Nodus.
 
 **What to test** (build 24):
 • On a fresh install, the mandatory voice setup should appear; check it in English and Spanish and that “Choose a voice model” opens Models. There is no “Not now” escape.
