@@ -8,15 +8,9 @@
 
 # Nodus Reader
 
-## Description
+Nodus Reader is a free, open-source app for listening to your library with voice models that run on your own device. Kokoro and Phonon are available today; more models are coming soon.
 
-Nodus Reader is a free, open-source, local-first reading app for iPhone, iPad and Mac. It opens EPUB, PDF, TXT, Markdown, HTML and RTF files, keeps them in a local library, and reads them aloud with neural voices that run on the device.
-
-The app uses native SwiftUI and SwiftData. Documents, reading progress, highlights and notes stay on the device unless the user enables personal iCloud sync. There are no Nodus accounts, ads, analytics or telemetry.
-
-The source code is licensed under AGPL-3.0-only. Nodus Reader is not affiliated with Apple.
-
-A public TestFlight is not open yet. Internal builds are used for testing.
+It opens EPUB, PDF, TXT, Markdown, HTML and RTF files on iPhone, iPad and Mac.
 
 ## Features
 
