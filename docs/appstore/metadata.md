@@ -18,20 +18,25 @@ App Store Connect in step.
 | Marketing URL | https://nodusresearch.com/ |
 | Privacy policy URL | https://nodusresearch.com/reader/privacy/ |
 | Copyright | 2026 Jorge Pérez Burgueño |
-| App privacy | Data Not Collected |
+| App privacy | Data Not Collected (manual declaration; confirm in App Store Connect) |
+| App Store state | Prepare for Submission; no App Store submission |
+| Release | Manual after approval; App Store version not submitted |
+| App Review detail | Contact, notes and no demo account filled |
+| iPhone screenshots | 8 English, 8 Spanish; complete |
+| iPad screenshots | 8 English; Spanish listing currently uses the English iPad captures |
 
 ## English (U.S.)
 
 **Subtitle** (30): Read and listen to your books
 
 **Promotional text** (170):
-Import EPUB and PDF files and listen to them with voices that run on your device. Works offline. Free and open source, with no ads, subscriptions or accounts.
+Import EPUB and PDF files and listen with neural voices that run on your device. Offline, free and open source, with no accounts, ads or tracking.
 
 **Keywords** (100): `epub,pdf,ebook,reader,read aloud,text to speech,tts,audiobook,narration,offline,ocr,notes,books`
 
 **Description**:
 
-Nodus Reader opens your EPUB and PDF books and documents and can read them aloud. Everything runs on your iPhone or iPad: books, notes and audio are not sent to any server. The app is free and open source, with no ads, subscriptions or accounts.
+Nodus Reader is a free, open-source reading and listening app for iPhone and iPad. It opens EPUB and PDF books and documents, keeps them in a local library and reads them aloud with neural voices that run on your device. Books, notes and audio are not sent to a Nodus server. There are no ads, subscriptions or accounts.
 
 IMPORT
 • Import EPUB, PDF, TXT, Markdown, HTML and RTF files from Files, from other apps with the Share button, or a whole folder at once.
@@ -40,19 +45,19 @@ IMPORT
 
 READ
 • Read page by page with a page-turn animation, or scroll continuously, vertically or horizontally.
-• Themes: light, sepia, dark, black (OLED), high contrast, or your own colours. Font, size, line spacing, margins and justification can be set for all books or for one book.
-• Add bookmarks, highlights in five colours and notes. Search the book and step through the results.
+• Themes: light, sepia, dark, black (OLED), high contrast, or your own colors. Font, size, line spacing, margins and justification can be set for all books or for one book.
+• Add bookmarks, highlights in five colors and notes. Search the book and step through the results.
 • PDFs open as the original page or in Intelligent Reading, which puts the text in reading order so it reads like a book. Scanned pages, and pages whose text cannot be read, are read with text recognition on the device.
 
 LISTEN
-• Narration with the voices of your device, or with optional neural voices: Kokoro (English and Spanish) and Phonon (English; Spanish and multilingual models with your own Hugging Face access).
-• Neural voices are downloaded once and then run on the device, without an internet connection.
+• Narration with Kokoro and Phonon neural voices that run on the device. Kokoro supports English and Spanish. Phonon supports English now; additional Spanish and multilingual models can be downloaded with your own Hugging Face access.
+• Download a voice model once, then listen without an internet connection.
 • Read & Listen highlights the sentence and the word being read and turns the pages. Tap a word to start reading from there.
-• Speed, sleep timer, lock screen controls and playback in the background.
+• Speed, sleep timer, lock-screen controls and playback in the background.
 • Generated audio is kept on the device so the same sentence is not generated twice. Audio of books you have not opened for a while is deleted automatically.
 
-ORGANISE
-• Collections inside collections, favourites, reading status and sorting.
+ORGANIZE
+• Collections inside collections, favorites, reading status and sorting.
 • Search the library by title, author and text.
 
 SYNC (OPTIONAL)
@@ -60,22 +65,22 @@ SYNC (OPTIONAL)
 
 PRIVACY
 • No data is collected: no analytics, no tracking, no ads.
-• The source code is public under the AGPL-3.0 licence: github.com/jorgepb96/nodus-reader
+• The source code is public under the AGPL-3.0 license: github.com/jorgepb96/nodus-reader
 
-Neural voice models are published by their authors under their own licences, and some allow non-commercial use only. Books protected with DRM cannot be opened.
+Neural voice models are published by their authors under their own licenses, and some allow non-commercial use only. Books protected with DRM cannot be opened.
 
 ## Spanish (Spain)
 
 **Subtitle** (30): Lee y escucha tus libros
 
 **Promotional text** (170):
-Importa archivos EPUB y PDF y escúchalos con voces que funcionan en tu dispositivo. Sin conexión. Gratis y de código abierto, sin anuncios, suscripciones ni cuentas.
+Importa EPUB y PDF y escúchalos con voces neuronales que funcionan en tu dispositivo. Sin conexión, gratis y de código abierto, sin cuentas, anuncios ni seguimiento.
 
 **Keywords** (100): `epub,pdf,ebook,lector,leer en voz alta,texto a voz,tts,audiolibro,narración,sin conexión,ocr,notas`
 
 **Description**:
 
-Nodus Reader abre tus libros y documentos EPUB y PDF y puede leerlos en voz alta. Todo funciona en tu iPhone o iPad: los libros, las notas y el audio no se envían a ningún servidor. La app es gratuita y de código abierto, sin anuncios, suscripciones ni cuentas.
+Nodus Reader es una app gratuita y de código abierto para leer y escuchar en iPhone y iPad. Abre libros y documentos EPUB y PDF, los guarda en una biblioteca local y los lee en voz alta con voces neuronales que funcionan en tu dispositivo. Los libros, las notas y el audio no se envían a un servidor de Nodus. Sin anuncios, suscripciones ni cuentas.
 
 IMPORTAR
 • Importa archivos EPUB, PDF, TXT, Markdown, HTML y RTF desde Archivos, desde otras apps con el botón Compartir o una carpeta entera de una vez.
@@ -89,11 +94,11 @@ LEER
 • Los PDF se abren como la página original o en Lectura inteligente, que ordena el texto en orden de lectura para leerlo como un libro. Las páginas escaneadas, y las que tienen un texto que no se puede leer, se leen con reconocimiento de texto en el dispositivo.
 
 ESCUCHAR
-• Narración con las voces de tu dispositivo o con voces neuronales opcionales: Kokoro (inglés y español) y Phonon (inglés; modelos en español y multilingüe con tu propio acceso a Hugging Face).
-• Las voces neuronales se descargan una vez y después funcionan en el dispositivo, sin conexión a internet.
+• Narración con voces neuronales Kokoro y Phonon que funcionan en el dispositivo. Kokoro admite inglés y español. Phonon admite inglés ahora; los modelos adicionales de español y multilingüe se pueden descargar con tu propio acceso a Hugging Face.
+• Descarga un modelo de voz una vez y escucha sin conexión a internet.
 • Leer y escuchar resalta la frase y la palabra que se leen y pasa las páginas. Toca una palabra para empezar a leer desde ahí.
 • Velocidad, temporizador, controles en la pantalla de bloqueo y reproducción en segundo plano.
-• El audio generado se guarda en el dispositivo para no generar dos veces la misma frase. El audio de los libros que no abres desde hace tiempo se borra automáticamente.
+• El audio generado se guarda en el dispositivo para no generar dos veces la misma frase. El audio de los libros que no abres durante un tiempo se borra automáticamente.
 
 ORGANIZAR
 • Colecciones dentro de colecciones, favoritos, estado de lectura y ordenación.

@@ -99,3 +99,4 @@ The private Beta App Review contact fields use the same owner contact as Nodus D
 - `betaBuildLocalizations` build 24: What to Test filled.
 - `appInfoLocalizations` en-US and es-ES: privacy policy URL filled.
 - No external beta group, public link, Beta App Review submission or App Store submission was created.
+- App Store 1.0 metadata, categories, 4+ age rating, review details and screenshots were also prepared. The App Store version is set to manual release, has no build attached and was not submitted.
