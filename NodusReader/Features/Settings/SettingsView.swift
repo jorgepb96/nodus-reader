@@ -81,7 +81,7 @@ struct SettingsView: View {
                     NavigationLink {
                         VoicesView()
                     } label: {
-                        SettingsRow(title: "Voices & Models", value: voices.defaultVoice?.name ?? String(localized: "System"))
+                        SettingsRow(title: "Voices & Models", value: voices.defaultVoice?.name ?? String(localized: "Set up a voice"))
                     }
                     divider
                     NavigationLink {

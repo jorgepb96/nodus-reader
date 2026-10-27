@@ -198,8 +198,6 @@ final class ModelManager {
 
     /// Pinned Hugging Face revision used for the public Phonon 31M Core ML bundle.
     /// The bundle's own `bundle.json` verifies the size and SHA-256 of every file.
-    static let systemModelID = "system"
-
     static let phononBundleBase = URL(string:
         "https://huggingface.co/mosiah/phonon-31m-en-coreml/resolve/0a2596e9154f0340005b6445514fdd57f7bc9ddb"
     )!
@@ -217,7 +215,7 @@ final class ModelManager {
             voices: ModelManager.kokoroVoices,
             availability: {
                 #if targetEnvironment(simulator)
-                .unavailable(String(localized: "Kokoro's English phonemizer uses MLX, which needs a Metal GPU. The Simulator does not provide one. Install Kokoro on an iPhone, iPad or Mac; Phonon and system voices work in the Simulator."))
+                .unavailable(String(localized: "Kokoro's English phonemizer uses MLX, which needs a Metal GPU. The Simulator does not provide one. Install Kokoro on an iPhone, iPad or Mac; Phonon works in the Simulator."))
                 #else
                 .available
                 #endif
@@ -274,7 +272,7 @@ final class ModelManager {
         self.voices = voices
         self.audioCache = audioCache
         self.defaults = defaults
-        self.selectedModelID = defaults.string(forKey: "nodus.models.selected") ?? Self.systemModelID
+        self.selectedModelID = defaults.string(forKey: "nodus.models.selected") ?? ""
         #if !targetEnvironment(simulator)
         // MLX runs only Kokoro's English fallback phonemizer (a small model for
         // words missing from its dictionary). On the GPU it is refused while
@@ -299,7 +297,9 @@ final class ModelManager {
         models.first { $0.id == selectedModelID }
     }
 
-    var isSystemSelected: Bool { selectedModelID == Self.systemModelID }
+    var hasInstalledModel: Bool {
+        models.contains { state(for: $0).isInstalled || isInstalled($0) }
+    }
 
     func isSelected(_ model: Model) -> Bool {
         selectedModelID == model.id
@@ -312,18 +312,6 @@ final class ModelManager {
         engineLoadTask?.cancel()
         engineLoadTask = nil
         engineLoadToken = UUID()
-        if id == Self.systemModelID {
-            // No neural engine is selected: its models leave memory now.
-            releaseEngines(keeping: nil)
-            selectedModelID = id
-            defaults.set(id, forKey: "nodus.models.selected")
-            publishVoices()
-            if let system = voices.bestSystemVoice {
-                voices.setDefault(system)
-            }
-            NotificationCenter.default.post(name: .nodusVoiceEngineChanged, object: nil)
-            return
-        }
         guard let model = models.first(where: { $0.id == id }),
               model.isAvailable,
               isInstalled(model) else { return }
@@ -345,11 +333,9 @@ final class ModelManager {
     }
 
     private func validateSelection() {
-        if selectedModelID != Self.systemModelID,
-           !(selectedModel.map { $0.isAvailable && isInstalled($0) } ?? false) {
-            selectedModelID = Self.systemModelID
-            defaults.set(selectedModelID, forKey: "nodus.models.selected")
-        }
+        guard !(selectedModel.map { $0.isAvailable && isInstalled($0) } ?? false) else { return }
+        selectedModelID = models.first { $0.isAvailable && isInstalled($0) }?.id ?? ""
+        defaults.set(selectedModelID, forKey: "nodus.models.selected")
     }
 
     var kokoroDirectory: URL { Self.kokoroCacheDirectory }
@@ -489,10 +475,7 @@ final class ModelManager {
         states[model.id] = .notInstalled
         validateSelection()
         publishVoices()
-        if selectedModelID == Self.systemModelID, let system = voices.bestSystemVoice,
-           voices.defaultVoice?.isSystem != true {
-            voices.setDefault(system)
-        }
+        if let first = voices.neuralVoices.first { voices.setDefault(first) }
         NotificationCenter.default.post(name: .nodusVoiceEngineChanged, object: nil)
         Task { await refreshStorage() }
     }
@@ -580,7 +563,11 @@ final class ModelManager {
             states[model.id] = .installed
             installTasks[model.id] = nil
             installTokens[model.id] = nil
-            publishVoices()
+            if selectedModelID.isEmpty {
+                selectModel(model.id)
+            } else {
+                publishVoices()
+            }
             await refreshStorage()
         } catch is CancellationError {
             guard installTokens[model.id] == token else { return }
@@ -663,7 +650,11 @@ final class ModelManager {
                 phononModelID = model.id
             }
             states[model.id] = .installed
-            publishVoices()
+            if selectedModelID.isEmpty {
+                selectModel(model.id)
+            } else {
+                publishVoices()
+            }
             NotificationCenter.default.post(name: .nodusVoiceEngineChanged, object: nil)
         } catch {
             try? FileManager.default.removeItem(at: destination)
@@ -987,7 +978,7 @@ final class ModelManager {
             }
         }
         let installed = models.filter { $0.isAvailable && isInstalled($0) }.flatMap(catalogVoices(for:))
-        guard !isSystemSelected, let model = selectedModel, model.isAvailable, isInstalled(model) else {
+        guard let model = selectedModel, model.isAvailable, isInstalled(model) else {
             voices.setNeuralVoices([], installed: installed)
             return
         }

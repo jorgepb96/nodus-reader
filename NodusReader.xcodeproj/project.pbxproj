@@ -49,6 +49,7 @@
 		7811592388EAB8C07E8E48AC /* MacRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 638DEE4E57C7085D36B92FB0 /* MacRootView.swift */; };
 		78B55073F0CE914B8ECD0877 /* StorageJanitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103016A574B8EB8D2FB618A3 /* StorageJanitor.swift */; };
 		7C220B5498C11A56ED2972E0 /* ReaderSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B4036A7F245A9E69D31D91A /* ReaderSearch.swift */; };
+		7C67445580926989F2C36DA3 /* VoiceSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08BCF69C070FDC82D543F37B /* VoiceSetupView.swift */; };
 		7F83A170CA5A4BCA946CFC5E /* CollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F044BBF5B2AF672BF9CC1E /* CollectionsView.swift */; };
 		81DB4B80C39C5EAD80A08D48 /* SpanishPhonemizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7E1602D5595F5D3887F7D92 /* SpanishPhonemizer.swift */; };
 		82A4E659FEF2A5B081B77840 /* ImportCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 656FC1AC67F05FB48653DA27 /* ImportCoordinator.swift */; };
@@ -147,6 +148,7 @@
 
 /* Begin PBXFileReference section */
 		0299B9EB01C2108D51F868EC /* SharedImportInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedImportInbox.swift; sourceTree = "<group>"; };
+		08BCF69C070FDC82D543F37B /* VoiceSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSetupView.swift; sourceTree = "<group>"; };
 		09340C49F00362F5D266FA01 /* PhononOnDeviceConversion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhononOnDeviceConversion.swift; sourceTree = "<group>"; };
 		099184BADB5FD68A4939C524 /* BookCoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCoverView.swift; sourceTree = "<group>"; };
 		09B5BF31B62E405F87474BFF /* CollectionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDetailView.swift; sourceTree = "<group>"; };
@@ -414,6 +416,7 @@
 				EA760B87303D3F0104FE2E0D /* Home */,
 				F1E32AA8695D5D9866080890 /* Library */,
 				D94098327A3D722621897010 /* Mac */,
+				A5073E7828789EBBBC6EF67F /* Onboarding */,
 				9622B8AFA21A0F4E51418A19 /* Player */,
 				11FE824DDDF2EB66FE2BF2DC /* Reader */,
 				5BBBA2B6798D01E1B6D0E2FC /* Search */,
@@ -482,6 +485,14 @@
 				92566F3CFEA02A9CC4062A6B /* PrivacyInfo.xcprivacy */,
 			);
 			path = NodusReader;
+			sourceTree = "<group>";
+		};
+		A5073E7828789EBBBC6EF67F /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				08BCF69C070FDC82D543F37B /* VoiceSetupView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		B4A87D945D082FCE957C5781 /* NodusReaderUITests */ = {
@@ -842,6 +853,7 @@
 				07A5245681E1BD9A675CF23E /* TextPaginator.swift in Sources */,
 				99D2734F6F871C9CA3EABA92 /* ThemePicker.swift in Sources */,
 				68BC4B6B98AE208B59C91A2B /* VoiceCatalog.swift in Sources */,
+				7C67445580926989F2C36DA3 /* VoiceSetupView.swift in Sources */,
 				E37E31D55CE8B373483E9141 /* VoicesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -950,7 +962,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1016,7 +1028,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;

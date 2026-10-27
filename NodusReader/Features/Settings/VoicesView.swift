@@ -3,7 +3,7 @@ import AuthenticationServices
 import DesignSystem
 import SwiftUI
 
-private enum VoicesMode: String, CaseIterable, Identifiable {
+enum VoicesMode: String, CaseIterable, Identifiable {
     case voices = "Voices"
     case models = "Models"
     var id: String { rawValue }
@@ -15,7 +15,8 @@ struct VoicesView: View {
     @Environment(ModelManager.self) private var models
     @Environment(\.nodusPalette) private var palette
 
-    @State private var mode: VoicesMode = .voices
+    @State private var mode: VoicesMode
+    var initialMode: VoicesMode = .voices
     @State private var searchText = ""
     @State private var languageFilter: String?
     @State private var qualityFilter: Int?
@@ -35,6 +36,11 @@ struct VoicesView: View {
     @State private var keepFiltersOnModelChange = false
     @AppStorage(SpeechWordAligner.enabledKey) private var preciseWordTiming = true
 
+    init(initialMode: VoicesMode = .voices) {
+        self.initialMode = initialMode
+        _mode = State(initialValue: initialMode)
+    }
+
     private var filteredVoices: [VoiceCatalog.Voice] {
         // Every installed model, not only the selected one, so any voice can
         // be tried and chosen.
@@ -42,9 +48,7 @@ struct VoicesView: View {
             if let languageFilter, let code = VoiceCatalog.languageCode(languageFilter),
                !voice.language.lowercased().hasPrefix(code) { return false }
             if let qualityFilter, voice.quality != qualityFilter { return false }
-            if let engineFilter {
-                if engineFilter == "system" ? !voice.isSystem : voice.modelID != engineFilter { return false }
-            }
+            if let engineFilter, voice.modelID != engineFilter { return false }
             let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty {
                 return voice.name.localizedCaseInsensitiveContains(trimmed)
@@ -101,44 +105,30 @@ struct VoicesView: View {
                 keepFiltersOnModelChange = false
                 return
             }
-            if let model = models.selectedModel {
+            if let model = models.selectedModel ?? installedModels.first {
                 engineFilter = model.id
                 if let first = model.voices.first {
                     languageFilter = first.language
                 }
             } else {
-                engineFilter = "system"
-                if !voices.voices(matchingLanguage: languageFilter).contains(where: { $0.isSystem }),
-                   let system = voices.bestSystemVoice {
-                    languageFilter = system.language
-                }
+                engineFilter = nil
             }
         }
         .task {
             await voices.loadIfNeeded()
             if !didSetInitialLanguage {
                 let bookLanguage = VoiceCatalog.languageCode(playback.activeBook?.language)
-                let modelLanguage = VoiceCatalog.languageCode(models.selectedModel?.voices.first?.language)
+                let modelLanguage = VoiceCatalog.languageCode(
+                    (models.selectedModel ?? installedModels.first)?.voices.first?.language
+                )
                 let preferred = bookLanguage ?? modelLanguage
                     ?? VoiceCatalog.languageCode(voices.defaultVoice?.language)
                 if let preferred,
                    let match = voices.voices.first(where: { $0.language.lowercased().hasPrefix(preferred) }) {
                     languageFilter = match.language
                 }
-                let code = VoiceCatalog.languageCode(languageFilter)
-                if let model = models.selectedModel {
-                    let modelSupportsLanguage = code.map { prefix in
-                        model.voices.contains { $0.language.lowercased().hasPrefix(prefix) }
-                    } ?? false
-                    let systemSupportsLanguage = code.map { prefix in
-                        voices.voices.contains { $0.isSystem && $0.language.lowercased().hasPrefix(prefix) }
-                    } ?? false
-                    engineFilter = modelSupportsLanguage || !systemSupportsLanguage
-                        ? model.id
-                        : "system"
-                } else {
-                    engineFilter = "system"
-                }
+                engineFilter = (models.selectedModel ?? installedModels.first)?.id
+                if installedModels.isEmpty { mode = .models }
                 didSetInitialLanguage = true
             }
             hfToken = HuggingFaceTokenStore.load() ?? ""
@@ -195,14 +185,11 @@ struct VoicesView: View {
             .font(.caption)
             .foregroundStyle(palette.muted)
 
-        if voices.isLoading {
-            HStack(spacing: 10) {
-                ProgressView()
-                Text("Loading system voices…")
-                    .font(.footnote)
-                    .foregroundStyle(palette.muted)
-            }
-            .frame(maxWidth: .infinity, minHeight: 120)
+        if voices.allInstalledVoices.isEmpty {
+            NodusEmptyState(icon: "waveform.badge.plus",
+                            title: "No voice model installed",
+                            message: "Install a Kokoro or Phonon model in the Models tab to start listening.")
+                .frame(minHeight: 220)
         } else {
             VStack(spacing: 0) {
                 ForEach(filteredVoices) { voice in
@@ -250,9 +237,6 @@ struct VoicesView: View {
                 if let modelID = voice.modelID, modelID != models.selectedModelID {
                     keepFiltersOnModelChange = true
                     models.selectModel(modelID)
-                } else if voice.isSystem, !models.isSystemSelected {
-                    keepFiltersOnModelChange = true
-                    models.selectModel(ModelManager.systemModelID)
                 }
                 voices.setDefault(voice)
             } label: {
@@ -384,26 +368,33 @@ struct VoicesView: View {
 
     private var engineSelectionCard: some View {
         VStack(spacing: 0) {
-            engineRow(id: ModelManager.systemModelID,
-                      title: String(localized: "System voices"),
-                      detail: String(localized: "Voices provided by \(DeviceInfo.platformName)"),
-                      systemImage: "waveform")
+            if installedModels.isEmpty {
+                Text("No voice model is installed. Download a Kokoro or Phonon model below to enable narration.")
+                    .font(.footnote)
+                    .foregroundStyle(palette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                ForEach(installedModels) { model in
+                    if model.id != installedModels.first?.id {
+                        Divider().overlay(palette.line)
+                    }
+                    engineRow(id: model.id,
+                              title: model.name,
+                              detail: String(localized: "\(model.voices.count) voices · \(model.language)"),
+                              systemImage: "brain")
+                }
 
-            ForEach(models.models.filter { models.isInstalled($0) }) { model in
                 Divider().overlay(palette.line)
-                engineRow(id: model.id,
-                          title: model.name,
-                          detail: String(localized: "\(model.voices.count) voices · \(model.language)"),
-                          systemImage: "brain")
+
+                Text("Only the selected model's voices appear in the reader and player.")
+                    .font(.caption2)
+                    .foregroundStyle(palette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-
-            Divider().overlay(palette.line)
-
-            Text("Only the selected voice engine appears in the reader and player voice lists. System voices are always available as a fallback.")
-                .font(.caption2)
-                .foregroundStyle(palette.muted)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(14)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .panelCard(radius: 18)
@@ -412,7 +403,7 @@ struct VoicesView: View {
     private func engineRow(id: String, title: String, detail: String, systemImage: String) -> some View {
         Button {
             models.selectModel(id)
-            engineFilter = id == ModelManager.systemModelID ? "system" : models.selectedModel?.id
+            engineFilter = models.selectedModel?.id
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: systemImage)
@@ -833,11 +824,8 @@ struct VoicesView: View {
     }
 
     private func engineLabel(for engine: String?) -> String {
-        switch engine {
-        case nil: String(localized: "All")
-        case "system": String(localized: "System")
-        case let id?: models.models.first { $0.id == id }?.name ?? String(localized: "All")
-        }
+        guard let engine else { return String(localized: "All") }
+        return models.models.first { $0.id == engine }?.name ?? String(localized: "All")
     }
 
     // MARK: Helpers
@@ -858,7 +846,6 @@ struct VoicesView: View {
                    isActive: engineFilter != nil) {
             Button("All models") { engineFilter = nil }
             Divider()
-            Button("System") { engineFilter = "system" }
             // Each downloaded model, selected or not.
             ForEach(installedModels) { model in
                 Button(model.name) { engineFilter = model.id }

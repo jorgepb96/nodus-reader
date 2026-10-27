@@ -121,7 +121,7 @@ final class NodusReaderUITests: XCTestCase {
         let spanish = language == "es"
         func label(_ english: String, _ spanishText: String) -> String { spanish ? spanishText : english }
         let app = XCUIApplication()
-        app.launchArguments = ["-NodusSampleLibrary", "-NodusResetReadingState",
+        app.launchArguments = ["-NodusSampleLibrary", "-NodusResetReadingState", "-NodusSkipVoiceSetup",
                                "-AppleLanguages", "(\(language))", "-AppleLocale", spanish ? "es_ES" : "en_US",
                                "-nodus.narration.preciseWordTiming", "NO"]
         app.launch()
@@ -413,6 +413,18 @@ final class NodusReaderUITests: XCTestCase {
         let width = app.windows.firstMatch.frame.width
         try XCTSkipIf(width >= 700, "This test runs on iPhone")
 
+        // This picker only makes sense once a neural voice is installed; the
+        // system catalogue is intentionally gone.
+        tapTab("Settings", in: app)
+        app.staticTexts["Voices & Models"].firstMatch.tap()
+        let noModelInSettings = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS 'No voice model is installed'")
+        ).firstMatch
+        if noModelInSettings.waitForExistence(timeout: 3) {
+            throw XCTSkip("No neural model is installed in this simulator.")
+        }
+        app.navigationBars.buttons.firstMatch.tap()
+
         tapTab("Library", in: app)
         let spanishBook = app.buttons.matching(
             NSPredicate(format: "label BEGINSWITH 'Don Quijote de la Mancha'")
@@ -428,11 +440,17 @@ final class NodusReaderUITests: XCTestCase {
         XCTAssertTrue(openPlayer.waitForExistence(timeout: 30))
         openPlayer.tap()
 
-        XCTAssertTrue(app.staticTexts["System"].firstMatch.waitForExistence(timeout: 10),
-                      "A Spanish book should start with a Spanish system voice")
         let voiceControl = app.buttons["Voice for this book"].firstMatch
         XCTAssertTrue(voiceControl.waitForExistence(timeout: 10))
         voiceControl.tap()
+
+        // There are no system voices in the picker any more.
+        XCTAssertFalse(app.buttons["System"].waitForExistence(timeout: 2))
+
+        let noModel = app.staticTexts["No voice model"].firstMatch
+        if noModel.waitForExistence(timeout: 3) {
+            throw XCTSkip("No neural model is installed in this simulator; system voices are intentionally absent.")
+        }
 
         let spanishSection = app.staticTexts.matching(
             NSPredicate(format: "label BEGINSWITH 'Spanish'")
@@ -446,15 +464,12 @@ final class NodusReaderUITests: XCTestCase {
         XCTAssertFalse(englishNeural.waitForExistence(timeout: 2),
                        "English neural voices were shown before the Spanish book voices")
 
-        // The model filter sits next to the language filter.
+        // The model filter sits next to the language filter and contains only
+        // installed neural models.
         let modelFilter = app.buttons["Filter by Model"].firstMatch
         XCTAssertTrue(modelFilter.waitForExistence(timeout: 5))
         modelFilter.tap()
-        let systemOnly = app.buttons["System"].firstMatch
-        XCTAssertTrue(systemOnly.waitForExistence(timeout: 5))
-        systemOnly.tap()
-        XCTAssertEqual(app.buttons["Filter by Model"].firstMatch.value as? String, "System")
-        XCTAssertTrue(spanishSection.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["System"].waitForExistence(timeout: 2))
     }
 
     func testICloudAndStorage() throws {
@@ -665,11 +680,30 @@ final class NodusReaderUITests: XCTestCase {
         XCTAssertFalse(app.switches["This book only"].firstMatch.waitForExistence(timeout: 1))
     }
 
+    func testVoiceSetupOpensModelCatalog() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-NodusResetVoiceSetup",
+                               "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+
+        let title = app.staticTexts["A voice for every book."]
+        XCTAssertTrue(title.waitForExistence(timeout: 15),
+                      "The first-run voice setup did not appear")
+        let choose = app.buttons["VoiceSetupChooseModel"]
+        XCTAssertTrue(choose.exists)
+        choose.tap()
+
+        XCTAssertTrue(app.staticTexts["Kokoro 82M"].waitForExistence(timeout: 15),
+                      "The voice setup button did not open the model catalogue")
+        XCTAssertFalse(app.buttons["System"].exists,
+                       "The model catalogue still offers system voices")
+    }
+
     private func launch(resetReadingState: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         // The tests read English labels; the app follows the device language
         // (Spanish or English), so pin it to English whatever the simulator uses.
-        app.launchArguments = ["-NodusSampleLibrary", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchArguments = ["-NodusSampleLibrary", "-NodusSkipVoiceSetup", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         // Word timing from speech recognition may first download the system's
         // speech model; the tests use the estimate unless asked to check that
         // narration still starts with it on (TEST_RUNNER_NODUS_PRECISE_TIMING=1).

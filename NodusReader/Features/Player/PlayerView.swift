@@ -108,7 +108,7 @@ struct PlayerView: View {
                     Spacer()
                 }
                 if !playback.isNeuralVoice {
-                    Text("Choose a Kokoro or Phonon voice to generate offline audio. System voices never write audio files.")
+                    Text("Choose a Kokoro or Phonon voice to generate offline audio.")
                         .font(.system(size: 10))
                         .foregroundStyle(palette.muted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -562,7 +562,7 @@ struct VoicePickerSheet: View {
 
     @State private var searchText = ""
     @State private var languageFilter: String?
-    /// "system" or an installed model's ID; nil shows every model.
+    /// An installed model's ID; nil shows every model.
     @State private var modelFilter: String?
     @State private var didSetInitialLanguage = false
 
@@ -573,8 +573,8 @@ struct VoicePickerSheet: View {
         playback.preferredVoiceIsMissing
     }
 
-    /// System voices and the voices of every installed model, not only the
-    /// selected engine's: choosing one from another model switches to it.
+    /// Voices of every installed model, not only the selected engine's:
+    /// choosing one from another model switches to it.
     private var allVoices: [VoiceCatalog.Voice] {
         voices.allInstalledVoices
     }
@@ -584,11 +584,8 @@ struct VoicePickerSheet: View {
     }
 
     private var modelLabel: String? {
-        switch modelFilter {
-        case nil: nil
-        case "system": String(localized: "System")
-        case let id?: installedModels.first { $0.id == id }?.name
-        }
+        guard let modelFilter else { return nil }
+        return installedModels.first { $0.id == modelFilter }?.name
     }
 
     private var filtered: [VoiceCatalog.Voice] {
@@ -596,9 +593,7 @@ struct VoicePickerSheet: View {
         let language = VoiceCatalog.languageCode(languageFilter)
         return allVoices.filter { voice in
             if let language, !voice.language.lowercased().hasPrefix(language) { return false }
-            if let modelFilter {
-                if modelFilter == "system" ? !voice.isSystem : voice.modelID != modelFilter { return false }
-            }
+            if let modelFilter, voice.modelID != modelFilter { return false }
             guard !trimmed.isEmpty else { return true }
             return voice.name.localizedCaseInsensitiveContains(trimmed)
                 || voice.languageName.localizedCaseInsensitiveContains(trimmed)
@@ -623,7 +618,6 @@ struct VoicePickerSheet: View {
                                 value: modelLabel, isActive: modelFilter != nil) {
                     Button("All models") { modelFilter = nil }
                     Divider()
-                    Button("System") { modelFilter = "system" }
                     ForEach(installedModels) { model in
                         Button(model.name) { modelFilter = model.id }
                     }

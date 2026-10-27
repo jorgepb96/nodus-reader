@@ -17,7 +17,7 @@ Nodus Reader is part of the Nodus Research ecosystem. It is not a web wrapper: t
 - Collections: unlimited nesting, rename, move, delete-without-deleting-documents, multiple memberships per book, manual order.
 - Reader: real EPUB text extraction and TextKit pagination with an iOS page-curl transition, macOS two-page spread, contents, bookmarks, highlights, notes and export, persistent progress, light/sepia/dark/OLED/high-contrast themes, custom themes, typography controls and justified text; an appearance popover with per-book settings; paged, continuous vertical and horizontal-column reading.
 - PDF: original PDFKit reading plus Intelligent Reading with reading-order reconstruction, multi-column detection, Vision OCR fallback, table crops, an original-page overlay, and highlights and notes on the reflowed text.
-- Narration: on-device system voices, plus optional Kokoro 82M (English and Spanish) and Phonon 31M (English) Core ML engines downloaded from Hugging Face. Sentence and word highlighting, tap a word to start Read & Listen from that word, sentence-level audio cache (compressed AAC) with prefetch, progress, cancellation, deletion and automatic cleanup of unused books, player with transport, speed, voice, sleep timer and modes. Background audio, interruptions, headphone unplugging and lock-screen controls are wired for iOS.
+- Narration: optional Kokoro 82M (English and Spanish) and Phonon 31M (English) Core ML engines downloaded from Hugging Face. System voices are deliberately not offered; a neural model is required for narration. Sentence and word highlighting, tap a word to start Read & Listen from that word, sentence-level audio cache (compressed AAC) with prefetch, progress, cancellation, deletion and automatic cleanup of unused books, player with transport, speed, voice, sleep timer and modes. Background audio, interruptions, headphone unplugging and lock-screen controls are wired for iOS.
 - Sync: optional personal iCloud sync through CloudKit and iCloud Drive, a durable outbox, tombstones, timestamp conflicts, cloud-only badges, download-on-open, `Remove Download` and `Delete from Library`.
 - Sharing: iOS Share Extension with an App Group inbox and collection selection.
 - Languages: English and Spanish. The app follows the device language: Spanish on a device set to Spanish, English everywhere else (or per app in Settings › Nodus Reader › Language).
@@ -97,9 +97,9 @@ xcrun simctl launch booted ai.nodus.reader -NodusSampleLibrary
 ## Word-level sync and tap-to-play
 
 Narration highlights the current sentence and word, and tapping a word on iPhone/iPad
-starts Read & Listen from that word. System voices use native timings; Kokoro and
-Phonon use a tested pause-detection and syllable-weighted alignment pass on the real
-waveform, with per-sentence audio caching, prefetch, cancellation and deletion.
+starts Read & Listen from that word. Kokoro and Phonon use a tested pause-detection
+and syllable-weighted alignment pass on the real waveform, with per-sentence audio
+caching, prefetch, cancellation and deletion.
 Models and audio never sync. See
 [`docs/NARRATION_SYNC.md`](docs/NARRATION_SYNC.md).
 
