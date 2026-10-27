@@ -1,6 +1,6 @@
 # Nodus Reader Privacy Policy
 
-_Last updated: 2026-10-26_
+_Last updated: 2026-10-27_
 
 Nodus Reader is local-first. Nodus Research does not operate a server for books, reading data, narration or analytics, and the app does not require a Nodus account.
 
@@ -20,7 +20,7 @@ All of the above is stored locally by default. iCloud sync is optional and off b
 - No telemetry, analytics, crash reporting SDK, advertising identifier or usage profiling.
 - No location, contacts, calendar, health data, microphone or camera access.
 - No Nodus account, email address or password.
-- No remote inference, OCR or text-to-speech. System voices are provided by the operating system; Kokoro and Phonon run locally after an explicit model download. The gated Phonon 40M models are downloaded with your own Hugging Face access and converted to Core ML on the device.
+- No remote inference, OCR or text-to-speech. Kokoro and Phonon run locally after an explicit model download. The gated Phonon 40M models are downloaded with your own Hugging Face access and converted to Core ML on the device.
 - No microphone. Precise word timing (iOS 26 and later, on by default, Settings › Voices & Models) runs Apple's on-device speech recognition on the audio the app has just generated, never on recorded sound, to time the read-along highlight.
 
 ## Permissions
@@ -61,4 +61,4 @@ Material changes will be documented in this file and in the release notes. The s
 
 ## Contact
 
-Open an issue at <https://github.com/jorgepb96/nodus-reader>.
+This policy is published at <https://nodusresearch.com/reader/privacy/>. For support, open an issue at <https://github.com/jorgepb96/nodus-reader>. For a private security or privacy concern, use <https://github.com/jorgepb96/nodus/security/advisories/new>.

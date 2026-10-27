@@ -16,7 +16,7 @@ App Store Connect in step.
 | Age rating | 4+ (every questionnaire answer "None" / "No") |
 | Support URL | https://github.com/jorgepb96/nodus-reader |
 | Marketing URL | https://nodusresearch.com/ |
-| Privacy policy URL | https://github.com/jorgepb96/nodus-reader/blob/main/PRIVACY.md |
+| Privacy policy URL | https://nodusresearch.com/reader/privacy/ |
 | Copyright | 2026 Jorge Pérez Burgueño |
 | App privacy | Data Not Collected |
 
@@ -110,25 +110,14 @@ Los modelos de voz neuronales los publican sus autores con sus propias licencias
 
 ## TestFlight
 
-**Beta app description** (English):
-Nodus Reader opens EPUB and PDF books and documents and reads them aloud with neural voices that run entirely on the device. It imports files from Files and from the Share button, keeps a library with collections, offers several reading themes, bookmarks, highlights, notes and search, rebuilds PDFs for reading with on-device text recognition, and can sync your library through your own iCloud account. Nothing is sent to a Nodus server.
+The public-beta fields, the Drift/Presenter strategy and the remaining App Store Connect steps are in [TESTFLIGHT_PUBLIC_BETA.md](TESTFLIGHT_PUBLIC_BETA.md).
 
-**Descripción de la beta** (español):
-Nodus Reader abre libros y documentos EPUB y PDF y los lee en voz alta con voces neuronales que funcionan íntegramente en el dispositivo. Importa archivos desde Archivos y desde el botón Compartir, organiza una biblioteca con colecciones, ofrece varios temas de lectura, marcadores, subrayados, notas y búsqueda, reconstruye los PDF para leerlos con reconocimiento de texto en el dispositivo y puede sincronizar la biblioteca con tu propia cuenta de iCloud. No se envía nada a un servidor de Nodus.
-
-**What to test** (build 24):
-• On a fresh install, the mandatory voice setup should appear; check it in English and Spanish and that “Choose a voice model” opens Models. There is no “Not now” escape.
-• The Nodus N sits alone, centred, without a circular halo.
-• Confirm there is no system-voice option in Voices, the player picker or Models.
-• Import a document and check that the confirmation banner is readable in light and dark themes and that the imported book opens directly in the reader.
-• Open a two-column paper (arXiv) in Intelligent Reading: paragraphs should stay in their column and not alternate left/right.
-• Check a humanities PDF with numbered footnotes: footnote text should not appear as body bullets.
-• Open a PDF and tap the magnifying glass in both PDF original and Intelligent Reading; the find bar should show a result count and the arrows should move between pages.
-• In Intelligent Reading, drag the page bar on the right edge to jump quickly through a long document.
-• Import a PDF whose text layer looks garbled and open Intelligent Reading. It should be recognised on device, paragraphs should stay joined, and body lines must not turn into huge headings.
-• Check a long table of contents: entries should keep their titles and page numbers without bullet fragments; a document with tables should show the table as its original image.
-• Import an EPUB with dialogue and poetry: paragraphs stay joined and verse lines keep their breaks.
-• Highlights in dark themes should be readable.
+- Feedback email: `contact@nodusresearch.com`
+- Privacy policy URL: `https://nodusresearch.com/reader/privacy/`
+- Current build: `0.1.0 (24)`
+- External group: not created
+- Public link: not created
+- Beta App Review: not submitted
 
 ## Screenshots
 
