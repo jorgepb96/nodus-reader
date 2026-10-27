@@ -88,6 +88,20 @@ public enum TextNormalizer {
         }
         value = value.replacingOccurrences(of: "\t", with: " ")
         value = value.replacingOccurrences(of: "[ ]{2,}", with: " ", options: .regularExpression)
+        // Rejoin embedded-font ligatures split by a space: "confl ictivos",
+        // "signifi cado", "fi ables". Require a letter on both sides so a real
+        // space before a word is preserved.
+        value = value.replacingOccurrences(
+            of: #"(?<=\p{L})(fi|fl|ff|ffi|ffl)\s+(?=\p{Ll})"#,
+            with: "$1",
+            options: [.regularExpression, .caseInsensitive]
+        )
+        // At the start of a line/word the look-behind cannot match.
+        value = value.replacingOccurrences(
+            of: #"\b(fi|fl|ff|ffi|ffl)\s+(?=\p{Ll})"#,
+            with: "$1",
+            options: [.regularExpression, .caseInsensitive]
+        )
         return value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 

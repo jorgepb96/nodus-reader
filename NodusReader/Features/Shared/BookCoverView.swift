@@ -211,7 +211,9 @@ struct ImportToast: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill").foregroundStyle(palette.accent)
-            Text(message).font(.footnote.weight(.medium))
+            Text(message)
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(palette.text)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
