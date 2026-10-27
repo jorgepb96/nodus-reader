@@ -3,7 +3,9 @@
 </p>
 
 <p align="center">
-  <img alt="TestFlight: Coming soon" src="https://img.shields.io/badge/TestFlight-Coming_soon-4f46e5?style=for-the-badge&amp;logo=apple&amp;logoColor=white">
+  <a href="https://testflight.apple.com/join/SjCk8AZ1">
+    <img alt="Join the Nodus Reader public beta on TestFlight" src="https://img.shields.io/badge/TestFlight-Public_beta-4f46e5?style=for-the-badge&amp;logo=apple&amp;logoColor=white">
+  </a>
 </p>
 
 # Nodus Reader

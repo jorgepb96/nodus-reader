@@ -1,6 +1,6 @@
-# Public TestFlight beta: prepared fields
+# Public TestFlight beta
 
-Status on 27 October 2026. This file records the values prepared for the public TestFlight beta. It does not submit the app for Beta App Review and does not publish an App Store version.
+Status on 27 October 2026. The external group exists, build 24 is assigned to it, the public link is enabled and Beta App Review was submitted. The review is **waiting for review** and public installation is not available until Apple approves the build. This does not publish an App Store version.
 
 ## Strategy in the other Nodus apps
 
@@ -8,7 +8,7 @@ Status on 27 October 2026. This file records the values prepared for the public 
 | --- | --- | --- | --- |
 | Nodus Presenter | Published on the App Store | `https://nodusresearch.com/presenter/privacy/` | Internal group only; no public link |
 | Nodus Drift | Public TestFlight beta; App Store version still in review | `https://nodusresearch.com/drift/privacy/` | External group `Nodus Drift — Public Beta`; public link enabled |
-| Nodus Reader | Public TestFlight beta only | `https://nodusresearch.com/reader/privacy/` | External group created; build 24 assigned; public link not created |
+| Nodus Reader | Public TestFlight beta only | `https://nodusresearch.com/reader/privacy/` | External group created; build 24 assigned; public link enabled; Beta App Review submitted |
 
 Reader follows Drift: the beta is tested through a public TestFlight link, not through an App Store release. Presenter is the App Store-published app and is not the model for this release.
 
@@ -25,8 +25,8 @@ Reader follows Drift: the beta is tested through a public TestFlight link, not t
 | Build processing state | Valid |
 | Internal group | `Internal` |
 | External group | `Nodus Reader — Public Beta` (`b2c18bee-362c-4fc0-804a-6869fb3ee638`) |
-| Public link | Not created; `publicLinkEnabled` is false |
-| Beta App Review | Not submitted |
+| Public link | `https://testflight.apple.com/join/SjCk8AZ1`; enabled |
+| Beta App Review | Submitted; `WAITING_FOR_REVIEW` |
 
 ## TestFlight fields
 
@@ -88,9 +88,8 @@ The private Beta App Review contact fields use the same owner contact as Nodus D
 
 1. Confirm that the App Privacy answer is still **Data Not Collected** for the current build. The app has no analytics, tracking or developer-operated server. Apple, Hugging Face and TestFlight are disclosed in the policy as separate services.
 2. Confirm the free-app agreement, tax and banking sections are active.
-3. Review the existing external group **Nodus Reader — Public Beta** and its build 24.
-4. Submit that build for Beta App Review. This is not an App Store submission.
-5. After approval, enable the public link and share it. Do not submit an App Store version.
+3. Monitor **Beta App Review** for the existing external group **Nodus Reader — Public Beta** and build 24.
+4. After approval, confirm that the public link accepts testers and share it. Do not submit an App Store version.
 
 ## API state after preparation
 
@@ -98,6 +97,8 @@ The private Beta App Review contact fields use the same owner contact as Nodus D
 - `betaAppReviewDetails`: owner contact copied from Drift; notes and no demo account filled.
 - `betaBuildLocalizations` build 24: What to Test filled.
 - `appInfoLocalizations` en-US and es-ES: privacy policy URL filled.
-- External beta group **Nodus Reader — Public Beta** created; build 24 assigned. Public link remains disabled.
-- No public link, Beta App Review submission or App Store submission was created.
+- External beta group **Nodus Reader — Public Beta** created; build 24 assigned to both internal and external groups.
+- Public link enabled: `https://testflight.apple.com/join/SjCk8AZ1`.
+- Beta App Review submitted for build 24; state `WAITING_FOR_REVIEW`.
+- No App Store submission was created.
 - App Store 1.0 metadata, categories, 4+ age rating, review details and screenshots were also prepared. The App Store version is set to manual release, has no build attached and was not submitted.
