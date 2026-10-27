@@ -11,6 +11,18 @@ final class PDFReflowJob {
     var errorMessage: String?
 }
 
+/// Finds a query in the reflowed page text, keeping the original page index.
+func reflowSearchMatches(for query: String, in document: PDFReflowDocument) -> [ReaderSearchMatch] {
+    var matches: [ReaderSearchMatch] = []
+    for page in document.pages {
+        for match in ReaderSearch.matches(for: query, in: [page.canonicalLayout.text]) {
+            matches.append(ReaderSearchMatch(chapterIndex: page.pageIndex, range: match.range))
+            if matches.count >= ReaderSearch.maximumMatches { return matches }
+        }
+    }
+    return matches
+}
+
 enum PDFReadingMode: String, CaseIterable, Identifiable {
     case original = "Original PDF"
     case intelligent = "Intelligent Reading"
@@ -33,6 +45,7 @@ struct PDFReaderContainer: View {
     /// Reading, where notes are shown.
     @Binding var mode: PDFReadingMode
     var search: ReaderSearchModel?
+    @State private var searchDocument: PDFReflowDocument?
     /// Starts Read & Listen at (page, offset in the page's canonical text).
     var onStartNarration: (Int, Int) -> Void = { _, _ in }
     var onAnnotate: (Int, NSRange, String, AnnotationColor) -> Void = { _, _, _, _ in }
@@ -56,15 +69,74 @@ struct PDFReaderContainer: View {
             switch mode {
             case .original:
                 PDFKitReader(url: url, pageIndex: $pdfPageIndex, pageCount: $pdfPageCount,
-                             jumpToPage: $jumpToPage, background: theme.background, search: search)
+                             jumpToPage: $jumpToPage, background: theme.background,
+                             search: search, externalSearch: true)
                     .ignoresSafeArea(edges: .bottom)
             case .intelligent:
                 PDFReflowView(book: book, url: url, theme: theme,
                               pdfPageIndex: $pdfPageIndex, jumpToPage: $jumpToPage,
+                              search: search,
                               onStartNarration: onStartNarration,
                               onAnnotate: onAnnotate)
             }
         }
+        .task(id: originalSearchKey) { await runOriginalSearch() }
+    }
+
+    private var originalSearchKey: String {
+        guard mode == .original, let search, search.isPresented else { return "" }
+        return search.query + "|" + book.contentHash
+    }
+
+    private var searchStore: PDFReflowStore {
+        PDFReflowStore(fileStore: library.fileStore)
+    }
+
+    /// PDFKit cannot search a garbled text layer. In Original view the search
+    /// therefore uses the same reflow page text as Intelligent Reading and
+    /// jumps the PDFView to the matching page.
+    private func runOriginalSearch() async {
+        guard mode == .original, let search, search.isPresented else { return }
+        let query = search.query
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            search.setMatches([], startingAt: nil)
+            search.isSearching = false
+            return
+        }
+        search.isSearching = true
+        var document = searchDocument
+        if document == nil {
+            document = searchStore.load(bookID: book.id, contentHash: book.contentHash)
+        }
+        if document == nil {
+            let bookID = book.id
+            let contentHash = book.contentHash
+            let store = searchStore
+            let work = Task.detached(priority: .userInitiated) {
+                try PDFReflowExtractor.extract(
+                    url: url, bookID: bookID, contentHash: contentHash, store: store
+                )
+            }
+            do {
+                document = try await withTaskCancellationHandler {
+                    try await work.value
+                } onCancel: {
+                    work.cancel()
+                }
+            } catch {
+                if !Task.isCancelled {
+                    search.setMatches([], startingAt: nil)
+                    search.isSearching = false
+                }
+                return
+            }
+        }
+        guard !Task.isCancelled, let document else { return }
+        searchDocument = document
+        let matches = reflowSearchMatches(for: query, in: document)
+        let start = ReaderSearch.firstIndex(in: matches, fromChapter: pdfPageIndex, offset: 0)
+        search.setMatches(matches, startingAt: start)
+        search.isSearching = false
     }
 }
 
@@ -87,6 +159,8 @@ struct PDFReflowView: View {
     @Binding var pdfPageIndex: Int
     /// Contents, bookmarks and "go to page" requests from the reader chrome.
     @Binding var jumpToPage: Int?
+    /// The reader's find state; the reflow runs it over its canonical page text.
+    var search: ReaderSearchModel?
     /// Tap a word: Read & Listen from there (page, canonical offset).
     var onStartNarration: (Int, Int) -> Void = { _, _ in }
     /// A highlight or note on (original page, canonical range, quote, colour).
@@ -96,9 +170,9 @@ struct PDFReflowView: View {
     @State private var showImages = true
     @State private var skipHeaders = true
     @State private var showSourceSheet = false
-    /// Original pages whose reflow is on screen; the first one is the page
-    /// shown in the reader bar and the original page panel.
-    @State private var visiblePages: Set<Int> = []
+    /// Page at the top of the reflow, used by the reader bar, the original
+    /// page panel and the scrollbar.
+    @State private var scrollPosition: Int?
 
     /// The book's own typography when it has one, the global one otherwise.
     private var typography: ReaderTypography {
@@ -149,6 +223,11 @@ struct PDFReflowView: View {
         }
         .background(theme.background)
         .task { await loadReflow() }
+        .task(id: reflowSearchKey) { await runReflowSearch() }
+        .onChange(of: search?.current) { _, _ in
+            guard let page = search?.currentMatch?.chapterIndex else { return }
+            if page != pdfPageIndex { jumpToPage = page }
+        }
         // Read & Listen turns to the page being read.
         .onChange(of: playback.chapterIndex) { _, page in
             guard isNarratingHere, playback.mode == .readAndListen, page != pdfPageIndex else { return }
@@ -217,17 +296,6 @@ struct PDFReflowView: View {
                         ForEach(document.pages) { page in
                             pageView(page)
                                 .id(page.pageIndex)
-                                .onScrollVisibilityChange(threshold: 0.15) { visible in
-                                    if visible {
-                                        visiblePages.insert(page.pageIndex)
-                                    } else {
-                                        visiblePages.remove(page.pageIndex)
-                                    }
-                                    // The topmost page on screen is the current one.
-                                    if let first = visiblePages.min(), first != pdfPageIndex {
-                                        pdfPageIndex = first
-                                    }
-                                }
                         }
                         if document.pageCount < document.totalPageCount {
                             Text("This build has analysed the first \(document.pageCount) of \(document.totalPageCount) pages. The original PDF remains available in full.")
@@ -247,16 +315,38 @@ struct PDFReflowView: View {
                     .padding(.horizontal, max(20, typography.margin))
                     .padding(.top, 20)
                     .padding(.bottom, 60)
+                    .scrollTargetLayout()
                 }
+                .scrollPosition(id: $scrollPosition, anchor: .top)
                 .scrollIndicators(.hidden)
+                .overlay(alignment: .trailing) {
+                    if !job.isWorking, document.pages.count > 1 {
+                        PDFReflowScrollbar(
+                            pages: document.pages.map(\.pageIndex),
+                            current: pdfPageIndex,
+                            theme: theme
+                        ) { page in
+                            scrollPosition = page
+                            pdfPageIndex = page
+                            jumpToPage = nil
+                            scroll(proxy, to: page, in: document)
+                        }
+                        .padding(.vertical, 74)
+                        .padding(.trailing, 4)
+                    }
+                }
+                .onChange(of: scrollPosition) { _, page in
+                    guard let page, page != pdfPageIndex else { return }
+                    pdfPageIndex = page
+                }
                 .onAppear {
                     // Switching from Original keeps the reading position.
+                    scrollPosition = pdfPageIndex
                     scroll(proxy, to: pdfPageIndex, in: document)
                 }
                 .onChange(of: jumpToPage) { _, target in
                     guard let target else { return }
-                    // Pages scrolled past in a jump may not report leaving.
-                    visiblePages = [target]
+                    scrollPosition = target
                     scroll(proxy, to: target, in: document)
                     pdfPageIndex = target
                     jumpToPage = nil
@@ -323,7 +413,7 @@ struct PDFReflowView: View {
 
     private func pageHighlights(page: Int, text: String) -> ReaderPageHighlights {
         let isDark = theme.isDark
-        let spans = narrationSpans(page: page, text: text) + book.annotations.filter { $0.chapterIndex == page }.compactMap { annotation -> ReaderPageHighlightSpan? in
+        var spans = narrationSpans(page: page, text: text) + book.annotations.filter { $0.chapterIndex == page }.compactMap { annotation -> ReaderPageHighlightSpan? in
             guard let range = ReflowAnnotationAnchor.resolve(start: annotation.startOffset,
                                                              end: annotation.endOffset,
                                                              quote: annotation.quote,
@@ -336,6 +426,24 @@ struct PDFReflowView: View {
                 underlineWidth: 1.5,
                 rounded: true
             )
+        }
+        if let search, search.isPresented,
+           let ranges = search.rangesByChapter[page] {
+            for range in ranges {
+                let isCurrent = search.currentMatch
+                    == ReaderSearchMatch(chapterIndex: page, range: range)
+                spans.append(ReaderPageHighlightSpan(
+                    range: range,
+                    fill: isCurrent
+                        ? PlatformColor(hex: NodusHex.searchCurrent,
+                                        alpha: isDark ? 0.55 : 0.9)
+                        : PlatformColor(hex: isDark ? NodusHex.searchMatchDark : NodusHex.searchMatch,
+                                        alpha: isDark ? 0.45 : 0.55),
+                    underline: isCurrent ? PlatformColor(hex: NodusHex.searchCurrentUnderline) : nil,
+                    underlineWidth: isCurrent ? 2 : 0,
+                    rounded: true
+                ))
+            }
         }
         return ReaderPageHighlights(spans: spans)
     }
@@ -459,6 +567,32 @@ struct PDFReflowView: View {
         #else
         DeviceInfo.isPad
         #endif
+    }
+
+    private var reflowSearchKey: String {
+        let query = search?.isPresented == true ? search?.query ?? "" : ""
+        return query + "|" + (job.document?.contentHash ?? "")
+    }
+
+    private func runReflowSearch() async {
+        guard let search, search.isPresented, let document = job.document else { return }
+        let query = search.query
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            search.setMatches([], startingAt: nil)
+            search.isSearching = false
+            return
+        }
+        search.isSearching = true
+        try? await Task.sleep(for: .milliseconds(250))
+        guard !Task.isCancelled else { return }
+        let matches = reflowSearchMatches(for: query, in: document)
+        guard !Task.isCancelled else { return }
+        let start = ReaderSearch.firstIndex(in: matches, fromChapter: pdfPageIndex, offset: 0)
+        search.setMatches(matches, startingAt: start)
+        search.isSearching = false
+        if let page = search.currentMatch?.chapterIndex, page != pdfPageIndex {
+            jumpToPage = page
+        }
     }
 
     private func loadReflow(force: Bool = false) async {
@@ -738,5 +872,80 @@ struct ReflowImage: View {
 private extension ReaderTheme {
     var panelFallback: Color {
         isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.05)
+    }
+}
+
+
+// MARK: - Reflow scrollbar
+
+/// A draggable page bar for the continuous reflow. It maps the track to
+/// original page indices, so moving the thumb jumps directly to a page instead
+/// of requiring a long fling through the whole thesis.
+struct PDFReflowScrollbar: View {
+    let pages: [Int]
+    let current: Int
+    let theme: ReaderTheme
+    let onSelect: (Int) -> Void
+    @State private var dragging = false
+
+    var body: some View {
+        GeometryReader { proxy in
+            let height = max(1, proxy.size.height)
+            let thumbHeight = min(height, max(44, height / CGFloat(max(pages.count, 1)) * 3))
+            let travel = max(0, height - thumbHeight)
+            let index = pages.firstIndex(of: current) ?? 0
+            let progress = pages.count > 1
+                ? CGFloat(index) / CGFloat(pages.count - 1)
+                : 0
+            let offset = travel * progress
+
+            ZStack(alignment: .top) {
+                Capsule()
+                    .fill(theme.text.opacity(0.12))
+                    .frame(width: 4, height: height)
+                Capsule()
+                    .fill(theme.accent.opacity(dragging ? 1 : 0.86))
+                    .frame(width: 10, height: thumbHeight)
+                    .overlay {
+                        if thumbHeight >= 44 {
+                            Text("\(current + 1)")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(theme.background)
+                                .monospacedDigit()
+                        }
+                    }
+                    .offset(y: offset)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        dragging = true
+                        guard pages.count > 1, travel > 0 else { return }
+                        let y = min(max(0, value.location.y - thumbHeight / 2), travel)
+                        let fraction = y / travel
+                        let target = Int((fraction * CGFloat(pages.count - 1)).rounded())
+                        guard pages.indices.contains(target) else { return }
+                        onSelect(pages[target])
+                    }
+                    .onEnded { _ in dragging = false }
+            )
+        }
+        .frame(width: 30)
+        .accessibilityElement()
+        .accessibilityIdentifier("PDFReflowScrollbar")
+        .accessibilityLabel("Scroll through pages")
+        .accessibilityValue("Page \(current + 1) of \(pages.count)")
+        .accessibilityAdjustableAction { direction in
+            let index = pages.firstIndex(of: current) ?? 0
+            let next: Int
+            switch direction {
+            case .increment: next = min(index + 1, pages.count - 1)
+            case .decrement: next = max(index - 1, 0)
+            @unknown default: return
+            }
+            if pages.indices.contains(next) { onSelect(pages[next]) }
+        }
     }
 }
