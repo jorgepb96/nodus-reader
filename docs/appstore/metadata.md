@@ -116,10 +116,11 @@ Nodus Reader opens EPUB and PDF books and documents and reads them aloud with th
 **Descripción de la beta** (español):
 Nodus Reader abre libros y documentos EPUB y PDF y los lee en voz alta con las voces de tu dispositivo o con voces neuronales que funcionan en el dispositivo. Importa archivos desde Archivos y desde el botón Compartir, organiza una biblioteca con colecciones, ofrece varios temas de lectura, marcadores, subrayados, notas y búsqueda, reconstruye los PDF para leerlos con reconocimiento de texto en el dispositivo y puede sincronizar la biblioteca con tu propia cuenta de iCloud. No se envía nada a un servidor de Nodus.
 
-**What to test** (build 16):
-• Import a PDF whose text looks wrong in Intelligent Reading: it should now be read with text recognition.
-• Narrate with a neural voice and lock the phone: narration should continue, with no pause between sentences.
-• Check that the word highlight follows the audio (Settings › Voices & Models › Precise word timing).
+**What to test** (build 19):
+• Import a PDF whose text layer looks garbled and open Intelligent Reading. It should be recognised on device, paragraphs should stay joined, and body lines must not turn into huge headings.
+• Check a long table of contents: entries should keep their titles and page numbers without bullet fragments; a document with tables should show the table as its original image.
+• Reopen a PDF imported in an older build: the reflow cache is rebuilt automatically (schema 6).
+• Import an EPUB with dialogue and poetry: paragraphs stay joined and verse lines keep their breaks.
 • Search inside a book with the magnifying glass and the arrows.
 • Highlights in dark themes should be readable.
 

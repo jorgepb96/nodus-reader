@@ -2,6 +2,7 @@
 import CoreGraphics
 import CoreText
 import Foundation
+import UIKit
 import PDFKit
 import Testing
 @testable import Nodus_Reader
@@ -773,4 +774,95 @@ func textImportRejectsAnEmptyDocument() throws {
     #expect(throws: ImportError.self) {
         _ = try DocumentExtractor.extract(url: url, format: .txt)
     }
+}
+
+
+// MARK: - Scanned PDF layout
+
+@MainActor
+private func makeScannedPDF() throws -> URL {
+    let size = CGSize(width: 1240, height: 1754)
+    let renderer = UIGraphicsImageRenderer(size: size)
+    let image = renderer.image { context in
+        UIColor.white.setFill()
+        context.fill(CGRect(origin: .zero, size: size))
+        let muted = UIColor(white: 0.35, alpha: 1)
+        let header = "A GENERIC RUNNING HEADER"
+        header.draw(at: CGPoint(x: 180, y: 55), withAttributes: [
+            .font: UIFont.systemFont(ofSize: 24), .foregroundColor: muted
+        ])
+        "CHAPTER I".draw(at: CGPoint(x: 140, y: 190), withAttributes: [
+            .font: UIFont.boldSystemFont(ofSize: 46), .foregroundColor: UIColor.black
+        ])
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineSpacing = 12
+        let body: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 29),
+            .foregroundColor: UIColor.black,
+            .paragraphStyle: paragraph
+        ]
+        ("This is the first paragraph, hard-wrapped over two lines so the reading "
+         + "engine must join them.")
+            .draw(in: CGRect(x: 140, y: 300, width: 960, height: 260), withAttributes: body)
+        ("This is the second paragraph after a blank gap. It must stay a separate "
+         + "paragraph from the first one.")
+            .draw(in: CGRect(x: 140, y: 700, width: 960, height: 240), withAttributes: body)
+        "1".draw(at: CGPoint(x: 610, y: 1650), withAttributes: [
+            .font: UIFont.systemFont(ofSize: 24), .foregroundColor: muted
+        ])
+    }
+    guard let cgImage = image.cgImage else { throw ImportError.unreadableDocument("scanned page") }
+    let data = NSMutableData()
+    var mediaBox = CGRect(x: 0, y: 0, width: 612, height: 792)
+    guard let consumer = CGDataConsumer(data: data as CFMutableData),
+          let context = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else {
+        throw ImportError.unreadableDocument("scanned page")
+    }
+    context.beginPDFPage(nil)
+    context.draw(cgImage, in: mediaBox)
+    context.endPDFPage()
+    context.closePDF()
+    return try temporaryFormatFile("scanned-layout.pdf", data: data as Data)
+}
+
+@Test @MainActor
+func scannedPDFJoinsParagraphsAndDoesNotPromoteBodyLinesToHeadings() throws {
+    let url = try makeScannedPDF()
+    defer { try? FileManager.default.removeItem(at: url) }
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("NodusScannedStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let store = PDFReflowStore(fileStore: FileStore(root: root))
+    let document = try PDFReflowExtractor.extract(
+        url: url, bookID: UUID(), contentHash: "scanned-layout",
+        store: store, maxPages: 1
+    )
+    #expect(document.usedOCR)
+    let markdown = document.markdown()
+    #expect(markdown.contains("CHAPTER I"))
+    #expect(markdown.contains("This is the first paragraph, hard-wrapped over two lines so the reading engine must join them."))
+    #expect(markdown.contains("This is the second paragraph after a blank gap."))
+    #expect(!markdown.contains("# This is the first paragraph"))
+    #expect(!markdown.contains("A GENERIC RUNNING HEADER"))
+}
+
+@Test
+func textNormalizerHandlesSpanishPageLabelsAndOcrLookalikes() {
+    #expect(TextNormalizer.isPageNumber("PÁGINA 8"))
+    #expect(TextNormalizer.isPageNumber("Página 8 de 70"))
+    #expect(TextNormalizer.isPageNumber("pág. 8"))
+    #expect(TextNormalizer.repairLatinOCR("Presentación у objetivos") == "Presentación y objetivos")
+    #expect(TextNormalizer.repairRomanOCR("Il. Marco teórico") == "II. Marco teórico")
+    #expect(TextNormalizer.repairRomanOCR("INTRODUCCIÓN'") == "INTRODUCCIÓN")
+}
+
+@Test
+func contentsEntryParsesOcrSplitPageNumbers() {
+    #expect(PDFReflowExtractor.contentsEntry("3.1. Title .. 68", onContentsPage: true)
+        == "3.1. Title · 68")
+    #expect(PDFReflowExtractor.contentsEntry("CAPÍTULO V. ESPAÑA EN BLANCO Y NEGRO.70",
+                                             onContentsPage: true)
+        == "CAPÍTULO V. ESPAÑA EN BLANCO Y NEGRO · 70")
+    #expect(PDFReflowExtractor.contentsEntry("Tabla 2. Corpus visual.41", onContentsPage: true)
+        == "Tabla 2. Corpus visual · 41")
 }

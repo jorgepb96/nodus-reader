@@ -14,11 +14,15 @@ import UIKit
 // MARK: - Models
 
 struct PDFReflowDocument: Codable, Sendable {
+    /// 6: OCR fragments are merged before reading order, OCR headings use
+    /// text/indent/spacing cues rather than raw box height, contents rows are
+    /// rebuilt from columns, table pages are preserved as images, and front
+    /// matter before a contents page is dropped when it is only cover copy.
     /// 5: blocks are reconstructed from font and baseline geometry, not only
     /// from line boxes. Contents and indexes keep one entry per line, running
     /// headers and feet are recognised by repetition and page numbers, and
     /// paragraphs that continue on the next page carry that relationship.
-    static let schemaVersion = 5
+    static let schemaVersion = 6
 
     var version: Int = PDFReflowDocument.schemaVersion
     var contentHash: String
@@ -191,11 +195,14 @@ enum PDFReflowExtractor {
 
             var lines = mergeLineFragments(textLines(page: page, bounds: bounds), bounds: bounds)
             var ocrPage = false
-            let garbled = PDFPageText.isGarbled(lines.map(\.text).joined(separator: " "))
-            if lines.count < 3 || garbled {
+            let bodyForGarble = lines.filter { !$0.marginal }.map(\.text).joined(separator: " ")
+            let garbled = PDFPageText.isGarbled(bodyForGarble)
+            let shortBody = bodyForGarble.count < 80
+            if lines.count < 3 || garbled || shortBody {
                 let ocr = (try? visionLines(page: page, bounds: bounds)) ?? []
-                if !ocr.isEmpty, garbled || ocr.count > lines.count {
-                    lines = ocr
+                let mergedOCR = mergeLineFragments(ocr, bounds: bounds)
+                if !mergedOCR.isEmpty, garbled || shortBody || mergedOCR.count > lines.count {
+                    lines = mergedOCR
                     ocrPage = true
                     usedOCR = true
                 } else if garbled {
@@ -244,16 +251,26 @@ enum PDFReflowExtractor {
     static func contentsEntry(_ text: String, onContentsPage: Bool) -> String? {
         let value = TextNormalizer.cleanLine(text)
         guard !value.isEmpty, value.count <= 220, !TextNormalizer.isPageNumber(value) else { return nil }
-        let pattern = #"^(.*?\S)\s*(?:(?:\.\s?){3,}|…+|_{3,})\s*(\d{1,4}|[ivxlcdmIVXLCDM]{1,6})$"#
+        let pattern = #"^(.*?\S)\s*(?:(?:\.\s?){2,}|…+|_{2,})\s*(\d{1,4}|[ivxlcdmIVXLCDM]{1,6})$"#
         if let match = value.range(of: pattern, options: .regularExpression) {
             let line = String(value[match])
             let title = line.replacingOccurrences(
-                of: #"\s*(?:(?:\.\s?){3,}|…+|_{3,})\s*(\d{1,4}|[ivxlcdmIVXLCDM]{1,6})$"#,
+                of: #"\s*(?:(?:\.\s?){2,}|…+|_{2,})\s*(\d{1,4}|[ivxlcdmIVXLCDM]{1,6})$"#,
                 with: "", options: .regularExpression
             )
             let number = line.range(of: #"(\d{1,4}|[ivxlcdmIVXLCDM]{1,6})$"#, options: .regularExpression)
                 .map { String(line[$0]) } ?? ""
-            return "\(title) · \(number)"
+            return "\(title.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: #"[.\s]+$"#, with: "")) · \(number)"
+        }
+        if onContentsPage,
+           let match = value.range(of: #"^(.*\S)\.(\d{1,4})$"#, options: .regularExpression) {
+            let line = String(value[match])
+            let number = line.range(of: #"\d{1,4}$"#, options: .regularExpression)
+                .map { String(line[$0]) } ?? ""
+            let title = line.replacingOccurrences(of: #"\.\d{1,4}$"#, with: "",
+                                                   options: .regularExpression)
+                .trimmingCharacters(in: CharacterSet(charactersIn: " ."))
+            if !title.isEmpty, !number.isEmpty { return "\(title.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: #"[.\s]+$"#, with: "")) · \(number)" }
         }
         if onContentsPage,
            let match = value.range(of: #"^(.*\D)\s+(\d{1,4}|[ivxlcdmIVXLCDM]{1,6})$"#, options: .regularExpression) {
@@ -263,7 +280,7 @@ enum PDFReflowExtractor {
             let title = line.replacingOccurrences(
                 of: #"\s+(\d{1,4}|[ivxlcdmIVXLCDM]{1,6})$"#, with: "", options: .regularExpression
             )
-            return "\(title) · \(number)"
+            return "\(title.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: #"[.\s]+$"#, with: "")) · \(number)"
         }
         return nil
     }
@@ -288,7 +305,7 @@ enum PDFReflowExtractor {
         let value = TextNormalizer.cleanLine(text).lowercased()
         guard value.count <= 40 else { return false }
         return value.range(
-            of: #"^(table of contents|contents|contenido|contenidos|índice|indice|sommaire|inhalt)$"#,
+            of: #"^(table of contents|contents|contenido|contenidos|índice|indice|índice de figuras|índice de tablas|indice de figuras|indice de tablas|list of figures|list of tables|sommaire|inhalt)$"#,
             options: .regularExpression
         ) != nil
     }
@@ -297,7 +314,7 @@ enum PDFReflowExtractor {
         let value = TextNormalizer.cleanLine(text).lowercased()
         guard value.count <= 40 else { return false }
         return value.range(
-            of: #"^(index|índice|indice|subject index|onomastic index)$"#,
+            of: #"^(index|índice|indice|subject index|onomastic index|índice de figuras|índice de tablas|indice de figuras|indice de tablas|list of figures|list of tables)$"#,
             options: .regularExpression
         ) != nil
     }
@@ -308,7 +325,7 @@ enum PDFReflowExtractor {
     /// chapter/appendix labels are.
     private static func strongContentsEntry(_ line: Line) -> Bool {
         let text = line.text
-        if text.range(of: #"^(.*?\S)\s*(?:(?:\.\s?){3,}|…+|\_{3,})\s*(\d{1,4}|[ivxlcdmIVXLCDM]{1,6})$"#,
+        if text.range(of: #"^(.*?\S)\s*(?:(?:\.\s?){2,}|…+|\_{2,})\s*(\d{1,4}|[ivxlcdmIVXLCDM]{1,6})$"#,
                       options: .regularExpression) != nil {
             return true
         }
@@ -343,7 +360,8 @@ enum PDFReflowExtractor {
 
     // MARK: Line helpers
 
-    private static func headingLevel(for line: Line, profile: LayoutProfile) -> Int? {
+    private static func headingLevel(for line: Line, profile: LayoutProfile,
+                                     previous: Line? = nil) -> Int? {
         let text = TextNormalizer.cleanLine(line.text)
         guard !text.isEmpty, text.count <= 140, !TextNormalizer.isPageNumber(text) else { return nil }
         if line.isVertical { return nil }
@@ -352,10 +370,10 @@ enum PDFReflowExtractor {
         let ratio = line.fontSize / max(profile.bodyFontSize, 1)
         let wordCount = text.split(whereSeparator: \.isWhitespace).count
         let numbered = text.range(
-            of: #"^\s*(?:\d{1,3}(?:\.\d+)*\.?|[IVXLC]{1,6}\.)\s+\S"#,
+            of: #"^\s*(?:\d{1,3}(?:\.\d+)*\.|[IVXLC]{1,6}\.)\s+\S"#,
             options: [.regularExpression, .caseInsensitive]
         ) != nil
-        let known = text.range(
+        let known = text.first?.isUppercase == true && text.range(
             of: #"^(abstract|introduction|conclusion|conclusions|contents|table of contents|index|references|bibliography|appendix|preface|foreword|acknowledg|summary|overview|background|methods|methodology|materials|results|discussion|related work|resumen|índice|introducción|conclusión|conclusiones|referencias|bibliografía|apéndice|prefacio|prólogo|capítulo|chapter|part|section)\b"#,
             options: [.regularExpression, .caseInsensitive]
         ) != nil
@@ -367,6 +385,29 @@ enum PDFReflowExtractor {
         let sentenceLike = endsSentence && wordCount > 8
         let shortBold = line.isBold && text.count <= 80 && wordCount <= 12
         let romanHeading = text.range(of: #"^[IVXLC]{1,6}$"#, options: .regularExpression) != nil
+        if line.isOCR {
+            // OCR line boxes vary with accents and merged fragments. Font
+            // height is not reliable enough to promote a body line to a
+            // heading. Prefer textual cues and a deliberate indented section
+            // title; use size only as a secondary signal.
+            let bottom = line.rect.minY > 0.80 || line.rect.maxY < 0.08
+            let strongIndent = line.rect.minX > profile.bodyLeft + 0.070
+            let separated = previous.map {
+                line.rect.minY - $0.rect.maxY >= profile.bodyLead * 1.15
+            } ?? strongIndent
+            let textCue = allCaps || numbered || known || romanHeading
+            let sectionCue = !bottom && separated
+                && text.count <= 80 && wordCount <= 12
+                && !endsSentence && !caption
+                && line.rect.minX > profile.bodyLeft + 0.045
+                && ratio >= 1.15
+            let bigCue = !bottom && separated
+                && text.count <= 80 && !sentenceLike && !caption
+                && ratio >= 1.40
+            guard textCue || sectionCue || bigCue else { return nil }
+            if textCue && bottom { return nil }
+            return (textCue || bigCue) ? 1 : 2
+        }
         let heading = !caption && !sentenceLike
             && (ratio >= 1.12 || numbered || known || (allCaps && text.count <= 80) || shortBold || romanHeading)
         guard heading else { return nil }
@@ -385,6 +426,20 @@ enum PDFReflowExtractor {
     private static func isCaption(_ text: String) -> Bool {
         text.range(of: #"^(figure|table|fig\.|tabla|figura|graph|chart|map|plate)\s+\d"#,
                    options: [.regularExpression, .caseInsensitive]) != nil
+    }
+
+    private static func isNoise(_ line: Line) -> Bool {
+        let text = TextNormalizer.cleanLine(line.text)
+        guard !text.isEmpty else { return true }
+        let letters = text.filter { $0.isLetter }.count
+        let digits = text.filter { $0.isNumber }.count
+        if line.isOCR, letters == 0, digits == 0, text.count <= 12 { return true }
+        if line.isOCR, letters == 0, digits <= 1,
+           text.range(of: #"^[\s\-–—•·.]+0?[\s\-–—•·.]*$"#, options: .regularExpression) != nil {
+            return true
+        }
+        if line.isOCR, letters <= 2, digits == 0, text.count <= 6 { return true }
+        return false
     }
 
     private static func isBullet(_ text: String) -> Bool {
@@ -417,7 +472,13 @@ enum PDFReflowExtractor {
         // A line that returns to the paragraph's left margin is a wrapped
         // line, even when the previous fragment was a URL that PDFKit placed
         // to the right. A line that starts at another column is a new block.
-        if abs(line.rect.minX - paragraphStartX) > 0.09 { return true }
+        if abs(line.rect.minX - paragraphStartX) > 0.09 {
+            let sameOCRLine = line.isOCR && previous.isOCR
+                && line.rect.minX > paragraphStartX
+                && !endsParagraph(previous.text)
+                && abs(line.baseline - previous.baseline) <= max(profile.bodyLead * 1.2, 0.012)
+            if !sameOCRLine { return true }
+        }
         if previous.text.hasSuffix("-"), !previous.text.hasSuffix("--"),
            line.text.first?.isLowercase == true {
             return false
@@ -425,7 +486,8 @@ enum PDFReflowExtractor {
         let delta = line.baseline - previous.baseline
         if delta < 0 { return true }
         if delta > profile.bodyLead * 1.45 { return true }
-        if abs(line.fontSize - previous.fontSize) > 0.8 { return true }
+        if !line.isOCR, !previous.isOCR,
+           abs(line.fontSize - previous.fontSize) > 0.8 { return true }
         if line.rect.minX > previous.rect.minX + 0.018, endsParagraph(previous.text) {
             return true
         }
@@ -481,22 +543,34 @@ enum PDFReflowExtractor {
         var bodyFontSize: CGFloat
         var bodyLead: CGFloat
         var medianHeight: CGFloat
+        var bodyLeft: CGFloat
 
         static func make(from pages: [PageData]) -> LayoutProfile {
-            var sizes: [Int: Int] = [:]
-            for page in pages {
-                for line in page.lines where !marginalCandidate(line) {
-                    let key = Int((line.fontSize * 2).rounded())
-                    sizes[key, default: 0] += max(1, line.text.count)
-                }
+            let ocrLines = pages.flatMap { page in
+                page.lines.filter { page.usedOCR && !marginalCandidate($0) }
             }
-            let bodyKey = sizes.max { $0.value < $1.value }?.key ?? 21
-            let bodySize = CGFloat(bodyKey) / 2
+            var bodySize: CGFloat
+            if ocrLines.count >= 40 {
+                // Vision does not expose font sizes. Use the median of the
+                // per-line bounding heights; a single tall accented line must
+                // not redefine "body".
+                bodySize = median(ocrLines.map(\.fontSize)) ?? 12
+            } else {
+                var sizes: [Int: Int] = [:]
+                for page in pages {
+                    for line in page.lines where !marginalCandidate(line) {
+                        let key = Int((line.fontSize * 2).rounded())
+                        sizes[key, default: 0] += max(1, line.text.count)
+                    }
+                }
+                let bodyKey = sizes.max { $0.value < $1.value }?.key ?? 21
+                bodySize = CGFloat(bodyKey) / 2
+            }
 
             var deltas: [CGFloat] = []
             for page in pages {
                 let bodyLines = page.lines
-                    .filter { abs($0.fontSize - bodySize) < 0.8 }
+                    .filter { !marginalCandidate($0) && (page.usedOCR || abs($0.fontSize - bodySize) < 1.2) }
                     .sorted { $0.rect.minY < $1.rect.minY }
                 for pair in zip(bodyLines, bodyLines.dropFirst()) {
                     let delta = pair.1.baseline - pair.0.baseline
@@ -508,8 +582,12 @@ enum PDFReflowExtractor {
                 .filter { !marginalCandidate($0) }
                 .map(\.height)
                 .filter { $0 > 0 }
+            let lefts = pages.flatMap(\.lines)
+                .filter { !marginalCandidate($0) && (pages.contains(where: { $0.usedOCR }) || abs($0.fontSize - bodySize) < 1.2) }
+                .map(\.rect.minX)
             return LayoutProfile(bodyFontSize: bodySize, bodyLead: lead,
-                                 medianHeight: median(heights) ?? 0.018)
+                                 medianHeight: median(heights) ?? 0.018,
+                                 bodyLeft: median(lefts) ?? 0.10)
         }
     }
 
@@ -536,6 +614,7 @@ enum PDFReflowExtractor {
         var fontName: String
         var isVertical: Bool
         var marginal: Bool
+        var isOCR: Bool
     }
 
     private struct StyledLine {
@@ -577,7 +656,8 @@ enum PDFReflowExtractor {
                               isItalic: styled?.isItalic ?? false,
                               fontName: styled?.fontName ?? "",
                               isVertical: vertical,
-                              marginal: marginal))
+                              marginal: marginal,
+                              isOCR: false))
         }
         return lines
     }
@@ -588,7 +668,7 @@ enum PDFReflowExtractor {
     /// but leave a wide gutter (two columns, a table cell) alone.
     private static func mergeLineFragments(_ input: [Line], bounds: CGRect) -> [Line] {
         guard input.count > 1 else { return input }
-        let allowedGap = max(12, bounds.width * 0.02)
+        let baseGap = max(12, bounds.width * 0.02)
         var merged: [Line] = []
         let ordered = input.sorted {
             if abs($0.baseline - $1.baseline) > 0.0005 { return $0.baseline < $1.baseline }
@@ -596,11 +676,12 @@ enum PDFReflowExtractor {
         }
         for line in ordered {
             if let index = merged.firstIndex(where: { candidate in
-                guard !candidate.isVertical, !line.isVertical,
-                      abs(candidate.baseline - line.baseline) <= 0.0035 else { return false }
+                guard !candidate.isVertical, !line.isVertical else { return false }
                 let gap = max(line.rect.minX - candidate.rect.maxX,
                               candidate.rect.minX - line.rect.maxX) * bounds.width
-                return gap <= allowedGap
+                let allowedGap = line.isOCR ? max(baseGap, bounds.width * 0.05) : baseGap
+                let tolerance: CGFloat = line.isOCR ? 0.008 : 0.0035
+                return gap <= allowedGap && abs(candidate.baseline - line.baseline) <= tolerance
             }) {
                 var target = merged[index]
                 let targetIsLeft = target.rect.minX <= line.rect.minX
@@ -608,7 +689,7 @@ enum PDFReflowExtractor {
                 let right = targetIsLeft ? line : target
                 let gap = (right.rect.minX - left.rect.maxX) * bounds.width
                 let text: String
-                if gap > 1.5 {
+                if line.isOCR || gap > 1.5 {
                     text = TextNormalizer.joinLines([left.text, right.text])
                 } else {
                     text = TextNormalizer.cleanLine(left.text + right.text)
@@ -616,7 +697,8 @@ enum PDFReflowExtractor {
                 target.text = text
                 target.rect = target.rect.union(line.rect)
                 target.height = max(target.height, line.height)
-                target.fontSize = max(target.fontSize, line.fontSize)
+                target.fontSize = (target.fontSize + line.fontSize) / 2
+                target.isOCR = target.isOCR || line.isOCR
                 target.isBold = target.isBold && line.isBold
                 target.isItalic = target.isItalic && line.isItalic
                 target.marginal = target.marginal || line.marginal
@@ -702,7 +784,9 @@ enum PDFReflowExtractor {
 
     private static func visionLines(page: PDFPage, bounds: CGRect) throws -> [Line] {
         try PDFPageText.recognizeLines(page: page).compactMap { recognized -> Line? in
-            let text = TextNormalizer.cleanLine(recognized.text)
+            let text = TextNormalizer.cleanLine(
+                TextNormalizer.repairRomanOCR(TextNormalizer.repairLatinOCR(recognized.text))
+            )
             guard !text.isEmpty, !isOnlyImageMarker(text) else { return nil }
             let box = recognized.box // normalized, bottom-left origin
             let normalized = CGRect(x: box.minX, y: 1 - box.maxY,
@@ -716,7 +800,8 @@ enum PDFReflowExtractor {
                         rawRect: raw, rawBounds: raw, baseline: normalized.maxY,
                         fontSize: fontSize, isBold: false, isItalic: false,
                         fontName: "", isVertical: false,
-                        marginal: marginalCandidate(text: text, rect: normalized))
+                        marginal: marginalCandidate(text: text, rect: normalized),
+                        isOCR: true)
         }
     }
 
@@ -759,6 +844,13 @@ enum PDFReflowExtractor {
             guard !lines.isEmpty else {
                 return imagePage(usedOCR: usedOCR, imagesDirectory: imagesDirectory)
             }
+            let substantive = lines.filter {
+                !PDFReflowExtractor.definiteMarginal($0) && !PDFReflowExtractor.isNoise($0)
+            }
+            let substantiveText = substantive.map(\.text).joined(separator: " ")
+            if substantiveText.count < 25, substantive.count <= 2 {
+                return emptyPage(usedOCR: usedOCR)
+            }
             let ordered = readingOrder(lines, pageWidth: bounds.width)
             let contentsHeadingIndex = ordered.firstIndex {
                 PDFReflowExtractor.isContentsHeading($0.text) || PDFReflowExtractor.isIndexHeading($0.text)
@@ -785,11 +877,18 @@ enum PDFReflowExtractor {
                 if headingStart > 0 {
                     appendNormal(Array(ordered[..<headingStart]), usedOCR: usedOCR)
                 }
-                appendContents(Array(ordered[headingStart..<split]), usedOCR: usedOCR)
-                if split < ordered.count {
-                    contents.active = false
-                    contents.index = false
-                    appendNormal(Array(ordered[split...]), usedOCR: usedOCR)
+                if ordered.contains(where: \.isOCR) {
+                    // The row parser also recognises a sentence below an index
+                    // heading; do not let the line-based splitter discard the
+                    // first entries after the heading.
+                    appendOCRContents(Array(ordered[headingStart...]), usedOCR: usedOCR)
+                } else {
+                    appendContents(Array(ordered[headingStart..<split]), usedOCR: usedOCR)
+                    if split < ordered.count {
+                        contents.active = false
+                        contents.index = false
+                        appendNormal(Array(ordered[split...]), usedOCR: usedOCR)
+                    }
                 }
             } else {
                 contents.active = false
@@ -814,7 +913,8 @@ enum PDFReflowExtractor {
                                                            indexMode: contents.index) {
                     return index
                 }
-                guard PDFReflowExtractor.headingLevel(for: line, profile: profile) != nil,
+                guard PDFReflowExtractor.headingLevel(for: line, profile: profile,
+                                                      previous: index > start ? lines[index - 1] : nil) != nil,
                       !PDFReflowExtractor.isContentsHeading(line.text),
                       !PDFReflowExtractor.isIndexHeading(line.text),
                       !PDFReflowExtractor.isContentsEntryStart(line, previous: nil,
@@ -826,6 +926,136 @@ enum PDFReflowExtractor {
                 if !looksLikeContents { return index }
             }
             return lines.count
+        }
+
+        /// OCR splits a table-of-contents row into number, title and page-number
+        /// fragments. Rebuild rows from their baselines before deciding what is
+        /// one entry; the line-by-line reader would otherwise turn every column
+        /// into a bullet.
+        private func contentsPieces(_ text: String) -> [String] {
+            var value = text
+            let patterns = [
+                #"(?<=\s)(?=(?:[IVXLC]{1,6}|\d{1,3}(?:\.\d+)+)\.\s+\p{Lu})"#,
+                #"(?<=\s)(?=(?:CAPÍTULO|CAPITULO|CHAPTER|PARTE|PART|SECCIÓN|SECTION)\b)"#,
+                #"(?<=\s)(?=Tabla\s+\d+\.)"#
+            ]
+            for pattern in patterns {
+                value = value.replacingOccurrences(of: pattern, with: "\n", options: .regularExpression)
+            }
+            var pieces = value.components(separatedBy: "\n")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            var collapsed: [String] = []
+            for piece in pieces {
+                if let last = collapsed.last,
+                   ["CAPÍTULO", "CAPITULO", "CHAPTER", "PARTE", "PART", "SECCIÓN", "SECTION"]
+                       .contains(last.uppercased()) {
+                    collapsed[collapsed.count - 1] = last + " " + piece
+                } else {
+                    collapsed.append(piece)
+                }
+            }
+            pieces = collapsed
+            return pieces
+        }
+
+        mutating func appendOCRContents(_ lines: [Line], usedOCR: Bool) {
+            var rows: [[Line]] = []
+            var currentRow: [Line] = []
+            for line in lines.sorted(by: { $0.rect.minY < $1.rect.minY }) {
+                if line.isVertical || PDFReflowExtractor.isNoise(line) { continue }
+                if line.rect.maxY < 0.10 { continue }
+                if PDFReflowExtractor.definiteMarginal(line) { continue }
+                if let last = currentRow.last,
+                   abs(last.baseline - line.baseline) <= 0.012 {
+                    currentRow.append(line)
+                } else {
+                    if !currentRow.isEmpty { rows.append(currentRow) }
+                    currentRow = [line]
+                }
+            }
+            if !currentRow.isEmpty { rows.append(currentRow) }
+            rows = rows.map { $0.sorted { $0.rect.minX < $1.rect.minX } }
+
+            var pending: [Line] = []
+
+            func appendPiece(_ piece: String) {
+                guard !piece.isEmpty else { return }
+                let value = PDFReflowExtractor.contentsEntry(piece, onContentsPage: true)
+                    ?? (contents.index ? PDFReflowExtractor.indexEntry(piece) : nil)
+                    ?? piece
+                appendBlock(lines: pending, kind: .list, text: value, usedOCR: usedOCR)
+            }
+
+            func flushPending() {
+                guard !pending.isEmpty else { return }
+                let joined = TextNormalizer.joinLines(pending.map(\.text), hyphenation: hyphenation)
+                guard !joined.isEmpty else { pending = []; return }
+                let pieces = contentsPieces(joined)
+                if pieces.count > 1 {
+                    for piece in pieces { appendPiece(piece) }
+                } else {
+                    appendPiece(joined)
+                }
+                pending = []
+            }
+
+            for row in rows {
+                let text = TextNormalizer.joinLines(row.map(\.text), hyphenation: hyphenation)
+                guard !text.isEmpty else { continue }
+                if PDFReflowExtractor.isContentsHeading(text)
+                    || PDFReflowExtractor.isIndexHeading(text) {
+                    flushPending()
+                    let level = PDFReflowExtractor.headingLevel(for: row[0], profile: profile) ?? 1
+                    appendBlock(lines: row, kind: level == 1 ? .heading1 : .heading2,
+                                text: text, usedOCR: usedOCR)
+                    if PDFReflowExtractor.isIndexHeading(text) { contents.index = true }
+                    continue
+                }
+                let startsNew = text.range(
+                    of: #"^\s*(?:\d{1,3}(?:\.\d+)*\.?|[IVXLC]{1,6}\.)\s+\S"#,
+                    options: [.regularExpression, .caseInsensitive]
+                ) != nil
+                    || text.range(of: #"^\s*(?:CAPÍTULO|CAPITULO|CHAPTER|PARTE|PART|SECCIÓN|SECTION)\b"#,
+                                  options: [.regularExpression, .caseInsensitive]) != nil
+                    || (text.count <= 80 && text == text.uppercased()
+                        && text.rangeOfCharacter(from: .letters) != nil)
+                let pieces = contentsPieces(text)
+                if pieces.count > 1 {
+                    if pending.isEmpty {
+                        for piece in pieces {
+                            let value = PDFReflowExtractor.contentsEntry(piece, onContentsPage: true)
+                                ?? (contents.index ? PDFReflowExtractor.indexEntry(piece) : nil)
+                                ?? piece
+                            appendBlock(lines: row, kind: .list, text: value, usedOCR: usedOCR)
+                        }
+                    } else {
+                        pending.append(contentsOf: row)
+                        flushPending()
+                    }
+                    continue
+                }
+                let parsed = PDFReflowExtractor.contentsEntry(text, onContentsPage: true)
+                    ?? (contents.index ? PDFReflowExtractor.indexEntry(text) : nil)
+                if let parsed {
+                    if pending.isEmpty {
+                        appendBlock(lines: row, kind: .list, text: parsed, usedOCR: usedOCR)
+                    } else {
+                        pending.append(contentsOf: row)
+                        flushPending()
+                    }
+                } else if startsNew {
+                    flushPending()
+                    pending = row
+                } else if !pending.isEmpty {
+                    pending.append(contentsOf: row)
+                } else if PDFReflowExtractor.endsParagraph(text), text.count > 40 {
+                    appendBlock(lines: row, kind: .body, text: text, usedOCR: usedOCR)
+                } else {
+                    pending = row
+                }
+            }
+            flushPending()
         }
 
         mutating func appendContents(_ lines: [Line], usedOCR: Bool) {
@@ -849,6 +1079,7 @@ enum PDFReflowExtractor {
 
             for line in lines {
                 if line.isVertical || PDFReflowExtractor.isMarginPageNumber(line) { continue }
+                if PDFReflowExtractor.isNoise(line) { continue }
                 if PDFReflowExtractor.definiteMarginal(line) {
                     flushEntry()
                     appendHeaderFooter(line, usedOCR: usedOCR)
@@ -861,6 +1092,13 @@ enum PDFReflowExtractor {
                     appendBlock(lines: [line], kind: level == 1 ? .heading1 : .heading2,
                                 text: line.text, usedOCR: usedOCR)
                     if PDFReflowExtractor.isIndexHeading(line.text) { contents.index = true }
+                    continue
+                }
+                if entry.isEmpty, !PDFReflowExtractor.isContentsEntryStart(line, previous: nil,
+                                                                             indexMode: contents.index),
+                   PDFReflowExtractor.endsParagraph(line.text), line.text.count > 60 {
+                    flushEntry()
+                    appendBlock(lines: [line], kind: .body, text: line.text, usedOCR: usedOCR)
                     continue
                 }
                 if PDFReflowExtractor.isContentsEntryStart(line, previous: entry.last,
@@ -928,8 +1166,10 @@ enum PDFReflowExtractor {
                 mode = .body
             }
 
+            var previousLine: Line?
             for line in lines {
                 if line.isVertical || PDFReflowExtractor.isMarginPageNumber(line) { continue }
+                if PDFReflowExtractor.isNoise(line) { continue }
                 if PDFReflowExtractor.definiteMarginal(line) {
                     flushCurrent()
                     marginal.append(line)
@@ -937,7 +1177,9 @@ enum PDFReflowExtractor {
                 }
                 flushMarginal()
 
-                let heading = PDFReflowExtractor.headingLevel(for: line, profile: profile)
+                let heading = PDFReflowExtractor.headingLevel(for: line, profile: profile,
+                                                              previous: previousLine)
+                previousLine = line
                 if let heading {
                     if case .heading(let currentLevel) = mode, currentLevel == heading,
                        !current.isEmpty, line.rect.minY - current.last!.rect.maxY < profile.medianHeight * 1.5 {
@@ -1065,6 +1307,11 @@ enum PDFReflowExtractor {
             }
         }
 
+        private mutating func emptyPage(usedOCR: Bool) -> PDFReflowPage {
+            PDFReflowPage(pageIndex: index, width: bounds.width, height: bounds.height,
+                          blocks: [], regions: regions)
+        }
+
         private mutating func imagePage(usedOCR: Bool, imagesDirectory: URL) -> PDFReflowPage {
             let imageName = "page-\(index)-full.jpg"
             if let image = render(page: page, bounds: bounds, scale: 2),
@@ -1146,9 +1393,7 @@ enum PDFReflowExtractor {
             // The top of a first page is a title/author/metadata block, not a
             // diagram. Leave it to the front-matter pass.
             if index == 0, block.rect.minY < 0.30 { return false }
-            if block.kind == .list {
-                return block.fontSize < profile.bodyFontSize * 0.90 && text.count < 80
-            }
+            if block.kind == .list { return false }
             guard block.kind == .body || block.kind == .heading1 || block.kind == .heading2 else {
                 return false
             }
@@ -1161,6 +1406,54 @@ enum PDFReflowExtractor {
 
         private mutating func replaceTables(ordered: [Line], usedOCR: Bool,
                                             imagesDirectory: URL) {
+            // A page with a "Tabla N" caption is a table page. OCR cannot
+            // recover its columns reliably, and the line-based reader mixes
+            // cells from different rows. Keep the caption and the prose after
+            // the table, but preserve the table itself as one page image.
+            if let captionIndex = blocks.firstIndex(where: {
+                $0.isCaption && $0.text.lowercased().hasPrefix("tabla ")
+            }) {
+                var end = blocks.count
+                for candidate in (captionIndex + 1)..<blocks.count {
+                    let block = blocks[candidate]
+                    if block.isHeaderFooter { continue }
+                    let tableRow = block.text.range(
+                        of: #"^\s*(?:P\d|C\d|TOTAL|CATEGOR|DESCRIP|\d{1,2}\s*[-–])"#,
+                        options: [.regularExpression, .caseInsensitive]
+                    ) != nil
+                    if block.kind == .body, !tableRow, block.text.count > 250,
+                       block.rect.minX < 0.28, block.rect.width > 0.50 {
+                        end = candidate
+                        break
+                    }
+                }
+                let tableBlocks = Array(blocks[(captionIndex + 1)..<end]).filter {
+                    !$0.isHeaderFooter
+                }
+                if tableBlocks.count >= 2 {
+                    let rect = union(tableBlocks.map(\.rect))
+                    if rect.width > 0.25, rect.height > 0.04 {
+                        let imageName = "page-\(index)-table-\(UUID().uuidString.prefix(6)).jpg"
+                        if let full = render(page: page, bounds: bounds, scale: 2),
+                           let cropped = crop(full, normalized: rect),
+                           let data = jpegData(from: cropped) {
+                            try? data.write(to: imagesDirectory.appendingPathComponent(imageName))
+                        }
+                        let table = PDFReflowBlock(
+                            id: UUID(), kind: .tableImage,
+                            text: "Table on page \(index + 1) · Reconstructed from the original page",
+                            rect: rect, pageIndex: index, imageFileName: imageName,
+                            isHeaderFooter: false, usedOCR: usedOCR
+                        )
+                        blocks.replaceSubrange((captionIndex + 1)..<end, with: [table])
+                        regions.removeAll { $0.kind != .headerFooter && $0.rect.intersects(rect) }
+                        regions.append(PDFReflowRegion(id: UUID(), kind: .table, rect: rect,
+                                                       label: String(localized: "Table")))
+                        return
+                    }
+                }
+            }
+
             var tableLines: [Line] = []
             var tableCandidates = Set<UUID>()
 
@@ -1250,15 +1543,19 @@ enum PDFReflowExtractor {
     private static func markHeadersAndFooters(in pages: inout [PDFReflowPage],
                                               profile: LayoutProfile) {
         var counts: [String: Int] = [:]
+        var headerTexts: [String: String] = [:]
         for page in pages {
-            for block in page.blocks where block.kind == .body && marginalCandidate(block) {
-                counts[normalizedHeader(block.text), default: 0] += 1
+            for block in page.blocks where (block.kind == .body || block.kind == .list)
+                && marginalCandidate(block) {
+                let key = normalizedHeader(block.text)
+                counts[key, default: 0] += 1
+                headerTexts[key] = block.text
             }
         }
         for pageIndex in pages.indices {
             for blockIndex in pages[pageIndex].blocks.indices {
                 let block = pages[pageIndex].blocks[blockIndex]
-                guard block.kind == .body else { continue }
+                guard block.kind == .body || block.kind == .list else { continue }
                 let text = block.text
                 let nearTop = block.rect.minY < 0.12
                 let nearBottom = block.rect.maxY > 0.86
@@ -1269,11 +1566,35 @@ enum PDFReflowExtractor {
                         && (nearTop || nearBottom))
                 let repeated = counts[normalizedHeader(text), default: 0] >= 2
                 let small = block.fontSize > 0 && block.fontSize < profile.bodyFontSize * 0.92
+                let runningTitle = nearTop && block.rect.minY < 0.10
+                    && text.count < 220 && !PDFReflowExtractor.endsParagraph(text)
                 let shouldMark = pageNumber
                     || (repeated && text.count < 160)
+                    || runningTitle
                     || (nearBottom && block.rect.maxY > 0.88 && small && text.count < 140)
                 if shouldMark {
                     pages[pageIndex].blocks[blockIndex].isHeaderFooter = true
+                }
+            }
+        }
+        let repeatedHeaders = headerTexts.filter { counts[$0.key, default: 0] >= 2 }.values
+            .sorted { $0.count > $1.count }
+        guard !repeatedHeaders.isEmpty else { return }
+        for pageIndex in pages.indices {
+            for blockIndex in pages[pageIndex].blocks.indices {
+                let block = pages[pageIndex].blocks[blockIndex]
+                guard !block.isHeaderFooter, block.kind == .body || block.kind == .list,
+                      block.rect.minY < 0.16 else { continue }
+                for header in repeatedHeaders {
+                    guard block.text.hasPrefix(header) else { continue }
+                    let remainder = String(block.text.dropFirst(header.count))
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    if remainder.isEmpty {
+                        pages[pageIndex].blocks[blockIndex].isHeaderFooter = true
+                    } else {
+                        pages[pageIndex].blocks[blockIndex].text = remainder
+                    }
+                    break
                 }
             }
         }
@@ -1299,6 +1620,25 @@ enum PDFReflowExtractor {
     }
 
     private static func markFrontMatter(in pages: inout [PDFReflowPage]) {
+        if let contentsIndex = pages.firstIndex(where: { page in
+            page.blocks.contains {
+                PDFReflowExtractor.isContentsHeading($0.text)
+                    || PDFReflowExtractor.isIndexHeading($0.text)
+            }
+        }), contentsIndex > 0 {
+            let hasFrontProse = pages[0..<contentsIndex].contains { page in
+                page.blocks.contains {
+                    $0.kind == .body && !$0.isHeaderFooter && $0.text.count > 600
+                }
+            }
+            if !hasFrontProse {
+                for index in 0..<contentsIndex {
+                    for blockIndex in pages[index].blocks.indices {
+                        pages[index].blocks[blockIndex].isHeaderFooter = true
+                    }
+                }
+            }
+        }
         guard var first = pages.first,
               let headingIndex = first.blocks.firstIndex(where: {
                   ($0.kind == .heading1 || $0.kind == .heading2)
