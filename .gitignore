@@ -24,3 +24,9 @@ docs/screenshots/raw-ipad/
 *.log
 __pycache__/
 Modules/PhononTTS/PhononCore.xcframework/
+
+# Parser test corpus and probe build
+tools/parser-corpus/pdfs/
+tools/parser-probe/.build/
+tools/parser-corpus/epubs/
+tools/parser-corpus/formats/

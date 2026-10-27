@@ -809,3 +809,150 @@ Tests: `recognisedWordsTimeTheReadAlongHighlight`, `wordAlignmentMatchesTextRang
 Tests: `reflowKeepsFootnotesAndContentsApart`, the opt-in
 `kokoroSpeaksWordsOutsideItsDictionary`, and `testPDFIntelligentReading` now starts
 Read & Listen from the reflow.
+
+## PDF and document parsing, paragraphs, contents and Markdown (2026-10-27)
+
+- **Line geometry instead of line boxes.** PDFKit exposes the font of every run,
+  so the reflow now uses point size, weight, baseline and indentation. A 12 pt
+  heading no longer has to beat a 22 % line-height threshold; it is a heading
+  because it is larger than the body text. Numbered sections ("1 Introduction",
+  "2.1 Methods") and chapter/appendix labels are headings even when the publisher
+  kept the body size.
+- **One visual line, not several fragments.** PDFKit sometimes returns one line as
+  two selections when the font changes ("application-level" + "protocol for
+  distributed,"). Fragments on the same baseline with a small gap are joined
+  before grouping. A wide gutter (a real two-column page) is left alone.
+- **Paragraphs.** Lines are joined with a font-aware baseline lead. First-line
+  indents, an extra leading, a column change and a font-size change start a new
+  paragraph; a hyphen at the end of a line is resolved by the system spell
+  checker ("exam-" + "ple" → "example", "English-to-" + "German" →
+  "English-to-German"). A paragraph that continues on the next page, or in the
+  next column, carries `continuesPrevious`; Markdown joins the halves and keeps
+  figures after the completed paragraph.
+- **Contents and indexes.** A conservative contents test recognises numbered
+  entries, dot leaders and chapter/appendix labels, never a body line that merely
+  ends in a year. The state runs across pages, so a contents section that starts
+  on one page and continues on the next keeps one entry per line. Index entries
+  ("Markdown 4, 7, 9") become "Markdown · 4, 7, 9". A page with a real contents
+  heading followed by prose switches back to normal body layout at the prose.
+- **Running heads, feet and folios.** Page numbers, bare folios in the margin,
+  repeated running heads, vertical arXiv stamps and front-matter metadata are
+  kept out of the body and out of Markdown. A sentence that begins at the top of
+  a page is not mistaken for a header. Footnotes in smaller type at the foot are
+  set apart and skipped by narration.
+- **Figures and sidebars.** A cluster of tiny, scattered labels with no prose is
+  cropped as a figure image instead of being emitted as dozens of false headings;
+  its caption stays as a caption and does not absorb the paragraph that follows.
+- **Markdown.** `PDFReflowDocument.markdown()` emits headings, paragraphs, lists,
+  quotes and image references, with blank lines between blocks; `readingText()`
+  is the same content without Markdown punctuation for the reader. A caption is
+  italic and never becomes the target of a paragraph continuation.
+- **Other formats.** Markdown import joins soft-wrapped lines and keeps list,
+  quote, code and table structure in readable text; HTML extraction adds list
+  bullets/numbers and table cell separators and drops `footer`, `nav`, `aside`
+  and form boilerplate; TXT/RTF join wrapped lines and keep blank-line paragraphs.
+
+Tests: `pdfParserKeepsParagraphsContentsAndRunningHeadsApart`,
+`markdownImportProducesCleanReadingText`,
+`htmlImportKeepsListsAndTablesAndDropsBoilerplate`,
+`plainTextJoinsWrappedLinesAndKeepsParagraphs`,
+`hyphenationKeepsCompoundsAndJoinsBrokenWords`, and the opt-in
+`realPDFCorpusParsesCleanly` (Wikipedia, arXiv and RFC PDFs).
+
+Tools: `tools/parser-probe` builds a parser-only macOS CLI that prints blocks and
+writes Markdown; `tools/parser-corpus/fetch.sh` downloads the public corpus. The
+corpus and probe build are git-ignored. Remaining limits: web-to-PDF text layers
+that merge a floating infobox into an article can still leave a stray fragment or
+a sidebar heading; OCR figures remain images; a two-column page whose text layer
+does not separate its columns relies on geometry and may differ font to font.
+
+## EPUB paragraphs, chapter labels and publisher boilerplate (2026-10-27)
+
+- **A paragraph split by an illustration.** Gutenberg EPUBs often put a
+  `div.figcenter`/`div.caption` in the middle of a prose paragraph and resume the
+  paragraph in a lower-case `<p class="nind">`. The figure wrappers are skipped
+  (the text reader has no image) and `ParagraphJoiner` reattaches a long
+  lower-case prose fragment when the previous long paragraph ends in a letter.
+  Project Gutenberg's *Pride and Prejudice* now reads “his being gone to London”
+  in one paragraph instead of two. Short verse lines are below the join
+  threshold and stay separate.
+- **Navigation labels that are illustration captions.** Some NCX labels read
+  "I hope Mr. Bingley will like it. CHAPTER II."; `ChapterBuilder.cleanTitle`
+  keeps the chapter marker, normalises `CHAPTERXXVII.` to `CHAPTER XXVII.` and
+  strips "The Project Gutenberg eBook of …". When the label is only a caption,
+  `resolvedTitle` takes the marker from the heading at the start of the slice.
+  The heading, including the caption inside the `<h2>`, is removed from the body.
+- **Publisher boilerplate.** Project Gutenberg `*** START/END … ***` markers,
+  its generated header and the full licence chapter are removed; the generated
+  *Biblioteca Virtual Miguel de Cervantes* licence page ("Este archivo fue
+  generado de forma automática…") is removed too. These are per chapter, so a
+  header file with no marker is also dropped when it is only title/credits.
+- **Long books.** The chapter cap is 2,000 instead of 500: the complete
+  Shakespeare EPUB now imports 906 chapters instead of stopping at 500.
+- **Front matter and verse.** Title pages, prefaces, contents pages and front
+  matter are kept as chapters (they are real book content, not publisher
+  boilerplate). Sonnets, plays and stage directions remain line-by-line; the
+  text is complete, but verse lines are separated like paragraphs because the
+  app's chapter text has no separate "line" block.
+
+Tests: `epubCleansTitlesAndJoinsParagraphsAcrossIllustrations`,
+`epubTitleCleanerHandlesIllustrationCaptionsAndGutenbergPrefixes`,
+`epubCleanerRemovesProjectGutenbergHeaderAndLicence`,
+`epubCleanerRemovesCervantesVirtualGeneratedLicence`, and the opt-in
+`realEPUBCorpusParsesParagraphsCleanly` (Gutenberg prose, drama, poetry and
+illustrated books, plus *Don Quijote* from Cervantes Virtual).
+
+Tools: `tools/parser-corpus/fetch-epubs.sh` downloads the EPUB corpus into
+`tools/parser-corpus/epubs` (git-ignored); point
+`TEST_RUNNER_NODUS_EPUB_CORPUS` at it. The Cervantes EPUB is fetched from the
+Wayback Machine because the live download sits behind a Cloudflare challenge;
+`lluisvives.com` exposes the same catalogue.
+
+## Import format pass: TXT, Markdown, HTML and RTF (2026-10-27)
+
+- **Text encoding.** `TextFileDecoder` tries UTF-8 (with or without BOM),
+  UTF-16 with BOM, UTF-16LE/BE without BOM (zero-byte heuristic), then
+  Windows-1252, ISO Latin-1 and Mac Roman. Windows smart quotes, the euro sign,
+  Spanish accents and Windows-generated UTF-16 files now import correctly.
+  The same decoder is used by HTML headings/titles and by `.txt`/Markdown.
+- **Plain text paragraphs.** Blank lines remain the primary paragraph signal.
+  Without blank lines, a short line that ends a sentence and is followed by an
+  upper-case line starts a new paragraph; headings (`CHAPTER I`, all-caps,
+  numbered/Roman) and list/quote blocks are kept apart; three or more short
+  lines with almost no terminal punctuation are treated as verse and keep
+  single line breaks. One-line prose paragraphs are also kept separate. Project
+  Gutenberg `.txt` headers, end markers and licence are stripped by the shared
+  publisher cleaner.
+- **Markdown.** YAML front matter is metadata, not body text; autolinks
+  (`<https://…>`) are preserved before raw HTML tags are stripped; footnote
+  definitions lose their `[^n]:` marker; a `>` blank line splits quote
+  paragraphs; task-list markers are removed; link-reference definitions stay
+  hidden; titles come from the first ATX heading.
+- **HTML.** Data uses the same decoder. List items and table rows use single
+  line breaks instead of blank lines, `<ol start>` is honoured, list bullets and
+  `Name | Value` tables survive, `footer`/`nav` boilerplate is skipped, and the
+  title prefers `<h1>`, then `<title>` (with a ` - Wikipedia` suffix removed),
+  then the first heading.
+- **RTF.** `NSAttributedString` paragraphs are preserved one per line instead of
+  being merged by the TXT line joiner; Unicode escapes (`áéíóú`, `ñ`, `€`) and
+  headings/lists survive. A table whose cells NSAttributedString concatenates
+  (`Alpha1`) gets a space between a letter and a digit (`Alpha 1`).
+
+Tests: `textImportJoinsWrappedLinesAndKeepsHeadingsListsAndVerse`,
+`textImportRecoversParagraphsWithoutBlankLines`,
+`textImportDecodesWindows1252AndUTF16`,
+`markdownImportStripsFrontMatterAndKeepsAutolinksAndFootnotes`,
+`htmlImportDecodesWindows1252AndKeepsListsTablesAndAutolinks`,
+`rtfImportKeepsParagraphsAndUnicode`, and the opt-in
+`realFormatCorpusParsesCleanly` (Gutenberg *Pride and Prejudice* `.txt`,
+RFC 9110 `.txt`, Wikipedia HTML for *The Great Gatsby*). The generated fixtures
+are written by the tests; no document from the machine is read.
+
+Tools: `tools/parser-corpus/fetch-formats.sh` downloads the three public
+samples into `tools/parser-corpus/formats` (git-ignored); point
+`TEST_RUNNER_NODUS_FORMAT_CORPUS` at it. The PDF and EPUB corpus tests continue
+to run in the same pass. Remaining limits: a raw `.txt` with no blank lines and
+unusual short lines can still merge or split a paragraph; RFC-style page headers
+remain in TXT; RTF table column boundaries are lost because NSAttributedString
+flattens cells; HTML superscript footnote markers and RTF table cells remain
+plain text.
