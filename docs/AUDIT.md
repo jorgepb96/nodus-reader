@@ -1050,8 +1050,10 @@ OCR-only books still depend on Vision quality and are checked separately.
 - `AVSpeechSynthesizer`, `AVSpeechSynthesisVoice` enumeration and the system-model
   selection path were removed. The app no longer offers or falls back to system
   voices; narration requires an installed Kokoro or Phonon model.
-- A first-run `VoiceSetupView` presents the centred Nodus mark and sends the user
-  directly to the Models catalogue. It is localised in English and Spanish and
-  closes as soon as a neural model finishes installing.
+- A mandatory first-run `VoiceSetupView` presents the Nodus mark alone (no halo)
+  and sends the user directly to the Models catalogue. It is localised in English
+  and Spanish, has no skip action, cannot be interactively dismissed, and closes
+  only when a neural model finishes installing.
 - Existing selections stored as `system` migrate to the first installed neural
-  model, or to no selection when no model is present.
+  model, or to no selection when no model is present. A missing model always
+  brings the mandatory setup back.

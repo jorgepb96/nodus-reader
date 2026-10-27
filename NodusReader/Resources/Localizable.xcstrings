@@ -6832,16 +6832,6 @@
         }
       }
     },
-    "Not now": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ahora no"
-          }
-        }
-      }
-    },
     "No voice model installed": {
       "localizations": {
         "es": {

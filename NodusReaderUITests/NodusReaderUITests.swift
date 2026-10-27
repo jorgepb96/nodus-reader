@@ -691,6 +691,8 @@ final class NodusReaderUITests: XCTestCase {
                       "The first-run voice setup did not appear")
         let choose = app.buttons["VoiceSetupChooseModel"]
         XCTAssertTrue(choose.exists)
+        XCTAssertFalse(app.buttons["VoiceSetupNotNow"].exists,
+                       "The mandatory voice setup must not be dismissible")
         choose.tap()
 
         XCTAssertTrue(app.staticTexts["Kokoro 82M"].waitForExistence(timeout: 15),

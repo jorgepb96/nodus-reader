@@ -9,9 +9,6 @@ struct VoiceSetupView: View {
     @Environment(\.nodusPalette) private var palette
     @Environment(\.dismiss) private var dismiss
 
-    /// Called when the user installs a model or chooses to continue later.
-    let onFinish: () -> Void
-
     @State private var showModels = false
 
     var body: some View {
@@ -19,7 +16,7 @@ struct VoiceSetupView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     mark
-                        .padding(.top, 34)
+                        .padding(.top, 44)
 
                     Eyebrow("NODUS READER")
                         .padding(.top, 24)
@@ -45,27 +42,17 @@ struct VoiceSetupView: View {
                     }
                     .padding(.top, 22)
 
-                    VStack(spacing: 12) {
-                        Button {
-                            showModels = true
-                        } label: {
-                            Label("Choose a voice model", systemImage: "waveform.badge.plus")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity, minHeight: 54)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(palette.accent)
-                        .foregroundStyle(palette.onAccent)
-                        .accessibilityIdentifier("VoiceSetupChooseModel")
-
-                        Button("Not now") {
-                            finish()
-                        }
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(palette.muted)
-                        .frame(minHeight: 44)
-                        .accessibilityIdentifier("VoiceSetupNotNow")
+                    Button {
+                        showModels = true
+                    } label: {
+                        Label("Choose a voice model", systemImage: "waveform.badge.plus")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, minHeight: 54)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(palette.accent)
+                    .foregroundStyle(palette.onAccent)
+                    .accessibilityIdentifier("VoiceSetupChooseModel")
                     .padding(.top, 30)
                     .padding(.horizontal, 8)
                     .padding(.bottom, 24)
@@ -80,30 +67,16 @@ struct VoiceSetupView: View {
                 VoicesView(initialMode: .models)
             }
         }
+        .interactiveDismissDisabled()
         .onChange(of: models.hasInstalledModel) { _, installed in
-            if installed { finish() }
+            if installed { dismiss() }
         }
     }
 
     private var mark: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [palette.accent.opacity(0.26), palette.accent.opacity(0.03)],
-                        center: .center,
-                        startRadius: 2,
-                        endRadius: 108
-                    )
-                )
-                .frame(width: 196, height: 196)
-            Circle()
-                .stroke(palette.line, lineWidth: 1)
-                .frame(width: 196, height: 196)
-            NodusMark()
-                .frame(width: 108, height: 120)
-        }
-        .accessibilityHidden(true)
+        NodusMark()
+            .frame(width: 140, height: 156)
+            .accessibilityHidden(true)
     }
 
     private func feature(_ icon: String, _ title: LocalizedStringKey) -> some View {
@@ -118,10 +91,5 @@ struct VoiceSetupView: View {
         .frame(height: 26)
         .background(palette.panel, in: Capsule())
         .overlay(Capsule().stroke(palette.line, lineWidth: 1))
-    }
-
-    private func finish() {
-        onFinish()
-        dismiss()
     }
 }
