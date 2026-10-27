@@ -568,7 +568,7 @@ struct PrivacyView: View {
                 )
 
                 Link("Read the full privacy policy",
-                     destination: URL(string: "https://github.com/jorgepb96/nodus-reader-mobile/blob/main/PRIVACY.md")!)
+                     destination: URL(string: "https://github.com/jorgepb96/nodus-reader/blob/main/PRIVACY.md")!)
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(palette.accent)
                     .padding(.top, 4)
@@ -644,15 +644,15 @@ struct AboutView: View {
                     .lineSpacing(2)
 
                 VStack(spacing: 0) {
-                    linkRow("Source code", url: "https://github.com/jorgepb96/nodus-reader-mobile")
+                    linkRow("Source code", url: "https://github.com/jorgepb96/nodus-reader")
                     divider
-                    linkRow("AGPL-3.0-only licence", url: "https://github.com/jorgepb96/nodus-reader-mobile/blob/main/LICENSE")
+                    linkRow("AGPL-3.0-only licence", url: "https://github.com/jorgepb96/nodus-reader/blob/main/LICENSE")
                     divider
-                    linkRow("Third-party notices", url: "https://github.com/jorgepb96/nodus-reader-mobile/blob/main/THIRD_PARTY_NOTICES.md")
+                    linkRow("Third-party notices", url: "https://github.com/jorgepb96/nodus-reader/blob/main/THIRD_PARTY_NOTICES.md")
                     divider
-                    linkRow("Model licences", url: "https://github.com/jorgepb96/nodus-reader-mobile/blob/main/MODEL_LICENSES.md")
+                    linkRow("Model licences", url: "https://github.com/jorgepb96/nodus-reader/blob/main/MODEL_LICENSES.md")
                     divider
-                    linkRow("Privacy", url: "https://github.com/jorgepb96/nodus-reader-mobile/blob/main/PRIVACY.md")
+                    linkRow("Privacy", url: "https://github.com/jorgepb96/nodus-reader/blob/main/PRIVACY.md")
                 }
                 .panelCard(radius: 18)
 

@@ -61,4 +61,4 @@ Material changes will be documented in this file and in the release notes. The s
 
 ## Contact
 
-Open an issue at <https://github.com/jorgepb96/nodus-reader-mobile>.
+Open an issue at <https://github.com/jorgepb96/nodus-reader>.
