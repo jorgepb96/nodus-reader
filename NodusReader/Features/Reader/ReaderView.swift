@@ -297,9 +297,8 @@ struct ReaderView: View {
     // MARK: Search
 
     private func openSearch() {
-        // PDFKit searches the original pages; Intelligent Reading shows the
-        // same text reflowed, so the search runs on the original.
-        if book.format == .pdf { pdfMode = .original }
+        // PDFKit searches the original pages; the reflow view runs the same
+        // query over its page text, so the current PDF mode is preserved.
         search.isPresented = true
     }
 

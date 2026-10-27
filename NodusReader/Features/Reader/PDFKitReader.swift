@@ -15,6 +15,7 @@ struct PDFKitReader: View {
     @Binding var jumpToPage: Int?
     var background: Color
     var search: ReaderSearchModel?
+    var externalSearch = true
 
     var body: some View {
         // Read here so a new query or match updates the page view.
@@ -23,11 +24,13 @@ struct PDFKitReader: View {
         #if os(macOS)
         MacPDFReader(url: url, pageIndex: $pageIndex, pageCount: $pageCount,
                      jumpToPage: $jumpToPage, background: NSColor(background),
-                     search: search, query: query, current: current)
+                     search: search, query: query, current: current,
+                     externalSearch: externalSearch)
         #else
         IOSPDFReader(url: url, pageIndex: $pageIndex, pageCount: $pageCount,
                      jumpToPage: $jumpToPage, background: UIColor(background),
-                     search: search, query: query, current: current)
+                     search: search, query: query, current: current,
+                     externalSearch: externalSearch)
         #endif
     }
 }
@@ -40,11 +43,35 @@ final class PDFSearchDriver {
     private var query = ""
     private var selections: [PDFSelection] = []
     private var shown: Int?
+    private var shownMatch: ReaderSearchMatch?
+    private var wasExternal = false
     private var pending: Task<Void, Never>?
 
     nonisolated init() {}
 
-    func update(_ view: PDFView, search: ReaderSearchModel?, query newQuery: String, current: Int?) {
+    func update(_ view: PDFView, search: ReaderSearchModel?, query newQuery: String,
+                current: Int?, externalSearch: Bool) {
+        if externalSearch {
+            wasExternal = true
+            guard let match = search?.currentMatch else {
+                shownMatch = nil
+                return
+            }
+            guard match != shownMatch else { return }
+            shownMatch = match
+            guard let page = view.document?.page(at: min(max(0, match.chapterIndex), max(0, (view.document?.pageCount ?? 1) - 1))) else { return }
+            view.go(to: page)
+            return
+        }
+        if wasExternal {
+            // Re-enter PDFKit search after a fallback; force a fresh query.
+            wasExternal = false
+            query = ""
+            selections = []
+            shown = nil
+            shownMatch = nil
+            view.highlightedSelections = nil
+        }
         let trimmed = newQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed != query {
             query = trimmed
@@ -98,6 +125,7 @@ private struct MacPDFReader: NSViewRepresentable {
     var search: ReaderSearchModel?
     var query: String
     var current: Int?
+    var externalSearch: Bool
 
     func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
 
@@ -120,7 +148,8 @@ private struct MacPDFReader: NSViewRepresentable {
     func updateNSView(_ view: PDFView, context: Context) {
         context.coordinator.parent = self
         view.backgroundColor = background
-        context.coordinator.search.update(view, search: search, query: query, current: current)
+        context.coordinator.search.update(view, search: search, query: query, current: current,
+                                           externalSearch: externalSearch)
         if let target = jumpToPage {
             DispatchQueue.main.async {
                 go(to: target, in: view)
@@ -173,6 +202,7 @@ private struct IOSPDFReader: UIViewRepresentable {
     var search: ReaderSearchModel?
     var query: String
     var current: Int?
+    var externalSearch: Bool
 
     func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
 
@@ -196,7 +226,8 @@ private struct IOSPDFReader: UIViewRepresentable {
     func updateUIView(_ view: PDFView, context: Context) {
         context.coordinator.parent = self
         view.backgroundColor = background
-        context.coordinator.search.update(view, search: search, query: query, current: current)
+        context.coordinator.search.update(view, search: search, query: query, current: current,
+                                           externalSearch: externalSearch)
         if let target = jumpToPage {
             DispatchQueue.main.async {
                 go(to: target, in: view)

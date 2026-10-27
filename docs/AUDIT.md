@@ -998,3 +998,28 @@ checkout.
 Remaining limits: OCR can omit a short word or misread a year/name; tables are
 images, not reconstructed Markdown tables; bibliography entries can be merged
 across lines; a front-matter preface without a contents page is kept as body.
+
+## PDF search in both views and quick page scrollbar (2026-10-27)
+
+- **Search in Original PDF.** PDFKit cannot find words in a PDF whose text layer is
+  garbled. The original view now uses the same reflow page text as Intelligent
+  Reading for the query, reports the count in the existing find bar, and asks
+  PDFKit to go to the matching page when the current result changes. PDFKit's
+  own text-layer search remains the fallback code path in `PDFSearchDriver`.
+- **Search in Intelligent Reading.** `PDFReflowView` runs the query over every
+  page's canonical text, groups the ranges by original page, shows them as
+  search highlights with a stronger colour for the current match, and scrolls
+  to the page. The find bar's arrows work in both modes.
+- **Scrollbar.** Intelligent Reading now has a persistent draggable page bar on
+  the right edge. It maps the full analysed page list to the track, shows the
+  current page number, supports tap/drag and accessibility increment/decrement,
+  and uses `scrollPosition` so the page indicator, original-page panel and
+  search start from the actual top page instead of a stale visibility set.
+- **Regression coverage.** `testPDFSearchAndReflowScrollbar` searches in Original
+  and Intelligent Reading, dismisses the bar, drags the page bar and asserts the
+  reader moved off page 1. The existing EPUB search test still passes.
+
+Limits: in Original view a search result navigates to the page, but a garbled
+text layer cannot show the word highlight; only Intelligent Reading can highlight
+it. A PDF that has never been reflowed may need a full on-device OCR pass before
+its first search, so the find bar shows "Searching…" until that cache is ready.

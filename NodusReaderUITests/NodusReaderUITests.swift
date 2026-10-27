@@ -703,4 +703,57 @@ final class NodusReaderUITests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
     }
+
+    func testPDFSearchAndReflowScrollbar() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let width = app.windows.firstMatch.frame.width
+        try XCTSkipIf(width >= 700, "This test runs on iPhone")
+
+        let pdf = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@",
+                                                    "Experiments in Plant Hybridization")).firstMatch
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+        pdf.tap()
+
+        // Search in the original PDF. The sample has a readable text layer, but
+        // the app deliberately uses the same reflow page text for both modes.
+        app.buttons["Search in book"].tap()
+        let field = app.textFields["ReaderSearchField"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.typeText("experiments")
+        let counter = app.staticTexts["ReaderSearchCounter"]
+        let found = expectation(for: NSPredicate(format: "label CONTAINS %@", " of "),
+                                evaluatedWith: counter)
+        wait(for: [found], timeout: 60)
+        XCTAssertTrue(counter.label.contains(" of "))
+        app.buttons["Done"].tap()
+
+        // Search in Intelligent Reading.
+        let intelligent = app.segmentedControls.buttons["Intelligent Reading"].firstMatch
+        XCTAssertTrue(intelligent.waitForExistence(timeout: 15))
+        intelligent.tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == 'Page 1'")).firstMatch
+            .waitForExistence(timeout: 60))
+
+        app.buttons["Search in book"].tap()
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.typeText("experiments")
+        let foundAgain = expectation(for: NSPredicate(format: "label CONTAINS %@", " of "),
+                                    evaluatedWith: counter)
+        wait(for: [foundAgain], timeout: 60)
+        app.buttons["Done"].tap()
+
+        // Drag the custom page scrollbar to the end and verify the page moved.
+        let bar = app.otherElements["PDFReflowScrollbar"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 10))
+        let start = bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15))
+        let end = bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85))
+        start.press(forDuration: 0.1, thenDragTo: end)
+        let pageLabel = app.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH 'Page ' AND label CONTAINS ' of '")
+        ).firstMatch
+        XCTAssertTrue(pageLabel.waitForExistence(timeout: 5))
+        XCTAssertFalse(pageLabel.label.hasPrefix("Page 1 of"),
+                       "The scrollbar did not move the reflow")
+    }
 }
