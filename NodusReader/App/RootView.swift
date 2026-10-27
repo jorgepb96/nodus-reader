@@ -17,6 +17,8 @@ struct RootView: View {
     /// longer mirror each other's sidebar selection and navigation.
     @State private var navigation = NavigationModel()
     @State private var importedBook: Book?
+    @State private var showVoiceSetup = false
+    @AppStorage("nodus.voices.setup.completed") private var voiceSetupCompleted = false
 
     private var palette: NodusPalette {
         theme.palette(colorScheme: colorScheme)
@@ -33,6 +35,16 @@ struct RootView: View {
             .preferredColorScheme(theme.appTheme.preferredColorScheme)
             .background(palette.background)
             .readerCover(item: $importedBook)
+            #if os(iOS)
+            .fullScreenCover(isPresented: $showVoiceSetup) {
+                voiceSetup
+            }
+            #else
+            .sheet(isPresented: $showVoiceSetup) {
+                voiceSetup
+                    .frame(minWidth: 620, minHeight: 760)
+            }
+            #endif
             .onChange(of: imports.bookToOpen?.id) { _, _ in
                 openPendingImportedBook()
             }
@@ -83,11 +95,27 @@ struct RootView: View {
                     SampleLibrary.resetReadingState(library: library)
                 }
                 #endif
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-NodusSkipVoiceSetup") {
+                    voiceSetupCompleted = true
+                }
+                if ProcessInfo.processInfo.arguments.contains("-NodusResetVoiceSetup") {
+                    voiceSetupCompleted = false
+                    showVoiceSetup = true
+                }
+                #endif
                 await imports.consumeSharedInbox()
                 openPendingImportedBook()
+                updateVoiceSetup()
                 await sync.start()
                 await models.loadInstalledEnginesIfNeeded()
                 await cleanUpStorage()
+            }
+            .onChange(of: models.hasInstalledModel) { _, installed in
+                if installed {
+                    voiceSetupCompleted = true
+                    showVoiceSetup = false
+                }
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
@@ -100,6 +128,22 @@ struct RootView: View {
                     Task { await cleanUpStorage() }
                 }
             }
+    }
+
+    private var voiceSetup: some View {
+        VoiceSetupView {
+            voiceSetupCompleted = true
+            showVoiceSetup = false
+        }
+    }
+
+    private func updateVoiceSetup() {
+        if models.hasInstalledModel {
+            voiceSetupCompleted = true
+            showVoiceSetup = false
+        } else if !voiceSetupCompleted {
+            showVoiceSetup = true
+        }
     }
 
     private func openPendingImportedBook() {

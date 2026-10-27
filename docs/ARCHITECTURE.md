@@ -142,10 +142,10 @@ The import is sequential to keep memory bounded and progress deterministic. Back
 
 ## Narration
 
-`PlaybackController` owns narration for all three engine families:
-- system voices through `AVSpeechSynthesizer`, using native word ranges;
+`PlaybackController` owns narration for the two neural engine families:
 - Kokoro through `KokoroTTS` (24 kHz PCM) and Phonon through `ptts` (24 kHz PCM),
   played with `AVAudioEngine → AVAudioUnitTimePitch → main mixer`;
+- system AVSpeechSynthesisVoice voices are intentionally not enumerated or offered;
 - sentence/word state, transport, speed, voice, sleep timer, modes, background audio,
   Now Playing and remote commands;
 - start from an arbitrary chapter offset or word, including mid-sentence neural start;

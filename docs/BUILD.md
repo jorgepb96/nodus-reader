@@ -111,7 +111,7 @@ xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader \
 The tests launch with `-NodusSampleLibrary`, which creates real EPUB/PDF files using public-domain text and original placeholder prose, imports them through the production pipeline, and seeds collections and reading state. Reader-specific tests also pass `-NodusResetReadingState` so a previous test's page position cannot hide the chapter opener. Debug-only.
 
 Covered flows: Home, Library, Reader, Appearance, Collections, Collection detail,
-Settings, Voices, Models, Typography, Search, Player (system voice), tap-a-word
+Settings, Voices, Models, Typography, Search, Player (neural voice), voice onboarding, tap-a-word
 Read & Listen, page turn/bookmarks, PDF Intelligent Reading and source panel, Phonon
 narration (behavioural: proves playback advances to sentence 2), the Spanish
 book-language voice picker and iCloud & Storage. The tests skip the iPad layout on
@@ -219,7 +219,7 @@ Sandbox entitlement first (see below).
 
 - The Mac app is a normal SwiftUI `WindowGroup`; the first launch uses `.defaultSize(1360 × 860)` and a minimum content size.
 - The iOS 26 simulator was used for the screenshots (iPhone 17 Pro, iPad Pro 13-inch M5, iOS 26.5). iOS 18.2 runtime is also installed and supported by the deployment target.
-- System voices come from the simulator/OS. Voice names and availability vary; the Tests do not assert a specific voice.
+- Narration needs an installed Kokoro or Phonon model; there is no system-voice fallback. Tests that need narration skip when no model is installed.
 - Phonon downloads about 300 MB and Kokoro about 210 MB; Core ML additionally
   compiles models beside the packages, so on-disk usage is larger than the download.
 - All model and audio caches are excluded from backup and are never uploaded.

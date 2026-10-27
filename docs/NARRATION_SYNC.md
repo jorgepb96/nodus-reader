@@ -1,6 +1,7 @@
 # Narration Sync, Tap-to-Play and Audio Cache
 
-Status: **implemented for system voices, Kokoro and Phonon.**
+Status: **implemented for Kokoro and Phonon.** System voices were removed: narration
+requires an installed neural model.
 
 This document records the word-level narration contract, how it is implemented in
 Nodus Reader and where it remains approximate.
@@ -20,7 +21,6 @@ Nodus Reader and where it remains approximate.
 
 | Engine | Audio path | Word timings | Cache |
 |---|---|---|---|
-| Apple system voices | `AVSpeechSynthesizer` | Native `willSpeakRangeOfSpeechString` | Not written; the system does not expose audio |
 | Kokoro 82M | `KokoroTTS` Core ML, 24 kHz mono Float PCM | Pause analysis + syllable-weighted DP | Per sentence `.caf` + `.json` |
 | Phonon 31M | `ptts` Core ML, 24 kHz mono Float PCM | Pause analysis + syllable-weighted DP | Per sentence `.caf` + `.json` |
 
@@ -50,7 +50,7 @@ Both neural engines return mono Float PCM at 24 kHz.
   changes (Kokoro's MLX buffer cache is cleared too). The next sentence reloads the
   engine.
 - At the end of a sentence, playback advances to the next sentence. Chapter changes,
-  sleep-at-end-of-chapter and book completion use the same path as system voices.
+  sleep-at-end-of-chapter and book completion use the same path.
 - Pause during synthesis cancels the synthesis; pause during playback pauses the
   player node. Resume continues the scheduled buffer.
 - Speed is applied by `AVAudioUnitTimePitch`; changing speed restarts the current
@@ -122,7 +122,7 @@ Application Support/NodusReader/Audio/
 - The iOS/iPadOS page text view maps the touch to the surrounding word range and
   reports the chapter offset.
 - `PlaybackController.start(... startingChapterOffset:)` finds the sentence and
-  starts from the word. System voices restart mid-sentence; neural engines start at
+  starts from the word. Neural engines start at
   the estimated word start inside the cached sentence.
 - The reader follows narration in Read & Listen and keeps the sentence visible.
 - macOS text paragraphs use the same selection/tap infrastructure; PDF Original page
@@ -149,9 +149,9 @@ controls. No Nodus code was copied; the algorithm was reimplemented in Swift.
 - `wordAlignmentMatchesTextRangesAndMonotonicTimes`
 - `wordAlignmentHandlesOneWordAndSilence`
 - `voiceCatalogPrefersTheBookLanguage`
-- `testReaderWordTapStartsReadAndListen` (system voice)
+- `testReaderWordTapStartsReadAndListen` (requires an installed neural model)
 - `testNeuralVoiceNarration` (Phonon, asserts progress to sentence 2)
-- `testVoicePickerStartsWithBookLanguage` (Spanish book, system voice)
+- `testVoicePickerStartsWithBookLanguage` (Spanish book, neural voice)
 - `testListenStartsNarration`, `testPagedReaderTurnsPagesAndBookmarks`
 
 The player and voice picker default to the book's detected language, fall back to

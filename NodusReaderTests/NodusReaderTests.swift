@@ -380,15 +380,25 @@ func voiceCatalogPrefersTheBookLanguage() async throws {
     defer { defaults.removePersistentDomain(forName: suite) }
 
     let catalog = VoiceCatalog(defaults: defaults)
-    await catalog.loadIfNeeded()
+    let spanish = VoiceCatalog.Voice(id: "phonon:Alba", name: "Alba", language: "es-ES",
+                                     languageName: "Spanish", quality: 3, gender: nil,
+                                     engineRaw: "phonon", modelID: "phonon-40m-es", modelName: "Phonon 40M Spanish")
+    let english = VoiceCatalog.Voice(id: "phonon:Harper", name: "Harper", language: "en-US",
+                                     languageName: "English", quality: 3, gender: nil,
+                                     engineRaw: "phonon", modelID: "phonon-31m-en", modelName: "Phonon 31M")
+    catalog.setNeuralVoices([english, spanish])
 
-    let spanish = catalog.narrationVoice(preferredID: nil, language: "es")
-    #expect(spanish?.language.lowercased().hasPrefix("es") == true,
-            "A Spanish book should resolve a Spanish voice instead of the global default")
+    let resolved = catalog.narrationVoice(preferredID: nil, language: "es")
+    #expect(resolved?.id == spanish.id,
+            "A Spanish book should resolve a Spanish neural voice instead of the global default")
     #expect(!catalog.voices(matchingLanguage: "es").isEmpty)
 
     let missingPreferred = catalog.narrationVoice(preferredID: "not.installed.voice", language: "es")
-    #expect(missingPreferred?.language.lowercased().hasPrefix("es") == true)
+    #expect(missingPreferred?.id == spanish.id)
+
+    let empty = VoiceCatalog(defaults: UserDefaults(suiteName: "nodus.tests.empty.voices")!)
+    #expect(empty.narrationVoice(preferredID: nil, language: "es") == nil)
+    #expect(empty.allInstalledVoices.isEmpty)
 }
 
 // MARK: - Defensive paths

@@ -1044,3 +1044,14 @@ its first search, so the find bar shows "Searching…" until that cache is ready
 The 50-document run produced Markdown for every file without a crash. Short
 fragments remain concentrated in formula-heavy papers and reference lists;
 OCR-only books still depend on Vision quality and are checked separately.
+
+## Neural-voice-only onboarding (2026-10-27)
+
+- `AVSpeechSynthesizer`, `AVSpeechSynthesisVoice` enumeration and the system-model
+  selection path were removed. The app no longer offers or falls back to system
+  voices; narration requires an installed Kokoro or Phonon model.
+- A first-run `VoiceSetupView` presents the centred Nodus mark and sends the user
+  directly to the Models catalogue. It is localised in English and Spanish and
+  closes as soon as a neural model finishes installing.
+- Existing selections stored as `system` migrate to the first installed neural
+  model, or to no selection when no model is present.

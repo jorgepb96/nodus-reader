@@ -6771,6 +6771,146 @@
           }
         }
       }
+    },
+    "A voice for every book.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una voz para cada libro."
+          }
+        }
+      }
+    },
+    "Nodus narrates with neural voices that run entirely on this device. Install one model to start listening — no account, no cloud, no system voice.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodus narra con voces neuronales que se ejecutan íntegramente en este dispositivo. Instala un modelo para empezar a escuchar: sin cuenta, sin nube y sin voces del sistema."
+          }
+        }
+      }
+    },
+    "On-device": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En el dispositivo"
+          }
+        }
+      }
+    },
+    "No account": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin cuenta"
+          }
+        }
+      }
+    },
+    "Works offline": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Funciona sin conexión"
+          }
+        }
+      }
+    },
+    "Choose a voice model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir un modelo de voz"
+          }
+        }
+      }
+    },
+    "Not now": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no"
+          }
+        }
+      }
+    },
+    "No voice model installed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay ningún modelo de voz instalado"
+          }
+        }
+      }
+    },
+    "Install a Kokoro or Phonon model in the Models tab to start listening.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instala un modelo Kokoro o Phonon en la pestaña Modelos para empezar a escuchar."
+          }
+        }
+      }
+    },
+    "No voice model is installed. Download a Kokoro or Phonon model below to enable narration.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay ningún modelo de voz instalado. Descarga un modelo Kokoro o Phonon para activar la narración."
+          }
+        }
+      }
+    },
+    "Only the selected model's voices appear in the reader and player.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo aparecen en el lector y el reproductor las voces del modelo seleccionado."
+          }
+        }
+      }
+    },
+    "Set up a voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configura una voz"
+          }
+        }
+      }
+    },
+    "No voice model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin modelo de voz"
+          }
+        }
+      }
+    },
+    "Choose a Kokoro or Phonon voice to generate offline audio.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige una voz Kokoro o Phonon para generar audio sin conexión."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
