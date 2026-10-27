@@ -956,3 +956,45 @@ unusual short lines can still merge or split a paragraph; RFC-style page headers
 remain in TXT; RTF table column boundaries are lost because NSAttributedString
 flattens cells; HTML superscript footnote markers and RTF table cells remain
 plain text.
+
+## PDF OCR layout and clean Markdown (2026-10-27)
+
+- **OCR fragments are merged before reading order.** Vision returns a visual line
+  as several observations when a word has a different typeface or spacing
+  ("constituye una novedad" + "en mi trayectoria…"). The OCR path now runs the
+  same baseline/gap merge as the text path, with a wider gap and baseline
+  tolerance for OCR. It also joins the fragments with a space instead of
+  producing "novedaden".
+- **OCR has no font sizes.** The old code derived a fake point size from the
+  bounding-box height and promoted ordinary body lines to huge headings. OCR
+  headings now require textual evidence (numbered/known/all-caps), a deliberate
+  section title indented beyond the body margin, or a clear size jump; body
+  lines cannot become headings from an accent or a merged fragment. Running
+  heads at the top and page numbers ("PÁGINA 8", "Página 8 de 70", "pág. 8") are
+  removed.
+- **Contents pages are rebuilt as rows.** OCR splits a TOC row into number,
+  title and a right-hand page number. Rows are grouped by baseline, sorted by
+  x, joined, and parsed; wrapped titles stay with their page number and
+  `CAPÍTULO V` is not split from its numeral. Two-dot and one-dot OCR leaders
+  are accepted. Figure/table indexes use the same path.
+- **Tables are preserved as images.** When a page has a `Tabla N` caption, the
+  table region is rendered as one image instead of letting OCR interleave
+  columns. The caption and prose after the table remain; the table text no
+  longer becomes fake headings or mixed cell paragraphs.
+- **Front matter.** If a document has a contents page and the pages before it
+  contain no long prose (only a cover, credits or funding copy), those pages are
+  marked as front matter and omitted from the reading text. A document with a
+  real preface before its contents keeps it.
+- **Cache schema 6.** The reflow cache is invalidated so existing libraries are
+  rebuilt with these rules.
+
+Tests: `scannedPDFJoinsParagraphsAndDoesNotPromoteBodyLinesToHeadings`
+(image-only PDF, OCR path), `textNormalizerHandlesSpanishPageLabelsAndOcrLookalikes`,
+`contentsEntryParsesOcrSplitPageNumbers`, plus the existing PDF, EPUB and format
+corpora (92 tests). No private document, OCR text, image, cache or test artifact
+is stored in the repository; the private verification corpus lives outside the
+checkout.
+
+Remaining limits: OCR can omit a short word or misread a year/name; tables are
+images, not reconstructed Markdown tables; bibliography entries can be merged
+across lines; a front-matter preface without a contents page is kept as body.

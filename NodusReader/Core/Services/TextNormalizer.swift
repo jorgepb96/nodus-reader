@@ -134,6 +134,39 @@ public enum TextNormalizer {
         return cleanBlock(result)
     }
 
+    /// Vision sometimes returns Cyrillic lookalikes for Latin glyphs in a
+    /// Spanish/English page. Repair only when Latin clearly dominates, so a
+    /// genuine Russian page is left alone.
+    public static func repairLatinOCR(_ text: String) -> String {
+        let scalars = text.unicodeScalars
+        let cyrillic = scalars.filter { (0x0400...0x04FF).contains($0.value) }.count
+        let latin = scalars.filter { (0x0041...0x024F).contains($0.value) }.count
+        guard cyrillic > 0, latin > cyrillic * 4 else { return text }
+        let map: [Character: Character] = [
+            "у": "y", "о": "o", "е": "e", "а": "a", "р": "p", "с": "c",
+            "х": "x", "к": "k", "м": "m", "т": "t", "н": "h", "в": "b",
+            "і": "i", "ї": "ï", "ј": "j", "ѕ": "s"
+        ]
+        return String(text.map { map[$0] ?? $0 })
+    }
+
+    /// OCR frequently reads a capital I in a Roman numeral as a lower-case l
+    /// ("Il. Marco teórico"). Repair only the leading numeral of a line.
+    public static func repairRomanOCR(_ text: String) -> String {
+        var value = text
+        for (bad, good) in [("IIl.", "III."), ("Il.", "II."), ("lII.", "III.")] {
+            if value.hasPrefix(bad) {
+                value = good + value.dropFirst(bad.count)
+                break
+            }
+        }
+        if value.hasSuffix("'"),
+           value.dropLast().allSatisfy({ !$0.isLetter || $0.isUppercase || $0.isWhitespace }) {
+            value.removeLast()
+        }
+        return value
+    }
+
     /// True when a line is only a page number, "Page 12", "12 of 90" or a
     /// Roman folio. Used to keep running feet out of the body and the contents.
     public static func isPageNumber(_ text: String) -> Bool {
@@ -144,7 +177,8 @@ public enum TextNormalizer {
             #"^p\.?\s*\d{1,4}$"#,
             #"^\d{1,4}\s*(?:of|/)\s*\d{1,4}$"#,
             #".*\bpage\s+\d{1,4}$"#,
-            #"^page\s+[ivxlcdm]{1,8}$"#
+            #"^page\s+[ivxlcdm]{1,8}$"#,
+            #"^(?:p[áa]g(?:ina)?\.?)\s*\d{1,4}(?:\s*(?:de|/)\s*\d{1,4})?$"#
         ]
         return patterns.contains { value.range(of: $0, options: [.regularExpression, .caseInsensitive]) != nil }
     }
