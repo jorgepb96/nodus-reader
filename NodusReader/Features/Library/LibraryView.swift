@@ -10,8 +10,6 @@ struct LibraryView: View {
     @Environment(\.nodusPalette) private var palette
 
     @Query(sort: \Book.addedAt, order: .reverse) private var books: [Book]
-    @Query(sort: \LibraryCollection.sortIndex) private var collections: [LibraryCollection]
-    @Query private var memberships: [CollectionMembership]
 
     @State private var searchText = ""
     @State private var filter: LibraryFilter.Kind = .all
@@ -28,8 +26,6 @@ struct LibraryView: View {
     @State private var pendingDeletion: [Book] = []
     @State private var showDeleteConfirmation = false
     @State private var searchMatches: Set<UUID>?
-    @State private var showNewCollection = false
-    @State private var newCollectionName = ""
 
     private var filteredBooks: [Book] {
         let filtered = books.filter {
@@ -47,9 +43,6 @@ struct LibraryView: View {
             VStack(alignment: .leading, spacing: 16) {
                 titleRow
                 searchField
-                if !visibleCollections.isEmpty || searchText.isEmpty {
-                    collectionsSection
-                }
                 LibraryFilterBar(selection: $filter)
                 sortRow
                 if filteredBooks.isEmpty {
@@ -105,19 +98,6 @@ struct LibraryView: View {
             if selectionMode, !selectedIDs.isEmpty {
                 selectionBar
             }
-        }
-        .navigationDestination(for: UUID.self) { id in
-            CollectionDetailView(collectionID: id)
-        }
-        .alert("New Collection", isPresented: $showNewCollection) {
-            TextField("Name", text: $newCollectionName)
-            Button("Create") {
-                _ = library.createCollection(name: newCollectionName)
-                newCollectionName = ""
-            }
-            Button("Cancel", role: .cancel) { newCollectionName = "" }
-        } message: {
-            Text("Collections can contain subcollections and documents.")
         }
         .readerCover(item: $readingBook)
         .sheet(isPresented: $showPlayer) {
@@ -178,86 +158,8 @@ struct LibraryView: View {
     }
 
     private var searchField: some View {
-        LibrarySearchField(text: $searchText, prompt: "Books, collections, text and notes",
+        LibrarySearchField(text: $searchText, prompt: "Books, text and notes",
                            accessibilityLabel: "Search library")
-    }
-
-    // MARK: Collections (folders)
-
-    /// Top-level collections; while searching, every collection whose name
-    /// matches, at any depth.
-    private var visibleCollections: [LibraryCollection] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let source = query.isEmpty
-            ? collections.filter { $0.parentID == nil }
-            : collections.filter { $0.name.localizedCaseInsensitiveContains(query) }
-        return source.sorted {
-            $0.sortIndex == $1.sortIndex
-                ? $0.name.localizedStandardCompare($1.name) == .orderedAscending
-                : $0.sortIndex < $1.sortIndex
-        }
-    }
-
-    private func bookCount(for collection: LibraryCollection) -> Int {
-        let ids = Set([collection.id] + library.descendantIDs(of: collection))
-        let bookIDs = memberships
-            .filter { membership in membership.collection.map { ids.contains($0.id) } ?? false }
-            .compactMap { $0.book?.id }
-        return Set(bookIDs).count
-    }
-
-    private var collectionsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Eyebrow("Collections")
-                Spacer()
-                Button {
-                    newCollectionName = ""
-                    showNewCollection = true
-                } label: {
-                    Image(systemName: "folder.badge.plus")
-                        .font(.system(size: 17))
-                        .foregroundStyle(palette.accent)
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("New collection")
-            }
-            if visibleCollections.isEmpty {
-                Text("Group books into folders and subfolders. A book can be in several collections without being copied.")
-                    .font(.footnote)
-                    .foregroundStyle(palette.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else if isGrid {
-                LazyVGrid(columns: columns, alignment: .leading, spacing: 14) {
-                    ForEach(visibleCollections) { collection in
-                        NavigationLink(value: collection.id) {
-                            CollectionFolderTile(collection: collection, bookCount: bookCount(for: collection))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(visibleCollections) { collection in
-                        NavigationLink(value: collection.id) {
-                            CollectionSummaryRow(
-                                collection: collection,
-                                subcollectionCount: collections.filter { $0.parentID == collection.id }.count,
-                                bookCount: bookCount(for: collection)
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        if collection.id != visibleCollections.last?.id {
-                            Divider().overlay(palette.line)
-                        }
-                    }
-                }
-                .panelCard(radius: 20)
-            }
-            Eyebrow("All books")
-                .padding(.top, 6)
-        }
     }
 
     // MARK: Grid and list

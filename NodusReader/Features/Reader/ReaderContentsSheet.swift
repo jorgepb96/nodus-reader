@@ -79,8 +79,11 @@ struct ReaderContentsSheet: View {
                         Text("\(chapter.id + 1)")
                             .font(.caption)
                             .foregroundStyle(palette.muted)
-                            .frame(width: 22, alignment: .trailing)
                             .monospacedDigit()
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                            .frame(minWidth: 22, alignment: .trailing)
+                            .layoutPriority(1)
                         Text(chapter.title)
                             .foregroundStyle(palette.text)
                             .lineLimit(2)
@@ -124,6 +127,9 @@ struct ReaderContentsSheet: View {
                                 .font(.caption)
                                 .foregroundStyle(palette.muted)
                                 .monospacedDigit()
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                                .layoutPriority(1)
                         }
                     }
                     .buttonStyle(.plain)
@@ -179,6 +185,8 @@ struct ReaderContentsSheet: View {
                     Text("\(draftPage) of \(pageCount)")
                         .foregroundStyle(palette.muted)
                         .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 }
                 Slider(
                     value: Binding(

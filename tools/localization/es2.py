@@ -1,4 +1,14 @@
 ES = {
+"Search chapters": "Buscar capítulos",
+"No matching chapters": "No se encontraron capítulos",
+"Try another chapter title or number.": "Prueba con otro título o número de capítulo.",
+
+"Scroll through contents": "Desplazarse por el índice",
+"Search collections": "Buscar colecciones",
+"Books, text and notes": "Libros, texto y notas",
+"Try a different collection name.": "Prueba con otro nombre de colección.",
+"1 collection": "1 colección",
+"%lld collections": "%lld colecciones",
 "Only the selected voice engine appears in the reader and player voice lists. System voices are always available as a fallback.": "En las listas de voces del lector y del reproductor solo aparece el motor de voz seleccionado. Las voces del sistema siempre están disponibles como alternativa.",
 "Open": "Abrir",
 "Open Access Tokens": "Abrir Access Tokens",

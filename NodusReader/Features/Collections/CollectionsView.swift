@@ -10,12 +10,19 @@ struct CollectionsView: View {
     @Query(sort: \LibraryCollection.sortIndex) private var collections: [LibraryCollection]
     @Query private var memberships: [CollectionMembership]
 
+    @State private var searchText = ""
+    @State private var isGrid = true
     @State private var showNewCollection = false
     @State private var newCollectionName = ""
 
-    private var roots: [LibraryCollection] {
+    private var query: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Browsing shows roots; search can find a collection at any depth.
+    private var visibleCollections: [LibraryCollection] {
         collections
-            .filter { $0.parentID == nil }
+            .filter { query.isEmpty ? $0.parentID == nil : $0.name.localizedCaseInsensitiveContains(query) }
             .sorted {
                 $0.sortIndex == $1.sortIndex
                     ? $0.name.localizedStandardCompare($1.name) == .orderedAscending
@@ -33,7 +40,10 @@ struct CollectionsView: View {
                         .foregroundStyle(palette.muted)
                 }
 
-                if roots.isEmpty {
+                LibrarySearchField(text: $searchText, prompt: "Search collections",
+                                   accessibilityLabel: "Search collections")
+
+                if collections.isEmpty {
                     NodusEmptyState(
                         icon: "folder",
                         title: "No collections yet",
@@ -44,23 +54,32 @@ struct CollectionsView: View {
                         showNewCollection = true
                     }
                     .frame(maxWidth: 260)
+                } else if visibleCollections.isEmpty {
+                    NodusEmptyState(
+                        icon: "magnifyingglass",
+                        title: "No matches",
+                        message: "Try a different collection name."
+                    )
+                    .frame(minHeight: 260)
+                    Button("Clear search") { searchText = "" }
+                        .foregroundStyle(palette.accent)
                 } else {
-                    VStack(spacing: 0) {
-                        ForEach(roots) { collection in
-                            NavigationLink(value: collection.id) {
-                                CollectionSummaryRow(
-                                    collection: collection,
-                                    subcollectionCount: collections.filter { $0.parentID == collection.id }.count,
-                                    bookCount: bookCount(for: collection)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            if collection.id != roots.last?.id {
-                                Divider().overlay(palette.line)
-                            }
+                    HStack {
+                        Text(visibleCollections.count == 1 ? "1 collection" : "\(visibleCollections.count) collections")
+                            .font(.footnote)
+                            .foregroundStyle(palette.muted)
+                        Spacer()
+                        Button {
+                            isGrid.toggle()
+                        } label: {
+                            Image(systemName: isGrid ? "list.bullet" : "square.grid.2x2")
+                                .foregroundStyle(palette.muted)
+                                .frame(width: 44, height: 44)
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(isGrid ? "Show as list" : "Show as grid")
                     }
-                    .panelCard(radius: 20)
+                    collectionResults
                 }
             }
             .padding(.horizontal, 20)
@@ -88,12 +107,46 @@ struct CollectionsView: View {
         .alert("New Collection", isPresented: $showNewCollection) {
             TextField("Name", text: $newCollectionName)
             Button("Create") {
-                _ = library.createCollection(name: newCollectionName)
+                _ = library.createCollection(name: newCollectionName.trimmingCharacters(in: .whitespacesAndNewlines))
                 newCollectionName = ""
+                searchText = ""
             }
+            .disabled(newCollectionName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             Button("Cancel", role: .cancel) { newCollectionName = "" }
         } message: {
             Text("Collections can contain subcollections and documents.")
+        }
+    }
+
+    @ViewBuilder
+    private var collectionResults: some View {
+        if isGrid {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 3),
+                      alignment: .leading, spacing: 20) {
+                ForEach(visibleCollections) { collection in
+                    NavigationLink(value: collection.id) {
+                        CollectionFolderTile(collection: collection, bookCount: bookCount(for: collection))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        } else {
+            VStack(spacing: 0) {
+                ForEach(visibleCollections) { collection in
+                    NavigationLink(value: collection.id) {
+                        CollectionSummaryRow(
+                            collection: collection,
+                            subcollectionCount: collections.filter { $0.parentID == collection.id }.count,
+                            bookCount: bookCount(for: collection)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    if collection.id != visibleCollections.last?.id {
+                        Divider().overlay(palette.line)
+                    }
+                }
+            }
+            .panelCard(radius: 20)
         }
     }
 

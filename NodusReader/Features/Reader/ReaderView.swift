@@ -454,6 +454,8 @@ struct ReaderView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(theme.muted)
                         .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
 
                     Spacer()
 

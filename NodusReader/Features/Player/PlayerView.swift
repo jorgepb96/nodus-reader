@@ -352,6 +352,7 @@ struct PlayerView: View {
         }
         .menuIndicator(.hidden)
         .accessibilityLabel("Playback speed")
+        .accessibilityValue(playback.speedLabel)
     }
 
     private var voiceControl: some View {

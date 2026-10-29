@@ -6901,6 +6901,96 @@
           }
         }
       }
+    },
+    "Search collections": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar colecciones"
+          }
+        }
+      }
+    },
+    "Books, text and notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libros, texto y notas"
+          }
+        }
+      }
+    },
+    "Try a different collection name.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba con otro nombre de colección."
+          }
+        }
+      }
+    },
+    "1 collection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 colección"
+          }
+        }
+      }
+    },
+    "%lld collections": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld colecciones"
+          }
+        }
+      }
+    },
+    "Scroll through contents": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desplazarse por el índice"
+          }
+        }
+      }
+    },
+    "Search chapters": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar capítulos"
+          }
+        }
+      }
+    },
+    "No matching chapters": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se encontraron capítulos"
+          }
+        }
+      }
+    },
+    "Try another chapter title or number.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba con otro título o número de capítulo."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -1,6 +1,6 @@
 # Public TestFlight beta
 
-Status on 27 October 2026. The external group exists, build 24 is assigned to it, the public link is enabled and Beta App Review was submitted. The review is **waiting for review** and public installation is not available until Apple approves the build. This does not publish an App Store version.
+Status on 29 October 2026. Build `0.1.0 (25)` is valid, assigned to the external group and approved by Beta App Review. The public link is enabled and serves the approved build. This does not publish an App Store version.
 
 ## Strategy in the other Nodus apps
 
@@ -8,7 +8,7 @@ Status on 27 October 2026. The external group exists, build 24 is assigned to it
 | --- | --- | --- | --- |
 | Nodus Presenter | Published on the App Store | `https://nodusresearch.com/presenter/privacy/` | Internal group only; no public link |
 | Nodus Drift | Public TestFlight beta; App Store version still in review | `https://nodusresearch.com/drift/privacy/` | External group `Nodus Drift — Public Beta`; public link enabled |
-| Nodus Reader | Public TestFlight beta only | `https://nodusresearch.com/reader/privacy/` | External group created; build 24 assigned; public link enabled; Beta App Review submitted |
+| Nodus Reader | Public TestFlight beta only | `https://nodusresearch.com/reader/privacy/` | External group created; build 25 assigned and approved; public link enabled |
 
 Reader follows Drift: the beta is tested through a public TestFlight link, not through an App Store release. Presenter is the App Store-published app and is not the model for this release.
 
@@ -21,12 +21,12 @@ Reader follows Drift: the beta is tested through a public TestFlight link, not t
 | Bundle ID | `ai.nodus.reader` |
 | SKU | `nodus-reader` |
 | App Store state | Prepare for Submission |
-| Build | `0.1.0 (24)` |
+| Build | `0.1.0 (25)` |
 | Build processing state | Valid |
 | Internal group | `Internal` |
 | External group | `Nodus Reader — Public Beta` (`b2c18bee-362c-4fc0-804a-6869fb3ee638`) |
 | Public link | `https://testflight.apple.com/join/SjCk8AZ1`; enabled |
-| Beta App Review | Submitted; `WAITING_FOR_REVIEW` |
+| Beta App Review | `APPROVED` |
 
 ## TestFlight fields
 
@@ -45,21 +45,37 @@ Nodus Reader is a free, open-source reading and listening app for iPhone, iPad a
 **What to Test**
 
 ```text
-Nodus Reader 0.1.0 (24) — first public beta.
+Nodus Reader 0.1.0 (25)
 
-FIRST-RUN SETUP
-• Voice setup is required. Tap “Choose a voice model”, install Phonon 31M (English, about 300 MB), and wait for the download to finish. No Hugging Face account is needed for Phonon.
-• After the model is installed, the library opens. No demo account is required.
+This build fixes EPUB import for books with more than 2,000 chapters. Please test the areas below and report any problem with your device model, iOS version and a screenshot.
 
-PLEASE CHECK
-• Import an EPUB and a PDF from Files; check the reading themes, library, collections, search, bookmarks, highlights and notes.
-• Open a book and start Read & Listen. Check sentence and word highlighting, voice selection, speed, sleep timer and lock-screen controls.
-• Open a PDF in Original and Intelligent Reading. Check text order, OCR, tables and the page scrollbar.
-• Optional: enable iCloud sync with your own Apple ID, import a book on one device and check it on another.
-• Use the Share Extension to import a document or web link.
-• Check the English and Spanish interface.
+1. VOICE MODEL DOWNLOAD
+- Open Settings > Voices & Models > Models.
+- Download Phonon 31M (English, about 300 MB). On an iPhone or iPad with Apple silicon and Metal support, also download Kokoro.
+- Confirm that the download completes, that the model appears as installed, and that narration still works after enabling Airplane Mode.
 
-Deleting a book removes its local file and generated audio. The app does not send books or audio to a Nodus server. Report bugs and screenshots through TestFlight.
+2. EPUB IMPORT
+- Import an EPUB from Files. If you have a long serial novel, use one with more than 2,000 chapters.
+- If you imported a long book in an earlier build, open it again without deleting or reimporting it. Confirm that the chapter list is complete and that the chapter label on Home uses the correct chapter after you read past chapter 2,000.
+- Open the chapter list and scroll to the end. Confirm that every chapter is present, that the last chapter is the real last chapter of the book, and that the chapter numbers have no gaps.
+- Open the last chapters and confirm that their text is present and readable.
+
+3. READ & LISTEN SYNCHRONIZATION
+- Open a book, choose Read & Listen, and start narration.
+- Confirm that the current sentence and the current word are highlighted and advance together with the audio.
+- Pause, resume, change speed, turn the page and lock the screen. Confirm that the highlight remains synchronized with the audio after each action.
+
+4. PDF IMPORT AND READING
+- Import a PDF with a text layer and a scanned PDF.
+- Open both in Original and in Intelligent Reading. Check reading order, OCR text, tables, search and the page scrollbar.
+- Add a highlight and a note to a PDF page and confirm that they appear on the correct page.
+
+5. OPTIONAL CHECKS
+- Enable iCloud sync with your own Apple ID (it is off by default).
+- Import a document with the Share Extension.
+- Switch the interface between English and Spanish.
+
+Report bugs and screenshots through TestFlight. Deleting a book removes its local file and generated audio. The app does not send books or audio to a Nodus server.
 ```
 
 **Beta App Review notes**
@@ -88,17 +104,17 @@ The private Beta App Review contact fields use the same owner contact as Nodus D
 
 1. Confirm that the App Privacy answer is still **Data Not Collected** for the current build. The app has no analytics, tracking or developer-operated server. Apple, Hugging Face and TestFlight are disclosed in the policy as separate services.
 2. Confirm the free-app agreement, tax and banking sections are active.
-3. Monitor **Beta App Review** for the existing external group **Nodus Reader — Public Beta** and build 24.
-4. After approval, confirm that the public link accepts testers and share it. Do not submit an App Store version.
+3. Build 25 is approved for the external group **Nodus Reader — Public Beta**.
+4. Confirm that the public link accepts testers and serves build 25. Do not submit an App Store version.
 
 ## API state after preparation
 
 - `betaAppLocalizations` en-US: description, feedback email and privacy URL filled.
 - `betaAppReviewDetails`: owner contact copied from Drift; notes and no demo account filled.
-- `betaBuildLocalizations` build 24: What to Test filled.
+- `betaBuildLocalizations` build 25: What to Test filled in en-US and es-ES.
 - `appInfoLocalizations` en-US and es-ES: privacy policy URL filled.
-- External beta group **Nodus Reader — Public Beta** created; build 24 assigned to both internal and external groups.
+- External beta group **Nodus Reader — Public Beta**: build 25 assigned; the internal group receives builds automatically.
 - Public link enabled: `https://testflight.apple.com/join/SjCk8AZ1`.
-- Beta App Review submitted for build 24; state `WAITING_FOR_REVIEW`.
+- Beta App Review approved for build 25; state `APPROVED`.
 - No App Store submission was created.
 - App Store 1.0 metadata, categories, 4+ age rating, review details and screenshots were also prepared. The App Store version is set to manual release, has no build attached and was not submitted.
