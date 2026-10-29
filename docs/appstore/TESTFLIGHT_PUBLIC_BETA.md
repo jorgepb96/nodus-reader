@@ -1,6 +1,6 @@
 # Public TestFlight beta
 
-Status on 29 October 2026. Build `0.1.0 (26)` is valid, assigned to both internal and external groups and shown as **En pruebas** in App Store Connect. The public link is enabled and serves the approved build. This does not publish an App Store version.
+Status on 29 October 2026. Build `0.1.0 (27)` is valid, assigned to both internal and external groups and shown as **En pruebas** in App Store Connect. The public link is enabled and serves the approved build. This does not publish an App Store version.
 
 ## Strategy in the other Nodus apps
 
@@ -8,7 +8,7 @@ Status on 29 October 2026. Build `0.1.0 (26)` is valid, assigned to both interna
 | --- | --- | --- | --- |
 | Nodus Presenter | Published on the App Store | `https://nodusresearch.com/presenter/privacy/` | Internal group only; no public link |
 | Nodus Drift | Public TestFlight beta; App Store version still in review | `https://nodusresearch.com/drift/privacy/` | External group `Nodus Drift — Public Beta`; public link enabled |
-| Nodus Reader | Public TestFlight beta only | `https://nodusresearch.com/reader/privacy/` | External group created; build 26 assigned and approved; public link enabled |
+| Nodus Reader | Public TestFlight beta only | `https://nodusresearch.com/reader/privacy/` | External group created; build 27 assigned and approved; public link enabled |
 
 Reader follows Drift: the beta is tested through a public TestFlight link, not through an App Store release. Presenter is the App Store-published app and is not the model for this release.
 
@@ -21,7 +21,7 @@ Reader follows Drift: the beta is tested through a public TestFlight link, not t
 | Bundle ID | `ai.nodus.reader` |
 | SKU | `nodus-reader` |
 | App Store state | Prepare for Submission |
-| Build | `0.1.0 (26)` |
+| Build | `0.1.0 (27)` |
 | Build processing state | Valid |
 | Internal group | `Internal` |
 | External group | `Nodus Reader — Public Beta` (`b2c18bee-362c-4fc0-804a-6869fb3ee638`) |
@@ -45,7 +45,7 @@ Nodus Reader is a free, open-source reading and listening app for iPhone, iPad a
 **What to Test**
 
 ```text
-Nodus Reader 0.1.0 (26)
+Nodus Reader 0.1.0 (27)
 
 This build improves library organization, chapter navigation and narration controls based on tester feedback.
 
@@ -87,25 +87,26 @@ The private Beta App Review contact fields use the same owner contact as Nodus D
 
 1. Confirm that the App Privacy answer is still **Data Not Collected** for the current build. The app has no analytics, tracking or developer-operated server. Apple, Hugging Face and TestFlight are disclosed in the policy as separate services.
 2. Confirm the free-app agreement, tax and banking sections are active.
-3. Build 26 is approved for the external group **Nodus Reader — Public Beta**.
-4. Confirm that the public link accepts testers and serves build 26. Do not submit an App Store version.
+3. Build 27 is approved for the external group **Nodus Reader — Public Beta**.
+4. Confirm that the public link accepts testers and serves build 27. Do not submit an App Store version.
 
 ## API state after preparation
 
 - `betaAppLocalizations` en-US: description, feedback email and privacy URL filled.
 - `betaAppReviewDetails`: owner contact copied from Drift; notes and no demo account filled.
-- `betaBuildLocalizations` build 26: What to Test filled in en-US and es-ES.
+- `betaBuildLocalizations` build 27: What to Test copied from build 26 in en-US and es-ES.
 - `appInfoLocalizations` en-US and es-ES: privacy policy URL filled.
-- External beta group **Nodus Reader — Public Beta**: build 26 assigned; the internal group receives builds automatically.
+- External beta group **Nodus Reader — Public Beta**: build 27 assigned; the internal group receives builds automatically.
 - Public link enabled: `https://testflight.apple.com/join/SjCk8AZ1`.
-- Build 26 was submitted for Beta App Review and is shown as **En pruebas** with both groups assigned. Automatic tester notifications are enabled.
+- Build 27 was submitted for Beta App Review and is shown as **En pruebas** with both groups assigned. Automatic tester notifications are enabled.
 - No App Store submission was created.
 - App Store 1.0 metadata, categories, 4+ age rating, review details and screenshots were also prepared. The App Store version is set to manual release, has no build attached and was not submitted.
 
-## Build 26 verification
+## Build 27 verification
 
-- Source: merged PR [#23](https://github.com/jorgepb96/nodus-reader/pull/23), commit `24081101c9dfffe855d1489849ee6e97d36bc87f`; closes [#22](https://github.com/jorgepb96/nodus-reader/issues/22).
-- Marketing version remains `0.1.0`; build number is `26`. No App Store version was submitted.
-- Signed Release simulator build launched successfully; the signed device archive and App Store Connect upload succeeded.
-- What to Test is saved in English (US) and Spanish (Spain).
-- Verified group assignments: **Internal** (internal) and **Nodus Reader — Public Beta** (external). App Store Connect shows build 26 **En pruebas**.
+- Source: merged PR [#24](https://github.com/jorgepb96/nodus-reader/pull/24), commit `a871e143e9e109a23141185eaad734f6886706f1`. Follow-up to the tester feedback in [#22](https://github.com/jorgepb96/nodus-reader/issues/22).
+- The only change over build 26 is the centred “New collection / Nueva colección” button in the empty Collections state. Marketing version remains `0.1.0`; build number is `27`. No App Store version was submitted.
+- The centred button was verified in the iOS Simulator in Spanish and the capture is stored in `docs/screenshots/iPhone-25-CollectionsEmpty.png`.
+- Signed Release simulator build launched successfully; the Release device archive (`build/NodusReader-0.1.0-27.xcarchive`) and the App Store Connect upload succeeded (Delivery UUID `4ea8dd7e-4417-4974-870b-89ef9bb89394`).
+- What to Test is the same text as build 26, saved in English (US) and Spanish (Spain); only the build number in the heading changed.
+- Verified group assignments: **Internal** (internal) and **Nodus Reader — Public Beta** (external). App Store Connect shows build 27 **En pruebas** and the Beta App Review state is **Approved**.
