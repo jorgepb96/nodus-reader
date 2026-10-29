@@ -382,6 +382,34 @@ func epubCleansTitlesAndJoinsParagraphsAcrossIllustrations() throws {
     #expect(chapter2.text.hasPrefix("MR. BENNET was among"))
 }
 
+@Test @MainActor
+func epubImportsEveryChapterBeyondTwoThousand() throws {
+    // Serial novels can be longer than the old 2,000-chapter cap. The parser
+    // must import the whole spine, not silently stop near the end of the book.
+    let chapterCount = 2_334
+    let chapters = (1...chapterCount).map { number in
+        SampleLibrary.Chapter(
+            title: "Chapter \(number)",
+            paragraphs: ["This is the body of chapter \(number), long enough to be kept."]
+        )
+    }
+    let url = try SampleLibrary.makeEPUB(SampleLibrary.Spec(
+        title: "Long Serial",
+        author: "Test Author",
+        language: "en",
+        description: "A serial novel with more chapters than the old cap.",
+        asPDF: false,
+        chapters: chapters
+    ))
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let extraction = try EPUBParser.parse(url: url, fallbackTitle: "Fallback")
+    #expect(extraction.chapters.count == chapterCount)
+    #expect(extraction.chapters.first?.title == "Chapter 1")
+    #expect(extraction.chapters.last?.title == "Chapter \(chapterCount)")
+    #expect(extraction.chapters.last?.text.contains("body of chapter \(chapterCount)") == true)
+}
+
 @Test
 func epubTitleCleanerHandlesIllustrationCaptionsAndGutenbergPrefixes() {
     #expect(ChapterBuilder.cleanTitle("I hope Mr. Bingley will like it. CHAPTER XXVII.")
