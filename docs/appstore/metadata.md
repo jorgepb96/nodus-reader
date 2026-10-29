@@ -119,10 +119,10 @@ The public-beta fields, the Drift/Presenter strategy and the remaining App Store
 
 - Feedback email: `contact@nodusresearch.com`
 - Privacy policy URL: `https://nodusresearch.com/reader/privacy/`
-- Current build: `0.1.0 (24)`
-- External group: `Nodus Reader — Public Beta` (build 24 assigned)
-- Public link: https://testflight.apple.com/join/SjCk8AZ1 (enabled; waiting for Beta App Review)
-- Beta App Review: submitted; `WAITING_FOR_REVIEW`
+- Current build: `0.1.0 (25)`
+- External group: `Nodus Reader — Public Beta` (build 25 assigned)
+- Public link: https://testflight.apple.com/join/SjCk8AZ1 (enabled; build 25 approved)
+- Beta App Review: `APPROVED`
 
 ## Screenshots
 
