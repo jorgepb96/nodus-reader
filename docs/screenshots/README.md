@@ -27,6 +27,7 @@ These are real captures from the app with a debug sample library, used for the R
 | `iPhone-22-ContentsFastScroll.png` | Chapter search field, draggable contents scrollbar and single-line four-digit chapter numbers (1,200-chapter EPUB fixture) |
 | `iPhone-23-ChapterSearch.png` | Contents filtered by chapter title, preserving the original chapter number and destination |
 | `iPhone-24-PlaybackSpeeds.png` | Playback speed menu including 1.35× between 1.25× and 1.5× |
+| `iPhone-25-CollectionsEmpty.png` | Empty Collections screen with the New Collection button centered (Spanish) |
 | `iPad-01-Library.png` | iPad library with sidebar and 5-column grid |
 | `iPad-02-Home.png` | iPad Home |
 | `iPad-03-Reader.png` | iPad reader |
