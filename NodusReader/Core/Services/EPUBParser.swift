@@ -93,20 +93,26 @@ public enum EPUBParser {
                 .sorted { $0.href.localizedStandardCompare($1.href) == .orderedAscending }
         }
 
+        // No chapter-count cap: serial novels can exceed 2,000 chapters and
+        // truncating them silently loses the end of the book. The extracted
+        // byte budget bounds the total work; the per-chapter pool keeps
+        // Foundation's parsing temporaries from accumulating across
+        // thousands of chapters.
         var builder = ChapterBuilder(hasNavigation: !navigationPoints.isEmpty)
         for item in spineItems {
-            guard item.mediaType.contains("html") || item.href.lowercased().hasSuffix(".xhtml") else { continue }
-            let path = resolve(item.href, relativeTo: baseDirectory)
-            guard let chapterData = try? data(path) else { continue }
-            let raw = String(data: chapterData, encoding: .utf8)
-                ?? String(data: chapterData, encoding: .isoLatin1)
-                ?? ""
-            let conversion = HTMLText.convert(raw)
-            let points = navigationPoints.filter { $0.path.caseInsensitiveCompare(path) == .orderedSame }
-            builder.add(conversion, points: points, heading: HTMLText.firstHeading(from: chapterData),
-                        documentTitle: HTMLText.documentTitle(from: chapterData),
-                        hasSectionHeading: HTMLText.hasSectionHeading(raw))
-            if builder.chapters.count >= 2000 { break }
+            autoreleasepool {
+                guard item.mediaType.contains("html") || item.href.lowercased().hasSuffix(".xhtml") else { return }
+                let path = resolve(item.href, relativeTo: baseDirectory)
+                guard let chapterData = try? data(path) else { return }
+                let raw = String(data: chapterData, encoding: .utf8)
+                    ?? String(data: chapterData, encoding: .isoLatin1)
+                    ?? ""
+                let conversion = HTMLText.convert(raw)
+                let points = navigationPoints.filter { $0.path.caseInsensitiveCompare(path) == .orderedSame }
+                builder.add(conversion, points: points, heading: HTMLText.firstHeading(from: chapterData),
+                            documentTitle: HTMLText.documentTitle(from: chapterData),
+                            hasSectionHeading: HTMLText.hasSectionHeading(raw))
+            }
         }
         let extractedChapters = builder.chapters
         var chapters: [ExtractedChapter] = extractedChapters.compactMap { chapter in

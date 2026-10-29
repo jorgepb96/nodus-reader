@@ -1067,3 +1067,18 @@ OCR-only books still depend on Vision quality and are checked separately.
   document with the new `client_id`; the old `hf-oauth-v1` tag stays untouched for
   existing builds. The Phonon asset was downloaded from the
   new release URL and its checksum verified by SwiftPM.
+
+## Long serials import in full (2026-10-29)
+
+- **Silent truncation.** `EPUBParser` stopped after 2,000 built chapters. A
+  2,334-chapter serial therefore imported 2,000 entries and ended at
+  "Chapter 1999"; the reader reparsed the file with the same cap. The cap is
+  gone: every chapter the spine and contents declare is imported, whatever
+  the count. The extracted-byte budget still bounds the work, and a
+  per-chapter autorelease pool keeps Foundation parsing temporaries from
+  accumulating across long spines.
+- **Verification.** The supplied 2,334-chapter EPUB now yields 2,335 entries
+  (title page plus 2,334 chapters) and ends at "Chapter 2334". A synthetic
+  10,000-chapter EPUB yields 10,000 entries and ends at "Chapter 10000".
+  `epubImportsEveryChapterBeyondTwoThousand` builds a 2,334-chapter fixture
+  and asserts the first and last chapters are present.
