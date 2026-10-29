@@ -1082,3 +1082,18 @@ OCR-only books still depend on Vision quality and are checked separately.
   10,000-chapter EPUB yields 10,000 entries and ends at "Chapter 10000".
   `epubImportsEveryChapterBeyondTwoThousand` builds a 2,334-chapter fixture
   and asserts the first and last chapters are present.
+
+## Repairing stored chapter titles (2026-10-29)
+
+- **Existing imports.** Books imported before the long-serial fix kept a
+  truncated `tocJSON`, even though the reader reparsed the EPUB and showed the
+  complete book. The Home Continue line used that stored list, so chapter labels
+  after 2,000 were wrong.
+- **On-open repair.** After the reader or playback loads an EPUB, the loaded
+  titles are compared with `tocJSON`; if they differ, the stored list is
+  rewritten and saved once. `tocJSON` is local derived data and is not part of
+  the CloudKit record, so the repair is saved with the sync journal suspended.
+  No second parse and no reimport are needed.
+- **Coverage.** `openingAnEPUBRepairsChapterTitlesStoredByAnOlderParser` imports
+  an EPUB, truncates the stored titles to simulate an old import, loads the book
+  and asserts that the full title list is restored.

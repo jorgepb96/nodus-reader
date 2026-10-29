@@ -522,6 +522,7 @@ struct ReaderView: View {
                 content = .failed(String(localized: "This document does not contain readable text."))
                 return
             }
+            library.refreshChapterTitlesIfNeeded(book, chapters: loaded)
             content = .chapters(loaded)
         } catch {
             content = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)

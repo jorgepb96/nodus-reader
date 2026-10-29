@@ -228,6 +228,24 @@ public final class LibraryService {
         }
     }
 
+    /// Repairs chapter titles stored by an older or incomplete parser. EPUB is
+    /// reparsed every time the reader opens it, so the loaded chapters are the
+    /// source of truth. `tocJSON` is local derived data (it is not part of the
+    /// CloudKit record), so repairing it must not enqueue a sync write.
+    func refreshChapterTitlesIfNeeded(_ book: Book, chapters: [ExtractedChapter]) {
+        guard book.format == .epub,
+              book.modelContext != nil,
+              !book.isDeleted else { return }
+        let titles = chapters.map(\.title)
+        guard !titles.isEmpty, titles != book.chapterTitles else { return }
+        book.setChapterTitles(titles)
+        if let syncJournal {
+            syncJournal.withSuspendedRecording { save() }
+        } else {
+            save()
+        }
+    }
+
     private func existingBook(withHash hash: String) throws -> Book? {
         var descriptor = FetchDescriptor<Book>(predicate: #Predicate<Book> { $0.contentHash == hash })
         descriptor.fetchLimit = 1
