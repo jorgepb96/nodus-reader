@@ -54,6 +54,7 @@ struct CollectionsView: View {
                         showNewCollection = true
                     }
                     .frame(maxWidth: 260)
+                    .frame(maxWidth: .infinity)
                 } else if visibleCollections.isEmpty {
                     NodusEmptyState(
                         icon: "magnifyingglass",
