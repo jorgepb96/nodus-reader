@@ -394,6 +394,7 @@ public final class PlaybackController {
             guard !loaded.isEmpty else {
                 throw ImportError.emptyDocument(book.title)
             }
+            library.refreshChapterTitlesIfNeeded(book, chapters: loaded)
             chapters = loaded
             sentences = Self.buildSentences(from: loaded)
             resetPrefetch()

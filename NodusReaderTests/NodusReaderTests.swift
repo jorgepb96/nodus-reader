@@ -174,6 +174,29 @@ func importsEPUBAndRejectsDuplicateContent() async throws {
 }
 
 @Test @MainActor
+func openingAnEPUBRepairsChapterTitlesStoredByAnOlderParser() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+
+    let url = try SampleLibrary.makeEPUB(sampleSpec())
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let result = await fixture.service.importFiles([url]) { _ in }
+    let book = try #require(result.imported.first)
+    let fullTitles = book.chapterTitles
+    #expect(fullTitles.count == 2)
+
+    // Simulate a book imported while the parser stopped at one chapter.
+    book.setChapterTitles(Array(fullTitles.prefix(1)))
+    fixture.service.save()
+
+    let loaded = try await BookTextLoader.loadChapters(for: book, fileStore: fixture.fileStore)
+    fixture.service.refreshChapterTitlesIfNeeded(book, chapters: loaded)
+
+    #expect(book.chapterTitles == fullTitles)
+}
+
+@Test @MainActor
 func importsPDFWithMetadataAndText() async throws {
     let fixture = try Fixture()
     defer { fixture.cleanUp() }
