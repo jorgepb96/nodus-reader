@@ -33,7 +33,8 @@ final class NodusReaderUITests: XCTestCase {
         dismissPopover(in: app)
         app.buttons["Back to library"].tap()
 
-        // Collections live in Library as folders.
+        // Collections have their own tab and search.
+        tapTab("Collections", in: app)
         XCTAssertTrue(app.staticTexts["Collections"].firstMatch.waitForExistence(timeout: 10))
         snap("iPhone-05-Collections")
         let history = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'History'")).firstMatch
@@ -74,8 +75,144 @@ final class NodusReaderUITests: XCTestCase {
         field.typeText("Ishmael")
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 8))
         snap("iPhone-11-Search")
-        XCTAssertFalse(app.tabBars.buttons["Collections"].exists)
+        XCTAssertTrue(app.tabBars.buttons["Collections"].exists)
         XCTAssertFalse(app.tabBars.buttons["Search"].exists)
+    }
+
+    func testPhoneLibraryCollectionsNavigation() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        try XCTSkipIf(app.windows.firstMatch.frame.width >= 700, "iPhone navigation")
+
+        tapTab("Library", in: app)
+        let librarySearch = app.textFields["Search library"].firstMatch
+        XCTAssertTrue(librarySearch.waitForExistence(timeout: 10))
+        let inProgress = app.buttons["In progress"].firstMatch
+        XCTAssertTrue(inProgress.exists)
+        XCTAssertLessThan(librarySearch.frame.maxY, inProgress.frame.minY)
+        XCTAssertLessThan(inProgress.frame.maxY, app.staticTexts["Moby-Dick"].firstMatch.frame.minY)
+        XCTAssertFalse(app.buttons["New collection"].exists)
+        snap("iPhone-CollectionsUpdate-01-Library")
+
+        tapTab("Collections", in: app)
+        let search = app.textFields["Search collections"].firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["New collection"].exists)
+        snap("iPhone-CollectionsUpdate-02-Collections")
+
+        search.tap()
+        search.typeText("francoism")
+        let nested = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Francoism'")).firstMatch
+        XCTAssertTrue(nested.waitForExistence(timeout: 8), "Search must find nested collections")
+        nested.tap()
+        XCTAssertTrue(app.staticTexts["In Francoism"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.textFields["Search this collection"].exists)
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertEqual(search.value as? String, "francoism")
+        app.buttons["Clear search"].firstMatch.tap()
+
+        search.tap()
+        search.typeText("zz-no-such-collection")
+        XCTAssertTrue(app.staticTexts["No matches"].waitForExistence(timeout: 8))
+        app.buttons["Clear search"].firstMatch.tap()
+        app.buttons["Show as list"].tap()
+        XCTAssertTrue(app.buttons["Show as grid"].exists)
+        let history = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'History'")).firstMatch
+        XCTAssertTrue(history.exists)
+        history.tap()
+        XCTAssertTrue(app.staticTexts["In History"].firstMatch.waitForExistence(timeout: 10))
+
+        tapTab("Library", in: app)
+        XCTAssertTrue(librarySearch.waitForExistence(timeout: 8))
+        inProgress.tap()
+        XCTAssertFalse(app.staticTexts["Meditations"].exists)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].exists)
+    }
+
+    func testLongContentsFastScrollAndSingleLineNumbers() throws {
+        let app = launch(resetReadingState: true, longContents: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        try XCTSkipIf(app.windows.firstMatch.frame.width >= 700, "iPhone contents navigation")
+        tapTab("Library", in: app)
+        let search = app.textFields["Search library"].firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        search.tap()
+        search.typeText("Long Contents Test")
+        let book = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Long Contents Test'")).firstMatch
+        XCTAssertTrue(book.waitForExistence(timeout: 60))
+        book.tap()
+        let contents = app.buttons["Contents, bookmarks and notes"]
+        XCTAssertTrue(contents.waitForExistence(timeout: 30))
+        contents.tap()
+        let bar = app.otherElements["ReaderContentsScrollbar"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 15))
+        // Grab the thumb directly while the sheet is still at its medium detent.
+        let mediumHeight = bar.frame.height
+        let thumbCenter = bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 22 / mediumHeight))
+        let mediumBottom = bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.99))
+        thumbCenter.press(forDuration: 0.05, thenDragTo: mediumBottom)
+        XCTAssertTrue(app.staticTexts["ContentsNumber-1200"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["ContentsNumber-1200"].isHittable)
+        XCTAssertEqual(bar.frame.height, mediumHeight, accuracy: 2, "Dragging the thumb must not resize the sheet")
+
+        let title = app.navigationBars.firstMatch
+        title.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
+            .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)))
+        let top = bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.02))
+        let bottom = bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.99))
+        bottom.press(forDuration: 0.05, thenDragTo: top)
+        XCTAssertTrue(app.staticTexts["ContentsNumber-1"].waitForExistence(timeout: 10))
+        top.press(forDuration: 0.05, thenDragTo: bottom)
+        let last = app.staticTexts["ContentsNumber-1200"]
+        XCTAssertTrue(last.waitForExistence(timeout: 10), "One drag must reach the end of a long contents list")
+        XCTAssertLessThan(last.frame.height, last.frame.width, "Four-digit numbers must stay on one line")
+        snap("iPhone-ContentsUpdate-01-FastScroll")
+        bottom.press(forDuration: 0.1, thenDragTo: top)
+        XCTAssertTrue(app.staticTexts["ContentsNumber-1"].waitForExistence(timeout: 10))
+        // Normal swipes still work, and the thumb reflects their position.
+        app.scrollViews.firstMatch.swipeUp()
+        XCTAssertNotEqual(bar.value as? String, "0%")
+        top.press(forDuration: 0.1, thenDragTo: bottom)
+        let lastChapter = app.buttons.containing(.staticText, identifier: "ContentsNumber-1200").firstMatch
+        XCTAssertTrue(lastChapter.waitForExistence(timeout: 10))
+        lastChapter.tap()
+        XCTAssertTrue(app.staticTexts["Chapter 1200: A journey through the changing seasons"].firstMatch
+            .waitForExistence(timeout: 15), "Choosing a chapter after scrubbing must navigate to it")
+    }
+
+    func testContentsSearchByTitleAndNumber() throws {
+        let app = launch(resetReadingState: true, longContents: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        try XCTSkipIf(app.windows.firstMatch.frame.width >= 700, "iPhone contents navigation")
+        tapTab("Library", in: app)
+        let librarySearch = app.textFields["Search library"].firstMatch
+        XCTAssertTrue(librarySearch.waitForExistence(timeout: 10))
+        librarySearch.tap()
+        librarySearch.typeText("Long Contents Test")
+        let book = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Long Contents Test'")).firstMatch
+        XCTAssertTrue(book.waitForExistence(timeout: 60))
+        book.tap()
+        let contents = app.buttons["Contents, bookmarks and notes"]
+        XCTAssertTrue(contents.waitForExistence(timeout: 30))
+        contents.tap()
+        let field = app.textFields["Search chapters"].firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("CHAPTER 1199:")
+        let result = app.staticTexts["ContentsNumber-1199"]
+        XCTAssertTrue(result.waitForExistence(timeout: 10))
+        XCTAssertTrue(result.isHittable)
+        XCTAssertFalse(app.staticTexts["ContentsNumber-1"].exists)
+        snap("iPhone-ContentsUpdate-02-Search")
+        app.buttons["Clear search"].firstMatch.tap()
+        field.typeText("no such chapter")
+        XCTAssertTrue(app.staticTexts["No matching chapters"].waitForExistence(timeout: 8))
+        app.buttons["Clear search"].firstMatch.tap()
+        field.typeText("1199")
+        XCTAssertTrue(result.waitForExistence(timeout: 8))
+        app.buttons.containing(.staticText, identifier: "ContentsNumber-1199").firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Chapter 1199: A journey through the changing seasons"].firstMatch
+            .waitForExistence(timeout: 15), "Filtering must preserve the original chapter destination")
     }
 
     func testPadScreens() throws {
@@ -255,6 +392,16 @@ final class NodusReaderUITests: XCTestCase {
         XCTAssertTrue(mode.waitForExistence(timeout: 25))
         sleep(3)
         snap("iPhone-12-Player")
+
+        let speed = app.buttons["Playback speed"]
+        XCTAssertTrue(speed.waitForExistence(timeout: 8))
+        speed.tap()
+        let intermediateSpeed = app.buttons["1.35×"].firstMatch
+        XCTAssertTrue(intermediateSpeed.waitForExistence(timeout: 5))
+        snap("iPhone-SpeedUpdate-01-Options")
+        intermediateSpeed.tap()
+        XCTAssertEqual(speed.value as? String, "1.35×")
+        snap("iPhone-SpeedUpdate-02-Selected")
 
         app.buttons["Close player"].tap()
         let miniPlayer = app.buttons.matching(
@@ -701,7 +848,7 @@ final class NodusReaderUITests: XCTestCase {
                        "The model catalogue still offers system voices")
     }
 
-    private func launch(resetReadingState: Bool = false) -> XCUIApplication {
+    private func launch(resetReadingState: Bool = false, longContents: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         // The tests read English labels; the app follows the device language
         // (Spanish or English), so pin it to English whatever the simulator uses.
@@ -715,6 +862,7 @@ final class NodusReaderUITests: XCTestCase {
         if resetReadingState {
             app.launchArguments.append("-NodusResetReadingState")
         }
+        if longContents { app.launchArguments.append("-NodusLongContentsSample") }
         app.launch()
         return app
     }

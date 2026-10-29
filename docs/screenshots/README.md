@@ -8,7 +8,7 @@ These are real captures from the app with a debug sample library, used for the R
 | `iPhone-02-Library.png` | Library grid, chips, sort |
 | `iPhone-03-Reader.png` | Reader, Dark theme (follows the App theme), chapter opener |
 | `iPhone-04-Appearance.png` | Reader appearance and typography sheet |
-| `iPhone-05-Collections.png` | Collections root |
+| `iPhone-05-Collections.png` | Collections tab, search and folder grid |
 | `iPhone-06-Collection.png` | Collection detail with subcollections and multi-membership |
 | `iPhone-07-Settings.png` | Settings, App/Reader themes |
 | `iPhone-08-Typography.png` | Reading & Typography settings |
@@ -24,6 +24,9 @@ These are real captures from the app with a debug sample library, used for the R
 | `iPhone-18-NeuralNarration.png` | Phonon narration in the expanded player with the offline-audio card |
 | `iPhone-19-NeuralProgress.png` | Neural playback advanced to the next sentence |
 | `iPhone-20-ICloudStorage.png` | iCloud & Storage with real status, storage and troubleshooting |
+| `iPhone-22-ContentsFastScroll.png` | Chapter search field, draggable contents scrollbar and single-line four-digit chapter numbers (1,200-chapter EPUB fixture) |
+| `iPhone-23-ChapterSearch.png` | Contents filtered by chapter title, preserving the original chapter number and destination |
+| `iPhone-24-PlaybackSpeeds.png` | Playback speed menu including 1.35× between 1.25× and 1.5× |
 | `iPad-01-Library.png` | iPad library with sidebar and 5-column grid |
 | `iPad-02-Home.png` | iPad Home |
 | `iPad-03-Reader.png` | iPad reader |

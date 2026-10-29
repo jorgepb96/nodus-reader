@@ -42,3 +42,16 @@ public enum NodusHex {
     public static let searchCurrent: UInt32 = 0xFB923C
     public static let searchCurrentUnderline: UInt32 = 0xEA580C
 }
+
+/// Contents navigation: readable rows and a scrollbar with a full touch target.
+public enum ReaderContentsLayout {
+    public static let horizontalInset: CGFloat = 16
+    public static let minimumRowHeight: CGFloat = 44
+    public static let rowVerticalInset: CGFloat = 8
+    public static let searchBottomInset: CGFloat = 12
+    public static let scrollbarTouchWidth: CGFloat = 44
+    public static let scrollbarInset: CGFloat = 8
+    public static let minimumThumbHeight: CGFloat = 44
+    public static let trackWidth: CGFloat = 3
+    public static let thumbWidth: CGFloat = 8
+}

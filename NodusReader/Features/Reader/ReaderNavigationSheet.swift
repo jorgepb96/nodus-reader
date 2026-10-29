@@ -157,6 +157,19 @@ struct ReaderNavigationSheet: View {
     var onEditAnnotation: (Annotation) -> Void
 
     @State private var tab: ReaderNavigationTab = .contents
+    @State private var chapterSearch = ""
+
+    private var chapterQuery: String {
+        chapterSearch.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var matchingChapterIndices: [Int] {
+        chapters.indices.filter { index in
+            chapterQuery.isEmpty
+                || chapters[index].title.localizedStandardContains(chapterQuery)
+                || String(index + 1) == chapterQuery
+        }
+    }
 
     private var currentChapterIndex: Int {
         pages.indices.contains(pageIndex) ? pages[pageIndex].chapterIndex : 0
@@ -200,12 +213,32 @@ struct ReaderNavigationSheet: View {
         }
         #if os(iOS)
         .presentationDetents([.medium, .large])
+        .presentationContentInteraction(.scrolls)
         #endif
     }
 
     private var contentsList: some View {
-        List {
-            ForEach(Array(chapters.enumerated()), id: \.element.id) { index, chapter in
+        VStack(spacing: 0) {
+            LibrarySearchField(text: $chapterSearch, prompt: "Search chapters",
+                               accessibilityLabel: "Search chapters")
+                .autocorrectionDisabled()
+                .padding(.horizontal, ReaderContentsLayout.horizontalInset)
+                .padding(.bottom, ReaderContentsLayout.searchBottomInset)
+
+            if matchingChapterIndices.isEmpty {
+                emptyState(icon: "magnifyingglass", title: "No matching chapters",
+                           message: "Try another chapter title or number.")
+            } else {
+                chapterResults
+                    .id(chapterQuery)
+            }
+        }
+    }
+
+    private var chapterResults: some View {
+        ReaderContentsScrollView(ids: matchingChapterIndices) {
+            ForEach(matchingChapterIndices, id: \.self) { index in
+                let chapter = chapters[index]
                 Button {
                     pageIndex = firstPageByChapter[index] ?? 0
                     dismiss()
@@ -214,8 +247,12 @@ struct ReaderNavigationSheet: View {
                         Text("\(index + 1)")
                             .font(.caption)
                             .foregroundStyle(palette.muted)
-                            .frame(width: 22, alignment: .trailing)
                             .monospacedDigit()
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                            .frame(minWidth: 22, alignment: .trailing)
+                            .layoutPriority(1)
+                            .accessibilityIdentifier("ContentsNumber-\(index + 1)")
                         Text(chapter.title)
                             .foregroundStyle(palette.text)
                             .lineLimit(2)
@@ -224,13 +261,16 @@ struct ReaderNavigationSheet: View {
                             Image(systemName: "checkmark").foregroundStyle(palette.accent)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, ReaderContentsLayout.rowVerticalInset)
+                    .frame(minHeight: ReaderContentsLayout.minimumRowHeight)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .listRowBackground(Color.clear)
+                .id(index)
+                Divider().overlay(palette.line)
             }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
     }
 
     private var bookmarksList: some View {
@@ -382,5 +422,116 @@ struct ReaderNavigationSheet: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)
+    }
+}
+
+// MARK: - Fast contents scrolling
+
+/// Follows normal scrolling, but targets stable chapter IDs for fast jumps.
+/// Pixel offsets into a large lazy stack can land in unmaterialised content.
+struct ReaderContentsScrollView<Content: View>: View {
+    let ids: [Int]
+    @State private var metrics = ContentsScrollMetrics()
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            HStack(spacing: 0) {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        content
+                    }
+                    .padding(.horizontal, ReaderContentsLayout.horizontalInset)
+                }
+                .scrollIndicators(.hidden)
+                .onScrollGeometryChange(for: ContentsScrollMetrics.self) { geometry in
+                    ContentsScrollMetrics(
+                        contentHeight: geometry.contentSize.height,
+                        viewportHeight: geometry.containerSize.height,
+                        offset: geometry.contentOffset.y
+                    )
+                } action: { _, value in
+                    metrics = value
+                }
+
+                if metrics.maximumOffset > 0 {
+                    ContentsScrollbar(metrics: metrics) { fraction in
+                        guard !ids.isEmpty else { return }
+                        let index = min(Int((fraction * CGFloat(ids.count - 1)).rounded()), ids.count - 1)
+                        proxy.scrollTo(ids[index], anchor: fraction >= 1 ? .bottom : .top)
+                    }
+                    .padding(.vertical, ReaderContentsLayout.scrollbarInset)
+                }
+            }
+        }
+    }
+}
+
+private struct ContentsScrollMetrics: Equatable {
+    var contentHeight: CGFloat = 0
+    var viewportHeight: CGFloat = 0
+    var offset: CGFloat = 0
+
+    var maximumOffset: CGFloat { max(0, contentHeight - viewportHeight) }
+    var progress: CGFloat { maximumOffset > 0 ? min(max(offset / maximumOffset, 0), 1) : 0 }
+}
+
+private struct ContentsScrollbar: View {
+    @Environment(\.nodusPalette) private var palette
+    let metrics: ContentsScrollMetrics
+    let onScroll: (CGFloat) -> Void
+    @State private var grabOffset: CGFloat?
+    @State private var dragProgress: CGFloat?
+
+    var body: some View {
+        GeometryReader { proxy in
+            let height = max(1, proxy.size.height)
+            let thumbHeight = min(height, max(ReaderContentsLayout.minimumThumbHeight,
+                height * metrics.viewportHeight / max(metrics.contentHeight, 1)))
+            let travel = max(0, height - thumbHeight)
+            let offset = (dragProgress ?? metrics.progress) * travel
+
+            ZStack(alignment: .top) {
+                Capsule()
+                    .fill(palette.muted.opacity(0.15))
+                    .frame(width: ReaderContentsLayout.trackWidth)
+                Capsule()
+                    .fill(grabOffset == nil ? palette.muted : palette.accent)
+                    .frame(width: ReaderContentsLayout.thumbWidth, height: thumbHeight)
+                    .offset(y: offset)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .contentShape(Rectangle())
+            .highPriorityGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        if grabOffset == nil {
+                            let start = value.startLocation.y
+                            grabOffset = (offset...offset + thumbHeight).contains(start)
+                                ? start - offset : thumbHeight / 2
+                        }
+                        guard travel > 0 else { return }
+                        let fraction = min(max((value.location.y - (grabOffset ?? 0)) / travel, 0), 1)
+                        dragProgress = fraction
+                        onScroll(fraction)
+                    }
+                    .onEnded { _ in
+                        grabOffset = nil
+                        dragProgress = nil
+                    }
+            )
+        }
+        .frame(width: ReaderContentsLayout.scrollbarTouchWidth)
+        .accessibilityElement()
+        .accessibilityIdentifier("ReaderContentsScrollbar")
+        .accessibilityLabel("Scroll through contents")
+        .accessibilityValue(Text(Double(metrics.progress), format: .percent.precision(.fractionLength(0))))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: onScroll(min(metrics.progress + 0.1, 1))
+            case .decrement: onScroll(max(metrics.progress - 0.1, 0))
+            @unknown default: break
+            }
+        }
     }
 }

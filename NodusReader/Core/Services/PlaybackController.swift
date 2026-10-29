@@ -76,7 +76,7 @@ public struct NarrationSentence: Identifiable, Sendable {
 @MainActor
 @Observable
 public final class PlaybackController {
-    public static let speedOptions: [Double] = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+    public static let speedOptions: [Double] = [0.75, 1.0, 1.25, 1.35, 1.5, 1.75, 2.0]
 
     @ObservationIgnored private let library: LibraryService
     public let voices: VoiceCatalog

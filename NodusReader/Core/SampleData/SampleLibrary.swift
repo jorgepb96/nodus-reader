@@ -166,6 +166,26 @@ enum SampleLibrary {
         library.save()
     }
 
+    /// Opt-in real EPUB fixture for fast contents scrolling and four-digit numbers.
+    static func seedLongContentsIfNeeded(library: LibraryService) async {
+        let title = "Long Contents Test"
+        guard !library.allBooks().contains(where: { $0.title == title }) else { return }
+        let chapters = (1...1200).map { number in
+            Chapter(title: "Chapter \(number): A journey through the changing seasons",
+                    paragraphs: ["This is chapter \(number) of the long contents navigation fixture."])
+        }
+        let spec = Spec(title: title, author: "Nodus Reader", language: "en",
+                        description: "Long contents navigation test fixture.", asPDF: false,
+                        chapters: chapters)
+        do {
+            let url = try makeEPUB(spec)
+            defer { try? FileManager.default.removeItem(at: url) }
+            _ = await library.importFiles([url], into: nil) { _ in }
+        } catch {
+            print("Long contents fixture failed: \(error)")
+        }
+    }
+
     // MARK: - EPUB
 
     static func makeEPUB(_ spec: Spec) throws -> URL {
