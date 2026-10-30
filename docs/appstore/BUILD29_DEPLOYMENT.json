@@ -1,0 +1,63 @@
+[
+  {
+    "id": "7b916c92-b4df-431b-97e5-0f6288fee35f",
+    "version": "29",
+    "uploadedDate": "2026-10-30T02:29:07-07:00",
+    "expirationDate": "2027-01-28T01:29:07-08:00",
+    "expired": false,
+    "minOsVersion": "18.0",
+    "lsMinimumSystemVersion": "15.0",
+    "computedMinMacOsVersion": "15.0",
+    "computedMinVisionOsVersion": "2.0",
+    "iconAssetToken": {
+      "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/ef/22/c8/ef22c84b-2d72-08ee-f876-bb4d78105eff/AppIcon76x76@2x_U007eipad.png/{w}x{h}bb.{f}",
+      "width": 152,
+      "height": 152
+    },
+    "processingState": "VALID",
+    "buildAudienceType": "APP_STORE_ELIGIBLE",
+    "usesNonExemptEncryption": false,
+    "preReleaseVersion": {
+      "version": "0.1.0",
+      "platform": "IOS"
+    },
+    "buildBetaDetail": {
+      "autoNotifyEnabled": true,
+      "internalBuildState": "IN_BETA_TESTING",
+      "externalBuildState": "IN_BETA_TESTING"
+    },
+    "betaAppReviewSubmission": {
+      "betaReviewState": "APPROVED",
+      "submittedDate": null
+    }
+  },
+  {
+    "id": "9a0e97c6-5905-4ae8-8046-815b9d746c57",
+    "version": "29",
+    "uploadedDate": "2026-10-30T02:27:00-07:00",
+    "expirationDate": "2027-01-28T01:27:00-08:00",
+    "expired": false,
+    "minOsVersion": "15.0",
+    "lsMinimumSystemVersion": "15.0",
+    "computedMinMacOsVersion": null,
+    "computedMinVisionOsVersion": null,
+    "iconAssetToken": {
+      "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/9f/6b/b0/9f6bb062-45ac-968a-d67a-7ce41a88e040/AppIcon.icns/{w}x{h}bb.{f}",
+      "width": 256,
+      "height": 256
+    },
+    "processingState": "VALID",
+    "buildAudienceType": "APP_STORE_ELIGIBLE",
+    "usesNonExemptEncryption": false,
+    "preReleaseVersion": {
+      "version": "0.1.0",
+      "platform": "MAC_OS"
+    },
+    "buildBetaDetail": {
+      "autoNotifyEnabled": true,
+      "internalBuildState": "IN_BETA_TESTING",
+      "externalBuildState": "READY_FOR_BETA_SUBMISSION"
+    },
+    "betaAppReviewSubmission": null
+  }
+]

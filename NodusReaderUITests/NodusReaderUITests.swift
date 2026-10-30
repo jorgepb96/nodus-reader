@@ -258,7 +258,7 @@ final class NodusReaderUITests: XCTestCase {
         let spanish = language == "es"
         func label(_ english: String, _ spanishText: String) -> String { spanish ? spanishText : english }
         let app = XCUIApplication()
-        app.launchArguments = ["-NodusSampleLibrary", "-NodusResetReadingState", "-NodusSkipVoiceSetup",
+        app.launchArguments = ["-NodusSampleLibrary", "-NodusResetReadingState", "-NodusSkipVoiceSetup", "-NodusSilentAudioTests",
                                "-AppleLanguages", "(\(language))", "-AppleLocale", spanish ? "es_ES" : "en_US",
                                "-nodus.narration.preciseWordTiming", "NO"]
         app.launch()
@@ -788,6 +788,70 @@ final class NodusReaderUITests: XCTestCase {
         dismissPopover(in: app)
     }
 
+    func testReaderFeedbackAppearanceAndCenteredTransport() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        if app.windows.firstMatch.frame.width >= 700 {
+            app.staticTexts["All Books"].firstMatch.tap()
+            app.staticTexts["Moby-Dick"].firstMatch.tap()
+        } else {
+            app.buttons["Read"].firstMatch.tap()
+        }
+        let play = app.buttons["Play narration"].firstMatch
+        XCTAssertTrue(play.waitForExistence(timeout: 20))
+        XCTAssertEqual(play.frame.midX, app.windows.firstMatch.frame.midX, accuracy: 2,
+                       "Play/Pause must be centred, independently of the voice label")
+        openAppearance(in: app)
+        let toggle = app.switches["AutoScrollNarrationToggle"].firstMatch
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        if !toggle.isHittable { app.scrollViews.containing(.switch, identifier: "AutoScrollNarrationToggle").firstMatch.swipeUp() }
+        XCTAssertTrue(toggle.isHittable)
+        let initialValue = toggle.value as? String
+        toggle.tap()
+        XCTAssertNotEqual(toggle.value as? String, initialValue)
+        let picker = app.descendants(matching: .any).matching(identifier: "NarrationHighlightPicker").firstMatch
+        XCTAssertTrue(picker.isHittable)
+        picker.tap()
+        app.buttons["Sentence only"].firstMatch.tap()
+        snap("Build29-Reader-HighlightSettings")
+        dismissPopover(in: app)
+        openAppearance(in: app)
+        XCTAssertEqual(toggle.value as? String, initialValue == "1" ? "0" : "1")
+        // Restore the shared defaults for the remaining tests.
+        if !toggle.isHittable { app.scrollViews.containing(.switch, identifier: "AutoScrollNarrationToggle").firstMatch.swipeUp() }
+        if (toggle.value as? String) != "1" { toggle.tap() }
+        picker.tap()
+        app.buttons["Sentence and word"].firstMatch.tap()
+        dismissPopover(in: app)
+    }
+
+    func testPausedNarrationResumesAfterRelaunch() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        if app.windows.firstMatch.frame.width >= 700 { app.staticTexts["Home"].firstMatch.tap() }
+        app.buttons["Listen"].firstMatch.tap()
+        let pause = app.buttons["Pause"].firstMatch
+        XCTAssertTrue(pause.waitForExistence(timeout: 90))
+        pause.tap()
+        let next = app.buttons["Next sentence"].firstMatch
+        XCTAssertTrue(next.waitForExistence(timeout: 10))
+        // Move well away from the chapter opener while staying paused.
+        for _ in 0..<3 { next.tap() }
+        let scrubber = app.descendants(matching: .any).matching(identifier: "Position in chapter").firstMatch
+        let saved = try XCTUnwrap(scrubber.value as? String)
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "-NodusResetReadingState" }
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        if app.windows.firstMatch.frame.width >= 700 { app.staticTexts["Home"].firstMatch.tap() }
+        app.buttons["Listen"].firstMatch.tap()
+        XCTAssertTrue(scrubber.waitForExistence(timeout: 30))
+        XCTAssertEqual(scrubber.value as? String, saved,
+                       "Closing and reopening must restore the paused sentence rather than the chapter opener")
+        if pause.exists { pause.tap() }
+        snap("Build29-PausedPositionRestored")
+    }
+
     // MARK: - Helpers
 
     private func pageLabel(in app: XCUIApplication, beginningWith prefix: String) -> XCUIElement {
@@ -831,7 +895,7 @@ final class NodusReaderUITests: XCTestCase {
 
     func testVoiceSetupOpensModelCatalog() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["-NodusResetVoiceSetup",
+        app.launchArguments = ["-NodusResetVoiceSetup", "-NodusSilentAudioTests",
                                "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         app.launch()
 
@@ -915,7 +979,7 @@ final class NodusReaderUITests: XCTestCase {
         let app = XCUIApplication()
         // The tests read English labels; the app follows the device language
         // (Spanish or English), so pin it to English whatever the simulator uses.
-        app.launchArguments = ["-NodusSampleLibrary", "-NodusSkipVoiceSetup", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchArguments = ["-NodusSampleLibrary", "-NodusSkipVoiceSetup", "-NodusSilentAudioTests", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         // Word timing from speech recognition may first download the system's
         // speech model; the tests use the estimate unless asked to check that
         // narration still starts with it on (TEST_RUNNER_NODUS_PRECISE_TIMING=1).

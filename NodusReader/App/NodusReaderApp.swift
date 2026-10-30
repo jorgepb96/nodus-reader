@@ -9,6 +9,7 @@ import AppKit
 @main
 struct NodusReaderApp: App {
     private let container: ModelContainer
+    private let appDefaults: UserDefaults
     @State private var theme: ThemeManager
     @State private var preferences: ReaderPreferences
     @State private var navigation: NavigationModel
@@ -28,31 +29,39 @@ struct NodusReaderApp: App {
             fatalError("Nodus Reader could not open its local library: \(error)")
         }
         self.container = container
+        let defaults = LibraryStorageScope.defaults
+        self.appDefaults = defaults
 
         let library = LibraryService(context: container.mainContext)
         let journal = SyncJournal(context: container.mainContext)
         library.syncJournal = journal
-        let voices = VoiceCatalog()
-        let models = ModelManager(voices: voices)
+        #if os(macOS)
+        if !LibraryStorageScope.isIsolated {
+            do { try LegacySampleLibraryCleanup.run(library: library) }
+            catch { NSLog("Legacy sample cleanup deferred: %@", error.localizedDescription) }
+        }
+        #endif
+        let voices = VoiceCatalog(defaults: defaults)
+        let models = ModelManager(voices: voices, defaults: defaults)
         library.narrationCache = models.narrationCache
         _library = State(initialValue: library)
         _voices = State(initialValue: voices)
         _imports = State(initialValue: ImportCoordinator(library: library))
         _playback = State(initialValue: PlaybackController(library: library, voices: voices,
-                                                           models: models))
+                                                           models: models, defaults: defaults))
         _models = State(initialValue: models)
-        _janitor = State(initialValue: StorageJanitor(library: library, cache: models.narrationCache))
-        let sync = CloudSyncService(context: container.mainContext, library: library, journal: journal)
-        let theme = ThemeManager()
+        _janitor = State(initialValue: StorageJanitor(library: library, cache: models.narrationCache, defaults: defaults))
+        let sync = CloudSyncService(context: container.mainContext, library: library, journal: journal, defaults: defaults)
+        let theme = ThemeManager(defaults: defaults)
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-NodusResetReadingState") {
             // UI tests share one simulator; start every reader test paged.
-            UserDefaults.standard.removeObject(forKey: "nodus.reader.flow")
-            UserDefaults.standard.removeObject(forKey: "nodus.reader.pageTurn")
-            UserDefaults.standard.removeObject(forKey: "nodus.reader.fontScale")
+            defaults.removeObject(forKey: "nodus.reader.flow")
+            defaults.removeObject(forKey: "nodus.reader.pageTurn")
+            defaults.removeObject(forKey: "nodus.reader.fontScale")
         }
         #endif
-        let preferences = ReaderPreferences()
+        let preferences = ReaderPreferences(defaults: defaults)
         sync.attachPreferences(theme: theme, reading: preferences)
         _sync = State(initialValue: sync)
         _theme = State(initialValue: theme)
@@ -63,6 +72,7 @@ struct NodusReaderApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .defaultAppStorage(appDefaults)
                 .environment(theme)
                 .environment(preferences)
                 .environment(navigation)
@@ -87,6 +97,7 @@ struct NodusReaderApp: App {
             Group {
                 if let bookID {
                     ReaderWindowHost(bookID: bookID)
+                        .defaultAppStorage(appDefaults)
                 } else {
                     ContentUnavailableView("No book selected", systemImage: "book.closed")
                 }
@@ -110,6 +121,7 @@ struct NodusReaderApp: App {
 
         Settings {
             MacSettingsRoot()
+            .defaultAppStorage(appDefaults)
             .environment(theme)
             .environment(preferences)
             .environment(navigation)

@@ -174,6 +174,8 @@ use `CFFIXED_USER_HOME` because their test host is built with
 
 ## TestFlight (iOS/iPadOS and macOS)
 
+Current delivery: **0.1.0 (29)**. See [build 29 validation and TestFlight state](appstore/BUILD29_VERIFICATION.md).
+
 The project signs automatically with team `6RPLS9EA4X`; `ITSAppUsesNonExemptEncryption`
 is `false` (the app only uses HTTPS), so uploads need no export-compliance answer.
 App Store Connect app: **Nodus Reader** (`ai.nodus.reader`, SKU `nodus-reader`).
@@ -359,3 +361,17 @@ xcodebuild test -project NodusReader.xcodeproj -scheme NodusReader -destination 
   -only-testing:'NodusReaderTests/convertedPhonon40SpanishBundleNarratesSpanish()' \
   -derivedDataPath build/DerivedData-mac CODE_SIGNING_ALLOWED=NO
 ```
+
+
+## Build 29 — reader feedback (30 October 2026)
+
+The eight screenshot/text feedback fixes are shipped in 0.1.0 (29) for iOS/iPadOS and native macOS. All applicable final unit and UI regressions passed, including exact-pause persistence, process relaunch, native line-following and per-book model/voice resolution. Localization: 710 keys, no missing Spanish or placeholder mismatches. Signed Release startup was checked on both simulators and the native Mac archive app; UI playback tests emitted no sound.
+
+Both builds reached VALID and are assigned to Internal and Nodus Reader — Public Beta. iOS is approved and externally testing. macOS is internally testing; its beta review submission was withdrawn at the user's request and is now READY_FOR_BETA_SUBMISSION. Do not resubmit macOS until explicitly requested. The older Mac 28 review submission was also withdrawn without expiring its build. No App Store production version was submitted.
+
+- iOS delivery: `7b916c92-b4df-431b-97e5-0f6288fee35f`.
+- macOS delivery: `9a0e97c6-5905-4ae8-8046-815b9d746c57`.
+- [Validation, artifacts and known limits](appstore/BUILD29_VERIFICATION.md).
+- [App-source and artifact fingerprint](appstore/BUILD29_SOURCE_FINGERPRINT.txt).
+
+Post-build-29 macOS cleanup, nonmodal model setup and product-copy updates are source changes pending a new binary; see [verification and review hold](appstore/POST29_MACOS_AND_COPY.md).

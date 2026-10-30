@@ -393,7 +393,7 @@ enum SampleLibrary {
 
     // MARK: - Specs
 
-    private static func sampleSpecs() -> [Spec] {
+    static func sampleSpecs() -> [Spec] {
         [
             Spec(
                 title: "Moby-Dick",

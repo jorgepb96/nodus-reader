@@ -2,8 +2,8 @@
 
 Status: **implemented behind an opt-in switch; signed real-device validation still required.**
 
-The app uses only the user's personal iCloud account. There is no Nodus account and
-no Nodus sync server. Sync is off by default; the library works fully without it.
+Synchronization uses the user's personal iCloud account and is off by default.
+The library works fully without it.
 
 ## Container and entitlements
 

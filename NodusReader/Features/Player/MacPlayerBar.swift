@@ -76,8 +76,8 @@ struct MacPlayerBar: View {
                         }
                     }
                     Divider()
-                    ForEach(voices.voices, id: \.id) { voice in
-                        Button("\(voice.name) · \(voice.languageName)") {
+                    ForEach(voices.allInstalledVoices, id: \.id) { voice in
+                        Button("\(voice.name) · \(voice.engineLabel) · \(voice.languageName)") {
                             playback.setVoice(voice)
                         }
                     }

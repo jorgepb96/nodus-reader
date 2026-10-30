@@ -60,6 +60,290 @@ private func sampleSpec(asPDF: Bool = false) -> SampleLibrary.Spec {
 
 // MARK: - EPUB and import
 
+// MARK: - Clean macOS library and test isolation
+
+@Test
+func developmentLibrariesHaveSeparateFilesAndDefaults() {
+    #expect(LibraryStorageScope.isIsolated(arguments: ["app", "-NodusSampleLibrary"], environment: [:]))
+    #expect(LibraryStorageScope.isIsolated(arguments: ["app", "-NodusLongContentsSample"], environment: [:]))
+    #expect(LibraryStorageScope.isIsolated(arguments: ["app"], environment: ["XCTestBundlePath": "tests"]))
+    #expect(!LibraryStorageScope.isIsolated(arguments: ["app"], environment: [:]))
+    #expect(LibraryStorageScope.isIsolated, "The XCTest host must not open the personal library")
+    #expect(Persistence.configuration().url.deletingLastPathComponent() == LibraryStorageScope.fileRoot(isolated: true))
+    #expect(LibraryStorageScope.fileRoot(isolated: true) != LibraryStorageScope.fileRoot(isolated: false))
+    #expect(LibraryStorageScope.fileRoot(isolated: false).lastPathComponent == "NodusReader")
+}
+
+@Test @MainActor
+func legacySampleCleanupPreservesPersonalImportsAndBacksUpNotes() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    await SampleLibrary.seedIfNeeded(library: fixture.service)
+    let samples = fixture.service.allBooks()
+    #expect(samples.count == 12)
+    for book in samples {
+        #expect(LegacySampleLibraryCleanup.isLegacySample(at: fixture.fileStore.documentURL(for: book)),
+                "Every shipped development fixture must be recognized by content")
+    }
+    let sample = try #require(samples.first { $0.title == "Moby-Dick" })
+    let note = Annotation(book: sample, chapterIndex: 0, startOffset: 0, endOffset: 5,
+                          quote: "Call me", note: "Keep this note in the backup")
+    fixture.container.mainContext.insert(note)
+    fixture.service.save()
+    // The same title is not sufficient: this is a separate personal edition.
+    var spec = sampleSpec()
+    spec.title = "Moby-Dick"
+    let url = try SampleLibrary.makeEPUB(spec)
+    defer { try? FileManager.default.removeItem(at: url) }
+    let result = await fixture.service.importFiles([url], into: nil) { _ in }
+    let personal = try #require(result.imported.first)
+    #expect(!LegacySampleLibraryCleanup.isLegacySample(at: fixture.fileStore.documentURL(for: personal)))
+    let novels = try #require(fixture.service.allCollections().first { $0.name == "Novels" })
+    fixture.service.add(personal, to: novels)
+    let custom = try #require(fixture.service.createCollection(name: "My research"))
+    let removed = try LegacySampleLibraryCleanup.run(library: fixture.service)
+    #expect(removed == 12)
+    #expect(fixture.service.allBooks().map(\.id) == [personal.id])
+    #expect(FileManager.default.fileExists(atPath: fixture.fileStore.documentURL(for: personal).path))
+    #expect(Set(fixture.service.allCollections().map(\.name)) == ["Literature", "Novels", custom.name])
+    let backups = try FileManager.default.contentsOfDirectory(
+        at: fixture.root.appendingPathComponent("LegacySamplesBackup"), includingPropertiesForKeys: nil)
+    #expect(backups.count == 1)
+    let data = try Data(contentsOf: backups[0].appendingPathComponent("manifest.json"))
+    #expect(String(decoding: data, as: UTF8.self).contains("Keep this note in the backup"))
+    #expect(FileManager.default.fileExists(atPath: backups[0].appendingPathComponent(sample.id.uuidString)
+        .appendingPathComponent(sample.fileName).path))
+    #expect(try LegacySampleLibraryCleanup.run(library: fixture.service) == 0)
+}
+
+@Test @MainActor
+func legacyCleanupLeavesLibraryUntouchedWhenBackupFails() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let spec = try #require(SampleLibrary.sampleSpecs().first { !$0.asPDF })
+    let url = try SampleLibrary.makeEPUB(spec)
+    defer { try? FileManager.default.removeItem(at: url) }
+    let result = await fixture.service.importFiles([url], into: nil) { _ in }
+    let book = try #require(result.imported.first)
+    try Data("A file blocks the backup directory".utf8)
+        .write(to: fixture.root.appendingPathComponent("LegacySamplesBackup"))
+    #expect(throws: (any Error).self) { try LegacySampleLibraryCleanup.run(library: fixture.service) }
+    #expect(fixture.service.allBooks().map(\.id) == [book.id])
+    #expect(FileManager.default.fileExists(atPath: fixture.fileStore.documentURL(for: book).path))
+}
+
+// MARK: - Reader feedback regressions
+
+#if canImport(UIKit)
+@Test @MainActor
+func narrationScrollFollowsTheActualLineAndRespectsSelection() throws {
+    let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+    let previous = scene.windows.first { $0.isKeyWindow }
+    let window = UIWindow(windowScene: scene)
+    let root = UIViewController()
+    window.rootViewController = root
+    window.makeKeyAndVisible()
+    defer { window.isHidden = true; previous?.makeKey() }
+    let scroll = UIScrollView(frame: CGRect(x: 0, y: 0, width: 360, height: 640))
+    root.view.addSubview(scroll)
+    let source = String(repeating: "A line of narration to follow comfortably.\n", count: 120) + "Target word."
+    let text = NSAttributedString(string: source, attributes: [.font: UIFont.systemFont(ofSize: 18)])
+    let view = ReaderSelectableTextView(mapping: .block(base: 0, length: text.length))
+    view.setText(text)
+    let height = view.fittingHeight(width: 360)
+    view.frame = CGRect(x: 0, y: 0, width: 360, height: height)
+    scroll.addSubview(view)
+    scroll.contentSize = view.bounds.size
+    root.view.layoutIfNeeded()
+    view.layoutIfNeeded()
+    let range = (source as NSString).range(of: "Target")
+    view.textView.selectedRange = NSRange(location: 0, length: 4)
+    let selectedOffset = scroll.contentOffset
+    view.followNarration(range, animated: false)
+    #expect(scroll.contentOffset == selectedOffset, "Following must not move the viewport while text is selected")
+    view.textView.selectedRange = NSRange(location: 0, length: 0)
+    // Leave room below the final line, as the reader does while auto-scrolling.
+    scroll.contentSize.height += 400
+    view.followNarration(range, animated: false)
+    #expect(scroll.contentOffset.y > 640)
+    let glyph = view.textView.layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+    let line = view.textView.layoutManager.lineFragmentRect(forGlyphAt: glyph.location, effectiveRange: nil)
+    let displayed = view.textView.convert(line, to: scroll)
+    let insets = scroll.adjustedContentInset
+    let visibleHeight = scroll.bounds.height - insets.top - insets.bottom
+    let relativeY = displayed.midY - scroll.contentOffset.y - insets.top
+    #expect(relativeY >= visibleHeight * 0.22 && relativeY <= visibleHeight * 0.55)
+}
+#else
+@MainActor private final class NarrationScrollTestDocument: NSView {
+    override var isFlipped: Bool { true }
+}
+
+@Test @MainActor
+func narrationScrollFollowsTheActualLineOnMac() async throws {
+    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 360, height: 640),
+                          styleMask: [.titled], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    defer { window.close() }
+    let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 360, height: 640))
+    window.contentView = scroll
+    let document = NarrationScrollTestDocument(frame: .zero)
+    scroll.documentView = document
+    let source = String(repeating: "A line of narration to follow comfortably.\n", count: 120) + "Target word."
+    let view = ReaderMacSelectableView(frame: .zero)
+    view.textView.textStorage?.setAttributedString(NSAttributedString(string: source, attributes: [.font: NSFont.systemFont(ofSize: 18)]))
+    let height = view.fittingHeight(width: 360)
+    document.frame = NSRect(x: 0, y: 0, width: 360, height: height + 400)
+    view.frame = NSRect(x: 0, y: 0, width: 360, height: height)
+    document.addSubview(view)
+    window.orderFront(nil)
+    view.needsLayout = true
+    view.layoutSubtreeIfNeeded()
+    let range = (source as NSString).range(of: "Target")
+    view.textView.setSelectedRange(NSRange(location: 0, length: 0))
+    // The concurrent Simulator UI suite can briefly hold a synthesized mouse
+    // button. Production correctly suspends following while a button is held.
+    for _ in 0..<40 where NSEvent.pressedMouseButtons != 0 {
+        try await Task.sleep(for: .milliseconds(50))
+    }
+    #expect(NSEvent.pressedMouseButtons == 0)
+    view.followNarration(range, animated: false)
+    #expect(scroll.contentView.documentVisibleRect.minY > 640)
+    let layout = try #require(view.textView.layoutManager)
+    let glyph = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+    let line = layout.lineFragmentRect(forGlyphAt: glyph.location, effectiveRange: nil)
+        .offsetBy(dx: view.textView.textContainerOrigin.x, dy: view.textView.textContainerOrigin.y)
+    let displayed = view.textView.convert(line, to: document)
+    let visible = scroll.contentView.documentVisibleRect
+    // AppKit may align a clip-view scroll to a text line. The product
+    // contract is the comfortable reading band, not sub-line pixel accuracy.
+    let relativeY = displayed.midY - visible.minY
+    #expect(relativeY >= visible.height * 0.22 && relativeY <= visible.height * 0.55)
+}
+#endif
+
+@Test
+func narrationSkipsDecorativeRulesAndKeepsOriginalUTF16Offsets() {
+    let text = "Antes: café y música.\n________________\nDespués: 72 puntos.\n* * *\nFinal."
+    let ns = text as NSString
+    let ranges = SentenceTokenizer.ranges(from: text)
+    #expect(ranges.map { ns.substring(with: $0) } == ["Antes: café y música.", "Después: 72 puntos.", "Final."])
+    #expect(ranges[1].location == ns.range(of: "Después").location)
+    #expect(SentenceTokenizer.sentences(from: "___\n---\n* * *\n…").isEmpty)
+    // A rule is a boundary even without sentence-ending punctuation.
+    #expect(SentenceTokenizer.sentences(from: "Before\n_____\nAfter") == ["Before", "After"])
+    #expect(SentenceTokenizer.sentences(from: "Keep snake_case and 00:00:00.").count == 1)
+}
+
+@Test @MainActor
+func narrationHighlightLayersAreDisjointAndNeverUnderlined() {
+    let theme = ReaderTheme.resolve(.dark, colorScheme: .dark)
+    let sentence = NSRange(location: 10, length: 30)
+    let word = NSRange(location: 18, length: 6)
+    let combined = ReaderPageHighlights.narration(sentence: sentence, word: word, style: .sentenceAndWord, theme: theme)
+    #expect(combined.map(\.range) == [NSRange(location: 10, length: 8), NSRange(location: 24, length: 16), word])
+    for (index, span) in combined.enumerated() {
+        #expect(span.underline == nil && span.underlineWidth == 0)
+        for other in combined.dropFirst(index + 1) { #expect(NSIntersectionRange(span.range, other.range).length == 0) }
+    }
+    #expect(ReaderPageHighlights.narration(sentence: sentence, word: word, style: .sentence, theme: theme).map(\.range) == [sentence])
+    #expect(ReaderPageHighlights.narration(sentence: sentence, word: word, style: .word, theme: theme).map(\.range) == [word])
+    #expect(ReaderPageHighlights.narration(sentence: sentence, word: nil, style: .sentenceAndWord, theme: theme).map(\.range) == [sentence])
+}
+
+@Test @MainActor
+func narrationPreferencesPersistAndDecodeOlderBooks() throws {
+    let suite = "nodus.tests.narration.preferences.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let first = ReaderPreferences(defaults: defaults)
+    first.narrationHighlight = .sentence
+    first.autoScrollNarration = false
+    let restored = ReaderPreferences(defaults: defaults)
+    #expect(restored.typography.narrationHighlight == .sentence)
+    #expect(!restored.typography.autoScrollNarration)
+    let legacy = try JSONDecoder().decode(ReaderTypography.self, from: Data(#"{"fontScale":1.2}"#.utf8))
+    #expect(legacy.narrationHighlight == .sentenceAndWord && legacy.autoScrollNarration)
+    let encoded = try JSONEncoder().encode(restored.typography)
+    #expect(try JSONDecoder().decode(ReaderTypography.self, from: encoded) == restored.typography)
+    let snapshot = SyncedPreferences(theme: ThemeManager(defaults: defaults), reading: restored)
+    #expect(snapshot.narrationHighlight == "sentence" && snapshot.autoScrollNarration == false)
+}
+
+@Test @MainActor
+func exactNarrationCursorSurvivesPageSavesCloseAndControllerRecreation() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let suite = "nodus.tests.resume.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let voices = VoiceCatalog(defaults: defaults)
+    let models = ModelManager(voices: voices, defaults: defaults)
+    let voice = VoiceCatalog.Voice(id: "phonon:Harper", name: "Harper", language: "en-US", languageName: "English", quality: 3, engineRaw: "phonon")
+    voices.setNeuralVoices([voice])
+    let url = try SampleLibrary.makeEPUB(sampleSpec())
+    defer { try? FileManager.default.removeItem(at: url) }
+    let book = try #require(await fixture.service.importFiles([url]) { _ in }.imported.first)
+    let chapters = try await BookTextLoader.loadChapters(for: book, fileStore: fixture.fileStore)
+    let range = try #require(SentenceTokenizer.ranges(from: chapters[1].text).first)
+    let cursor = NarrationPosition(chapterIndex: 1, sentenceOffset: range.location,
+                                   characterOffset: range.location + 10,
+                                   sentenceText: (chapters[1].text as NSString).substring(with: range),
+                                   audioTime: 1.375, voiceID: voice.id)
+    book.locator = ReadingLocator(chapterIndex: 1, narrationPosition: cursor)
+    // A visual page save must not erase the independent audio marker.
+    fixture.service.updateProgress(book, locator: ReadingLocator(chapterIndex: 0, pageIndex: 0), progress: 0.1)
+    #expect(book.locator.narrationPosition == cursor)
+    let playback = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
+    // Read mode restores the cursor without scheduling or emitting any audio.
+    await playback.start(book: book, mode: .read)
+    #expect(playback.chapterIndex == 1)
+    #expect(playback.currentChapterOffset == cursor.characterOffset)
+    playback.pause()
+    playback.stopAndClose()
+    #expect(book.locator.narrationPosition == cursor)
+    let recreated = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
+    await recreated.start(book: book, mode: .read)
+    #expect(recreated.currentChapterOffset == cursor.characterOffset)
+    recreated.stopAndClose()
+    #expect(book.locator.narrationPosition?.audioTime == 1.375)
+    let legacy = try JSONDecoder().decode(ReadingLocator.self, from: Data(#"{"chapterIndex":1,"scrollFraction":0.4}"#.utf8))
+    #expect(legacy.narrationPosition == nil)
+}
+
+@Test @MainActor
+func eachBookResolvesItsSavedVoiceAcrossGlobalModelChanges() throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let suite = "nodus.tests.book.voices.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let catalog = VoiceCatalog(defaults: defaults)
+    let english = VoiceCatalog.Voice(id: "phonon:Harper", name: "Harper", language: "en-US", languageName: "English", quality: 3, engineRaw: "phonon", modelID: "phonon-31m-en")
+    let spanish = VoiceCatalog.Voice(id: "phonon-40m-es:Alba", name: "Alba", language: "es-ES", languageName: "Spanish", quality: 3, engineRaw: "phonon", modelID: "phonon-40m-es")
+    let otherAlba = VoiceCatalog.Voice(id: "phonon-40m-multilingual:Alba", name: "Alba", language: "es-ES", languageName: "Spanish", quality: 3, engineRaw: "phonon", modelID: "phonon-40m-multilingual")
+    let installed = [english, spanish, otherAlba]
+    let first = Book(title: "English book", author: "", format: .epub,
+                     fileName: "english.epub", relativePath: "english.epub", fileSize: 0, contentHash: "english")
+    let second = Book(title: "Spanish book", author: "", format: .epub,
+                      fileName: "spanish.epub", relativePath: "spanish.epub", fileSize: 0, contentHash: "spanish")
+    fixture.container.mainContext.insert(first)
+    fixture.container.mainContext.insert(second)
+    fixture.service.setPreferredVoice(first, voiceID: english.id)
+    fixture.service.setPreferredVoice(second, voiceID: otherAlba.id)
+    catalog.setNeuralVoices([spanish], installed: installed)
+    #expect(catalog.narrationVoice(preferredID: first.preferredVoiceID, language: "en") == english)
+    #expect(catalog.narrationVoice(preferredID: second.preferredVoiceID, language: "es") == otherAlba)
+    let reopened = VoiceCatalog(defaults: defaults)
+    reopened.setNeuralVoices([english], installed: installed)
+    #expect(reopened.narrationVoice(preferredID: second.preferredVoiceID, language: "es") == otherAlba)
+    #expect(reopened.voice(withID: "phonon:Alba") == spanish)
+    // Uninstalling a model permits a temporary fallback without erasing it.
+    reopened.setNeuralVoices([english], installed: [english])
+    #expect(reopened.narrationVoice(preferredID: second.preferredVoiceID, language: "es") == english)
+    #expect(second.preferredVoiceID == otherAlba.id)
+}
+
 @Test @MainActor
 func narrationSpeedSurvivesControllerRecreation() throws {
     let fixture = try Fixture()

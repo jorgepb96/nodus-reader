@@ -187,7 +187,7 @@ struct PDFReflowView: View {
         GeometryReader { proxy in
             let showPanel = proxy.size.width > 820
             HStack(spacing: 0) {
-                reflowContent
+                reflowContent(viewportHeight: proxy.size.height)
                     .frame(maxWidth: .infinity)
                 if showPanel, let document = job.document {
                     Rectangle().fill(theme.line).frame(width: 0.5)
@@ -255,7 +255,7 @@ struct PDFReflowView: View {
     }
 
     @ViewBuilder
-    private var reflowContent: some View {
+    private func reflowContent(viewportHeight: CGFloat) -> some View {
         if job.isWorking {
             VStack(spacing: 14) {
                 ProgressView(value: job.progress)
@@ -314,7 +314,8 @@ struct PDFReflowView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, max(20, typography.margin))
                     .padding(.top, 20)
-                    .padding(.bottom, 60)
+                    .padding(.bottom, typography.autoScrollNarration && isNarratingHere && playback.mode == .readAndListen
+                             ? max(60, viewportHeight * 0.6) : 60)
                     .scrollTargetLayout()
                 }
                 .scrollPosition(id: $scrollPosition, anchor: .top)
@@ -389,26 +390,26 @@ struct PDFReflowView: View {
         playback.activeBook?.id == book.id && playback.mode != .read
     }
 
+    private func narrationFollowRange(page: Int, text: String) -> NSRange? {
+        guard typography.autoScrollNarration, isNarratingHere,
+              playback.mode == .readAndListen, playback.isPlaying,
+              playback.chapterIndex == page, playback.chapters.indices.contains(page),
+              (playback.chapters[page].text as NSString).length == (text as NSString).length else { return nil }
+        return playback.currentWordChapterRange ?? playback.currentSentenceChapterRange
+    }
+
     /// The narrated sentence and word on `page`, when narration reads this
     /// page's reflowed text (same length as the canonical text).
     private func narrationSpans(page: Int, text: String) -> [ReaderPageHighlightSpan] {
         guard isNarratingHere, playback.chapterIndex == page,
               playback.chapters.indices.contains(page),
               (playback.chapters[page].text as NSString).length == (text as NSString).length else { return [] }
-        var spans: [ReaderPageHighlightSpan] = []
-        if let sentence = playback.currentSentenceChapterRange {
-            spans.append(ReaderPageHighlightSpan(range: sentence, fill: PlatformColor(theme.narration),
-                                                 underline: nil, underlineWidth: 0, rounded: true))
-        }
-        if let word = playback.currentWordChapterRange {
-            spans.append(ReaderPageHighlightSpan(
-                range: word,
-                fill: theme.isDark ? PlatformColor(hex: NodusHex.lavender, alpha: 0.55)
-                    : PlatformColor(hex: NodusHex.violet, alpha: 0.38),
-                underline: theme.isDark ? PlatformColor(hex: NodusHex.lavender) : PlatformColor(hex: NodusHex.violet),
-                underlineWidth: 2, rounded: true))
-        }
-        return spans
+        return ReaderPageHighlights.narration(
+            sentence: playback.currentSentenceChapterRange,
+            word: playback.currentWordChapterRange,
+            style: typography.narrationHighlight,
+            theme: theme
+        )
     }
 
     private func pageHighlights(page: Int, text: String) -> ReaderPageHighlights {
@@ -461,6 +462,7 @@ struct PDFReflowView: View {
                 ?? ReaderTextMapping(anchorOffset: { _ in nil }, localRange: { _ in nil }),
             highlights: highlights,
             accessibilityLabel: nil,
+            narrationFollowRange: narrationFollowRange(page: pageIndex, text: pageText),
             onWordTap: { offset in onStartNarration(pageIndex, offset) },
             onHighlight: { range, color in
                 onAnnotate(pageIndex, range, quote(range, in: pageText), color)

@@ -115,17 +115,33 @@ public struct BookAppearance: Codable, Equatable, Sendable {
 
 // MARK: - Locator
 
+/// A durable narration cursor, independent of the page currently being read.
+/// The sentence text and voice identify the audio timeline; the character
+/// offset remains useful when the voice or extracted text has changed.
+public struct NarrationPosition: Codable, Equatable, Sendable {
+    public var chapterIndex: Int
+    public var sentenceOffset: Int
+    public var characterOffset: Int
+    public var sentenceText: String
+    public var audioTime: Double?
+    public var voiceID: String?
+}
+
 /// A small, format-independent reading locator. Paginated text stores a chapter
-/// and page fraction; PDFs also store a page index. EPUB CFI is future work.
+/// and page fraction; PDFs also store a page index. Narration keeps a separate
+/// precise cursor so visual navigation cannot erase a saved pause.
 public struct ReadingLocator: Codable, Equatable, Sendable {
     public var chapterIndex: Int
     public var scrollFraction: Double
     public var pageIndex: Int?
+    public var narrationPosition: NarrationPosition?
 
-    public init(chapterIndex: Int = 0, scrollFraction: Double = 0, pageIndex: Int? = nil) {
+    public init(chapterIndex: Int = 0, scrollFraction: Double = 0, pageIndex: Int? = nil,
+                narrationPosition: NarrationPosition? = nil) {
         self.chapterIndex = chapterIndex
         self.scrollFraction = scrollFraction
         self.pageIndex = pageIndex
+        self.narrationPosition = narrationPosition
     }
 }
 
@@ -157,6 +173,8 @@ public final class Book {
     public var sourceDevice: String = ""
     public var lastPositionDevice: String = ""
     public var lastPositionDate: Date?
+    /// Stable voice ID including its engine/checkpoint. Stored and synced
+    /// with this book, independently of the global model and default voice.
     public var preferredVoiceID: String?
     public var readingModeRaw: String = ReadingMode.read.rawValue
     /// JSON `BookAppearance`; empty when the book uses the global appearance.

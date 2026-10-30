@@ -388,7 +388,7 @@ struct VoicesView: View {
 
                 Divider().overlay(palette.line)
 
-                Text("Only the selected model's voices appear in the reader and player.")
+                Text("Default model for new books. Each book can keep its own voice and model.")
                     .font(.caption2)
                     .foregroundStyle(palette.muted)
                     .fixedSize(horizontal: false, vertical: true)

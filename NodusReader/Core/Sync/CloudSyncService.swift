@@ -98,7 +98,7 @@ final class CloudSyncService {
         self.journal = journal
         self.documents = ICloudDocumentStore(fileStore: fileStore)
         self.defaults = defaults
-        self.isEnabled = defaults.bool(forKey: Key.enabled)
+        self.isEnabled = !LibraryStorageScope.isIsolated && defaults.bool(forKey: Key.enabled)
         self.lastSync = defaults.object(forKey: Key.lastSync) as? Date
         self.zoneID = CKRecordZone.ID(zoneName: Self.zoneName, ownerName: CKCurrentUserDefaultName)
         self.pendingCount = journal.pendingCount()
@@ -201,6 +201,7 @@ final class CloudSyncService {
     // MARK: Lifecycle
 
     func start() async {
+        guard !LibraryStorageScope.isIsolated else { return }
         guard !started else {
             if isEnabled { await syncNow() }
             return
@@ -217,6 +218,7 @@ final class CloudSyncService {
     }
 
     func refreshAvailability() async {
+        guard !LibraryStorageScope.isIsolated else { return }
         pendingCount = journal.pendingCount()
         reconcileDownloadStates()
         fileSyncAvailable = await documents.refreshAvailability()
@@ -278,6 +280,7 @@ final class CloudSyncService {
     }
 
     func setEnabled(_ enabled: Bool) async {
+        guard !LibraryStorageScope.isIsolated else { return }
         guard enabled != isEnabled else { return }
         defaults.set(enabled, forKey: Key.enabled)
         isEnabled = enabled

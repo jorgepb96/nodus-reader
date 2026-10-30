@@ -12,6 +12,7 @@ final class ReaderSelectableTextView: UIView, UITextViewDelegate {
     private let overlay = ReaderHighlightOverlayView()
 
     var mapping: ReaderTextMapping
+    var narrationFollowRange: NSRange?
     var contentInsets: UIEdgeInsets = .zero {
         didSet { setNeedsLayout() }
     }
@@ -233,9 +234,11 @@ final class ReaderHighlightOverlayView: UIView {
                                                 dy: textView.textContainerInset.top))
             }
             for lineRect in rects {
+                // Stay inside TextKit's line bounds so adjacent lines never
+                // blend their highlight backgrounds at tight line spacing.
                 let path = span.rounded
-                    ? UIBezierPath(roundedRect: lineRect.insetBy(dx: 0, dy: -1), cornerRadius: 3)
-                    : UIBezierPath(rect: lineRect.insetBy(dx: 0, dy: -1))
+                    ? UIBezierPath(roundedRect: lineRect, cornerRadius: 3)
+                    : UIBezierPath(rect: lineRect)
                 span.fill.setFill()
                 path.fill()
                 if let underline = span.underline {

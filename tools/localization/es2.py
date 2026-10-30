@@ -159,7 +159,6 @@ ES = {
 "Sync error": "Error de sincronización",
 "Sync is off": "Sincronización desactivada",
 "Sync is optional and off by default. Turning it off leaves every local file untouched.": "La sincronización es opcional y está desactivada de forma predeterminada. Al desactivarla, los archivos locales no se modifican.",
-"Sync is optional and off by default. When you enable it, Nodus Reader uses your personal iCloud account through CloudKit and iCloud Drive. Nodus Research does not operate a sync server and cannot read your library.": "La sincronización es opcional y está desactivada de forma predeterminada. Si la activas, Nodus Reader usa tu cuenta personal de iCloud mediante CloudKit e iCloud Drive. Nodus Research no tiene un servidor de sincronización y no puede leer tu biblioteca.",
 "Sync with iCloud": "Sincronizar con iCloud",
 "Syncing…": "Sincronizando…",
 "System": "Sistema",
@@ -468,4 +467,23 @@ ES.update({
     "Scroll through pages": "Desplazarse por las páginas",
     "Set up a voice": "Configura una voz",
     "Works offline": "Funciona sin conexión"
+})
+
+
+# Reader/narration feedback (build 29).
+ES.update({
+    "Default model for new books. Each book can keep its own voice and model.": "Modelo predeterminado para libros nuevos. Cada libro puede conservar su propia voz y modelo.",
+    "Sentence and word": "Frase y palabra",
+    "Sentence only": "Solo frase",
+    "Word only": "Solo palabra",
+    "Read-along highlighting": "Resaltado durante la narración",
+    "Choose whether to highlight the sentence, the current word, or both while listening.": "Elige si quieres resaltar la frase, la palabra actual o ambas durante la narración.",
+    "Auto-scroll while listening": "Desplazamiento automático al escuchar",
+    "Read & Listen uses vertical scrolling to keep the spoken line near the centre of the screen.": "Leer y escuchar usa el desplazamiento vertical para mantener la línea narrada cerca del centro de la pantalla.",
+"One library across your devices through your personal iCloud account.": "Una sola biblioteca en todos tus dispositivos a través de tu cuenta personal de iCloud.",
+"Books, PDFs and notes are read and stored on this device.": "Los libros, los PDF y las notas se leen y se guardan en este dispositivo.",
+"Sync is optional and off by default. When you enable it, Nodus Reader uses your personal iCloud account through CloudKit and iCloud Drive.": "La sincronización es opcional y está desactivada de forma predeterminada. Si la activas, Nodus Reader usa tu cuenta personal de iCloud mediante CloudKit e iCloud Drive.",
+"Nodus narrates with neural voices that run entirely on this device. Download a voice model to start listening offline.": "Nodus narra con voces neuronales que funcionan íntegramente en este dispositivo. Descarga un modelo de voz para empezar a escuchar sin conexión.",
+"Narration, OCR and document analysis run on this device. Generated audio stays on this device.": "La narración, el OCR y el análisis de documentos se ejecutan en este dispositivo. El audio generado permanece en él.",
+"Quit Nodus Reader": "Salir de Nodus Reader",
 })

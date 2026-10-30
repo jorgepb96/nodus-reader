@@ -634,7 +634,7 @@ struct VoicePickerSheet: View {
     }
 
     /// Voices of every installed model, not only the selected engine's:
-    /// choosing one from another model switches to it.
+    /// choosing one stores that model and voice for this book.
     private var allVoices: [VoiceCatalog.Voice] {
         voices.allInstalledVoices
     }
@@ -749,12 +749,8 @@ struct VoicePickerSheet: View {
                     Section(voices.languageName(for: language)) {
                         ForEach(filtered.filter { VoiceCatalog.languageCode($0.language) == language }) { voice in
                             Button {
-                                // A voice of a model that is not the voice
-                                // engine makes that model the engine, so it
-                                // really narrates instead of falling back.
-                                if let modelID = voice.modelID, modelID != models.selectedModelID {
-                                    models.selectModel(modelID)
-                                }
+                                // Synthesis loads the model identified by this
+                                // voice without changing the global default.
                                 playback.setVoice(voice)
                                 dismiss()
                             } label: {

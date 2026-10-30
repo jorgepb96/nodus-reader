@@ -81,9 +81,10 @@ Phonon Core ML; word-level alignment; and a partial audio cache with prefetch an
 deletion.
 
 The reader follows the app theme by default, hides the status bar on iOS and opens
-in a dedicated full-window Reading window on macOS. A selected voice engine (System, Kokoro or Phonon) filters
-the voices exposed everywhere, and narration starts in the book's detected language
-unless the user has chosen a per-book voice. Book covers always draw a typographic
+in a dedicated full-window Reading window on macOS. The selected model supplies
+the global default; each book can retain a voice from any installed model through
+its stable engine/checkpoint-qualified voice ID. Narration uses the book's detected
+language unless the user has chosen a per-book voice. Book covers always draw a typographic
 fallback while the real cover loads. The interface is localized in English (base)
 and Spanish through `NodusReader/Resources/Localizable.xcstrings`; see
 `tools/localization/README.md` before adding UI text.
@@ -114,3 +115,15 @@ See `docs/ROADMAP.md`, `docs/ICLOUD.md` and `docs/NARRATION_SYNC.md`.
 - Unsigned simulator builds cannot exercise CloudKit or the App Group; those paths
   report unavailability explicitly and are documented as requiring signed
   real-device validation.
+
+
+## Post-build-29 macOS status
+
+Development sample launches and test hosts use `NodusReaderSamples` storage and a
+separate preference suite; iCloud sync and shared-inbox consumption are disabled
+there. Production macOS startup backs up and removes only identifiable legacy
+fixtures, preserving real imports and personal collections. Voice setup is
+nonmodal window content with a Quit action. See
+`docs/appstore/POST29_MACOS_AND_COPY.md` for verification. The user withdrew
+macOS 29 from Apple review: do not resubmit macOS until explicitly requested.
+These later fixes are not part of the uploaded build-29 binary.

@@ -1,0 +1,14 @@
+Nodus Reader 0.1.0 (29)
+
+Correcciones de lectura y narración a partir de vuestras capturas:
+- Elige resaltado de solo frase, solo palabra o ambos en Apariencia.
+- El desplazamiento automático opcional mantiene la línea narrada en una zona cómoda. Se detiene al pausar y respeta Reducir movimiento.
+- Reproducción/pausa queda centrado en la barra inferior del lector.
+- Los fondos de frase y palabra ya no se acumulan; se elimina el subrayado de la palabra.
+- La narración omite separadores decorativos de guiones bajos, guiones o asteriscos, evitando que Kokoro se detenga o que Phonon los pronuncie.
+- Pausa, cierra el libro o la app y vuelve a abrir: la narración recupera la frase, la palabra y el instante guardados. Si el audio ya no está en caché o cambia la voz, retoma desde la palabra.
+- Cada libro recuerda su voz y modelo, independientemente del modelo global y de los demás libros.
+
+Comprueba estos comportamientos con EPUB y PDF en Lectura inteligente, incluidos capítulos largos y libros en distintos idiomas. Las sesiones guardadas por versiones anteriores no contienen un instante exacto de audio; realiza una nueva pausa en esta build para probar la reanudación exacta.
+
+La app nativa de macOS requiere Apple silicon y macOS 15 o posterior. El envío de comentarios con capturas sigue habilitado en TestFlight.

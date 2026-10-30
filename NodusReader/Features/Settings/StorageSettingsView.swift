@@ -45,7 +45,7 @@ struct StorageSettingsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 6) {
                     DisplayTitle("iCloud")
-                    Text("One library across your devices through your personal iCloud account. Nodus Reader never runs a sync server.")
+                    Text("One library across your devices through your personal iCloud account.")
                         .font(.footnote)
                         .foregroundStyle(palette.muted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -544,7 +544,7 @@ struct PrivacyView: View {
 
                 section(
                     title: "Your documents",
-                    body: "Books, PDFs and notes are read and stored on this device. Nodus Reader has no servers and no Nodus account."
+                    body: "Books, PDFs and notes are read and stored on this device."
                 )
                 section(
                     title: "No telemetry",
@@ -552,11 +552,11 @@ struct PrivacyView: View {
                 )
                 section(
                     title: "No remote processing",
-                    body: "Narration, OCR and document analysis run locally. Documents and generated audio are never sent to a remote service."
+                    body: "Narration, OCR and document analysis run on this device. Generated audio stays on this device."
                 )
                 section(
                     title: "Your iCloud",
-                    body: "Sync is optional and off by default. When you enable it, Nodus Reader uses your personal iCloud account through CloudKit and iCloud Drive. Nodus Research does not operate a sync server and cannot read your library."
+                    body: "Sync is optional and off by default. When you enable it, Nodus Reader uses your personal iCloud account through CloudKit and iCloud Drive."
                 )
                 section(
                     title: "Device-local data",

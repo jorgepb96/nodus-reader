@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import DesignSystem
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 /// First-run invitation to install a neural voice. Nodus no longer offers the
 /// system's AVSpeechSynthesisVoice catalogue; a model is required for narration.
@@ -26,7 +29,7 @@ struct VoiceSetupView: View {
                         .padding(.top, 10)
                         .padding(.horizontal, 8)
 
-                    Text("Nodus narrates with neural voices that run entirely on this device. Install one model to start listening — no account, no cloud, no system voice.")
+                    Text("Nodus narrates with neural voices that run entirely on this device. Download a voice model to start listening offline.")
                         .font(.callout)
                         .foregroundStyle(palette.muted)
                         .multilineTextAlignment(.center)
@@ -66,8 +69,19 @@ struct VoiceSetupView: View {
             .navigationDestination(isPresented: $showModels) {
                 VoicesView(initialMode: .models)
             }
+            #if os(macOS)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Quit Nodus Reader") { NSApp.terminate(nil) }
+                        .keyboardShortcut("q", modifiers: .command)
+                        .accessibilityIdentifier("VoiceSetupQuitApp")
+                }
+            }
+            #endif
         }
+        #if os(iOS)
         .interactiveDismissDisabled()
+        #endif
         .onChange(of: models.hasInstalledModel) { _, installed in
             if installed { dismiss() }
         }

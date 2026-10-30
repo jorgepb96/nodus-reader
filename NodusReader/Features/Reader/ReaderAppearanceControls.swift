@@ -41,6 +41,7 @@ struct ReaderAppearanceControls: View {
             }
             typographySection
             readingModeSection
+            narrationHighlightSection
             if book != nil {
                 bookOnlySection
             }
@@ -288,6 +289,34 @@ struct ReaderAppearanceControls: View {
             String(localized: "Scroll freely through the book in one column.")
         case .scrollHorizontal:
             String(localized: "Scroll sideways along a strip of columns.")
+        }
+    }
+
+    // MARK: Read & Listen
+
+    private var narrationHighlightSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Eyebrow("Read & Listen")
+            Picker("Read-along highlighting", selection: binding(\.narrationHighlight)) {
+                ForEach(NarrationHighlightStyle.allCases) { highlight in
+                    Text(highlight.label).tag(highlight)
+                }
+            }
+            .pickerStyle(.menu)
+            .font(.footnote)
+            .accessibilityIdentifier("NarrationHighlightPicker")
+            Text("Choose whether to highlight the sentence, the current word, or both while listening.")
+                .font(.caption2)
+                .foregroundStyle(palette.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            Toggle("Auto-scroll while listening", isOn: binding(\.autoScrollNarration))
+                .font(.footnote)
+                .tint(palette.accent)
+                .accessibilityIdentifier("AutoScrollNarrationToggle")
+            Text("Read & Listen uses vertical scrolling to keep the spoken line near the centre of the screen.")
+                .font(.caption2)
+                .foregroundStyle(palette.muted)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

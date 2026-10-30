@@ -43,16 +43,51 @@ public enum BookTextLoader {
 /// synchronisation granularity from design/DESIGN.md.
 public enum SentenceTokenizer {
     public static func sentences(from text: String) -> [String] {
-        let normalized = text.replacingOccurrences(of: "\n", with: " ")
-        var result: [String] = []
-        normalized.enumerateSubstrings(in: normalized.startIndex..<normalized.endIndex,
-                                       options: [.bySentences, .substringNotRequired]) { _, range, _, _ in
-            let sentence = normalized[range].trimmingCharacters(in: .whitespacesAndNewlines)
-            if !sentence.isEmpty { result.append(sentence) }
+        let ns = text as NSString
+        return ranges(from: text).map {
+            ns.substring(with: $0).replacingOccurrences(of: "\n", with: " ")
         }
-        if result.isEmpty, !normalized.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            result = [normalized.trimmingCharacters(in: .whitespacesAndNewlines)]
+    }
+
+    /// Sentence ranges in the original UTF-16 text. Decorative rules are
+    /// boundaries, even when the sentence tokenizer would attach them to the
+    /// prose before or after them. Never rewrite the chapter: the reader and
+    /// word alignment use these same offsets.
+    static func ranges(from text: String) -> [NSRange] {
+        let ns = text as NSString
+        guard ns.length > 0 else { return [] }
+        var result: [NSRange] = []
+
+        func appendSentences(in segment: NSRange) {
+            guard segment.length > 0 else { return }
+            ns.enumerateSubstrings(in: segment, options: [.bySentences, .substringNotRequired]) { _, range, _, _ in
+                let value = ns.substring(with: range) as NSString
+                let content = value.rangeOfCharacter(from: .whitespacesAndNewlines.inverted)
+                guard content.location != NSNotFound,
+                      value.rangeOfCharacter(from: .alphanumerics).location != NSNotFound else { return }
+                let lastContent = value.rangeOfCharacter(from: .whitespacesAndNewlines.inverted, options: .backwards)
+                result.append(NSRange(location: range.location + content.location,
+                                      length: NSMaxRange(lastContent) - content.location))
+            }
         }
+
+        var segmentStart = 0
+        ns.enumerateSubstrings(in: NSRange(location: 0, length: ns.length),
+                               options: [.byLines, .substringNotRequired]) { _, range, enclosingRange, _ in
+            guard isDecorativeSeparator(ns.substring(with: range)) else { return }
+            appendSentences(in: NSRange(location: segmentStart, length: range.location - segmentStart))
+            segmentStart = NSMaxRange(enclosingRange)
+        }
+        appendSentences(in: NSRange(location: segmentStart, length: ns.length - segmentStart))
         return result
     }
+
+    private static func isDecorativeSeparator(_ line: String) -> Bool {
+        let marks = line.unicodeScalars.filter { !CharacterSet.whitespaces.contains($0) }
+        // Recognise rules such as "_____", "---", "* * *" and Unicode
+        // horizontal rules without stripping punctuation from actual prose.
+        return marks.count >= 3 && marks.allSatisfy { separatorMarks.contains($0) }
+    }
+
+    private static let separatorMarks = CharacterSet(charactersIn: "_-–—―*⁂⁎~•·=─━═﹏＿－")
 }

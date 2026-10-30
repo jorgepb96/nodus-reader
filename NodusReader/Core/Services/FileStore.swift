@@ -25,9 +25,7 @@ public final class FileStore: @unchecked Sendable {
         if let root {
             self.root = root
         } else {
-            let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-                ?? fileManager.temporaryDirectory
-            self.root = base.appendingPathComponent("NodusReader", isDirectory: true)
+            self.root = LibraryStorageScope.fileRoot(fileManager: fileManager)
         }
         ensureDirectories()
     }
