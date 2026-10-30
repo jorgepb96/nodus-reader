@@ -1,0 +1,130 @@
+DEFINE SCHEMA
+
+    RECORD TYPE Annotation (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        bookID          STRING,
+        chapterIndex    INT64,
+        color           STRING,
+        createdAt       TIMESTAMP,
+        endOffset       INT64,
+        note            STRING,
+        quote           STRING,
+        startOffset     INT64,
+        updatedAt       TIMESTAMP
+    );
+
+    RECORD TYPE Book (
+        "___createTime"    TIMESTAMP,
+        "___createdBy"     REFERENCE,
+        "___etag"          STRING,
+        "___modTime"       TIMESTAMP,
+        "___modifiedBy"    REFERENCE,
+        "___recordID"      REFERENCE QUERYABLE,
+        addedAt            TIMESTAMP,
+        appearanceJSON     STRING,
+        author             STRING,
+        bookDescription    STRING,
+        contentHash        STRING,
+        coverFileName      STRING,
+        fileName           STRING,
+        fileSize           INT64,
+        format             STRING,
+        isFavorite         INT64,
+        language           STRING,
+        lastOpenedAt       TIMESTAMP,
+        lastPositionDate   TIMESTAMP,
+        lastPositionDevice STRING,
+        locatorJSON        STRING,
+        preferredVoiceID   STRING,
+        progress           DOUBLE,
+        published          STRING,
+        readingMode        STRING,
+        relativePath       STRING,
+        sourceDevice       STRING,
+        status             STRING,
+        title              STRING,
+        updatedAt          TIMESTAMP
+    );
+
+    RECORD TYPE Bookmark (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        bookID          STRING,
+        chapterTitle    STRING,
+        createdAt       TIMESTAMP,
+        locatorJSON     STRING,
+        title           STRING,
+        updatedAt       TIMESTAMP
+    );
+
+    RECORD TYPE Collection (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        createdAt       TIMESTAMP,
+        name            STRING,
+        parentID        STRING,
+        sortIndex       INT64,
+        updatedAt       TIMESTAMP
+    );
+
+    RECORD TYPE Membership (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        addedAt         TIMESTAMP,
+        bookID          STRING,
+        collectionID    STRING,
+        sortIndex       INT64,
+        updatedAt       TIMESTAMP
+    );
+
+    RECORD TYPE Preference (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        payload         STRING,
+        updatedAt       TIMESTAMP
+    );
+
+    RECORD TYPE Tombstone (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        deletedAt       TIMESTAMP,
+        entityID        STRING,
+        entityType      STRING
+    );
+
+    RECORD TYPE Users (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE,
+        roles           LIST<INT64>,
+        GRANT WRITE TO "_creator",
+        GRANT READ TO "_world"
+    );

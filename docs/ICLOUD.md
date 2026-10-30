@@ -1,6 +1,6 @@
 # iCloud Sync
 
-Status: **implemented behind an opt-in switch; signed real-device validation still required.**
+Status: **implemented behind an opt-in switch. Production schema deployed on 30 October 2026; signed two-device validation still required.**
 
 Synchronization uses the user's personal iCloud account and is off by default.
 The library works fully without it.
@@ -214,3 +214,17 @@ authenticated CloudKit account.
 CloudKit result semantics and change-tag conflicts follow Apple's documentation:
 [modifyRecords](https://developer.apple.com/documentation/cloudkit/ckdatabase/modifyrecords(saving:deleting:savepolicy:atomically:))
 and [serverRecordChanged](https://developer.apple.com/documentation/cloudkit/ckerror/serverrecordchanged).
+
+## Versioned schema and release gate
+
+The canonical production schema is [Config/CloudKitSchema.ckdb](../Config/CloudKitSchema.ckdb). It contains the seven application types and 54 payload fields. The app uses the private database; these types have no PUBLIC database grants. The built-in Users definition is preserved.
+
+Before release, run:
+
+```bash
+python3 tools/cloudkit/check-schema.py
+```
+
+This checks field coverage against CloudSyncService and rejects public grants on application types. It does **not** prove deployment. Export a fresh **Production** schema from CloudKit Console (or authenticated `cktool export-schema`) and run the same check with its path as an argument. Import any required additive changes into Development, review Deploy Schema Changes, deploy, and verify a fresh Production export before declaring server sync ready. TestFlight VALID/APPROVED and local unit tests do not validate the CloudKit schema.
+
+On 30 October, the user reported `Cannot create new type Book in production schema`. Both environments contained only Users. The full schema was imported and validated by Apple, then deployed to Production: seven new record types, seven record-name indexes, zero security-role changes. A fresh Production export was checked against all payload fields and their expected types; Users remained unchanged. This server correction applies to existing builds without another binary upload. See [deployment record](appstore/CLOUDKIT_SCHEMA_DEPLOYMENT_2026-10-30.md).
