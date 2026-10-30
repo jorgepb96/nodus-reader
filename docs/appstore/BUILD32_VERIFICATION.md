@@ -28,3 +28,9 @@
 `testPDFIntelligentReading` now resets the sample reading state: it depended on the Home order left by earlier runs.
 
 Not verified here: the oscillation fix on a long real PDF on device, and live two-device iCloud sync on a signed Mac build.
+
+## Distribution
+
+Version 0.1.0 (32), archived from merge commit `0192678` ([PR #33](https://github.com/jorgepb96/nodus-reader/pull/33)). Both signed archives passed `codesign --verify --deep --strict`. The signed macOS archive app stayed running after launch (runpath `@executable_path/../Frameworks`); a signed Release simulator build launched and stayed running on the iPhone 17 Pro simulator.
+
+Uploads succeeded through Xcode's account (`destination: upload`): macOS `Nodus Reader.pkg` first, then the iOS IPA. The **Internal** group receives both automatically. macOS stays internal only: no external macOS beta review. iOS still has to be assigned to **Nodus Reader — Public Beta** and submitted for Beta App Review with the [English](TestFlight-32-en.txt) / [Spanish](TestFlight-32-es.txt) notes.
