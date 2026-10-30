@@ -2222,16 +2222,6 @@
         }
       }
     },
-    "Go to page %lld": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ir a la página %lld"
-          }
-        }
-      }
-    },
     "Green": {
       "localizations": {
         "es": {
@@ -2328,16 +2318,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Color del resaltado"
-          }
-        }
-      }
-    },
-    "Highlights and notes": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resaltados y notas"
           }
         }
       }
@@ -4062,16 +4042,6 @@
         }
       }
     },
-    "Page": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Página"
-          }
-        }
-      }
-    },
     "Page %lld": {
       "localizations": {
         "es": {
@@ -4848,6 +4818,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reintentar"
+          }
+        }
+      }
+    },
+    "Return": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver"
+          }
+        }
+      }
+    },
+    "Return to narration": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver a la narración"
           }
         }
       }
@@ -6072,16 +6062,6 @@
         }
       }
     },
-    "This PDF does not include an outline.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este PDF no incluye un índice."
-          }
-        }
-      }
-    },
     "This book has no iCloud copy yet.": {
       "localizations": {
         "es": {
@@ -6258,6 +6238,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Por leer"
+          }
+        }
+      }
+    },
+    "To narration": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A la narración"
           }
         }
       }

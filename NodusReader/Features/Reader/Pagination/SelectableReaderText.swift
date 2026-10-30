@@ -6,6 +6,12 @@ import AppKit
 import UIKit
 #endif
 
+/// A one-shot visual jump, independent of the automatic-follow preference.
+struct ReaderTextScrollRequest {
+    let id: UUID
+    let range: NSRange
+}
+
 /// SwiftUI wrapper around the reader's selectable text (selection menu,
 /// word taps, highlight overlays). It sizes itself to its text, so it can sit
 /// in lazy stacks: continuous-scroll slices and PDF Intelligent Reading blocks.
@@ -21,11 +27,24 @@ struct SelectableReaderText {
     /// Stable chapter/page range of the spoken word. Independent of which
     /// highlight layers the user chose to display.
     var narrationFollowRange: NSRange?
+    var scrollRequest: ReaderTextScrollRequest? = nil
+    var onScrollRequestHandled: (UUID) -> Void = { _ in }
     var onWordTap: (Int) -> Void = { _ in }
     var onHighlight: (NSRange, AnnotationColor) -> Void = { _, _ in }
     var onNote: (NSRange) -> Void = { _ in }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    final class Coordinator {
+        var handledScrollRequest: UUID?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    private var localScrollRequest: ReaderTextScrollRequest? {
+        guard let scrollRequest, let range = mapping.localRange(scrollRequest.range) else { return nil }
+        return ReaderTextScrollRequest(id: scrollRequest.id, range: range)
+    }
 
     private var localNarrationRange: NSRange? {
         guard let narrationFollowRange else { return nil }
@@ -53,10 +72,18 @@ extension SelectableReaderText: UIViewRepresentable {
         view.setHighlights(highlights)
         view.narrationFollowRange = localNarrationRange
         let range = localNarrationRange
+        let request = localScrollRequest
+        let coordinator = context.coordinator
         let animated = !reduceMotion
         DispatchQueue.main.async { [weak view] in
-            guard let view, let range, view.narrationFollowRange == range else { return }
-            view.followNarration(range, animated: animated)
+            guard let view else { return }
+            if let request, coordinator.handledScrollRequest != request.id {
+                coordinator.handledScrollRequest = request.id
+                view.followNarration(request.range, animated: false)
+                onScrollRequestHandled(request.id)
+            } else if let range, view.narrationFollowRange == range {
+                view.followNarration(range, animated: animated)
+            }
         }
     }
 
@@ -174,10 +201,18 @@ extension SelectableReaderText: NSViewRepresentable {
         view.needsLayout = true
         view.narrationFollowRange = localNarrationRange
         let range = localNarrationRange
+        let request = localScrollRequest
+        let coordinator = context.coordinator
         let animated = !reduceMotion
         DispatchQueue.main.async { [weak view] in
-            guard let view, let range, view.narrationFollowRange == range else { return }
-            view.followNarration(range, animated: animated)
+            guard let view else { return }
+            if let request, coordinator.handledScrollRequest != request.id {
+                coordinator.handledScrollRequest = request.id
+                view.followNarration(request.range, animated: false)
+                onScrollRequestHandled(request.id)
+            } else if let range, view.narrationFollowRange == range {
+                view.followNarration(range, animated: animated)
+            }
         }
     }
 

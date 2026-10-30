@@ -21,6 +21,7 @@ struct ContinuousReaderContent: View {
     var style: ReaderPageStyle
     var narrationChapterIndex: Int?
     var narrationRange: NSRange?
+    @Binding var narrationReturnTarget: ReaderNavigationTarget?
     var narrationBottomPadding: CGFloat
     var highlightsProvider: (ReaderPage) -> ReaderPageHighlights
     var onWordTap: (Int, Int) -> Void
@@ -83,9 +84,16 @@ struct ContinuousReaderContent: View {
         .onChange(of: pageIndex) { _, index in
             // A contents jump, bookmark or narration follow moved the reader.
             if visibleID != index {
-                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { visibleID = index }
+                withAnimation(reduceMotion || narrationReturnTarget != nil ? nil : .easeInOut(duration: 0.25)) { visibleID = index }
             }
         }
+    }
+
+    private func scrollRequest(for page: ReaderPage) -> ReaderTextScrollRequest? {
+        guard axis == .vertical, let target = narrationReturnTarget,
+              target.chapterIndex == page.chapterIndex, let offset = target.characterOffset,
+              offset >= page.chapterStartOffset, offset < page.chapterEndOffset else { return nil }
+        return ReaderTextScrollRequest(id: target.id, range: NSRange(location: offset, length: 1))
     }
 
     @ViewBuilder
@@ -99,6 +107,10 @@ struct ContinuousReaderContent: View {
                 fillsProposedHeight: axis == .horizontal,
                 accessibilityLabel: "\(page.chapterTitle), part \(page.pageIndexInChapter + 1) of \(max(page.pagesInChapter, 1))",
                 narrationFollowRange: page.id == narrationPageID ? narrationRange : nil,
+                scrollRequest: scrollRequest(for: page),
+                onScrollRequestHandled: { id in
+                    if narrationReturnTarget?.id == id { narrationReturnTarget = nil }
+                },
                 onWordTap: { offset in onWordTap(page.chapterIndex, offset) },
                 onHighlight: { range, color in onHighlight(page.chapterIndex, range, color) },
                 onNote: { range in onNote(page.chapterIndex, range) }
