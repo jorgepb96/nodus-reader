@@ -22,10 +22,7 @@ struct PhoneRootView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.22), value: playback.hasActiveBook)
-            .sheet(isPresented: $showPlayer) {
-            PlayerView()
-                .presentationDragIndicator(.hidden)
-        }
+            .playerSheet(isPresented: $showPlayer)
     }
 
     private func tabView(selection: Binding<AppTab>) -> some View {

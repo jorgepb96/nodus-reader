@@ -135,6 +135,12 @@ struct RootView: View {
     }
 
     private func updateVoiceSetup() {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-NodusResetVoiceSetup") {
+            showVoiceSetup = true
+            return
+        }
+        #endif
         showVoiceSetup = !models.hasInstalledModel && !voiceSetupBypassed
     }
 

@@ -29,6 +29,7 @@ struct ReaderView: View {
     @State private var pdfChapterSelection = 0
     @State private var pdfMode: PDFReadingMode = .original
     @State private var pageIndex = 0
+    @State private var navigationTarget: ReaderNavigationTarget?
     @State private var pageInfo = ReaderPageInfo()
     @State private var firstPageByChapter: [Int: Int] = [:]
     @State private var readerPages: [ReaderPage] = []
@@ -43,6 +44,7 @@ struct ReaderView: View {
     @State private var showAppearance = false
     @State private var showAppearanceSheet = false
     @State private var showPlayer = false
+    @State private var preparingNarration = false
     @State private var annotationDraft: ReaderAnnotationDraft?
     @State private var search = ReaderSearchModel()
 
@@ -138,6 +140,17 @@ struct ReaderView: View {
             // repagination after a font, theme or window change.
             if old.pageCount > 0, old.pageCount == new.pageCount, old.pageIndex != new.pageIndex {
                 hasTurnedPage = true
+                // A manual page turn into another chapter also moves the
+                // read-along audio. Narration-driven turns already agree
+                // with playback.chapterIndex and must not seek a second time.
+                if !old.isProvisional, !new.isProvisional,
+                   old.chapterIndex != new.chapterIndex,
+                   playback.activeBook?.id == book.id, playback.mode == .readAndListen,
+                   playback.chapterIndex != new.chapterIndex,
+                   readerPages.indices.contains(new.pageIndex) {
+                    seekReaderNarration(chapter: new.chapterIndex,
+                                        offset: readerPages[new.pageIndex].chapterStartOffset)
+                }
             }
             // Saved once the reader settles: a database save on every turn
             // lands right as the next curl starts and makes it stutter.
@@ -161,11 +174,13 @@ struct ReaderView: View {
                     currentPage: $pdfPageIndex,
                     jumpToPage: $pdfJumpPage,
                     annotations: library.annotations(for: book),
+                    onNavigatePage: { page in seekReaderNarration(chapter: page, offset: 0) },
                     onOpenAnnotation: { annotation in
                         // Notes are shown in Intelligent Reading.
                         pdfMode = .intelligent
                         pdfJumpPage = annotation.chapterIndex
                         pdfPageIndex = annotation.chapterIndex
+                        seekReaderNarration(chapter: annotation.chapterIndex, offset: annotation.startOffset)
                     },
                     onEditAnnotation: editAnnotation
                 )
@@ -174,8 +189,12 @@ struct ReaderView: View {
                     book: book,
                     chapters: chapters,
                     pages: readerPages,
-                    firstPageByChapter: firstPageByChapter,
-                    pageIndex: $pageIndex,
+                    pageIndex: pageIndex,
+                    onNavigate: { target in
+                        navigationTarget = target
+                        seekReaderNarration(chapter: target.chapterIndex, offset: target.characterOffset,
+                                            fraction: target.fraction)
+                    },
                     onEditAnnotation: editAnnotation
                 )
             }
@@ -187,7 +206,8 @@ struct ReaderView: View {
                 .readerPresentation(readerTheme)
         }
         .sheet(isPresented: $showPlayer) {
-            PlayerView().presentationDragIndicator(.hidden)
+            PlayerView(onOpenReader: { _ in showPlaybackPosition() })
+                .presentationDragIndicator(.hidden)
                 .readerPresentation(readerTheme)
         }
         .sheet(item: $annotationDraft) { draft in
@@ -223,7 +243,7 @@ struct ReaderView: View {
                 searchRanges: search.isPresented ? search.rangesByChapter : [:],
                 currentSearchMatch: search.isPresented ? search.currentMatch : nil,
                 columns: paginationColumns,
-                followNarration: playback.mode == .readAndListen,
+                followNarration: playback.mode == .readAndListen && playback.isPlaying,
                 onWordTap: { chapter, offset in startNarration(chapter: chapter, offset: offset) },
                 onHighlight: { chapter, range, color in
                     presentAnnotation(chapter: chapter, range: range, color: color, note: false)
@@ -231,6 +251,7 @@ struct ReaderView: View {
                 onNote: { chapter, range in
                     presentAnnotation(chapter: chapter, range: range, color: .yellow, note: true)
                 },
+                navigationTarget: $navigationTarget,
                 pageIndex: $pageIndex,
                 pageInfo: $pageInfo,
                 firstPageByChapter: $firstPageByChapter,
@@ -428,60 +449,21 @@ struct ReaderView: View {
 
     private func bottomBar(_ theme: ReaderTheme) -> some View {
         VStack(spacing: 8) {
-            if playback.activeBook?.id == book.id, playback.mode != .read {
-                ReaderNarrationCapsule(theme: theme) {
-                    showPlayer = true
-                }
-            } else {
-                HStack {
-                    if book.format != .pdf {
-                        Button {
-                            goToPage(pageIndex - pageStep)
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(canGoPreviousPage ? theme.text : theme.muted.opacity(0.4))
-                                .frame(width: 44, height: 44)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!canGoPreviousPage)
-                        .accessibilityLabel("Previous page")
-                    }
+            ReaderNarrationCapsule(book: book, theme: theme,
+                                   isReady: narrationReady, isPreparing: preparingNarration,
+                                   canGoPreviousPage: book.format != .pdf && canGoPreviousPage,
+                                   canGoNextPage: book.format != .pdf && canGoNextPage,
+                                   onPreviousPage: { goToPage(pageIndex - pageStep) },
+                                   onNextPage: { goToPage(pageIndex + pageStep) },
+                                   onPlay: toggleReaderNarration,
+                                   onOpenPlayer: openReaderPlayer)
 
-                    Spacer()
-
-                    Text(progressLine)
-                        .font(.system(size: 11))
-                        .foregroundStyle(theme.muted)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-
-                    Spacer()
-
-                    if book.format != .pdf {
-                        Button {
-                            goToPage(pageIndex + pageStep)
-                        } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(canGoNextPage ? theme.text : theme.muted.opacity(0.4))
-                                .frame(width: 44, height: 44)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!canGoNextPage)
-                        .accessibilityLabel("Next page")
-                    }
-                }
-                .padding(.horizontal, 4)
-            }
-
-            if playback.activeBook?.id == book.id, playback.mode != .read {
-                Text(progressLine)
-                    .font(.system(size: 11))
-                    .foregroundStyle(theme.muted)
-                    .monospacedDigit()
-            }
+            Text(progressLine)
+                .font(.system(size: 11))
+                .foregroundStyle(theme.muted)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -493,6 +475,70 @@ struct ReaderView: View {
     }
 
     // MARK: Load and save
+
+    private var narrationReady: Bool {
+        if book.format == .pdf { return pdfPageCount > 0 && pdfURL != nil }
+        return readerPages.indices.contains(pageIndex)
+    }
+
+    private var readerShowsPlaybackPosition: Bool {
+        guard playback.activeBook?.id == book.id else { return false }
+        if book.format == .pdf {
+            return playback.chapters.indices.contains(playback.chapterIndex) &&
+                playback.chapters[playback.chapterIndex].id == pdfPageIndex
+        }
+        guard readerPages.indices.contains(pageIndex), let offset = playback.currentChapterOffset else { return false }
+        let page = readerPages[pageIndex]
+        return page.chapterIndex == playback.chapterIndex &&
+            offset >= page.chapterStartOffset && offset < max(page.chapterEndOffset, page.chapterStartOffset + 1)
+    }
+
+    private func toggleReaderNarration() {
+        if playback.activeBook?.id == book.id, playback.isPlaying {
+            playback.pause()
+        } else if readerShowsPlaybackPosition {
+            playback.setMode(.readAndListen)
+        } else {
+            prepareReaderNarration(openPlayer: false)
+        }
+    }
+
+    private func seekReaderNarration(chapter: Int, offset: Int?, fraction: Double = 0) {
+        guard playback.activeBook?.id == book.id else { return }
+        playback.seek(toChapter: chapter, offset: offset, fraction: fraction)
+    }
+
+    private func openReaderPlayer() {
+        if playback.activeBook?.id == book.id {
+            showPlayer = true
+        } else {
+            prepareReaderNarration(openPlayer: true)
+        }
+    }
+
+    /// Prepare only after an explicit action; simply opening a book keeps
+    /// other audio untouched. Play begins at the text on the visible page.
+    private func prepareReaderNarration(openPlayer: Bool) {
+        guard narrationReady, !preparingNarration else { return }
+        let chapter: Int
+        let offset: Int
+        if book.format == .pdf {
+            chapter = pdfPageIndex
+            offset = 0
+        } else {
+            let page = readerPages[pageIndex]
+            chapter = page.chapterIndex
+            offset = page.chapterStartOffset
+        }
+        preparingNarration = true
+        Task { @MainActor in
+            defer { preparingNarration = false }
+            if book.format == .pdf, !openPlayer { pdfMode = .intelligent }
+            await playback.start(book: book, mode: openPlayer ? .read : .readAndListen,
+                                 startingChapterIndex: chapter, startingChapterOffset: offset)
+            if openPlayer || playback.errorMessage != nil { showPlayer = true }
+        }
+    }
 
     private func load() async {
         let localURL = library.fileStore.documentURL(for: book)
@@ -514,6 +560,7 @@ struct ReaderView: View {
         Task { await library.refreshExtractedTextIfNeeded(book) }
 
         if book.format == .pdf {
+            showPlaybackPosition()
             content = .pdf(localURL)
             return
         }
@@ -525,6 +572,7 @@ struct ReaderView: View {
                 return
             }
             library.refreshChapterTitlesIfNeeded(book, chapters: loaded)
+            showPlaybackPosition()
             content = .chapters(loaded)
         } catch {
             content = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
@@ -532,6 +580,9 @@ struct ReaderView: View {
     }
 
     private func saveProgress() {
+        // Read & Listen uses the audio position; a delayed page update must
+        // not replace it with an older visual position when closing a sheet.
+        if playback.activeBook?.id == book.id, playback.mode == .readAndListen, playback.isPlaying { return }
         switch content {
         case .chapters(let chapters):
             guard hasTurnedPage, pageInfo.pageCount > 0, !chapters.isEmpty else { return }
@@ -565,6 +616,24 @@ struct ReaderView: View {
     }
 
     // MARK: Page helpers
+
+    private func showPlaybackPosition() {
+        let requested = playback.consumeReaderResume(for: book)
+        guard playback.activeBook?.id == book.id,
+              requested != nil || playback.mode != .read,
+              let offset = requested?.offset ?? playback.currentChapterOffset else { return }
+        let chapter = requested?.chapterIndex ?? playback.chapterIndex
+        if book.format == .pdf {
+            guard playback.chapters.indices.contains(chapter) else { return }
+            let page = playback.chapters[chapter].id
+            pdfPageIndex = page
+            pdfJumpPage = page
+            if playback.mode == .readAndListen { pdfMode = .intelligent }
+        } else {
+            navigationTarget = ReaderNavigationTarget(chapterIndex: chapter,
+                                                      characterOffset: offset)
+        }
+    }
 
     private var canGoPreviousPage: Bool {
         pageIndex > 0
@@ -738,8 +807,28 @@ struct ReaderView: View {
 struct ReaderNarrationCapsule: View {
     @Environment(PlaybackController.self) private var playback
 
+    let book: Book
     let theme: ReaderTheme
+    let isReady: Bool
+    let isPreparing: Bool
+    let canGoPreviousPage: Bool
+    let canGoNextPage: Bool
+    var onPreviousPage: () -> Void
+    var onNextPage: () -> Void
+    var onPlay: () -> Void
     var onOpenPlayer: () -> Void
+
+    private var isActiveBook: Bool { playback.activeBook?.id == book.id }
+    private var hasNarration: Bool { isActiveBook && playback.mode != .read }
+    private var isPlaying: Bool { isActiveBook && playback.isPlaying }
+    private var isLoading: Bool { isPreparing || (isActiveBook && playback.isLoading) }
+    private var voiceLabel: String {
+        playback.voices.narrationVoice(preferredID: book.preferredVoiceID, language: book.language)?.name
+            ?? String(localized: "No voice model")
+    }
+    private var mode: ReadingMode {
+        isActiveBook && playback.mode != .read ? playback.mode : .readAndListen
+    }
 
     private var playForeground: Color {
         theme.isDark ? NodusColors.onAccent : .white
@@ -748,7 +837,7 @@ struct ReaderNarrationCapsule: View {
     var body: some View {
         HStack(spacing: 2) {
             Button {
-                playback.previousSentence()
+                if hasNarration { playback.previousSentence() } else { onPreviousPage() }
             } label: {
                 Image(systemName: "backward.end")
                     .font(.system(size: 18))
@@ -756,28 +845,29 @@ struct ReaderNarrationCapsule: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Previous sentence")
+            .disabled(isLoading || (hasNarration ? playback.currentIndex == 0 : !canGoPreviousPage))
+            .accessibilityHidden(book.format == .pdf && !hasNarration)
+            .accessibilityLabel(hasNarration ? "Previous sentence" : "Previous page")
 
-            Button {
-                playback.toggle()
-            } label: {
-                Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
+            Button(action: onPlay) {
+                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 17, weight: .semibold))
-                    .offset(x: playback.isPlaying ? 0 : 1)
+                    .offset(x: isPlaying ? 0 : 1)
                     .foregroundStyle(playForeground)
                     .frame(width: 52, height: 52)
                     .background(theme.accent, in: Circle())
                     .overlay {
-                        if playback.isLoading {
+                        if isLoading {
                             LoadingRing(color: playForeground, lineWidth: 3).padding(3)
                         }
                     }
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(playback.isPlaying ? "Pause narration" : "Play narration")
+            .disabled(isPreparing || (!isReady && !isPlaying) || (isLoading && !isPlaying))
+            .accessibilityLabel(isPlaying ? "Pause narration" : "Play narration")
 
             Button {
-                playback.nextSentence()
+                if hasNarration { playback.nextSentence() } else { onNextPage() }
             } label: {
                 Image(systemName: "forward.end")
                     .font(.system(size: 18))
@@ -785,15 +875,17 @@ struct ReaderNarrationCapsule: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Next sentence")
+            .disabled(isLoading || (hasNarration ? playback.currentIndex + 1 >= playback.sentenceCount : !canGoNextPage))
+            .accessibilityHidden(book.format == .pdf && !hasNarration)
+            .accessibilityLabel(hasNarration ? "Next sentence" : "Next page")
 
             Button(action: onOpenPlayer) {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(playback.mode.label.uppercased())
+                    Text(mode.label.uppercased())
                         .font(.system(size: 10, weight: .semibold))
                         .tracking(1.4)
                         .foregroundStyle(theme.accent)
-                    Text("\(playback.voiceLabel) · \(playback.speedLabel)")
+                    Text("\(voiceLabel) · \(playback.speedLabel)")
                         .font(.system(size: 13))
                         .foregroundStyle(theme.text)
                         .lineLimit(1)
@@ -803,6 +895,7 @@ struct ReaderNarrationCapsule: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .disabled(isPreparing || (!isReady && !isActiveBook))
             .accessibilityLabel("Open player")
 
             Menu {
@@ -815,6 +908,7 @@ struct ReaderNarrationCapsule: View {
                     .foregroundStyle(playback.sleepTimer == .off ? theme.text : theme.accent)
                     .frame(width: 42, height: 44)
             }
+            .disabled(!isActiveBook || isPreparing)
             .accessibilityLabel("Sleep timer")
         }
         .padding(.horizontal, 6)

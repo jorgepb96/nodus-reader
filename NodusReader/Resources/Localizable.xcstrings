@@ -232,6 +232,16 @@
         }
       }
     },
+    "%lld collections": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld colecciones"
+          }
+        }
+      }
+    },
     "%lld documents imported": {
       "localizations": {
         "es": {
@@ -402,6 +412,16 @@
         }
       }
     },
+    "1 collection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 colección"
+          }
+        }
+      }
+    },
     "1 document imported": {
       "localizations": {
         "es": {
@@ -518,6 +538,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Un documento subido desde otro dispositivo puede tardar un poco en aparecer. Desliza hacia abajo para actualizar o toca Comprobar de nuevo."
+          }
+        }
+      }
+    },
+    "A voice for every book.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una voz para cada libro."
           }
         }
       }
@@ -972,6 +1002,16 @@
         }
       }
     },
+    "Books, text and notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libros, texto y notas"
+          }
+        }
+      }
+    },
     "CHAPTER %lld": {
       "localizations": {
         "es": {
@@ -1152,12 +1192,22 @@
         }
       }
     },
-    "Choose a Kokoro or Phonon voice to generate offline audio. System voices never write audio files.": {
+    "Choose a Kokoro or Phonon voice to generate offline audio.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elige una voz de Kokoro o Phonon para generar audio sin conexión. Las voces del sistema nunca guardan archivos de audio."
+            "value": "Elige una voz Kokoro o Phonon para generar audio sin conexión."
+          }
+        }
+      }
+    },
+    "Choose a voice model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir un modelo de voz"
           }
         }
       }
@@ -1358,6 +1408,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Índice"
+          }
+        }
+      }
+    },
+    "Contents entry": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrada del índice"
           }
         }
       }
@@ -1812,6 +1872,16 @@
         }
       }
     },
+    "Drag the handle to move within this chapter.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrastra el control para desplazarte por este capítulo."
+          }
+        }
+      }
+    },
     "EPUB": {
       "localizations": {
         "es": {
@@ -1982,6 +2052,26 @@
         }
       }
     },
+    "Figure": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Figura"
+          }
+        }
+      }
+    },
+    "Figure on page %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Figura en la página %lld"
+          }
+        }
+      }
+    },
     "File": {
       "localizations": {
         "es": {
@@ -2038,16 +2128,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Libros terminados"
-          }
-        }
-      }
-    },
-    "Footnote": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nota al pie"
           }
         }
       }
@@ -2552,6 +2632,16 @@
         }
       }
     },
+    "Install a Kokoro or Phonon model in the Models tab to start listening.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instala un modelo Kokoro o Phonon en la pestaña Modelos para empezar a escuchar."
+          }
+        }
+      }
+    },
     "Install from file…": {
       "localizations": {
         "es": {
@@ -2642,12 +2732,12 @@
         }
       }
     },
-    "Kokoro's English phonemizer uses MLX, which needs a Metal GPU. The Simulator does not provide one. Install Kokoro on an iPhone, iPad or Mac; Phonon and system voices work in the Simulator.": {
+    "Kokoro's English phonemizer uses MLX, which needs a Metal GPU. The Simulator does not provide one. Install Kokoro on an iPhone, iPad or Mac; Phonon works in the Simulator.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El fonetizador inglés de Kokoro usa MLX, que necesita una GPU Metal. El Simulador no la tiene. Instala Kokoro en un iPhone, iPad o Mac; Phonon y las voces del sistema funcionan en el Simulador."
+            "value": "El fonemizador de inglés de Kokoro utiliza MLX y necesita una GPU compatible con Metal. El simulador no dispone de ella. Instala Kokoro en un iPhone, iPad o Mac; Phonon funciona en el simulador."
           }
         }
       }
@@ -2798,16 +2888,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cargando PDF…"
-          }
-        }
-      }
-    },
-    "Loading system voices…": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cargando voces del sistema…"
           }
         }
       }
@@ -3072,6 +3152,16 @@
         }
       }
     },
+    "NODUS READER": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NODUS READER"
+          }
+        }
+      }
+    },
     "Name": {
       "localizations": {
         "es": {
@@ -3148,6 +3238,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Motores neuronales"
+          }
+        }
+      }
+    },
+    "Neural voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voz neuronal"
           }
         }
       }
@@ -3282,6 +3382,16 @@
         }
       }
     },
+    "No account": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin cuenta"
+          }
+        }
+      }
+    },
     "No book selected": {
       "localizations": {
         "es": {
@@ -3392,6 +3502,16 @@
         }
       }
     },
+    "No matching chapters": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se encontraron capítulos"
+          }
+        }
+      }
+    },
     "No other collections": {
       "localizations": {
         "es": {
@@ -3462,16 +3582,6 @@
         }
       }
     },
-    "No system voice is available for this document.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No hay ninguna voz del sistema disponible para este documento."
-          }
-        }
-      }
-    },
     "No telemetry": {
       "localizations": {
         "es": {
@@ -3488,6 +3598,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "No hay ninguna voz disponible para este documento."
+          }
+        }
+      }
+    },
+    "No voice model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin modelo de voz"
+          }
+        }
+      }
+    },
+    "No voice model installed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay ningún modelo de voz instalado"
+          }
+        }
+      }
+    },
+    "No voice model is installed. Download a Kokoro or Phonon model below to enable narration.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay ningún modelo de voz instalado. Descarga un modelo Kokoro o Phonon para activar la narración."
           }
         }
       }
@@ -3578,6 +3718,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "El contenedor compartido de Nodus Reader no está disponible. Abre la app una vez y comprueba el permiso del grupo de apps."
+          }
+        }
+      }
+    },
+    "Nodus narrates with neural voices that run entirely on this device. Install one model to start listening — no account, no cloud, no system voice.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodus narra con voces neuronales que se ejecutan íntegramente en este dispositivo. Instala un modelo para empezar a escuchar: sin cuenta, sin nube y sin voces del sistema."
           }
         }
       }
@@ -3742,6 +3892,16 @@
         }
       }
     },
+    "On-device": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En el dispositivo"
+          }
+        }
+      }
+    },
     "One library across your devices through your personal iCloud account. Nodus Reader never runs a sync server.": {
       "localizations": {
         "es": {
@@ -3752,12 +3912,12 @@
         }
       }
     },
-    "Only the selected voice engine appears in the reader and player voice lists. System voices are always available as a fallback.": {
+    "Only the selected model's voices appear in the reader and player.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "En las listas de voces del lector y del reproductor solo aparece el motor de voz seleccionado. Las voces del sistema siempre están disponibles como alternativa."
+            "value": "Solo aparecen en el lector y el reproductor las voces del modelo seleccionado."
           }
         }
       }
@@ -4162,6 +4322,16 @@
         }
       }
     },
+    "Position in chapter": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posición en el capítulo"
+          }
+        }
+      }
+    },
     "Precise word timing": {
       "localizations": {
         "es": {
@@ -4322,6 +4492,16 @@
         }
       }
     },
+    "Quote": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cita"
+          }
+        }
+      }
+    },
     "READ & LISTEN": {
       "localizations": {
         "es": {
@@ -4398,6 +4578,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lee la licencia. Si estás de acuerdo, rellena el breve formulario de la página y selecciona el botón para aceptar y solicitar acceso."
+          }
+        }
+      }
+    },
+    "Read, %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leer, %@"
           }
         }
       }
@@ -4642,6 +4832,16 @@
         }
       }
     },
+    "Returns to the current reading position": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuelve a la posición actual de lectura"
+          }
+        }
+      }
+    },
     "Sans": {
       "localizations": {
         "es": {
@@ -4722,6 +4922,26 @@
         }
       }
     },
+    "Scroll through contents": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desplazarse por el índice"
+          }
+        }
+      }
+    },
+    "Scroll through pages": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desplazarse por las páginas"
+          }
+        }
+      }
+    },
     "Search": {
       "localizations": {
         "es": {
@@ -4748,6 +4968,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Buscar libros"
+          }
+        }
+      }
+    },
+    "Search chapters": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar capítulos"
+          }
+        }
+      }
+    },
+    "Search collections": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar colecciones"
           }
         }
       }
@@ -4918,6 +5158,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usar %@ como voz predeterminada"
+          }
+        }
+      }
+    },
+    "Set up a voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configura una voz"
           }
         }
       }
@@ -5138,16 +5388,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tamaño"
-          }
-        }
-      }
-    },
-    "Skip headers & page numbers": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Omitir encabezados y números de página"
           }
         }
       }
@@ -5448,26 +5688,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sistema"
-          }
-        }
-      }
-    },
-    "System voice": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voz del sistema"
-          }
-        }
-      }
-    },
-    "System voices": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voces del sistema"
           }
         }
       }
@@ -6052,6 +6272,16 @@
         }
       }
     },
+    "Try a different collection name.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba con otro nombre de colección."
+          }
+        }
+      }
+    },
     "Try a different title, author or passage.": {
       "localizations": {
         "es": {
@@ -6068,6 +6298,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reintentar"
+          }
+        }
+      }
+    },
+    "Try another chapter title or number.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba con otro título o número de capítulo."
           }
         }
       }
@@ -6362,16 +6602,6 @@
         }
       }
     },
-    "Voices provided by %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voces de %@"
-          }
-        }
-      }
-    },
     "Waiting for a connection": {
       "localizations": {
         "es": {
@@ -6418,6 +6648,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Con Reducir movimiento activado, «Curva» se muestra como «Deslizar»."
+          }
+        }
+      }
+    },
+    "Works offline": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Funciona sin conexión"
           }
         }
       }
@@ -6768,226 +7008,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "•"
-          }
-        }
-      }
-    },
-    "A voice for every book.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Una voz para cada libro."
-          }
-        }
-      }
-    },
-    "Nodus narrates with neural voices that run entirely on this device. Install one model to start listening — no account, no cloud, no system voice.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nodus narra con voces neuronales que se ejecutan íntegramente en este dispositivo. Instala un modelo para empezar a escuchar: sin cuenta, sin nube y sin voces del sistema."
-          }
-        }
-      }
-    },
-    "On-device": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "En el dispositivo"
-          }
-        }
-      }
-    },
-    "No account": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sin cuenta"
-          }
-        }
-      }
-    },
-    "Works offline": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Funciona sin conexión"
-          }
-        }
-      }
-    },
-    "Choose a voice model": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elegir un modelo de voz"
-          }
-        }
-      }
-    },
-    "No voice model installed": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No hay ningún modelo de voz instalado"
-          }
-        }
-      }
-    },
-    "Install a Kokoro or Phonon model in the Models tab to start listening.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Instala un modelo Kokoro o Phonon en la pestaña Modelos para empezar a escuchar."
-          }
-        }
-      }
-    },
-    "No voice model is installed. Download a Kokoro or Phonon model below to enable narration.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No hay ningún modelo de voz instalado. Descarga un modelo Kokoro o Phonon para activar la narración."
-          }
-        }
-      }
-    },
-    "Only the selected model's voices appear in the reader and player.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Solo aparecen en el lector y el reproductor las voces del modelo seleccionado."
-          }
-        }
-      }
-    },
-    "Set up a voice": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configura una voz"
-          }
-        }
-      }
-    },
-    "No voice model": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sin modelo de voz"
-          }
-        }
-      }
-    },
-    "Choose a Kokoro or Phonon voice to generate offline audio.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elige una voz Kokoro o Phonon para generar audio sin conexión."
-          }
-        }
-      }
-    },
-    "Search collections": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buscar colecciones"
-          }
-        }
-      }
-    },
-    "Books, text and notes": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Libros, texto y notas"
-          }
-        }
-      }
-    },
-    "Try a different collection name.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prueba con otro nombre de colección."
-          }
-        }
-      }
-    },
-    "1 collection": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 colección"
-          }
-        }
-      }
-    },
-    "%lld collections": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld colecciones"
-          }
-        }
-      }
-    },
-    "Scroll through contents": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Desplazarse por el índice"
-          }
-        }
-      }
-    },
-    "Search chapters": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buscar capítulos"
-          }
-        }
-      }
-    },
-    "No matching chapters": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se encontraron capítulos"
-          }
-        }
-      }
-    },
-    "Try another chapter title or number.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prueba con otro título o número de capítulo."
           }
         }
       }

@@ -61,6 +61,117 @@ private func sampleSpec(asPDF: Bool = false) -> SampleLibrary.Spec {
 // MARK: - EPUB and import
 
 @Test @MainActor
+func narrationSpeedSurvivesControllerRecreation() throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let suite = "nodus.tests.playback.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let voices = VoiceCatalog(defaults: defaults)
+    let models = ModelManager(voices: voices, defaults: defaults)
+    let first = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
+    #expect(first.speedMultiplier == 1)
+    first.setSpeed(1.35)
+    let restored = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
+    #expect(restored.speedMultiplier == 1.35)
+    #expect(restored.speedLabel == "1.35×")
+    restored.setSpeed(.nan)
+    #expect(restored.speedMultiplier == 1.35)
+}
+
+@Test @MainActor
+func pausedReaderChapterSeekMovesNarrationAndTransfersItsPosition() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let suite = "nodus.tests.seek.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let voices = VoiceCatalog(defaults: defaults)
+    let models = ModelManager(voices: voices, defaults: defaults)
+    let playback = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
+    let url = try SampleLibrary.makeEPUB(sampleSpec())
+    defer { try? FileManager.default.removeItem(at: url) }
+    let result = await fixture.service.importFiles([url]) { _ in }
+    let book = try #require(result.imported.first)
+    await playback.start(book: book, mode: .read)
+    #expect(playback.chapterIndex == 0)
+    #expect(playback.seek(toChapter: 1, offset: 10))
+    #expect(playback.chapterIndex == 1)
+    #expect(playback.currentSentence.contains("second chapter"))
+    #expect(playback.currentChapterOffset == 10)
+    #expect(!playback.isPlaying)
+    #expect(book.locator.chapterIndex == 1)
+    playback.requestReaderResume()
+    let transferred = try #require(playback.consumeReaderResume(for: book))
+    #expect(transferred.chapterIndex == 1 && transferred.offset == 10)
+    #expect(playback.consumeReaderResume(for: book) == nil)
+    #expect(playback.seek(toChapter: 0, fraction: 0.5))
+    #expect(playback.chapterIndex == 0)
+    #expect(!playback.isPlaying)
+    #expect(!playback.seek(toChapter: 999))
+    playback.stopAndClose()
+}
+
+@Test
+func kokoroChunkJoinsRemoveOnlyArtificialBoundaryPadding() {
+    let silence = Array(repeating: Float.zero, count: 4_800)
+    let speech = Array(repeating: Float(0.2), count: 2_400)
+    let padded = silence + speech + silence
+    let trimmed = NarrationPCM.kokoroChunk(padded, sampleRate: 24_000,
+                                          continuesPrevious: true, continuesNext: true)
+    #expect(trimmed.count <= speech.count + 960)
+    #expect(trimmed.filter { $0 == 0.2 }.count == speech.count)
+    #expect(NarrationPCM.kokoroChunk(padded, sampleRate: 24_000,
+                                    continuesPrevious: false, continuesNext: false) == padded)
+    #expect(NarrationPCM.endsClause("His shoes,”"))
+    #expect(!NarrationPCM.endsClause("rifle and"))
+    var joined = Array(repeating: Float(0.2), count: 480)
+    NarrationPCM.append(Array(repeating: Float(-0.2), count: 480), to: &joined, sampleRate: 24_000)
+    #expect(joined.count == 840)
+    #expect(zip(joined, joined.dropFirst()).allSatisfy { abs($0 - $1) < 0.01 })
+}
+
+@Test
+func phononEdgeFadeKeepsDurationAndSpeechInterior() {
+    var samples = Array(repeating: Float(0.3), count: 2_400)
+    NarrationPCM.fadeEdges(&samples, sampleRate: 24_000)
+    #expect(samples.count == 2_400)
+    #expect(samples.first == 0 && samples.last == 0)
+    #expect(samples[1_200] == 0.3)
+    #expect(samples.allSatisfy { $0.isFinite && $0 >= 0 && $0 <= 0.3 })
+}
+
+@Test(.enabled(if: ProcessInfo.processInfo.environment["NODUS_MODEL_DOWNLOAD_TESTS"] == "1"),
+      .timeLimit(.minutes(5)))
+@MainActor
+func longNeuralNarrationUsesRealChunksAndCleanPhononEdges() async throws {
+    let suite = "nodus.tests.long-narration.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let text = "He had noticed much earlier that the speed Han Xiao had was from his shoes, so he used his assault rifle and shot with high accuracy. He knew that Han Xiao would not be able to escape if his shoes were broken."
+    for engine in [ModelManager.Engine.kokoro, .phonon] {
+        let model = try #require(manager.models.first { $0.engine == engine && !$0.requiresAcceptedLicense })
+        try #require(manager.isInstalled(model))
+        manager.selectModel(model)
+        let voice = try #require(model.voices.first)
+        let audio = try await manager.synthesize(text, voiceID: voice.id, engine: engine)
+        #expect(audio.sampleRate == 24_000)
+        #expect(Double(audio.samples.count) / audio.sampleRate > 5)
+        #expect(audio.samples.allSatisfy { $0.isFinite })
+        #expect(audio.samples.contains { abs($0) > 0.01 })
+        if engine == .kokoro {
+            let runtime = try #require(manager.kokoroEngine())
+            let name = voice.id.split(separator: ":").last.map(String.init) ?? voice.id
+            let inputs = try await runtime.prepare(text, voice: KokoroVoiceID(name))
+            #expect(inputs.count > 1, "The regression must exercise chunk joins")
+        } else {
+            #expect(audio.samples.first == 0 && audio.samples.last == 0)
+        }
+    }
+}
+
+@Test @MainActor
 func epubParserExtractsMetadataAndChapters() throws {
     let url = try SampleLibrary.makeEPUB(sampleSpec())
     defer { try? FileManager.default.removeItem(at: url) }

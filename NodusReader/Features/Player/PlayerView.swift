@@ -7,6 +7,8 @@ struct PlayerView: View {
     @Environment(ModelManager.self) private var models
     @Environment(\.dismiss) private var dismiss
 
+    var onOpenReader: (Book) -> Void
+
     @State private var showVoicePicker = false
 
     /// The app theme's palette, or the reader theme's when the player is
@@ -56,6 +58,13 @@ struct PlayerView: View {
             }
         }
         .task { await playback.refreshAudioCacheSize() }
+        #if os(iOS)
+        // A form sheet on iPad is only 640 pt tall, which pushed the whole
+        // speed/voice/sleep/mode row below the transport and forced a scroll
+        // before the listener could change the speed. The page presentation
+        // keeps the primary controls visible, with the same sheet on iPhone.
+        .presentationSizing(.page)
+        #endif
     }
 
     private var audioCacheCard: some View {
@@ -257,15 +266,22 @@ struct PlayerView: View {
     }
 
     private var scrubber: some View {
-        VStack(spacing: 8) {
+        let position = playback.sentenceIndexInChapter
+        let count = max(playback.sentenceCountInChapter, 1)
+        let start = max(0, playback.currentIndex - position)
+        let bookID = playback.activeBook?.id
+        let chapter = playback.chapterIndex
+        return VStack(spacing: 8) {
             NarrationScrubber(
                 index: playback.currentIndex,
-                total: max(playback.sentenceCount, 1)
+                bounds: start..<(start + count)
             ) { value in
+                guard playback.activeBook?.id == bookID, playback.chapterIndex == chapter else { return }
                 playback.seek(to: value)
             }
+            .disabled(playback.isLoading || count <= 1)
             HStack {
-                Text("Sentence \(playback.sentenceNumber) of \(max(playback.sentenceCount, 1))")
+                Text("Sentence \(position + 1) of \(count)")
                 Spacer()
                 Text("Chapter \(playback.chapterNumber) of \(max(playback.chapterCount, 1))")
             }
@@ -396,7 +412,11 @@ struct PlayerView: View {
             ForEach(ReadingMode.allCases) { mode in
                 Button {
                     playback.setMode(mode)
-                    if mode == .read { dismiss() }
+                    if mode != .listen, let book = playback.activeBook {
+                        playback.requestReaderResume()
+                        onOpenReader(book)
+                        dismiss()
+                    }
                 } label: {
                     Label(mode.label, systemImage: playback.mode == mode ? "checkmark" : "circle")
                 }
@@ -499,16 +519,32 @@ struct PlayerView: View {
 
 struct NarrationScrubber: View {
     var index: Int
-    var total: Int
+    var bounds: Range<Int>
     var onSeek: (Int) -> Void
 
     @Environment(\.nodusPalette) private var palette
     @State private var dragFraction: CGFloat?
+    @State private var dragOrigin: (index: Int, bounds: Range<Int>)?
+    @GestureState private var isDragging = false
 
     private var fraction: CGFloat {
         if let dragFraction { return dragFraction }
-        guard total > 1 else { return 0 }
-        return CGFloat(index) / CGFloat(total - 1)
+        return fraction(for: index, in: bounds)
+    }
+
+    private func fraction(for index: Int, in bounds: Range<Int>) -> CGFloat {
+        guard bounds.count > 1 else { return 0 }
+        return max(0, min(1, CGFloat(index - bounds.lowerBound) / CGFloat(bounds.count - 1)))
+    }
+
+    private func draggedFraction(translation: CGFloat, width: CGFloat,
+                                 origin: (index: Int, bounds: Range<Int>)) -> CGFloat {
+        max(0, min(1, fraction(for: origin.index, in: origin.bounds) + translation / max(width, 1)))
+    }
+
+    private func resetDrag() {
+        dragFraction = nil
+        dragOrigin = nil
     }
 
     var body: some View {
@@ -527,25 +563,48 @@ struct NarrationScrubber: View {
             .frame(height: 22)
             .contentShape(Rectangle())
             .gesture(
-                DragGesture(minimumDistance: 0)
+                DragGesture(minimumDistance: 10)
+                    .updating($isDragging) { _, state, _ in state = true }
                     .onChanged { value in
-                        dragFraction = max(0, min(1, value.location.x / max(width, 1)))
+                        if dragOrigin == nil {
+                            let thumbCenter = max(thumbSize / 2, min(width - thumbSize / 2, width * fraction))
+                            // Only an intentional horizontal drag beginning
+                            // near the handle can seek. Taps on the track and
+                            // vertical scrolling leave playback untouched.
+                            guard abs(value.startLocation.x - thumbCenter) <= 22,
+                                  abs(value.translation.width) > abs(value.translation.height) else { return }
+                            dragOrigin = (index, bounds)
+                        }
+                        guard let origin = dragOrigin, origin.bounds == bounds else { return }
+                        dragFraction = draggedFraction(translation: value.translation.width, width: width, origin: origin)
                     }
                     .onEnded { value in
-                        let value = max(0, min(1, value.location.x / max(width, 1)))
-                        dragFraction = nil
-                        onSeek(Int((value * CGFloat(max(total - 1, 0))).rounded()))
+                        defer { resetDrag() }
+                        guard let origin = dragOrigin, origin.bounds == bounds,
+                              abs(value.translation.width) > abs(value.translation.height) else { return }
+                        let fraction = draggedFraction(translation: value.translation.width, width: width, origin: origin)
+                        let target = bounds.lowerBound + Int((fraction * CGFloat(max(bounds.count - 1, 0))).rounded())
+                        if target != index { onSeek(target) }
                     }
             )
         }
         .frame(height: 22)
+        // Retain the old drag bounds until the gesture ends, so a chapter
+        // change cancels the seek instead of retargeting the new chapter.
+        .onChange(of: bounds) { _, _ in dragFraction = nil }
+        .onChange(of: isDragging) { _, dragging in
+            if !dragging { resetDrag() }
+        }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Narration position")
-        .accessibilityValue("Sentence \(index + 1) of \(total)")
+        .accessibilityLabel("Position in chapter")
+        .accessibilityHint("Drag the handle to move within this chapter.")
+        .accessibilityValue("Sentence \(index - bounds.lowerBound + 1) of \(bounds.count)")
         .accessibilityAdjustableAction { direction in
             switch direction {
-            case .increment: onSeek(min(index + 1, total - 1))
-            case .decrement: onSeek(max(index - 1, 0))
+            case .increment:
+                if index + 1 < bounds.upperBound { onSeek(index + 1) }
+            case .decrement:
+                if index > bounds.lowerBound { onSeek(index - 1) }
             default: break
             }
         }
@@ -737,10 +796,10 @@ struct VoicePickerSheet: View {
                 guard !didSetInitialLanguage else { return }
                 let bookLanguage = VoiceCatalog.languageCode(playback.activeBook?.language)
                 let fallback = VoiceCatalog.languageCode(voices.defaultVoice?.language)
-                if let code = bookLanguage ?? fallback,
-                   allVoices.contains(where: { $0.language.lowercased().hasPrefix(code) }) {
-                    languageFilter = code
-                }
+                // Keep the book's language even when its voices are not
+                // installed. The empty state explains how to show all voices
+                // or install a model, instead of silently listing English.
+                languageFilter = bookLanguage ?? fallback
                 didSetInitialLanguage = true
             }
         }

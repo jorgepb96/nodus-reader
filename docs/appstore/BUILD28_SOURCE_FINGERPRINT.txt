@@ -1,0 +1,32 @@
+BUILD 28 SOURCE FINGERPRINT
+Recorded: 2026-10-30T00:10:04Z (UTC)
+HEAD: 53d453bc78a737a49f49c09dccb0789a943771ea
+Branch: main
+
+Code diff (tracked, app/tests/project/config) sha256:
+18160a879089d38bf310f080051359604d558c50682c8ab8ccee3d163255af62  -
+
+Full tracked diff sha256 (documentation freeze, after the archives were built):
+e485d18e31fe068104a42f7e3afd33f49f8997ac1ac39a03eb041566efc5b6a5  -
+
+The code fingerprint above is the tree that produced the archives; the later
+documentation edits do not change the binaries.
+
+Untracked files sha256:
+6809e5ea0c1abb5cdbafeaa251817f226752af4dce9ea32fb9a8c96fbf248605  Config/ExportOptions-macOS.plist
+1cf039e4e81af7b3a85cf0440d4aaf17577257ea6f0daaa5135fa28e89371113  Config/NodusReader-macOS.entitlements
+5af063c0e71acfbaa2a18f776a017b461ce6195cd9cbc21180aa61775161b730  NodusReader.xcodeproj/xcshareddata/xcschemes/NodusReader-macOS.xcscheme
+
+Toolchain: Xcode 27.1 Build version 27A9275
+Host: 27.0.1 (26A434), arm64
+Simulators: iPhone 17 Pro 037E0DEF-B1E2-495C-9C97-B5D651083328; iPad Pro 13-inch M5 738358AA-B2BC-4598-92DB-2E8FF5E0A136 (iOS 26.5)
+
+Archives:
+ iOS  build/NodusReader-iOS-0.1.0-28.xcarchive
+ Mac  build/NodusReader-macOS-0.1.0-28.xcarchive
+IPA   build/export-ios-28/Nodus Reader.ipa
+PKG   build/export-macOS-28/Nodus Reader.pkg
+
+Deliveries:
+ iOS  b0465230-3fec-4a6b-887f-0982ceabb4ce (APPROVED / IN_BETA_TESTING)
+ Mac  2d23e765-7a58-4db6-a03c-ffc4c8bb4a52 (WAITING_FOR_REVIEW)

@@ -37,10 +37,18 @@ struct MiniPlayerBar: View {
     @Environment(\.nodusPalette) private var palette
 
     var onOpen: () -> Void
+    @State private var readingBook: Book?
 
     var body: some View {
         HStack(spacing: 11) {
-            Button(action: onOpen) {
+            Button {
+                if let book = playback.activeBook, playback.mode != .listen {
+                    if playback.mode == .readAndListen { playback.requestReaderResume() }
+                    readingBook = book
+                } else {
+                    onOpen()
+                }
+            } label: {
                 HStack(spacing: 11) {
                     if let book = playback.activeBook {
                         SquareCoverThumb(book: book)
@@ -60,8 +68,12 @@ struct MiniPlayerBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Open player, \(playback.activeBook?.title ?? "")")
-            .accessibilityHint("Shows the expanded player")
+            .accessibilityLabel(playback.mode == .listen
+                ? Text("Open player, \(playback.activeBook?.title ?? "")")
+                : Text("Read, \(playback.activeBook?.title ?? "")"))
+            .accessibilityHint(playback.mode == .listen
+                ? Text("Shows the expanded player")
+                : Text("Returns to the current reading position"))
 
             Button {
                 playback.toggle()
@@ -87,6 +99,7 @@ struct MiniPlayerBar: View {
         .background(palette.panelRaised, in: Capsule())
         .overlay(Capsule().stroke(palette.accent.opacity(0.14), lineWidth: 1))
         .shadow(color: palette.shadow, radius: 16, y: 8)
+        .readerCover(item: $readingBook)
     }
 }
 
@@ -105,14 +118,36 @@ struct MiniPlayerModifier: ViewModifier {
                         .frame(maxWidth: .infinity)
                 }
             }
-            .sheet(isPresented: $showPlayer) {
-                PlayerView()
+            .playerSheet(isPresented: $showPlayer)
+    }
+}
+
+/// Finish dismissing the audio panel before presenting the full reader.
+/// Both phone and tablet use the same transition from the mode control.
+private struct PlayerSheetModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    @State private var pendingReaderBook: Book?
+    @State private var readingBook: Book?
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $isPresented, onDismiss: {
+                guard let book = pendingReaderBook else { return }
+                pendingReaderBook = nil
+                readingBook = book
+            }) {
+                PlayerView(onOpenReader: { pendingReaderBook = $0 })
                     .presentationDragIndicator(.hidden)
             }
+            .readerCover(item: $readingBook)
     }
 }
 
 extension View {
+    func playerSheet(isPresented: Binding<Bool>) -> some View {
+        modifier(PlayerSheetModifier(isPresented: isPresented))
+    }
+
     func miniPlayer(showPlayer: Binding<Bool>) -> some View {
         modifier(MiniPlayerModifier(showPlayer: showPlayer))
     }

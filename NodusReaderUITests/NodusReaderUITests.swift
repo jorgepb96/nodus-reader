@@ -607,9 +607,9 @@ final class NodusReaderUITests: XCTestCase {
 
         let englishNeural = app.staticTexts.matching(
             NSPredicate(format: "label BEGINSWITH 'Phonon'")
-        ).firstMatch
-        XCTAssertFalse(englishNeural.waitForExistence(timeout: 2),
-                       "English neural voices were shown before the Spanish book voices")
+        )
+        XCTAssertTrue(englishNeural.allElementsBoundByIndex.allSatisfy { !$0.isHittable },
+                      "English neural voices were shown before the Spanish book voices")
 
         // The model filter sits next to the language filter and contains only
         // installed neural models.
@@ -663,7 +663,9 @@ final class NodusReaderUITests: XCTestCase {
         // The panel's arrows turn the reflow too, and the panel follows it.
         let pageCounter = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '1 / '")).firstMatch
         XCTAssertTrue(pageCounter.waitForExistence(timeout: 5))
-        app.buttons["Next page"].firstMatch.tap()
+        let nextSourcePage = app.buttons.matching(identifier: "PDFSourceNextPage").firstMatch
+        XCTAssertTrue(nextSourcePage.isHittable)
+        nextSourcePage.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         let secondPage = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '2 / '")).firstMatch
         XCTAssertTrue(secondPage.waitForExistence(timeout: 5))
         app.buttons["Done"].firstMatch.tap()
@@ -846,6 +848,67 @@ final class NodusReaderUITests: XCTestCase {
                       "The voice setup button did not open the model catalogue")
         XCTAssertFalse(app.buttons["System"].exists,
                        "The model catalogue still offers system voices")
+    }
+
+    func testReaderNarrationChapterModeScrubberAndSavedSpeed() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        if app.windows.firstMatch.frame.width >= 700 {
+            app.staticTexts["Home"].firstMatch.tap()
+        }
+        app.buttons["Read"].firstMatch.tap()
+        let play = app.buttons["Play narration"].firstMatch
+        XCTAssertTrue(play.waitForExistence(timeout: 20), "Narration must be available before tapping the book text")
+        XCTAssertTrue(play.isHittable)
+        play.tap()
+        XCTAssertTrue(app.buttons["Pause narration"].firstMatch.waitForExistence(timeout: 90))
+        app.buttons["Contents, bookmarks and notes"].tap()
+        let chapter = app.buttons.containing(.staticText, identifier: "ContentsNumber-2").firstMatch
+        XCTAssertTrue(chapter.waitForExistence(timeout: 10))
+        chapter.tap()
+        app.buttons["Open player"].tap()
+        XCTAssertTrue(app.staticTexts["Chapter 2 of 3"].waitForExistence(timeout: 30),
+                      "Changing chapters must also move narration")
+        let pause = app.buttons["Pause"].firstMatch
+        XCTAssertTrue(pause.waitForExistence(timeout: 30))
+        pause.tap()
+        let scrubber = app.descendants(matching: .any).matching(identifier: "Position in chapter").firstMatch
+        XCTAssertTrue(scrubber.waitForExistence(timeout: 10))
+        let position = scrubber.value as? String
+        scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5)).tap()
+        XCTAssertEqual(scrubber.value as? String, position, "A tap on the track must not seek")
+        if !app.buttons["Playback speed"].exists || !app.buttons["Playback speed"].isHittable {
+            // iPad presents a shorter sheet: reveal the controls below transport.
+            app.scrollViews.containing(.button, identifier: "Close player").firstMatch.swipeUp()
+        }
+        app.buttons["Playback speed"].tap()
+        app.buttons["1.35×"].firstMatch.tap()
+        app.buttons["Reading mode"].tap()
+        app.buttons["Read & Listen"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["Back to library"].waitForExistence(timeout: 10),
+                      "Read & Listen must return to the reader")
+        app.buttons["Back to library"].tap()
+        let mini = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Read, Moby-Dick'")).firstMatch
+        XCTAssertTrue(mini.waitForExistence(timeout: 10))
+        mini.tap()
+        XCTAssertTrue(app.buttons["Contents, bookmarks and notes"].waitForExistence(timeout: 15),
+                      "The read-along mini player must open the reader")
+        app.terminate()
+        app.launch()
+        if app.windows.firstMatch.frame.width >= 700 {
+            // A relaunch restores the tablet library rather than the Home tab;
+            // select Home so the book exposes its Read/Listen actions again.
+            let home = app.staticTexts["Home"].firstMatch
+            XCTAssertTrue(home.waitForExistence(timeout: 30),
+                          "The tablet sidebar must be usable after a relaunch")
+            home.tap()
+        }
+        XCTAssertTrue(app.buttons["Listen"].firstMatch.waitForExistence(timeout: 45))
+        app.buttons["Listen"].firstMatch.tap()
+        let speed = app.buttons["Playback speed"]
+        XCTAssertTrue(speed.waitForExistence(timeout: 30))
+        XCTAssertEqual(speed.value as? String, "1.35×", "Speed must survive a full app relaunch")
+        snap("iPhone-Build28-NarrationRegression")
     }
 
     private func launch(resetReadingState: Bool = false, longContents: Bool = false) -> XCUIApplication {

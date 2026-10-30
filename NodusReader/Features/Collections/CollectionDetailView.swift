@@ -129,7 +129,7 @@ struct CollectionDetailView: View {
             CollectionDetailView(collectionID: id, showsBrand: showsBrand)
         }
         .readerCover(item: $readingBook)
-        .sheet(isPresented: $showPlayer) { PlayerView().presentationDragIndicator(.hidden) }
+        .playerSheet(isPresented: $showPlayer)
         .sheet(item: $editingBook) { BookInfoSheet(book: $0) }
         .sheet(isPresented: $showCollectionSheet) { AddToCollectionSheet(books: collectionBooks) }
         .sheet(isPresented: $showManualOrder) {

@@ -100,9 +100,7 @@ struct LibraryView: View {
             }
         }
         .readerCover(item: $readingBook)
-        .sheet(isPresented: $showPlayer) {
-            PlayerView().presentationDragIndicator(.hidden)
-        }
+        .playerSheet(isPresented: $showPlayer)
         .sheet(item: $editingBook) { book in
             BookInfoSheet(book: book)
         }

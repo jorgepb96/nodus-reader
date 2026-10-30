@@ -77,10 +77,7 @@ struct HomeView: View {
         }
         .inlineNavigationTitle()
         .readerCover(item: $readingBook)
-        .sheet(isPresented: $showPlayer) {
-            PlayerView()
-                .presentationDragIndicator(.hidden)
-        }
+        .playerSheet(isPresented: $showPlayer)
         .onChange(of: playback.activeBook?.id) { _, newValue in
             if newValue != nil, playback.errorMessage != nil {
                 showPlayer = true
