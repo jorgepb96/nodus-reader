@@ -43,3 +43,7 @@ iOS was uploaded and made available first, as requested. It is assigned to **Nod
 The native macOS archive and exported installer both passed signature verification. The installer was uploaded successfully after iOS was approved and available; delivery ID `c0615553-6a3d-41e5-8201-a612c1931490`. Local artifacts: `NodusReader-iOS-0.1.0-30.xcarchive`, `NodusReader-macOS-0.1.0-30.xcarchive` and `export-macOS-30/Nodus Reader.pkg`. Archive executable and uploaded installer hashes are in the fingerprint JSON. No signed Release startup check or live authenticated iCloud session was performed in this run.
 
 Final App Store Connect state is recorded in [BUILD30_DEPLOYMENT.json](BUILD30_DEPLOYMENT.json): both builds are VALID and available internally. iOS is APPROVED and IN_BETA_TESTING publicly; macOS remains READY_FOR_BETA_SUBMISSION with no review submission. English and Spanish notes are set on both builds. The Mac build was not added to the public group or resubmitted for beta review.
+
+## Subsequent CloudKit schema correction
+
+The user subsequently reported a missing Book type in Production. On 30 October, the seven application record types were initialized and deployed after confirming both server environments had contained only Users. See [schema deployment record](CLOUDKIT_SCHEMA_DEPLOYMENT_2026-10-30.md). The build 30 TestFlight approval above describes binary distribution, not CloudKit schema readiness at the time of that upload.
