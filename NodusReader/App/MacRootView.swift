@@ -74,6 +74,10 @@ struct MacRootView: View {
                let book = books.first(where: { $0.title == "Moby-Dick" }) {
                 await playback.start(book: book, mode: .listen)
             }
+            if ProcessInfo.processInfo.arguments.contains("-NodusCaptureScreens") {
+                await MacScreenCapture.tour(navigation: navigation, books: { books }, collections: { collections },
+                                            openWindow: openWindow, openSettings: openSettings)
+            }
             if ProcessInfo.processInfo.arguments.contains("-NodusOpenSampleReader"),
                let book = books.first(where: { $0.title == "Moby-Dick" }) {
                 openWindow(id: "reader", value: book.id)
@@ -93,10 +97,13 @@ struct MacRootView: View {
             .padding(.bottom, 6)
 
             List(selection: selectionBinding) {
-                Section("Library") {
+                Section {
                     ForEach(SmartList.allCases) { list in
                         SidebarSmartListRow(list: list, count: count(for: list))
                     }
+                } header: {
+                    Text("Library")
+                        .foregroundStyle(palette.muted)
                 }
 
                 Section {
@@ -119,6 +126,7 @@ struct MacRootView: View {
                 } header: {
                     HStack {
                         Text("Collections")
+                            .foregroundStyle(palette.muted)
                         Spacer()
                         Button {
                             newCollectionParent = nil
@@ -127,6 +135,7 @@ struct MacRootView: View {
                         } label: {
                             Image(systemName: "plus")
                                 .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(palette.muted)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("New collection")

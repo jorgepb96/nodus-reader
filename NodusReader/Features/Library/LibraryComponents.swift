@@ -483,6 +483,19 @@ extension View {
 }
 
 
+extension View {
+    /// A menu that shows its custom label as drawn. AppKit otherwise wraps it
+    /// in a bordered pop-up button (a white box with its own chevron).
+    @ViewBuilder
+    func nodusMenuLabelStyle() -> some View {
+        #if os(macOS)
+        self.menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden)
+        #else
+        self
+        #endif
+    }
+}
+
 extension ToolbarItemPlacement {
     static var nodusLeading: ToolbarItemPlacement {
         #if os(macOS)

@@ -67,7 +67,7 @@ struct MacPlayerBar: View {
                 } label: {
                     chip(playback.speedLabel)
                 }
-                .menuIndicator(.hidden)
+                .nodusMenuLabelStyle()
 
                 Menu {
                     Button("Book default") {
@@ -84,7 +84,7 @@ struct MacPlayerBar: View {
                 } label: {
                     chip("\(playback.voiceLabel) · \(playback.engineLabel)")
                 }
-                .menuIndicator(.hidden)
+                .nodusMenuLabelStyle()
 
                 HStack(spacing: 4) {
                     Text("Space")

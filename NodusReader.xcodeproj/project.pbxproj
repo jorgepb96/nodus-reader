@@ -33,6 +33,7 @@
 		435808C4B06CDA38CF39C4D7 /* NodusReaderShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4850038DA7CFCCE5A5054726 /* NodusReaderShare.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4412BA092D7B5B51CA1FB90D /* NodusReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D2FEAF26A6FAC1835AD1D28 /* NodusReaderTests.swift */; };
 		4E0FDFE41F4C119058E345CE /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = 97847CD1D596CE9027A9176A /* DesignSystem */; };
+		50D610110186BFCE9A734E87 /* MacScreenCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87EA8C3C2FC93A24565D37 /* MacScreenCapture.swift */; };
 		5173F711BC3B35D5EDA9213C /* SyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F210889CB9BA7F90F3091A /* SyncCoordinator.swift */; };
 		59E2649B0917D2CB38172E65 /* PDFReflowEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40A191E547B3FA244E030216 /* PDFReflowEngine.swift */; };
 		5A981BAEFC424C1C36349E09 /* ContinuousReaderContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E693CDEB62AE25BFAAD0B0E2 /* ContinuousReaderContent.swift */; };
@@ -228,6 +229,7 @@
 		C82CE5961581728B2A01BA11 /* JustifiedText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JustifiedText.swift; sourceTree = "<group>"; };
 		C8407DC14C3175CA38B9D21D /* ReaderPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPreferences.swift; sourceTree = "<group>"; };
 		C9511B52EA6C7414D8572A72 /* PDFReflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReflowView.swift; sourceTree = "<group>"; };
+		CC87EA8C3C2FC93A24565D37 /* MacScreenCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacScreenCapture.swift; sourceTree = "<group>"; };
 		D3A948B31F01AEE2881D6EFA /* KokoroSpanish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KokoroSpanish.swift; sourceTree = "<group>"; };
 		D593BBC908B5D057F4618106 /* PaginatedReaderContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginatedReaderContent.swift; sourceTree = "<group>"; };
 		DE36EC19E2D87BCF092916A9 /* DocumentExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExtractor.swift; sourceTree = "<group>"; };
@@ -279,6 +281,7 @@
 			isa = PBXGroup;
 			children = (
 				638DEE4E57C7085D36B92FB0 /* MacRootView.swift */,
+				CC87EA8C3C2FC93A24565D37 /* MacScreenCapture.swift */,
 				7B92988CA90EC86D1C75F894 /* NavigationModel.swift */,
 				5CFF6B8EDA004F101CAF1458 /* NodusReaderApp.swift */,
 				791ABB10006E5F268A2EB6E9 /* PadRootView.swift */,
@@ -813,6 +816,7 @@
 				159BB6150EA90581C93DF756 /* MacPageView.swift in Sources */,
 				65AA4F18D40C7D764BBEF98D /* MacPlayerBar.swift in Sources */,
 				7811592388EAB8C07E8E48AC /* MacRootView.swift in Sources */,
+				50D610110186BFCE9A734E87 /* MacScreenCapture.swift in Sources */,
 				1B08F42EED4D914256217EF2 /* MiniPlayerBar.swift in Sources */,
 				9D72B6DB18718AEC79D7B994 /* ModelManager.swift in Sources */,
 				FD4D2E8CFED41A3C6F97F7B9 /* Models.swift in Sources */,
@@ -974,7 +978,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1040,7 +1044,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;

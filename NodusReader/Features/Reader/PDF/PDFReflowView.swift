@@ -59,6 +59,8 @@ struct PDFReaderContainer: View {
                 }
             }
             .pickerStyle(.segmented)
+            // macOS draws a segmented picker's label beside it.
+            .labelsHidden()
             .frame(maxWidth: 360)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 16)

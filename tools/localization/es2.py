@@ -497,3 +497,12 @@ ES.update({
     "%@ · In iCloud only": "%@ · Solo en iCloud",
     "%@ · Downloading…": "%@ · Descargando…",
 })
+ES.update({
+    "1 book · iCloud": "1 libro · iCloud",
+    "1 book · Local library": "1 libro · Biblioteca local",
+    "Add to collection": "Añadir a una colección",
+})
+ES.update({
+    "1 subcollection": "1 subcolección",
+    "%lld subcollections": "%lld subcolecciones",
+})
