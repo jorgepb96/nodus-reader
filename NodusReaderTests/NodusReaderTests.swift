@@ -58,6 +58,43 @@ private func sampleSpec(asPDF: Bool = false) -> SampleLibrary.Spec {
     )
 }
 
+// MARK: - Shared PDF contents
+
+@Test @MainActor
+func pdfContentsResolveDestinationsActionsAndNestedHeadings() throws {
+    let url = try SampleLibrary.makePDF(sampleSpec(asPDF: true))
+    defer { try? FileManager.default.removeItem(at: url) }
+    let document = try #require(PDFDocument(url: url))
+    let root = PDFOutline()
+    let first = PDFOutline()
+    first.label = "Opening"
+    first.destination = PDFDestination(page: try #require(document.page(at: 0)), at: .zero)
+    root.insertChild(first, at: 0)
+    let heading = PDFOutline()
+    heading.label = "Heading without a destination"
+    let last = PDFOutline()
+    last.label = "Nested chapter"
+    last.action = PDFActionGoTo(destination: PDFDestination(page: try #require(document.page(at: 2)), at: .zero))
+    heading.insertChild(last, at: 0)
+    root.insertChild(heading, at: 1)
+    document.outlineRoot = root
+    let entries = PDFContents.entries(in: document)
+    #expect(entries.map(\.title) == ["Opening", "Nested chapter"])
+    #expect(entries.map(\.chapterIndex) == [0, 2])
+    #expect(entries.map(\.id) == [0, 1])
+    #expect(PDFContents.entries(in: document) == entries, "Repeated reads retain stable row identities")
+}
+
+@Test @MainActor
+func pdfContentsWithoutAnOutlineKeepEveryPageNavigable() throws {
+    let url = try SampleLibrary.makePDF(sampleSpec(asPDF: true))
+    defer { try? FileManager.default.removeItem(at: url) }
+    let document = try #require(PDFDocument(url: url))
+    let entries = PDFContents.entries(in: document)
+    #expect(entries.count == document.pageCount)
+    #expect(entries.map(\.chapterIndex) == Array(0..<document.pageCount))
+}
+
 // MARK: - EPUB and import
 
 // MARK: - Clean macOS library and test isolation

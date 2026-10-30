@@ -344,10 +344,11 @@ struct PlayerView: View {
     }
 
     private var controlGrid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 8) {
             speedControl
             voiceControl
             sleepControl
+            returnToNarrationControl
             modeControl
         }
         .padding(.top, 16)
@@ -405,6 +406,22 @@ struct PlayerView: View {
         }
         .menuIndicator(.hidden)
         .accessibilityLabel("Sleep timer")
+    }
+
+    private var returnToNarrationControl: some View {
+        Button {
+            guard let book = playback.activeBook else { return }
+            playback.requestReaderResume()
+            onOpenReader(book)
+            dismiss()
+        } label: {
+            controlTile(icon: "location.fill", top: String(localized: "Return"),
+                        bottom: String(localized: "To narration"), highlighted: false)
+        }
+        .buttonStyle(.plain)
+        .disabled(playback.currentChapterOffset == nil)
+        .accessibilityLabel("Return to narration")
+        .accessibilityIdentifier("ReturnToNarration")
     }
 
     private var modeControl: some View {

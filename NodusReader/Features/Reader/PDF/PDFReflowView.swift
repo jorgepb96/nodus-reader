@@ -44,6 +44,7 @@ struct PDFReaderContainer: View {
     /// Owned by the reader so opening a PDF note can switch to Intelligent
     /// Reading, where notes are shown.
     @Binding var mode: PDFReadingMode
+    @Binding var narrationReturnTarget: ReaderNavigationTarget?
     var search: ReaderSearchModel?
     @State private var searchDocument: PDFReflowDocument?
     /// Starts Read & Listen at (page, offset in the page's canonical text).
@@ -75,6 +76,7 @@ struct PDFReaderContainer: View {
             case .intelligent:
                 PDFReflowView(book: book, url: url, theme: theme,
                               pdfPageIndex: $pdfPageIndex, jumpToPage: $jumpToPage,
+                              narrationReturnTarget: $narrationReturnTarget,
                               search: search,
                               onStartNarration: onStartNarration,
                               onAnnotate: onAnnotate)
@@ -159,6 +161,7 @@ struct PDFReflowView: View {
     @Binding var pdfPageIndex: Int
     /// Contents, bookmarks and "go to page" requests from the reader chrome.
     @Binding var jumpToPage: Int?
+    @Binding var narrationReturnTarget: ReaderNavigationTarget?
     /// The reader's find state; the reflow runs it over its canonical page text.
     var search: ReaderSearchModel?
     /// Tap a word: Read & Listen from there (page, canonical offset).
@@ -228,10 +231,14 @@ struct PDFReflowView: View {
             guard let page = search?.currentMatch?.chapterIndex else { return }
             if page != pdfPageIndex { jumpToPage = page }
         }
-        // Read & Listen turns to the page being read.
-        .onChange(of: playback.chapterIndex) { _, page in
-            guard isNarratingHere, playback.mode == .readAndListen, page != pdfPageIndex else { return }
-            jumpToPage = page
+        // Playback uses an index into readable chapters; PDF navigation uses
+        // the original page ID (blank pages may have no narration chapter).
+        .onChange(of: playback.chapterIndex) { _, chapter in
+            guard isNarratingHere, playback.mode == .readAndListen,
+                  playback.isPlaying, typography.autoScrollNarration,
+                  playback.chapters.indices.contains(chapter) else { return }
+            let page = playback.chapters[chapter].id
+            if page != pdfPageIndex { jumpToPage = page }
         }
         .sheet(isPresented: $showSourceSheet) {
             NavigationStack {
@@ -390,20 +397,24 @@ struct PDFReflowView: View {
         playback.activeBook?.id == book.id && playback.mode != .read
     }
 
+    private var narratedPage: Int? {
+        guard playback.chapters.indices.contains(playback.chapterIndex) else { return nil }
+        return playback.chapters[playback.chapterIndex].id
+    }
+
     private func narrationFollowRange(page: Int, text: String) -> NSRange? {
         guard typography.autoScrollNarration, isNarratingHere,
               playback.mode == .readAndListen, playback.isPlaying,
-              playback.chapterIndex == page, playback.chapters.indices.contains(page),
-              (playback.chapters[page].text as NSString).length == (text as NSString).length else { return nil }
+              narratedPage == page,
+              (playback.chapters[playback.chapterIndex].text as NSString).length == (text as NSString).length else { return nil }
         return playback.currentWordChapterRange ?? playback.currentSentenceChapterRange
     }
 
     /// The narrated sentence and word on `page`, when narration reads this
     /// page's reflowed text (same length as the canonical text).
     private func narrationSpans(page: Int, text: String) -> [ReaderPageHighlightSpan] {
-        guard isNarratingHere, playback.chapterIndex == page,
-              playback.chapters.indices.contains(page),
-              (playback.chapters[page].text as NSString).length == (text as NSString).length else { return [] }
+        guard isNarratingHere, narratedPage == page,
+              (playback.chapters[playback.chapterIndex].text as NSString).length == (text as NSString).length else { return [] }
         return ReaderPageHighlights.narration(
             sentence: playback.currentSentenceChapterRange,
             word: playback.currentWordChapterRange,
@@ -463,6 +474,13 @@ struct PDFReflowView: View {
             highlights: highlights,
             accessibilityLabel: nil,
             narrationFollowRange: narrationFollowRange(page: pageIndex, text: pageText),
+            scrollRequest: narrationReturnTarget.flatMap { target in
+                guard target.chapterIndex == pageIndex, let offset = target.characterOffset else { return nil }
+                return ReaderTextScrollRequest(id: target.id, range: NSRange(location: offset, length: 1))
+            },
+            onScrollRequestHandled: { id in
+                if narrationReturnTarget?.id == id { narrationReturnTarget = nil }
+            },
             onWordTap: { offset in onStartNarration(pageIndex, offset) },
             onHighlight: { range, color in
                 onAnnotate(pageIndex, range, quote(range, in: pageText), color)

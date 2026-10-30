@@ -490,3 +490,5 @@ ES.update({
     "Waiting to sync": "Pendiente de sincronizar",
     "Changes are queued and will be retried automatically.": "Los cambios están en cola y se volverán a intentar automáticamente.",
 })
+
+ES.update({"Return to narration": "Volver a la narración", "Return": "Volver", "To narration": "A la narración"})

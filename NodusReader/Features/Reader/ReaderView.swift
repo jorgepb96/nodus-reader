@@ -26,10 +26,10 @@ struct ReaderView: View {
     @State private var pdfPageIndex: Int
     @State private var pdfPageCount = 0
     @State private var pdfJumpPage: Int?
-    @State private var pdfChapterSelection = 0
     @State private var pdfMode: PDFReadingMode = .original
     @State private var pageIndex = 0
     @State private var navigationTarget: ReaderNavigationTarget?
+    @State private var narrationReturnTarget: ReaderNavigationTarget?
     @State private var pageInfo = ReaderPageInfo()
     @State private var firstPageByChapter: [Int: Int] = [:]
     @State private var readerPages: [ReaderPage] = []
@@ -164,42 +164,25 @@ struct ReaderView: View {
         }
         .onChange(of: pdfPageIndex) { _, _ in saveProgress() }
         .sheet(isPresented: $showContents) {
-            Group {
-            if book.format == .pdf {
-                ReaderContentsSheet(
-                    bookTitle: book.title,
-                    chapters: [],
-                    currentChapter: $pdfChapterSelection,
-                    pdfURL: pdfURL,
-                    pageCount: pdfPageCount,
-                    currentPage: $pdfPageIndex,
-                    jumpToPage: $pdfJumpPage,
-                    annotations: library.annotations(for: book),
-                    onNavigatePage: { page in seekReaderNarration(chapter: page, offset: 0) },
-                    onOpenAnnotation: { annotation in
-                        // Notes are shown in Intelligent Reading.
-                        pdfMode = .intelligent
-                        pdfJumpPage = annotation.chapterIndex
-                        pdfPageIndex = annotation.chapterIndex
-                        seekReaderNarration(chapter: annotation.chapterIndex, offset: annotation.startOffset)
-                    },
-                    onEditAnnotation: editAnnotation
-                )
-            } else {
-                ReaderNavigationSheet(
-                    book: book,
-                    chapters: chapters,
-                    pages: readerPages,
-                    pageIndex: pageIndex,
-                    onNavigate: { target in
+            ReaderNavigationSheet(
+                book: book,
+                chapters: chapters,
+                pages: readerPages,
+                pageIndex: book.format == .pdf ? pdfPageIndex : pageIndex,
+                pdfURL: pdfURL,
+                onNavigate: { target in
+                    if book.format == .pdf {
+                        if target.characterOffset != nil { pdfMode = .intelligent }
+                        pdfJumpPage = target.chapterIndex
+                        pdfPageIndex = target.chapterIndex
+                    } else {
                         navigationTarget = target
-                        seekReaderNarration(chapter: target.chapterIndex, offset: target.characterOffset,
-                                            fraction: target.fraction)
-                    },
-                    onEditAnnotation: editAnnotation
-                )
-            }
-            }
+                    }
+                    seekReaderNarration(chapter: target.chapterIndex, offset: target.characterOffset,
+                                        fraction: target.fraction)
+                },
+                onEditAnnotation: editAnnotation
+            )
             .readerPresentation(readerTheme)
         }
         .sheet(isPresented: $showAppearanceSheet) {
@@ -254,6 +237,7 @@ struct ReaderView: View {
                     presentAnnotation(chapter: chapter, range: range, color: .yellow, note: true)
                 },
                 navigationTarget: $navigationTarget,
+                narrationReturnTarget: $narrationReturnTarget,
                 pageIndex: $pageIndex,
                 pageInfo: $pageInfo,
                 firstPageByChapter: $firstPageByChapter,
@@ -269,6 +253,7 @@ struct ReaderView: View {
                 pdfPageCount: $pdfPageCount,
                 jumpToPage: $pdfJumpPage,
                 mode: $pdfMode,
+                narrationReturnTarget: $narrationReturnTarget,
                 search: search,
                 onStartNarration: { page, offset in startNarration(chapter: page, offset: offset) },
                 onAnnotate: { page, range, quote, color in
@@ -458,7 +443,8 @@ struct ReaderView: View {
                                    onPreviousPage: { goToPage(pageIndex - pageStep) },
                                    onNextPage: { goToPage(pageIndex + pageStep) },
                                    onPlay: toggleReaderNarration,
-                                   onOpenPlayer: openReaderPlayer)
+                                   onOpenPlayer: openReaderPlayer,
+                                   onReturnToNarration: showPlaybackPosition)
 
             Text(progressLine)
                 .font(.system(size: 11))
@@ -647,9 +633,11 @@ struct ReaderView: View {
             pdfPageIndex = page
             pdfJumpPage = page
             if playback.mode == .readAndListen { pdfMode = .intelligent }
+            narrationReturnTarget = ReaderNavigationTarget(chapterIndex: page, characterOffset: offset)
         } else {
-            navigationTarget = ReaderNavigationTarget(chapterIndex: chapter,
-                                                      characterOffset: offset)
+            let target = ReaderNavigationTarget(chapterIndex: chapter, characterOffset: offset)
+            narrationReturnTarget = target
+            navigationTarget = target
         }
     }
 
@@ -835,6 +823,7 @@ struct ReaderNarrationCapsule: View {
     var onNextPage: () -> Void
     var onPlay: () -> Void
     var onOpenPlayer: () -> Void
+    var onReturnToNarration: () -> Void
 
     private var isActiveBook: Bool { playback.activeBook?.id == book.id }
     private var hasNarration: Bool { isActiveBook && playback.mode != .read }
@@ -860,7 +849,19 @@ struct ReaderNarrationCapsule: View {
             transportControls
                 .fixedSize(horizontal: true, vertical: false)
 
-            sleepTimer
+            HStack(spacing: 0) {
+                Button(action: onReturnToNarration) {
+                    Image(systemName: "location.fill")
+                        .font(.system(size: 17))
+                        .foregroundStyle(theme.text)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .disabled(!hasNarration || isPreparing)
+                .accessibilityLabel("Return to narration")
+                .accessibilityIdentifier("ReturnToNarration")
+                sleepTimer
+            }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.horizontal, 6)

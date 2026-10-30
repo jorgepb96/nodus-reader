@@ -721,8 +721,9 @@ final class NodusReaderUITests: XCTestCase {
 
         // The note is listed by page in the contents sheet.
         app.buttons["Contents, bookmarks and notes"].tap()
-        XCTAssertTrue(app.staticTexts["Highlights and notes"].firstMatch.waitForExistence(timeout: 8)
-                      || app.otherElements["Highlights and notes"].firstMatch.exists)
+        let notes = app.segmentedControls.buttons["Notes"].firstMatch
+        XCTAssertTrue(notes.waitForExistence(timeout: 8))
+        notes.tap()
         let noteRow = app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'Page '")).firstMatch
         XCTAssertTrue(noteRow.waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts["Mendel's ratio"].firstMatch.waitForExistence(timeout: 3))
@@ -1013,6 +1014,66 @@ final class NodusReaderUITests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    func testPDFContentsSearchAndReturnToPausedNarration() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        try XCTSkipIf(app.windows.firstMatch.frame.width >= 700, "iPhone PDF navigation")
+        let pdf = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@",
+                                                    "Experiments in Plant Hybridization")).firstMatch
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+        pdf.tap()
+        let contents = app.buttons["Contents, bookmarks and notes"]
+        XCTAssertTrue(contents.waitForExistence(timeout: 20))
+        contents.tap()
+        let field = app.textFields["Search chapters"].firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "PDF uses the same searchable contents as EPUB")
+        field.tap()
+        field.typeText("no such chapter")
+        XCTAssertTrue(app.staticTexts["No matching chapters"].waitForExistence(timeout: 5))
+        app.buttons["Clear search"].firstMatch.tap()
+        field.typeText("3")
+        let third = app.buttons.containing(.staticText, identifier: "ContentsNumber-3").firstMatch
+        XCTAssertTrue(third.waitForExistence(timeout: 5))
+        snap("PDF-Contents-Search")
+        third.tap()
+        let progress = app.staticTexts.matching(NSPredicate(format:
+            "label BEGINSWITH 'Page ' AND label CONTAINS ' of '")).firstMatch
+        let pageThree = expectation(for: NSPredicate(format: "label BEGINSWITH 'Page 3 of'"), evaluatedWith: progress)
+        wait(for: [pageThree], timeout: 15)
+        XCTAssertTrue(app.buttons["Play narration"].exists, "Contents preserves the paused state, as EPUB does")
+
+        // Start at the selected page, pause, then browse without seeking audio.
+        app.buttons["Play narration"].tap()
+        let pause = app.buttons["Pause narration"].firstMatch
+        XCTAssertTrue(pause.waitForExistence(timeout: 45))
+        pause.tap()
+        openAppearance(in: app)
+        let follow = app.switches["AutoScrollNarrationToggle"].firstMatch
+        XCTAssertTrue(follow.waitForExistence(timeout: 5))
+        if !follow.isHittable { app.scrollViews.containing(.switch, identifier: "AutoScrollNarrationToggle").firstMatch.swipeUp() }
+        if follow.value as? String == "1" { follow.tap() }
+        dismissPopover(in: app)
+        let bar = app.otherElements["PDFReflowScrollbar"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 15))
+        bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)).press(forDuration: 0.1,
+            thenDragTo: bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)))
+        let browsed = expectation(for: NSPredicate(format: "NOT (label BEGINSWITH 'Page 3 of')"), evaluatedWith: progress)
+        wait(for: [browsed], timeout: 10)
+        let returnButton = app.buttons["ReturnToNarration"].firstMatch
+        XCTAssertTrue(returnButton.isEnabled)
+        let moon = app.buttons["Sleep timer"].firstMatch
+        XCTAssertLessThanOrEqual(abs(moon.frame.midX - returnButton.frame.midX), 46)
+        returnButton.tap()
+        let returned = expectation(for: NSPredicate(format: "label BEGINSWITH 'Page 3 of'"), evaluatedWith: progress)
+        wait(for: [returned], timeout: 10)
+        XCTAssertTrue(app.buttons["Play narration"].exists, "Returning must not resume paused audio")
+        snap("PDF-Return-To-Narration")
+        openAppearance(in: app)
+        XCTAssertEqual(follow.value as? String, "0", "Returning must not change the automatic-follow preference")
+        follow.tap() // restore the shared default
+        dismissPopover(in: app)
     }
 
     func testPDFSearchAndReflowScrollbar() throws {

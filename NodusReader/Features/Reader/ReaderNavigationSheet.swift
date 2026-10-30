@@ -161,26 +161,38 @@ struct ReaderNavigationSheet: View {
     let chapters: [ExtractedChapter]
     let pages: [ReaderPage]
     let pageIndex: Int
+    var pdfURL: URL? = nil
     var onNavigate: (ReaderNavigationTarget) -> Void
     var onEditAnnotation: (Annotation) -> Void
 
     @State private var tab: ReaderNavigationTab = .contents
     @State private var chapterSearch = ""
+    @State private var pdfContents: [ReaderContentsEntry] = []
+    @State private var isLoadingContents = false
 
     private var chapterQuery: String {
         chapterSearch.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private var matchingChapterIndices: [Int] {
-        chapters.indices.filter { index in
-            chapterQuery.isEmpty
-                || chapters[index].title.localizedStandardContains(chapterQuery)
-                || String(index + 1) == chapterQuery
+    private var entries: [ReaderContentsEntry] {
+        if book.format == .pdf { return pdfContents }
+        return chapters.indices.map {
+            ReaderContentsEntry(id: $0, title: chapters[$0].title, chapterIndex: $0)
         }
     }
 
-    private var currentChapterIndex: Int {
-        pages.indices.contains(pageIndex) ? pages[pageIndex].chapterIndex : 0
+    private var matchingEntries: [ReaderContentsEntry] {
+        entries.filter {
+            chapterQuery.isEmpty || $0.title.localizedStandardContains(chapterQuery)
+                || String($0.id + 1) == chapterQuery
+        }
+    }
+
+    private var currentEntryID: Int? {
+        if book.format == .pdf {
+            return entries.last(where: { $0.chapterIndex <= pageIndex })?.id
+        }
+        return pages.indices.contains(pageIndex) ? pages[pageIndex].chapterIndex : 0
     }
 
     var body: some View {
@@ -219,6 +231,16 @@ struct ReaderNavigationSheet: View {
                 }
             }
         }
+        .task(id: pdfURL) {
+            guard let pdfURL else { return }
+            isLoadingContents = true
+            let rows = await Task.detached(priority: .userInitiated) {
+                PDFContents.entries(url: pdfURL)
+            }.value
+            guard !Task.isCancelled else { return }
+            pdfContents = rows
+            isLoadingContents = false
+        }
         #if os(iOS)
         .presentationDetents([.medium, .large])
         .presentationContentInteraction(.scrolls)
@@ -233,7 +255,9 @@ struct ReaderNavigationSheet: View {
                 .padding(.horizontal, ReaderContentsLayout.horizontalInset)
                 .padding(.bottom, ReaderContentsLayout.searchBottomInset)
 
-            if matchingChapterIndices.isEmpty {
+            if isLoadingContents {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if matchingEntries.isEmpty {
                 emptyState(icon: "magnifyingglass", title: "No matching chapters",
                            message: "Try another chapter title or number.")
             } else {
@@ -244,11 +268,11 @@ struct ReaderNavigationSheet: View {
     }
 
     private var chapterResults: some View {
-        ReaderContentsScrollView(ids: matchingChapterIndices) {
-            ForEach(matchingChapterIndices, id: \.self) { index in
-                let chapter = chapters[index]
+        ReaderContentsScrollView(ids: matchingEntries.map(\.id)) {
+            ForEach(matchingEntries) { entry in
+                let index = entry.id
                 Button {
-                    onNavigate(ReaderNavigationTarget(chapterIndex: index))
+                    onNavigate(ReaderNavigationTarget(chapterIndex: entry.chapterIndex))
                     dismiss()
                 } label: {
                     HStack(spacing: 10) {
@@ -261,11 +285,11 @@ struct ReaderNavigationSheet: View {
                             .frame(minWidth: 22, alignment: .trailing)
                             .layoutPriority(1)
                             .accessibilityIdentifier("ContentsNumber-\(index + 1)")
-                        Text(chapter.title)
+                        Text(entry.title)
                             .foregroundStyle(palette.text)
                             .lineLimit(2)
                         Spacer(minLength: 6)
-                        if index == currentChapterIndex {
+                        if index == currentEntryID {
                             Image(systemName: "checkmark").foregroundStyle(palette.accent)
                         }
                     }
@@ -291,7 +315,9 @@ struct ReaderNavigationSheet: View {
                     ForEach(book.bookmarks.sorted { $0.createdAt > $1.createdAt }) { bookmark in
                         Button {
                             onNavigate(ReaderNavigationTarget(
-                                chapterIndex: max(bookmark.locator.chapterIndex, 0),
+                                chapterIndex: max(book.format == .pdf
+                                    ? bookmark.locator.pageIndex ?? bookmark.locator.chapterIndex
+                                    : bookmark.locator.chapterIndex, 0),
                                 fraction: min(max(bookmark.locator.scrollFraction, 0), 1)))
                             dismiss()
                         } label: {
@@ -365,7 +391,9 @@ struct ReaderNavigationSheet: View {
                                             .foregroundStyle(palette.muted)
                                             .lineLimit(3)
                                     }
-                                    Text("Chapter \(annotation.chapterIndex + 1)")
+                                    Text(book.format == .pdf
+                                         ? String(localized: "Page \(annotation.chapterIndex + 1)")
+                                         : String(localized: "Chapter \(annotation.chapterIndex + 1)"))
                                         .font(.caption2)
                                         .foregroundStyle(palette.muted)
                                 }

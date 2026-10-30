@@ -50,6 +50,7 @@ struct PaginatedReaderContent: View {
     var onNote: (Int, NSRange) -> Void
 
     @Binding var navigationTarget: ReaderNavigationTarget?
+    @Binding var narrationReturnTarget: ReaderNavigationTarget?
     @Binding var pageIndex: Int
     @Binding var pageInfo: ReaderPageInfo
     @Binding var firstPageByChapter: [Int: Int]
@@ -133,6 +134,7 @@ struct PaginatedReaderContent: View {
                         style: pageStyle,
                         narrationChapterIndex: narrationChapterIndex,
                         narrationRange: narrationScrollRange,
+                        narrationReturnTarget: $narrationReturnTarget,
                         narrationBottomPadding: usesNarrationScrolling ? proxy.size.height * 0.6 : 0,
                         highlightsProvider: highlights(for:),
                         onWordTap: onWordTap,
@@ -384,6 +386,7 @@ struct PaginatedReaderContent: View {
         }
         pageIndex = destination
         updatePageInfo()
+        if flow == .paged { narrationReturnTarget = nil }
         appliedNavigationID = target.id
         if shownComplete { navigationTarget = nil }
         return true
