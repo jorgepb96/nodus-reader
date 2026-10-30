@@ -134,5 +134,8 @@
     "NodusShareExtension/ShareViewController.swift": "aad379c089a7e428f8e045d0523fad3366985a4c1ce308ef1c65adba6c82dfa8",
     "Shared/SharedImportInbox.swift": "68521781350ae0f68a559d2283ef647be3b76b58b18ff5dac3f681a018fe34ba",
     "project.yml": "711684973e11add9a5c82f3467d8429decac33863d129588ef5ce4cee9664462"
-  }
+  },
+  "macOSBinarySHA256": "da7be7ceb4f28123b59ac3b89a54245accae1fcae07e77e9ef5fc60c25320f9a",
+  "macOSInstallerSHA256": "5a8d5f489f76ebff2af13418fc4c108ed6e785eccf0881bff441be6ca7114076",
+  "binaryHashScope": "Signed archive executables before App Store distribution re-signing; installer hash refers to the uploaded PKG."
 }

@@ -1,5 +1,33 @@
 [
   {
+    "id": "c0615553-6a3d-41e5-8201-a612c1931490",
+    "version": "30",
+    "uploadedDate": "2026-10-30T09:31:17-07:00",
+    "expirationDate": "2027-01-28T08:31:17-08:00",
+    "expired": false,
+    "minOsVersion": "15.0",
+    "lsMinimumSystemVersion": "15.0",
+    "computedMinMacOsVersion": null,
+    "computedMinVisionOsVersion": null,
+    "iconAssetToken": {
+      "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/87/bd/27/87bd27d0-c932-58ac-955e-33cda63ffd0b/AppIcon.icns/{w}x{h}bb.{f}",
+      "width": 256,
+      "height": 256
+    },
+    "processingState": "VALID",
+    "buildAudienceType": "APP_STORE_ELIGIBLE",
+    "usesNonExemptEncryption": false,
+    "preReleaseVersion": {
+      "version": "0.1.0",
+      "platform": "MAC_OS"
+    },
+    "buildBetaDetail": {
+      "autoNotifyEnabled": true,
+      "internalBuildState": "IN_BETA_TESTING",
+      "externalBuildState": "READY_FOR_BETA_SUBMISSION"
+    }
+  },
+  {
     "id": "dfc62a01-e5ea-4dad-9e14-be9bb997d217",
     "version": "30",
     "uploadedDate": "2026-10-30T09:23:56-07:00",

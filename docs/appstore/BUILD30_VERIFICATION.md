@@ -19,7 +19,7 @@
 | Final macOS unit/integration suite | 115 passed, 10 optional skips, 0 failures | `Build30-macOS-Validated.xcresult` |
 | iPhone UI: iCloud/storage, page/bookmark, paused narration after relaunch | 3 passed, 0 failures | `Build30-iPhone-Final.xcresult` |
 | iPad unit/integration suite | 115 passed, 10 optional skips, 0 failures | `Build30-iPad-Validated.xcresult` |
-| iPad iCloud/storage UI | 1 passed, 0 failures | `Build30-iPad.xcresult` |
+| iPad iCloud/storage UI | Skipped: iPhone-specific case | `Build30-iPad.xcresult` |
 | English/Spanish catalog | 709 keys, 0 missing Spanish, 0 placeholder mismatches | Current Debug extraction, both platforms |
 | Whitespace | `git diff --check` passed | Source commit |
 
@@ -36,6 +36,10 @@ iOS build/delivery ID: `dfc62a01-e5ea-4dad-9e14-be9bb997d217`.
 | Platform | Processing | Internal | Public Beta |
 | --- | --- | --- | --- |
 | iOS / iPadOS | VALID | IN_BETA_TESTING | APPROVED / IN_BETA_TESTING |
-| Native macOS | Final archive in progress | Not uploaded yet | No submission |
+| Native macOS | VALID | IN_BETA_TESTING | READY_FOR_BETA_SUBMISSION; not submitted |
 
 iOS was uploaded and made available first, as requested. It is assigned to **Nodus Reader — Public Beta**; **Internal** has automatic access to all builds. English and Spanish release notes are set. The [public TestFlight link](https://testflight.apple.com/join/SjCk8AZ1) is unchanged. macOS public beta review remains withdrawn; no App Store production submission is part of this task.
+
+The native macOS archive and exported installer both passed signature verification. The installer was uploaded successfully after iOS was approved and available; delivery ID `c0615553-6a3d-41e5-8201-a612c1931490`. Local artifacts: `NodusReader-iOS-0.1.0-30.xcarchive`, `NodusReader-macOS-0.1.0-30.xcarchive` and `export-macOS-30/Nodus Reader.pkg`. Archive executable and uploaded installer hashes are in the fingerprint JSON. No signed Release startup check or live authenticated iCloud session was performed in this run.
+
+Final App Store Connect state is recorded in [BUILD30_DEPLOYMENT.json](BUILD30_DEPLOYMENT.json): both builds are VALID and available internally. iOS is APPROVED and IN_BETA_TESTING publicly; macOS remains READY_FOR_BETA_SUBMISSION with no review submission. English and Spanish notes are set on both builds. The Mac build was not added to the public group or resubmitted for beta review.

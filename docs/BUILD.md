@@ -378,4 +378,4 @@ Post-build-29 macOS cleanup, nonmodal model setup and product-copy updates are s
 
 ## Build 30 — iCloud event queue
 
-The event-driven sync fixes were merged in [PR #30](https://github.com/jorgepb96/nodus-reader/pull/30). iOS/iPadOS 0.1.0 (30) is VALID and available to Internal and Public Beta testers. Final iPhone, iPad and macOS unit suites each passed 115 tests with 10 optional skips; the selected iPhone/iPad UI regressions passed. See [build 30 verification and delivery](appstore/BUILD30_VERIFICATION.md) for exact evidence, signed artifacts, source identity and live iCloud validation limits.
+The event-driven sync fixes were merged in [PR #30](https://github.com/jorgepb96/nodus-reader/pull/30). iOS/iPadOS 0.1.0 (30) is VALID and available to Internal and Public Beta testers. Final iPhone, iPad and macOS unit suites each passed 115 tests with 10 optional skips; the three selected iPhone UI regressions passed (the iCloud UI case is skipped on iPad). See [build 30 verification and delivery](appstore/BUILD30_VERIFICATION.md) for exact evidence, signed artifacts, source identity and live iCloud validation limits.
