@@ -1469,9 +1469,12 @@ func exportedPDFNotesNamePages() async throws {
     let book = try #require(await fixture.service.importFiles([url]) { _ in }.imported.first)
     fixture.service.addAnnotation(book, chapterIndex: 2, startOffset: 0, endOffset: 5,
                                   quote: "First", note: "Check this")
+    _ = fixture.service.addBookmark(book, title: "Page 2", chapterTitle: "",
+                                    locator: ReadingLocator(chapterIndex: 1, scrollFraction: 0.5, pageIndex: 1))
     let export = fixture.service.exportNotes(for: book)
     #expect(export.contains("— Page 3"))
-    #expect(!export.contains("— Chapter"))
+    #expect(export.contains("- **Page 2**\n"))
+    #expect(!export.contains("Chapter"))
 }
 
 // MARK: - Reader paragraph layout

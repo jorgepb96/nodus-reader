@@ -64,6 +64,9 @@ struct HomeView: View {
                 }
             }
             ToolbarItem(placement: .nodusTrailing) {
+                #if os(macOS)
+                MacImportToolbarButton()
+                #else
                 Button {
                     imports.beginImport()
                 } label: {
@@ -73,6 +76,7 @@ struct HomeView: View {
                         .frame(minWidth: 44, minHeight: 44)
                 }
                 .accessibilityLabel("Import documents")
+                #endif
             }
         }
         .inlineNavigationTitle()

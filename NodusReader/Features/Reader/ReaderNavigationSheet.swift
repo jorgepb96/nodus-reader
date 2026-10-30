@@ -328,12 +328,12 @@ struct ReaderNavigationSheet: View {
                                     Text(bookmark.title)
                                         .foregroundStyle(palette.text)
                                         .lineLimit(1)
-                                    Text(bookmark.chapterTitle.isEmpty
-                                         ? String(localized: "Chapter \(bookmark.locator.chapterIndex + 1)")
-                                         : bookmark.chapterTitle)
-                                        .font(.caption)
-                                        .foregroundStyle(palette.muted)
-                                        .lineLimit(1)
+                                    if let subtitle = bookmarkSubtitle(bookmark) {
+                                        Text(subtitle)
+                                            .font(.caption)
+                                            .foregroundStyle(palette.muted)
+                                            .lineLimit(1)
+                                    }
                                 }
                                 Spacer(minLength: 6)
                                 Text(bookmark.createdAt, style: .date)
@@ -354,6 +354,18 @@ struct ReaderNavigationSheet: View {
                 .scrollContentBackground(.hidden)
             }
         }
+    }
+
+    /// The chapter of an EPUB bookmark; for a PDF, the contents section that
+    /// contains its page (older PDF bookmarks stored an English "PDF page N").
+    private func bookmarkSubtitle(_ bookmark: Bookmark) -> String? {
+        if book.format == .pdf {
+            let page = bookmark.locator.pageIndex ?? bookmark.locator.chapterIndex
+            return entries.last(where: { $0.chapterIndex <= page })?.title
+        }
+        return bookmark.chapterTitle.isEmpty
+            ? String(localized: "Chapter \(bookmark.locator.chapterIndex + 1)")
+            : bookmark.chapterTitle
     }
 
     private var notesList: some View {

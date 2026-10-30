@@ -492,3 +492,8 @@ ES.update({
 })
 
 ES.update({"Return to narration": "Volver a la narración", "Return": "Volver", "To narration": "A la narración"})
+ES.update({
+    "%lld books · iCloud": "%lld libros · iCloud",
+    "%@ · In iCloud only": "%@ · Solo en iCloud",
+    "%@ · Downloading…": "%@ · Descargando…",
+})

@@ -637,7 +637,8 @@ final class NodusReaderUITests: XCTestCase {
     }
 
     func testPDFIntelligentReading() throws {
-        let app = launch()
+        // Earlier runs reorder Home; start from the sample's reading state.
+        let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
         let width = app.windows.firstMatch.frame.width
         try XCTSkipIf(width >= 700, "This test runs on iPhone")

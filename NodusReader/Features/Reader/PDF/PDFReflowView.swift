@@ -144,10 +144,20 @@ struct PDFReaderContainer: View {
 
 // MARK: - Reflow
 
-/// Scrolls the reflow to the last analysed page at or before `page`.
-private func scroll(_ proxy: ScrollViewProxy, to page: Int, in document: PDFReflowDocument) {
-    guard let target = document.pages.last(where: { $0.pageIndex <= page }) ?? document.pages.first else { return }
-    proxy.scrollTo(target.pageIndex, anchor: .top)
+/// The analysed page shown for an original page: the page itself, or the
+/// nearest analysed one in the direction of travel (blank pages are skipped).
+private func reflowPage(for page: Int, forward: Bool, in document: PDFReflowDocument) -> Int? {
+    let target = forward
+        ? document.pages.first(where: { $0.pageIndex >= page }) ?? document.pages.last
+        : document.pages.last(where: { $0.pageIndex <= page }) ?? document.pages.first
+    return target?.pageIndex
+}
+
+/// Scrolls the reflow to `page`, or the nearest analysed page.
+private func scroll(_ proxy: ScrollViewProxy, to page: Int, forward: Bool = false,
+                    in document: PDFReflowDocument) {
+    guard let target = reflowPage(for: page, forward: forward, in: document) else { return }
+    proxy.scrollTo(target, anchor: .top)
 }
 
 struct PDFReflowView: View {
@@ -214,7 +224,7 @@ struct PDFReflowView: View {
                         Image(systemName: "rectangle.righthalf.inset.filled")
                             .font(.system(size: 16))
                             .foregroundStyle(theme.text)
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                             .background(theme.background.opacity(0.94), in: Circle())
                             .overlay(Circle().stroke(theme.line, lineWidth: 1))
                     }
@@ -236,9 +246,17 @@ struct PDFReflowView: View {
         .onChange(of: playback.chapterIndex) { _, chapter in
             guard isNarratingHere, playback.mode == .readAndListen,
                   playback.isPlaying, typography.autoScrollNarration,
-                  playback.chapters.indices.contains(chapter) else { return }
+                  playback.chapters.indices.contains(chapter),
+                  let document = job.document else { return }
+            // The next page is already on screen and its text follows the
+            // narrated line. Snapping it to the top as well fought that follow
+            // and made the reflow bounce until the reader scrolled by hand;
+            // only a seek to a distant page needs a jump.
             let page = playback.chapters[chapter].id
-            if page != pdfPageIndex { jumpToPage = page }
+            let pages = document.pages
+            guard let narrated = pages.firstIndex(where: { $0.pageIndex == page }) else { return }
+            let visible = pages.lastIndex(where: { $0.pageIndex <= pdfPageIndex }) ?? 0
+            if abs(narrated - visible) > 1 { jumpToPage = page }
         }
         .sheet(isPresented: $showSourceSheet) {
             NavigationStack {
@@ -334,7 +352,6 @@ struct PDFReflowView: View {
                             current: pdfPageIndex,
                             theme: theme
                         ) { page in
-                            scrollPosition = page
                             pdfPageIndex = page
                             jumpToPage = nil
                             scroll(proxy, to: page, in: document)
@@ -349,14 +366,16 @@ struct PDFReflowView: View {
                 }
                 .onAppear {
                     // Switching from Original keeps the reading position.
-                    scrollPosition = pdfPageIndex
+                    scrollPosition = reflowPage(for: pdfPageIndex, forward: false, in: document)
                     scroll(proxy, to: pdfPageIndex, in: document)
                 }
-                .onChange(of: jumpToPage) { _, target in
+                .onChange(of: jumpToPage, initial: true) { _, target in
+                    // One scroll per jump: also writing `scrollPosition` made
+                    // two programmatic scrolls race over the lazy page heights.
                     guard let target else { return }
-                    scrollPosition = target
-                    scroll(proxy, to: target, in: document)
-                    pdfPageIndex = target
+                    let forward = target > pdfPageIndex
+                    scroll(proxy, to: target, forward: forward, in: document)
+                    pdfPageIndex = reflowPage(for: target, forward: forward, in: document) ?? target
                     jumpToPage = nil
                 }
             }

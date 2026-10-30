@@ -113,7 +113,12 @@ struct RootView: View {
                 showVoiceSetup = !installed && !voiceSetupBypassed
             }
             .onChange(of: scenePhase) { _, phase in
+                #if os(iOS)
+                // A Mac app keeps running behind other apps, and this window's
+                // phase is not the app's: reading in the Reading window with
+                // the library minimised or in another Space must keep syncing.
                 sync.setSceneActive(phase == .active)
+                #endif
                 if phase != .active { playback.persistPosition() }
                 if phase == .active {
                     Task {

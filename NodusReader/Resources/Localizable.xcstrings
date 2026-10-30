@@ -102,6 +102,16 @@
         }
       }
     },
+    "%@ · Downloading…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Descargando…"
+          }
+        }
+      }
+    },
     "%@ · FROM CHAPTER %lld": {
       "localizations": {
         "es": {
@@ -118,6 +128,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ · Terminado"
+          }
+        }
+      }
+    },
+    "%@ · In iCloud only": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Solo en iCloud"
           }
         }
       }
@@ -228,6 +248,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld libros · Biblioteca local"
+          }
+        }
+      }
+    },
+    "%lld books · iCloud": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld libros · iCloud"
           }
         }
       }
