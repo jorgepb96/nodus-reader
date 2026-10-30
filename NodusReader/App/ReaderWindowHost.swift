@@ -26,6 +26,8 @@ struct ReaderWindowHost: View {
     var body: some View {
         Group {
             if let book = books.first {
+                // The reader sets the window's colour scheme from the book's
+                // theme; a second, app-level preference here competed with it.
                 ReaderView(book: book) {
                     dismissWindow(id: "reader", value: bookID)
                 }
@@ -35,13 +37,13 @@ struct ReaderWindowHost: View {
                     systemImage: "book.closed",
                     description: Text("This document was removed from the library.")
                 )
+                .preferredColorScheme(theme.appTheme.preferredColorScheme)
             }
         }
         .frame(minWidth: 900, minHeight: 680)
         .background(palette.background)
         .nodusPalette(palette)
         .tint(palette.accent)
-        .preferredColorScheme(theme.appTheme.preferredColorScheme)
     }
 }
 #endif

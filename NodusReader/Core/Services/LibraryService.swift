@@ -486,6 +486,11 @@ public final class LibraryService {
             lines.append("## Bookmarks")
             lines.append("")
             for bookmark in bookmarks {
+                // A PDF bookmark's title already names its page.
+                if book.format == .pdf {
+                    lines.append("- **\(bookmark.title)**")
+                    continue
+                }
                 let chapter = bookmark.chapterTitle.isEmpty ? String(localized: "Chapter \(bookmark.locator.chapterIndex + 1)") : bookmark.chapterTitle
                 lines.append("- **\(bookmark.title)** — \(chapter)")
             }

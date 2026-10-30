@@ -54,22 +54,37 @@ struct SidebarSmartListRow: View {
 
 struct SidebarFooter: View {
     @Environment(\.nodusPalette) private var palette
+    @Environment(CloudSyncService.self) private var sync
     let bookCount: Int
     var onSettings: (() -> Void)?
 
+    /// iCloud sync state when it is on; otherwise the local library.
+    private var syncIcon: String {
+        switch sync.status {
+        case .syncing: "arrow.triangle.2.circlepath.icloud"
+        case .upToDate: "checkmark.icloud"
+        case .error, .unavailable: "exclamationmark.icloud"
+        case .offline: "icloud.slash"
+        case .waiting, .disabled: "icloud"
+        }
+    }
+
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "internaldrive")
+            Image(systemName: sync.isEnabled ? syncIcon : "internaldrive")
                 .font(.system(size: 15))
                 .foregroundStyle(palette.accent)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
-                Text("On this device")
+                Text(sync.isEnabled ? sync.status.title : String(localized: "On this device"))
                     .font(.caption.weight(.medium))
                     .foregroundStyle(palette.text)
-                Text("\(bookCount) books · Local library")
+                Text(sync.isEnabled ? String(localized: "\(bookCount) books · iCloud")
+                                    : String(localized: "\(bookCount) books · Local library"))
                     .font(.caption2)
                     .foregroundStyle(palette.muted)
             }
+            .accessibilityElement(children: .combine)
             Spacer(minLength: 0)
             if let onSettings {
                 Button(action: onSettings) {

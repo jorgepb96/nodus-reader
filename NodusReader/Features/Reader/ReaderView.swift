@@ -153,16 +153,13 @@ struct ReaderView: View {
                                         offset: readerPages[new.pageIndex].chapterStartOffset)
                 }
             }
-            // Saved once the reader settles: a database save on every turn
-            // lands right as the next curl starts and makes it stutter.
-            progressSaveTask?.cancel()
-            progressSaveTask = Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(700))
-                guard !Task.isCancelled else { return }
-                saveProgress()
-            }
+            scheduleProgressSave()
         }
-        .onChange(of: pdfPageIndex) { _, _ in saveProgress() }
+        .onChange(of: pdfPageIndex) { old, new in
+            // Pages restored while opening arrive before the page count.
+            if pdfPageCount > 0, old != new { hasTurnedPage = true }
+            scheduleProgressSave()
+        }
         .sheet(isPresented: $showContents) {
             ReaderNavigationSheet(
                 book: book,
@@ -172,7 +169,13 @@ struct ReaderView: View {
                 pdfURL: pdfURL,
                 onNavigate: { target in
                     if book.format == .pdf {
-                        if target.characterOffset != nil { pdfMode = .intelligent }
+                        if let offset = target.characterOffset {
+                            // Notes live in Intelligent Reading; scroll to the
+                            // highlighted line, not just the top of its page.
+                            pdfMode = .intelligent
+                            narrationReturnTarget = ReaderNavigationTarget(chapterIndex: target.chapterIndex,
+                                                                           characterOffset: offset)
+                        }
                         pdfJumpPage = target.chapterIndex
                         pdfPageIndex = target.chapterIndex
                     } else {
@@ -399,6 +402,7 @@ struct ReaderView: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
+            .keyboardShortcut("d", modifiers: .command)
             .accessibilityLabel(isCurrentPageBookmarked ? "Remove bookmark from this page" : "Bookmark this page")
 
             Button {
@@ -438,13 +442,15 @@ struct ReaderView: View {
         VStack(spacing: 8) {
             ReaderNarrationCapsule(book: book, theme: theme,
                                    isReady: narrationReady, isPreparing: preparingNarration,
-                                   canGoPreviousPage: book.format != .pdf && canGoPreviousPage,
-                                   canGoNextPage: book.format != .pdf && canGoNextPage,
-                                   onPreviousPage: { goToPage(pageIndex - pageStep) },
-                                   onNextPage: { goToPage(pageIndex + pageStep) },
+                                   canGoPreviousPage: canGoPreviousPage,
+                                   canGoNextPage: canGoNextPage,
+                                   onPreviousPage: { turnPage(by: -1) },
+                                   onNextPage: { turnPage(by: 1) },
                                    onPlay: toggleReaderNarration,
                                    onOpenPlayer: openReaderPlayer,
                                    onReturnToNarration: showPlaybackPosition)
+                // A floating capsule, not a full-width bar, in a wide window.
+                .frame(maxWidth: 640)
 
             Text(progressLine)
                 .font(.system(size: 11))
@@ -552,7 +558,17 @@ struct ReaderView: View {
         Task { await library.refreshExtractedTextIfNeeded(book) }
 
         if book.format == .pdf {
+            // Counted from the file, not from the PDFKit view: a PDF reopened
+            // in Intelligent Reading never creates that view, and the reader
+            // stayed on "Loading PDF…" with narration disabled.
+            let pageCount = await Task.detached(priority: .userInitiated) {
+                PDFDocument(url: localURL)?.pageCount ?? 0
+            }.value
             showPlaybackPosition()
+            if pageCount > 0 {
+                pdfPageIndex = min(pdfPageIndex, pageCount - 1)
+                pdfPageCount = pageCount
+            }
             content = .pdf(localURL)
             return
         }
@@ -568,6 +584,18 @@ struct ReaderView: View {
             content = .chapters(loaded)
         } catch {
             content = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+        }
+    }
+
+    /// Saved once the reader settles: a database save on every turn lands
+    /// right as the next curl starts and makes it stutter, and a scrolled PDF
+    /// reports every page it passes.
+    private func scheduleProgressSave() {
+        progressSaveTask?.cancel()
+        progressSaveTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(700))
+            guard !Task.isCancelled else { return }
+            saveProgress()
         }
     }
 
@@ -593,7 +621,7 @@ struct ReaderView: View {
                 progress: overall
             )
         case .pdf:
-            guard pdfPageCount > 0 else { return }
+            guard hasTurnedPage, pdfPageCount > 0 else { return }
             let total = max(pdfPageCount, 1)
             let overall = min(1, Double(pdfPageIndex + 1) / Double(total))
             library.updateProgress(
@@ -642,16 +670,24 @@ struct ReaderView: View {
     }
 
     private var canGoPreviousPage: Bool {
-        pageIndex > 0
+        book.format == .pdf ? pdfPageCount > 0 && pdfPageIndex > 0 : pageIndex > 0
     }
 
     private var canGoNextPage: Bool {
-        pageInfo.pageCount > 0 && pageIndex + pageStep < pageInfo.pageCount
+        if book.format == .pdf { return pdfPageIndex + 1 < pdfPageCount }
+        return pageInfo.pageCount > 0 && pageIndex + pageStep < pageInfo.pageCount
     }
 
-    private func goToPage(_ index: Int) {
+    /// The capsule's page buttons. A PDF page is reported back by the view
+    /// that shows it: Intelligent Reading may skip pages it did not analyse.
+    private func turnPage(by delta: Int) {
+        if book.format == .pdf {
+            guard pdfPageCount > 0 else { return }
+            pdfJumpPage = min(max(pdfPageIndex + delta, 0), pdfPageCount - 1)
+            return
+        }
         guard pageInfo.pageCount > 0 else { return }
-        pageIndex = min(max(index, 0), pageInfo.pageCount - 1)
+        pageIndex = min(max(pageIndex + delta * pageStep, 0), pageInfo.pageCount - 1)
     }
 
     private var currentChapterLabel: String {
@@ -728,7 +764,8 @@ struct ReaderView: View {
             library.addBookmark(
                 book,
                 title: String(localized: "Page \(pdfPageIndex + 1)"),
-                chapterTitle: "PDF page \(pdfPageIndex + 1)",
+                // The bookmark list shows the PDF section containing the page.
+                chapterTitle: "",
                 locator: ReadingLocator(chapterIndex: pdfPageIndex,
                                         scrollFraction: Double(pdfPageIndex + 1) / Double(max(pdfPageCount, 1)),
                                         pageIndex: pdfPageIndex)
@@ -889,7 +926,6 @@ struct ReaderNarrationCapsule: View {
             }
             .buttonStyle(.plain)
             .disabled(isLoading || (hasNarration ? playback.currentIndex == 0 : !canGoPreviousPage))
-            .accessibilityHidden(book.format == .pdf && !hasNarration)
             .accessibilityLabel(hasNarration ? "Previous sentence" : "Previous page")
 
             Button(action: onPlay) {
@@ -919,7 +955,6 @@ struct ReaderNarrationCapsule: View {
             }
             .buttonStyle(.plain)
             .disabled(isLoading || (hasNarration ? playback.currentIndex + 1 >= playback.sentenceCount : !canGoNextPage))
-            .accessibilityHidden(book.format == .pdf && !hasNarration)
             .accessibilityLabel(hasNarration ? "Next sentence" : "Next page")
         }
     }

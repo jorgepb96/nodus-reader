@@ -26,7 +26,7 @@ struct MacLibraryContentView: View {
     @State private var selectedBookID: Book.ID?
     @State private var fallbackBookID: Book.ID?
     @State private var sortOrder: [KeyPathComparator<Book>] = [
-        KeyPathComparator(\Book.lastOpenedAt, order: .reverse)
+        KeyPathComparator(\Book.lastOpenedSort, order: .reverse)
     ]
     @State private var showInspector = true
     @State private var readingBook: Book?
@@ -74,23 +74,7 @@ struct MacLibraryContentView: View {
         .navigationSubtitle("\(shownBooks.count) books")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    imports.beginImport()
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 12, weight: .semibold))
-                        Text("Import")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    .foregroundStyle(palette.onAccent)
-                    .padding(.horizontal, 12)
-                    .frame(height: 30)
-                    .background(palette.accent, in: Capsule())
-                    .fixedSize()
-                }
-                .buttonStyle(.plain)
-                .help("Import documents (⇧⌘I)")
+                MacImportToolbarButton()
             }
             ToolbarItem(placement: .primaryAction) {
                 Picker("View", selection: $viewMode) {
@@ -167,7 +151,8 @@ struct MacLibraryContentView: View {
     // MARK: Table
 
     private var table: some View {
-        Table(shownBooks, selection: $selectedBookID, sortOrder: $sortOrder) {
+        // The column headers set `sortOrder`; the rows must follow it.
+        Table(shownBooks.sorted(using: sortOrder), selection: $selectedBookID, sortOrder: $sortOrder) {
             TableColumn("Title", value: \.title) { book in
                 HStack(spacing: 9) {
                     BookCoverView(book: book, showBadges: false)
@@ -390,6 +375,15 @@ struct BookInspector: View {
         return matching.isEmpty ? installed : matching
     }
 
+    /// Where the original file is: a cloud-only book is not on this Mac yet.
+    private var fileState: String {
+        switch book.downloadState {
+        case .downloaded: String(localized: "\(book.format.label) · Downloaded")
+        case .cloudOnly: String(localized: "\(book.format.label) · In iCloud only")
+        case .downloading: String(localized: "\(book.format.label) · Downloading…")
+        }
+    }
+
     private var currentVoiceName: String {
         if let voice = voices.voice(withID: book.preferredVoiceID) {
             return "\(voice.name) · \(voice.engineLabel)"
@@ -520,7 +514,7 @@ struct BookInspector: View {
                     HStack {
                         Text("File").foregroundStyle(palette.muted)
                         Spacer()
-                        Text("\(book.format.label) · Downloaded")
+                        Text(fileState)
                     }
                     .padding(.horizontal, 10)
                     .frame(height: 34)
@@ -581,6 +575,34 @@ struct BookInspector: View {
         saveTask?.cancel()
         book.touch()
         library.save()
+    }
+}
+
+/// The library's Import action as a toolbar capsule, the same in every Mac
+/// library view (the iOS "+" is sized for touch, not for a Mac toolbar).
+struct MacImportToolbarButton: View {
+    @Environment(ImportCoordinator.self) private var imports
+    @Environment(\.nodusPalette) private var palette
+
+    var body: some View {
+        Button {
+            imports.beginImport()
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "plus")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Import")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .foregroundStyle(palette.onAccent)
+            .padding(.horizontal, 12)
+            .frame(height: 30)
+            .background(palette.accent, in: Capsule())
+            .fixedSize()
+        }
+        .buttonStyle(.plain)
+        .help("Import documents (⇧⌘I)")
+        .accessibilityLabel("Import documents")
     }
 }
 
