@@ -24,6 +24,7 @@ At the user's request, native macOS build `9a0e97c6-5905-4ae8-8046-815b9d746c57`
 - Migration tests cover all twelve original sample files, a distinct imported edition with the same title, personal collection membership, retained notes in the backup, repeat execution and a failed backup that leaves the library untouched.
 - The current native macOS app launched successfully. Clicking **Salir de Nodus Reader** terminated the process without installing a model. After relaunch, opening the catalogue and pressing ⌘Q also terminated normally. Neither check played audio.
 - Localization regenerated from current Debug iOS/macOS compiler extraction: 706 keys, zero missing Spanish and zero placeholder mismatches. Historical archive extraction was excluded because it contains the replaced copy.
+- Three final iPhone UI regressions passed: precise pause across process relaunch, highlight/auto-scroll settings with centred transport, and first-run model catalogue (`build/Post29-iPhone-UI-2.xcresult`). Player volume remained zero through the DEBUG test flag.
 - Original build-29 unit/UI, iPad, signed archive and TestFlight checks are recorded in [BUILD29_VERIFICATION.md](BUILD29_VERIFICATION.md).
 
 ![macOS setup with a normal quit action](screenshots/Post29-macOS-voice-setup.jpg)

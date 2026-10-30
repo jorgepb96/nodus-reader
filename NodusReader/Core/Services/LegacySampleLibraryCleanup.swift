@@ -63,7 +63,7 @@ enum LegacySampleLibraryCleanup {
             let directory = backup.appendingPathComponent(book.id.uuidString, isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try FileManager.default.copyItem(at: library.fileStore.documentURL(for: book),
-                                            to: directory.appendingPathComponent(book.fileName))
+                                            to: directory.appendingPathComponent(FileStore.sanitizedFileName(book.fileName)))
             if let cover = library.fileStore.coverForBook(book), FileManager.default.fileExists(atPath: cover.path) {
                 try FileManager.default.copyItem(at: cover, to: directory.appendingPathComponent("cover.jpg"))
             }
