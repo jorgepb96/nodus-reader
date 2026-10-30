@@ -1,0 +1,1 @@
+PDF contents now match EPUB: search chapters, navigate the outline, and access bookmarks and notes. Use the new location button next to the sleep timer to return to the narration position. Automatic following respects your reading preference.

@@ -1,0 +1,1 @@
+El índice de PDF ahora funciona como el de EPUB: busca capítulos, navega por el índice y accede a marcapáginas y notas. El nuevo botón de ubicación, junto al temporizador de sueño, te devuelve al punto de la narración. El seguimiento automático respeta tu preferencia de lectura.
