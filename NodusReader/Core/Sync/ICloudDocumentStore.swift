@@ -19,8 +19,8 @@ struct RemoteBookFile: Sendable {
 }
 
 /// Files live in the user's iCloud Documents container; metadata lives in
-/// CloudKit. A file may arrive after its metadata, so every operation is
-/// best-effort and the Book's download state is the source of truth in the UI.
+/// CloudKit. Uploads and deletions throw on failure so the durable outbox
+/// retains responsibility for the bytes as well as the metadata.
 ///
 /// Every filesystem call here can block on iCloud Drive (container lookup,
 /// whole-file copies, coordinated reads), so it all runs on a background task.
@@ -34,8 +34,10 @@ final class ICloudDocumentStore: @unchecked Sendable {
     private var cachedContainerURL: URL?
     private var resolvedContainer = false
 
-    init(fileStore: FileStore = .shared) {
+    init(fileStore: FileStore = .shared, containerURL: URL? = nil) {
         self.fileStore = fileStore
+        self.cachedContainerURL = containerURL
+        self.resolvedContainer = containerURL != nil
     }
 
     /// Last known availability; refreshed by `refreshAvailability()`.
@@ -73,6 +75,12 @@ final class ICloudDocumentStore: @unchecked Sendable {
     private static func remoteCoverURL(root: URL, bookID: UUID) -> URL {
         root.appendingPathComponent("Covers", isDirectory: true)
             .appendingPathComponent("\(bookID.uuidString).jpg")
+    }
+
+    private static func remoteItemExists(_ url: URL) -> Bool {
+        let placeholder = url.deletingLastPathComponent().appendingPathComponent(".\(url.lastPathComponent).icloud")
+        return FileManager.default.fileExists(atPath: url.path)
+            || FileManager.default.fileExists(atPath: placeholder.path)
     }
 
     func hasRemoteFile(for book: RemoteBookFile) async -> Bool {
@@ -148,35 +156,63 @@ final class ICloudDocumentStore: @unchecked Sendable {
 
     /// Copies the local document and cover into iCloud Documents. iCloud Drive
     /// handles the upload; this call only needs the local bytes.
-    func upload(_ book: RemoteBookFile) async {
-        guard let root = await documentsRoot() else { return }
+    func upload(_ book: RemoteBookFile) async throws {
+        guard let root = await documentsRoot() else { throw SyncFileError.notInICloud }
         let local = fileStore.documentURL(bookID: book.id, fileName: book.fileName)
         let cover = fileStore.coverURL(for: book.coverFileName)
         let remote = Self.remoteFileURL(root: root, book: book)
         let remoteCover = Self.remoteCoverURL(root: root, bookID: book.id)
-        await Task.detached(priority: .utility) {
+        try await Task.detached(priority: .utility) {
             let fileManager = FileManager.default
-            if fileManager.fileExists(atPath: local.path) {
-                do {
-                    try fileManager.createDirectory(at: remote.deletingLastPathComponent(),
-                                                    withIntermediateDirectories: true)
-                    if fileManager.fileExists(atPath: remote.path) {
-                        try fileManager.removeItem(at: remote)
-                    }
-                    try fileManager.copyItem(at: local, to: remote)
-                } catch {
-                    // Metadata sync remains useful even when the file cannot be copied.
-                }
+            // Originals are immutable. An existing placeholder is already an
+            // iCloud copy; do not hydrate or overwrite it on every reading save.
+            if !Self.remoteItemExists(remote) {
+                guard fileManager.fileExists(atPath: local.path) else { throw SyncFileError.notInICloud }
+                try Self.copyAtomically(from: local, to: remote)
             }
-            if let cover, fileManager.fileExists(atPath: cover.path) {
-                try? fileManager.createDirectory(at: remoteCover.deletingLastPathComponent(),
-                                                 withIntermediateDirectories: true)
-                if fileManager.fileExists(atPath: remoteCover.path) {
-                    try? fileManager.removeItem(at: remoteCover)
+            if let cover {
+                if fileManager.fileExists(atPath: cover.path) {
+                    try Self.copyAtomically(from: cover, to: remoteCover)
+                } else if !Self.remoteItemExists(remoteCover) {
+                    // A cloud-only book can be edited before its cover has
+                    // downloaded. Reuse the existing remote cover in that case.
+                    throw SyncFileError.notInICloud
                 }
-                try? fileManager.copyItem(at: cover, to: remoteCover)
+            } else {
+                try Self.removeIfPresent(remoteCover)
+                try Self.removeIfPresent(remoteCover.deletingLastPathComponent()
+                    .appendingPathComponent(".\(remoteCover.lastPathComponent).icloud"))
             }
         }.value
+    }
+
+    /// Stage beside the destination and coordinate the replacement with iCloud.
+    /// A failed copy must leave the previous remote cover/document intact.
+    static func copyAtomically(from source: URL, to destination: URL) throws {
+        let manager = FileManager.default
+        try manager.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let staged = destination.deletingLastPathComponent().appendingPathComponent(".\(UUID().uuidString).tmp")
+        defer { try? manager.removeItem(at: staged) }
+        try manager.copyItem(at: source, to: staged)
+        let coordinator = NSFileCoordinator()
+        var coordinationError: NSError?
+        var writeError: Error?
+        coordinator.coordinate(writingItemAt: destination, options: .forReplacing, error: &coordinationError) { url in
+            do {
+                if manager.fileExists(atPath: url.path) {
+                    _ = try manager.replaceItemAt(url, withItemAt: staged)
+                } else {
+                    try manager.moveItem(at: staged, to: url)
+                }
+            } catch { writeError = error }
+        }
+        if let coordinationError { throw coordinationError }
+        if let writeError { throw writeError }
+    }
+
+    private static func removeIfPresent(_ url: URL) throws {
+        do { try FileManager.default.removeItem(at: url) }
+        catch let error as CocoaError where error.code == .fileNoSuchFile { /* idempotent */ }
     }
 
     /// Downloads the document into the app container. Returns the new local
@@ -243,25 +279,17 @@ final class ICloudDocumentStore: @unchecked Sendable {
         }.value
     }
 
-    func deleteRemoteFiles(bookID: UUID, fileName: String) async {
-        guard let root = await documentsRoot() else { return }
+    func deleteRemoteFiles(bookID: UUID) async throws {
+        guard let root = await documentsRoot() else { throw SyncFileError.notInICloud }
         let folder = root
             .appendingPathComponent("Books", isDirectory: true)
             .appendingPathComponent(bookID.uuidString, isDirectory: true)
         let cover = Self.remoteCoverURL(root: root, bookID: bookID)
-        await Task.detached(priority: .utility) {
-            try? FileManager.default.removeItem(at: folder)
-            try? FileManager.default.removeItem(at: cover)
-        }.value
-    }
-
-    /// Used when the user cleared a custom cover: otherwise a device that
-    /// pulls the book later would restore the old cover from iCloud Drive.
-    func deleteRemoteCover(bookID: UUID) async {
-        guard let root = await documentsRoot() else { return }
-        let cover = Self.remoteCoverURL(root: root, bookID: bookID)
-        await Task.detached(priority: .utility) {
-            try? FileManager.default.removeItem(at: cover)
+        try await Task.detached(priority: .utility) {
+            try Self.removeIfPresent(folder)
+            try Self.removeIfPresent(cover)
+            try Self.removeIfPresent(cover.deletingLastPathComponent()
+                .appendingPathComponent(".\(cover.lastPathComponent).icloud"))
         }.value
     }
 

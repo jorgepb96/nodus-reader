@@ -1,0 +1,7 @@
+iCloud synchronization now follows your library changes: saved reading and listening positions, bookmarks, notes, book imports, collections and deletions.
+
+Changes are kept in a persistent queue, grouped by item and sent without overlapping sync passes. Failed operations retry automatically, including after connection recovery. Edits made during an upload remain queued for the next pass.
+
+CloudKit failures are checked per record, concurrent changes use conflict protection, and pending file transfers or cleanup are no longer silently discarded. Cover replacements and cloud-only books are handled more reliably. Sync status now distinguishes pending changes from a completed sync.
+
+Changes from other devices are checked when opening or returning to the app and every minute while it is active. Books and narration continue to work offline.

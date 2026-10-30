@@ -3,6 +3,10 @@ import CloudKit
 import DesignSystem
 import Foundation
 import Observation
+import Network
+#if os(iOS)
+import UIKit
+#endif
 import SwiftData
 #if os(macOS)
 import Security
@@ -23,6 +27,7 @@ final class CloudSyncService {
         case unavailable(String)
         case syncing
         case upToDate
+        case waiting
         case offline
         case error(String)
 
@@ -32,6 +37,7 @@ final class CloudSyncService {
             case .unavailable: String(localized: "iCloud unavailable")
             case .syncing: String(localized: "Syncing…")
             case .upToDate: String(localized: "Up to date")
+            case .waiting: String(localized: "Waiting to sync")
             case .offline: String(localized: "Waiting for a connection")
             case .error: String(localized: "Sync error")
             }
@@ -43,6 +49,7 @@ final class CloudSyncService {
             case .unavailable(let message): message
             case .syncing: String(localized: "Changes are moving through your personal iCloud.")
             case .upToDate: nil
+            case .waiting: String(localized: "Changes are queued and will be retried automatically.")
             case .offline: String(localized: "Changes are queued and will be sent when you are back online.")
             case .error(let message): message
             }
@@ -82,7 +89,16 @@ final class CloudSyncService {
     private(set) var downloadingBookIDs: Set<UUID> = []
     private(set) var downloadError: String?
 
-    private var syncTask: Task<Void, Never>?
+    @ObservationIgnored private lazy var coordinator = SyncCoordinator { [weak self] in
+        await self?.performSync()
+    }
+    @ObservationIgnored private var networkMonitor: NWPathMonitor?
+    nonisolated(unsafe) private var accountObserver: NSObjectProtocol?
+    private var consecutiveFailures = 0
+    private var sceneIsActive = true
+    #if os(iOS)
+    private var backgroundSyncTask: UIBackgroundTaskIdentifier = .invalid
+    #endif
     nonisolated(unsafe) private var outboxObserver: NSObjectProtocol?
     private var zoneReady = false
     private var started = false
@@ -105,7 +121,7 @@ final class CloudSyncService {
 
         outboxObserver = NotificationCenter.default.addObserver(
             forName: .nodusSyncOutboxChanged,
-            object: nil,
+            object: journal,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
@@ -118,6 +134,8 @@ final class CloudSyncService {
     deinit {
         if let outboxObserver { NotificationCenter.default.removeObserver(outboxObserver) }
         if let preferencesObserver { NotificationCenter.default.removeObserver(preferencesObserver) }
+        if let accountObserver { NotificationCenter.default.removeObserver(accountObserver) }
+        networkMonitor?.cancel()
     }
 
     // MARK: Preferences
@@ -155,21 +173,26 @@ final class CloudSyncService {
         CKRecord.ID(recordName: "preference-settings", zoneID: zoneID)
     }
 
-    private func pushPreferencesIfNeeded() async throws {
-        guard let sources = preferenceSources, let database else { return }
+    private func pushPreferencesIfNeeded(generation: UUID) async throws {
+        guard let sources = preferenceSources, database != nil else { return }
         let current = SyncedPreferences(theme: sources.theme, reading: sources.reading).encoded
         guard current != defaults.data(forKey: Key.prefsSynced) else { return }
         let localDate = defaults.object(forKey: Key.prefsUpdatedAt) as? Date ?? .distantPast
-        if let remote = try? await database.record(for: preferencesRecordID),
-           let remoteDate = remote["updatedAt"] as? Date, remoteDate > localDate {
+        let remote = try await remoteRecord(preferencesRecordID)
+        try checkSession(generation)
+        guard current == SyncedPreferences(theme: sources.theme, reading: sources.reading).encoded else {
+            scheduleSync()
+            return
+        }
+        if let remote, let remoteDate = remote["updatedAt"] as? Date, remoteDate > localDate {
             applyRemotePreferences(remote)
             return
         }
         let record = CKRecord(recordType: "Preference", recordID: preferencesRecordID)
         record["payload"] = String(data: current, encoding: .utf8)
         record["updatedAt"] = localDate == .distantPast ? Date() : localDate
-        _ = try await database.modifyRecords(saving: [record], deleting: [],
-                                             savePolicy: .allKeys, atomically: false)
+        try await saveRecord(record, replacing: remote)
+        try checkSession(generation)
         defaults.set(current, forKey: Key.prefsSynced)
     }
 
@@ -207,6 +230,7 @@ final class CloudSyncService {
             return
         }
         started = true
+        observeRecoveryEvents()
         await refreshAvailability()
         if isEnabled, isAvailable {
             if !defaults.bool(forKey: Key.initialPush) {
@@ -214,7 +238,59 @@ final class CloudSyncService {
                 defaults.set(true, forKey: Key.initialPush)
             }
             await syncNow()
+        } else if isEnabled {
+            scheduleSync(after: 60)
         }
+    }
+
+    private func observeRecoveryEvents() {
+        let monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { [weak self] path in
+            guard path.status == .satisfied else { return }
+            Task { @MainActor [weak self] in self?.scheduleSync(after: 0) }
+        }
+        monitor.start(queue: DispatchQueue(label: "ai.nodus.reader.sync.network"))
+        networkMonitor = monitor
+        accountObserver = NotificationCenter.default.addObserver(
+            forName: .CKAccountChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.activeSyncGeneration = UUID()
+                self.zoneReady = false
+                self.clearChangeToken()
+                self.scheduleSync(after: 0)
+            }
+        }
+    }
+
+    func setSceneActive(_ active: Bool) {
+        sceneIsActive = active
+        if active { scheduleSync(after: 0) }
+        else { coordinator.stop() }
+    }
+
+    /// Give the last saved reading/audio cursor a chance to leave the device
+    /// before iOS suspends it. Unsent work remains in SwiftData on expiration.
+    func syncBeforeSuspending() async {
+        guard isEnabled else { return }
+        #if os(iOS)
+        if backgroundSyncTask == .invalid {
+            backgroundSyncTask = UIApplication.shared.beginBackgroundTask(withName: "Library sync") { [weak self] in
+                Task { @MainActor [weak self] in self?.endBackgroundSync() }
+            }
+        }
+        #endif
+        await syncNow()
+    }
+
+    private func endBackgroundSync() {
+        #if os(iOS)
+        if backgroundSyncTask != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundSyncTask)
+            backgroundSyncTask = .invalid
+        }
+        #endif
     }
 
     func refreshAvailability() async {
@@ -285,7 +361,7 @@ final class CloudSyncService {
         defaults.set(enabled, forKey: Key.enabled)
         isEnabled = enabled
         activeSyncGeneration = UUID()
-        syncTask?.cancel()
+        coordinator.stop()
         if !enabled {
             status = .disabled
             return
@@ -297,6 +373,7 @@ final class CloudSyncService {
         }
         guard isAvailable else {
             status = .unavailable(availabilityMessage)
+            scheduleSync(after: 60)
             return
         }
         status = .syncing
@@ -308,58 +385,84 @@ final class CloudSyncService {
     // MARK: Sync
 
     func syncNow() async {
-        guard isEnabled, isAvailable, !isSyncing else { return }
-        let generation = UUID()
-        activeSyncGeneration = generation
-        isSyncing = true
-        status = .syncing
-        defer { isSyncing = false }
-        do {
-            try await ensureZone()
-            guard isEnabled, generation == activeSyncGeneration else { return }
-            var pushError: Error?
-            do {
-                try await pushOutbox()
-            } catch {
-                pushError = error
-            }
-            do {
-                try await pushPreferencesIfNeeded()
-            } catch {
-                pushError = pushError ?? error
-            }
-            guard isEnabled, generation == activeSyncGeneration else { return }
-            try await pullChanges()
-            guard isEnabled, generation == activeSyncGeneration else { return }
-            lastSync = Date()
-            defaults.set(lastSync, forKey: Key.lastSync)
-            pendingCount = journal.pendingCount()
-            status = pushError.map { status(for: $0) } ?? .upToDate
-        } catch {
-            guard isEnabled, generation == activeSyncGeneration else { return }
-            pendingCount = journal.pendingCount()
-            status = status(for: error)
-        }
+        guard isEnabled else { return }
+        await coordinator.runNow()
     }
 
-    private func scheduleSync() {
-        guard isEnabled, isAvailable else { return }
-        syncTask?.cancel()
-        syncTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(2))
-            guard !Task.isCancelled else { return }
-            await self?.syncNow()
+    /// Returns the next deadline to the serial coordinator. Outbox retry dates
+    /// survive launches; the foreground fallback also discovers remote-only edits.
+    private func performSync() async -> Date? {
+        guard isEnabled else { return nil }
+        let generation = activeSyncGeneration
+        isSyncing = true
+        status = .syncing
+        defer {
+            isSyncing = false
+            endBackgroundSync()
         }
+        var syncError: Error?
+        do {
+            await refreshAvailability()
+            try checkSession(generation)
+            guard isAvailable else { return sceneIsActive ? Date().addingTimeInterval(60) : nil }
+            try await ensureZone()
+            try checkSession(generation)
+            if !defaults.bool(forKey: Key.initialPush) {
+                journal.enqueueAll()
+                defaults.set(true, forKey: Key.initialPush)
+            }
+            do { try await pushOutbox(generation: generation) }
+            catch { syncError = error }
+            try checkSession(generation)
+            do { try await pushPreferencesIfNeeded(generation: generation) }
+            catch { syncError = syncError ?? error }
+            try checkSession(generation)
+            try await pullChanges(generation: generation)
+            try checkSession(generation)
+        } catch {
+            guard isEnabled, generation == activeSyncGeneration else { return nil }
+            syncError = error
+        }
+        pendingCount = journal.pendingCount()
+        var next = sceneIsActive ? Date().addingTimeInterval(60) : nil
+        if let syncError {
+            consecutiveFailures += 1
+            let delay = max(min(300, pow(2, Double(min(consecutiveFailures, 6))) * 5),
+                            (syncError as? CKError)?.retryAfterSeconds ?? 0)
+            next = Date().addingTimeInterval(delay)
+            status = status(for: syncError)
+        } else {
+            consecutiveFailures = 0
+            // Backing-off entries are not a completed synchronization.
+            if pendingCount == 0 {
+                lastSync = Date()
+                defaults.set(lastSync, forKey: Key.lastSync)
+                status = .upToDate
+            } else {
+                status = .waiting
+            }
+        }
+        if let queued = try? journal.nextAttemptAt() {
+            let deadline = max(queued, Date().addingTimeInterval(1))
+            next = min(next ?? deadline, deadline)
+        }
+        return next
+    }
+
+    private func checkSession(_ generation: UUID) throws {
+        guard isEnabled, generation == activeSyncGeneration else { throw CancellationError() }
+        try Task.checkCancellation()
+    }
+
+    private func scheduleSync(after delay: TimeInterval = 1) {
+        guard isEnabled else { return }
+        coordinator.request(at: Date().addingTimeInterval(delay))
     }
 
     private func ensureZone() async throws {
         guard !zoneReady else { return }
         guard let database else { throw SyncServiceError.cloudKitUnavailable }
-        do {
-            _ = try await database.save(CKRecordZone(zoneID: zoneID))
-        } catch let error as CKError where error.code == .serverRejectedRequest {
-            // The zone already exists.
-        }
+        _ = try await database.save(CKRecordZone(zoneID: zoneID))
         zoneReady = true
     }
 
@@ -376,9 +479,9 @@ final class CloudSyncService {
         }
     }
 
-    private func pushOutbox() async throws {
+    private func pushOutbox(generation: UUID) async throws {
         let descriptor = FetchDescriptor<SyncOutboxEntry>(sortBy: [SortDescriptor(\SyncOutboxEntry.createdAt)])
-        let entries = (try? context.fetch(descriptor)) ?? []
+        let entries = try context.fetch(descriptor)
         let ordered = entries.sorted {
             let lhs = Self.pushPriority($0.entityType)
             let rhs = Self.pushPriority($1.entityType)
@@ -386,23 +489,24 @@ final class CloudSyncService {
         }
         var firstError: Error?
         for entry in ordered {
-            guard entry.nextAttemptAt <= Date() else { continue }
+            try checkSession(generation)
+            guard entry.modelContext != nil, entry.nextAttemptAt <= Date() else { continue }
             let enqueuedAt = entry.createdAt
             let operation = entry.operation
             do {
                 switch operation {
                 case .delete:
-                    try await pushDeletion(entry)
+                    try await pushDeletion(entry, generation: generation)
                 case .upsert:
-                    try await pushUpsert(entry)
+                    try await pushUpsert(entry, generation: generation)
                 }
+                try checkSession(generation)
                 journal.completePush(entry, enqueuedAt: enqueuedAt, operation: operation)
                 try context.save()
             } catch {
-                entry.attempts += 1
-                let delay = min(300, pow(2, Double(entry.attempts)) * 5)
-                entry.nextAttemptAt = Date().addingTimeInterval(delay)
-                entry.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                try checkSession(generation)
+                journal.failPush(entry, enqueuedAt: enqueuedAt, operation: operation,
+                                 error: error, retryAfter: (error as? CKError)?.retryAfterSeconds)
                 try? context.save()
                 if firstError == nil { firstError = error }
             }
@@ -411,103 +515,139 @@ final class CloudSyncService {
         if let firstError { throw firstError }
     }
 
-    private func pushUpsert(_ entry: SyncOutboxEntry) async throws {
+    /// Only absence is optional. Network/authentication errors must retain the
+    /// queue entry instead of being treated as permission to overwrite iCloud.
+    private func remoteRecord(_ id: CKRecord.ID) async throws -> CKRecord? {
         guard let database else { throw SyncServiceError.cloudKitUnavailable }
-        guard let localDate = updatedAt(type: entry.entityType, id: entry.entityID),
-              let record = buildRecord(for: entry) else {
-            return
-        }
-
-        // A tombstone from another device wins over an offline upsert.
-        if let tombstone = try? await database.record(for: tombstoneID(type: entry.entityType, id: entry.entityID)),
-           let deletedAt = tombstone["deletedAt"] as? Date,
-           deletedAt >= localDate {
-            journal.withSuspendedRecording {
-                deleteLocal(type: entry.entityType, id: entry.entityID)
-                try? context.save()
-            }
-            return
-        }
-
-        // If the server already has a newer version, apply it instead of
-        // overwriting it with this device's stale outbox entry.
-        if let remote = try? await database.record(for: recordID(type: entry.entityType, id: entry.entityID)),
-           let remoteDate = remote["updatedAt"] as? Date,
-           remoteDate > localDate {
-            journal.withSuspendedRecording {
-                applyRemote(remote)
-                try? context.save()
-            }
-            return
-        }
-
-        _ = try await database.modifyRecords(
-            saving: [record],
-            deleting: [],
-            savePolicy: .allKeys,
-            atomically: false
-        )
-        if entry.entityType == .book, let book = fetchBook(id: entry.entityID) {
-            let file = RemoteBookFile(book)
-            if !(await documents.hasRemoteFile(for: file)) {
-                await documents.upload(file)
-            }
-            if file.coverFileName == nil {
-                await documents.deleteRemoteCover(bookID: file.id)
-            }
-        }
+        do { return try await database.record(for: id) }
+        catch let error as CKError where error.code == .unknownItem { return nil }
     }
 
-    private func pushDeletion(_ entry: SyncOutboxEntry) async throws {
+    private func saveRecord(_ record: CKRecord, replacing remote: CKRecord?) async throws {
         guard let database else { throw SyncServiceError.cloudKitUnavailable }
-        let localTombstone = fetchTombstone(type: entry.entityType, id: entry.entityID)
-        let deletedAt = localTombstone?.deletedAt ?? Date()
-        let tombstone = CKRecord(recordType: "Tombstone",
-                                  recordID: tombstoneID(type: entry.entityType, id: entry.entityID))
-        tombstone["entityType"] = entry.entityType.rawValue
-        tombstone["entityID"] = entry.entityID.uuidString
-        tombstone["deletedAt"] = deletedAt
+        let target = remote ?? record
+        if let remote {
+            for key in record.allKeys() { remote[key] = record[key] }
+        }
+        let result = try await database.modifyRecords(saving: [target], deleting: [],
+                                                       savePolicy: .ifServerRecordUnchanged,
+                                                       atomically: true)
+        try Self.requireSavedRecord(target.recordID, results: result.saveResults)
+    }
 
-        let dataRecordID = recordID(type: entry.entityType, id: entry.entityID)
-        do {
-            _ = try await database.modifyRecords(
-                saving: [tombstone],
-                deleting: [dataRecordID],
-                savePolicy: .allKeys,
-                atomically: false
-            )
-        } catch let error as CKError where error.code == .partialFailure {
-            let partial = error.partialErrorsByItemID ?? [:]
-            if let tombstoneError = partial[tombstone.recordID] {
-                throw tombstoneError
+    static func requireSavedRecord(_ id: CKRecord.ID,
+                                   results: [CKRecord.ID: Result<CKRecord, Error>]) throws {
+        guard let result = results[id] else { throw SyncServiceError.missingRecordResult }
+        _ = try result.get()
+    }
+
+    static func requireDeletedRecord(_ id: CKRecord.ID,
+                                     results: [CKRecord.ID: Result<Void, Error>]) throws {
+        guard let result = results[id] else { throw SyncServiceError.missingRecordResult }
+        do { try result.get() }
+        catch let error as CKError where error.code == .unknownItem { /* idempotent delete */ }
+    }
+
+    private func pushUpsert(_ entry: SyncOutboxEntry, generation: UUID) async throws {
+        let enqueuedAt = entry.createdAt
+        let type = entry.entityType
+        let id = entry.entityID
+        guard let localDate = updatedAt(type: type, id: id),
+              let record = buildRecord(for: entry) else { return }
+
+        let tombstone = try await remoteRecord(tombstoneID(type: type, id: id))
+        try checkSession(generation)
+        guard journal.isCurrent(entry, enqueuedAt: enqueuedAt, operation: .upsert) else { return }
+        if let tombstone, let deletedAt = tombstone["deletedAt"] as? Date, deletedAt >= localDate {
+            try journal.withSuspendedRecording {
+                applyRemoteTombstone(tombstone)
+                try context.save()
             }
-            if let dataError = partial[dataRecordID] as? CKError,
-               dataError.code != .unknownItem {
-                throw dataError
-            }
-        } catch let error as CKError where error.code == .unknownItem {
-            // The data record was already absent; the tombstone still saved.
+            return
         }
 
-        localTombstone?.isPushed = true
-        if entry.entityType == .book,
-           let data = entry.payloadJSON.data(using: .utf8),
-           let payload = try? JSONSerialization.jsonObject(with: data) as? [String: String],
-           let fileName = payload["fileName"] {
-            await documents.deleteRemoteFiles(bookID: entry.entityID, fileName: fileName)
+        let remote = try await remoteRecord(record.recordID)
+        try checkSession(generation)
+        guard journal.isCurrent(entry, enqueuedAt: enqueuedAt, operation: .upsert) else { return }
+        if let remote, let remoteDate = remote["updatedAt"] as? Date, remoteDate > localDate {
+            try journal.withSuspendedRecording {
+                applyRemote(remote)
+                try context.save()
+            }
+            return
+        }
+
+        if type == .book, let book = fetchBook(id: id) {
+            let file = RemoteBookFile(book)
+            // File failures are retryable, just like metadata failures. Stage
+            // originals before publishing a book another device can discover.
+            try await documents.upload(file)
+            try checkSession(generation)
+            guard journal.isCurrent(entry, enqueuedAt: enqueuedAt, operation: .upsert) else { return }
+        }
+        try await saveRecord(record, replacing: remote)
+    }
+
+    private func pushDeletion(_ entry: SyncOutboxEntry, generation: UUID) async throws {
+        guard let database else { throw SyncServiceError.cloudKitUnavailable }
+        let enqueuedAt = entry.createdAt
+        let type = entry.entityType
+        let id = entry.entityID
+        let localTombstone = fetchTombstone(type: type, id: id)
+        let deletedAt = localTombstone?.deletedAt ?? enqueuedAt
+        let remote = try await remoteRecord(recordID(type: type, id: id))
+        try checkSession(generation)
+        guard journal.isCurrent(entry, enqueuedAt: enqueuedAt, operation: .delete) else { return }
+        if let remote, let remoteDate = remote["updatedAt"] as? Date, remoteDate > deletedAt {
+            try journal.withSuspendedRecording {
+                applyRemote(remote)
+                try context.save()
+            }
+            return
+        }
+        let tombstoneRecordID = tombstoneID(type: type, id: id)
+        let tombstone = try await remoteRecord(tombstoneRecordID)
+            ?? CKRecord(recordType: "Tombstone", recordID: tombstoneRecordID)
+        try checkSession(generation)
+        guard journal.isCurrent(entry, enqueuedAt: enqueuedAt, operation: .delete) else { return }
+        tombstone["entityType"] = type.rawValue
+        tombstone["entityID"] = id.uuidString
+        tombstone["deletedAt"] = max(deletedAt, tombstone["deletedAt"] as? Date ?? .distantPast)
+        let dataRecordID = recordID(type: type, id: id)
+        let result = try await database.modifyRecords(saving: [tombstone],
+                                                       deleting: remote == nil ? [] : [dataRecordID],
+                                                       savePolicy: .ifServerRecordUnchanged,
+                                                       atomically: false)
+        try Self.requireSavedRecord(tombstoneRecordID, results: result.saveResults)
+        if remote != nil {
+            try Self.requireDeletedRecord(dataRecordID, results: result.deleteResults)
+        }
+        try checkSession(generation)
+        guard journal.isCurrent(entry, enqueuedAt: enqueuedAt, operation: .delete) else { return }
+        if type == .book {
+            // Remove the whole UUID directory, including hidden iCloud placeholders.
+            try await documents.deleteRemoteFiles(bookID: id)
+            try checkSession(generation)
+        }
+        if journal.isCurrent(entry, enqueuedAt: enqueuedAt, operation: .delete) {
+            localTombstone?.isPushed = true
         }
     }
 
     // MARK: Pull
 
-    private func pullChanges() async throws {
+    private func pullChanges(generation: UUID) async throws {
         guard let database else { throw SyncServiceError.cloudKitUnavailable }
         var token = loadChangeToken()
         var moreComing = true
         var retriedZone = false
         while moreComing {
+            try checkSession(generation)
             do {
                 let changes = try await database.recordZoneChanges(inZoneWith: zoneID, since: token)
+                try checkSession(generation)
+                // A per-record failure must not be skipped when advancing the token.
+                for result in changes.modificationResultsByID.values { _ = try result.get() }
                 try journal.withSuspendedRecording {
                     // Parents must exist before children: a membership or
                     // annotation can arrive in the same batch as its book.
@@ -518,9 +658,8 @@ final class CloudSyncService {
                     for record in records.sorted(by: { Self.applyPriority($0.recordType) < Self.applyPriority($1.recordType) }) {
                         applyRemote(record)
                     }
-                    for deletion in changes.deletions {
-                        applyRemoteDeletion(deletion.recordID, recordType: deletion.recordType)
-                    }
+                    // Physical deletions carry no timestamp; Tombstone
+                    // records are authoritative, including across pull pages.
                     retryDeferredChildren()
                     try context.save()
                 }
@@ -540,6 +679,8 @@ final class CloudSyncService {
                 token = nil
                 clearChangeToken()
                 try await ensureZone()
+                journal.enqueueAll()
+                defaults.removeObject(forKey: Key.prefsSynced)
                 moreComing = true
             }
         }
@@ -626,7 +767,7 @@ final class CloudSyncService {
 
     // MARK: Applying remote records
 
-    private func applyRemote(_ record: CKRecord) {
+    func applyRemote(_ record: CKRecord) {
         switch record.recordType {
         case "Book": applyRemoteBook(record)
         case "Collection": applyRemoteCollection(record)
@@ -857,9 +998,6 @@ final class CloudSyncService {
     private func deferChild(_ record: CKRecord) {
         deferredChildren.removeAll { $0.recordID == record.recordID }
         deferredChildren.append(record)
-        if deferredChildren.count > 2_000 {
-            deferredChildren.removeFirst(deferredChildren.count - 2_000)
-        }
     }
 
     private func retryDeferredChildren() {
@@ -902,9 +1040,26 @@ final class CloudSyncService {
            localDate > deletedAt {
             return
         }
+        let deletedAt = record["deletedAt"] as? Date ?? .distantPast
+        if let existing = fetchTombstone(type: type, id: id) {
+            // Receiving our own tombstone is not an acknowledgement of file
+            // cleanup. Keep a failed/pending local delete in the outbox.
+            if !existing.isPushed {
+                existing.deletedAt = max(existing.deletedAt, deletedAt)
+                deleteLocal(type: type, id: id)
+                return
+            }
+            guard existing.deletedAt <= deletedAt else { return }
+            existing.deletedAt = deletedAt
+            existing.isPushed = true
+        } else {
+            let marker = SyncTombstone(entityType: type, entityID: id)
+            marker.deletedAt = deletedAt
+            marker.isPushed = true
+            context.insert(marker)
+        }
         deleteLocal(type: type, id: id)
         removeOutbox(type: type, id: id)
-        NotificationCenter.default.post(name: .nodusSyncOutboxChanged, object: nil)
     }
 
     private static func applyPriority(_ recordType: CKRecord.RecordType) -> Int {
@@ -917,15 +1072,6 @@ final class CloudSyncService {
         case "Tombstone": 5
         default: 6
         }
-    }
-
-    private func applyRemoteDeletion(_ recordID: CKRecord.ID, recordType: CKRecord.RecordType) {
-        // The deletion of a tombstone record is not the deletion of the entity.
-        guard recordType != "Tombstone",
-              let type = entityType(forRecordName: recordID.recordName),
-              let id = uuid(from: recordID) else { return }
-        deleteLocal(type: type, id: id)
-        removeOutbox(type: type, id: id)
     }
 
     // MARK: Local deletion
@@ -1187,11 +1333,14 @@ final class CloudSyncService {
 
 enum SyncServiceError: LocalizedError {
     case cloudKitUnavailable
+    case missingRecordResult
 
     var errorDescription: String? {
         switch self {
         case .cloudKitUnavailable:
             String(localized: "CloudKit is unavailable in this build or on this device.")
+        case .missingRecordResult:
+            String(localized: "iCloud did not confirm the change. It will be retried.")
         }
     }
 }

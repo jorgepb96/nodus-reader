@@ -462,6 +462,7 @@ struct StorageSettingsView: View {
         case .unavailable: "exclamationmark.icloud"
         case .syncing: "arrow.triangle.2.circlepath.icloud"
         case .upToDate: "checkmark.icloud"
+        case .waiting: "clock.arrow.circlepath"
         case .offline: "icloud.slash"
         case .error: "xmark.icloud"
         }
@@ -469,7 +470,7 @@ struct StorageSettingsView: View {
 
     private var statusColor: Color {
         switch sync.status {
-        case .disabled, .offline: palette.muted
+        case .disabled, .offline, .waiting: palette.muted
         case .unavailable, .error: palette.accent
         case .syncing, .upToDate: palette.accent
         }

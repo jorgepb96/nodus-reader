@@ -1122,6 +1122,16 @@
         }
       }
     },
+    "Changes are queued and will be retried automatically.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los cambios están en cola y se volverán a intentar automáticamente."
+          }
+        }
+      }
+    },
     "Changes are queued and will be sent when you are back online.": {
       "localizations": {
         "es": {
@@ -6642,6 +6652,16 @@
         }
       }
     },
+    "Waiting to sync": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pendiente de sincronizar"
+          }
+        }
+      }
+    },
     "Weight": {
       "localizations": {
         "es": {
@@ -6878,6 +6898,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "iCloud y almacenamiento"
+          }
+        }
+      }
+    },
+    "iCloud did not confirm the change. It will be retried.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iCloud no ha confirmado el cambio. Se volverá a intentar."
           }
         }
       }

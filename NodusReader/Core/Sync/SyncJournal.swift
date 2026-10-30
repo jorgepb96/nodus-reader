@@ -85,8 +85,28 @@ final class SyncJournal {
     /// re-enqueued while the push was in flight. In that case a newer edit or a
     /// delete is still waiting to be sent and the entry must stay queued.
     func completePush(_ entry: SyncOutboxEntry, enqueuedAt: Date, operation: SyncOperationKind) {
-        guard entry.createdAt == enqueuedAt, entry.operation == operation else { return }
+        guard isCurrent(entry, enqueuedAt: enqueuedAt, operation: operation) else { return }
         context.delete(entry)
+    }
+
+    func isCurrent(_ entry: SyncOutboxEntry, enqueuedAt: Date, operation: SyncOperationKind) -> Bool {
+        entry.modelContext != nil && entry.createdAt == enqueuedAt && entry.operation == operation
+    }
+
+    /// A failed older upload must not back off a newer edit or deletion.
+    func failPush(_ entry: SyncOutboxEntry, enqueuedAt: Date, operation: SyncOperationKind,
+                  error: Error, retryAfter: TimeInterval? = nil, now: Date = Date()) {
+        guard isCurrent(entry, enqueuedAt: enqueuedAt, operation: operation) else { return }
+        entry.attempts += 1
+        let delay = min(300, pow(2, Double(min(entry.attempts, 6))) * 5)
+        entry.nextAttemptAt = now.addingTimeInterval(max(delay, retryAfter ?? 0))
+        entry.lastError = error.localizedDescription
+    }
+
+    func nextAttemptAt() throws -> Date? {
+        var descriptor = FetchDescriptor<SyncOutboxEntry>(sortBy: [SortDescriptor(\SyncOutboxEntry.nextAttemptAt)])
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first?.nextAttemptAt
     }
 
     func pendingCount() -> Int {
@@ -99,6 +119,7 @@ final class SyncJournal {
         let updated = Self.identifiers(notification, .updatedIdentifiers)
         guard !inserted.isEmpty || !updated.isEmpty else { return }
 
+        var recorded = false
         for identifier in inserted.union(updated) {
             let model = context.model(for: identifier)
             switch model {
@@ -113,10 +134,11 @@ final class SyncJournal {
             case let annotation as Annotation:
                 enqueue(type: .annotation, id: annotation.id, operation: .upsert)
             default:
-                break
+                continue
             }
+            recorded = true
         }
-        persistJournal()
+        if recorded { persistJournal() }
     }
 
     /// SwiftData posts the identifiers as an `Array`, not the `Set` one might
@@ -133,6 +155,14 @@ final class SyncJournal {
         // An indexed lookup: this runs for every changed object on every save,
         // so scanning the whole outbox would grow with the library.
         let raw = type.rawValue
+        if operation == .upsert {
+            let tombstone = FetchDescriptor<SyncTombstone>(
+                predicate: #Predicate { $0.entityID == id && $0.entityTypeRaw == raw }
+            )
+            // recordDelete saves the tombstone before the model is removed.
+            // Relationship updates in that save must not turn it into an upsert.
+            if ((try? context.fetchCount(tombstone)) ?? 0) > 0 { return }
+        }
         var descriptor = FetchDescriptor<SyncOutboxEntry>(
             predicate: #Predicate { $0.entityID == id && $0.entityTypeRaw == raw }
         )
@@ -155,6 +185,6 @@ final class SyncJournal {
         isRecording = true
         defer { isRecording = false }
         try? context.save()
-        NotificationCenter.default.post(name: .nodusSyncOutboxChanged, object: nil)
+        NotificationCenter.default.post(name: .nodusSyncOutboxChanged, object: self)
     }
 }

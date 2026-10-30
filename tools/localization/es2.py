@@ -486,4 +486,7 @@ ES.update({
 "Nodus narrates with neural voices that run entirely on this device. Download a voice model to start listening offline.": "Nodus narra con voces neuronales que funcionan íntegramente en este dispositivo. Descarga un modelo de voz para empezar a escuchar sin conexión.",
 "Narration, OCR and document analysis run on this device. Generated audio stays on this device.": "La narración, el OCR y el análisis de documentos se ejecutan en este dispositivo. El audio generado permanece en él.",
 "Quit Nodus Reader": "Salir de Nodus Reader",
+    "iCloud did not confirm the change. It will be retried.": "iCloud no ha confirmado el cambio. Se volverá a intentar.",
+    "Waiting to sync": "Pendiente de sincronizar",
+    "Changes are queued and will be retried automatically.": "Los cambios están en cola y se volverán a intentar automáticamente.",
 })

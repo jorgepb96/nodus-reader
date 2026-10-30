@@ -33,6 +33,7 @@
 		435808C4B06CDA38CF39C4D7 /* NodusReaderShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4850038DA7CFCCE5A5054726 /* NodusReaderShare.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4412BA092D7B5B51CA1FB90D /* NodusReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D2FEAF26A6FAC1835AD1D28 /* NodusReaderTests.swift */; };
 		4E0FDFE41F4C119058E345CE /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = 97847CD1D596CE9027A9176A /* DesignSystem */; };
+		5173F711BC3B35D5EDA9213C /* SyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F210889CB9BA7F90F3091A /* SyncCoordinator.swift */; };
 		59E2649B0917D2CB38172E65 /* PDFReflowEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40A191E547B3FA244E030216 /* PDFReflowEngine.swift */; };
 		5A981BAEFC424C1C36349E09 /* ContinuousReaderContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E693CDEB62AE25BFAAD0B0E2 /* ContinuousReaderContent.swift */; };
 		610DE11A27D5B824C82CDFED /* EPUBParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3252C65DAC3AB8067A57173E /* EPUBParser.swift */; };
@@ -80,6 +81,7 @@
 		D45E6022A985F00EEA2F542E /* SearchResultsContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E62F2F972274F54CF57BEE33 /* SearchResultsContent.swift */; };
 		D4BB0B652DA9BA54E98A519B /* StorageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEA231B6036008AC4763DC43 /* StorageSettingsView.swift */; };
 		D500B03C89B854345292E938 /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9D8968A724911866F8AC36D /* PlaybackController.swift */; };
+		D558825DFD17434164BEB8D2 /* SyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77664F53036C39CBCF5CAA1 /* SyncTests.swift */; };
 		DD5DDDD25FAB30062669DFBA /* BookCoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 099184BADB5FD68A4939C524 /* BookCoverView.swift */; };
 		DE3C74A0A0088D2D8ED24673 /* SyncedPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5766A5530202F6E711E0850B /* SyncedPreferences.swift */; };
 		E03A749E4F409D53C8B138D3 /* ReaderPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8407DC14C3175CA38B9D21D /* ReaderPreferences.swift */; };
@@ -215,6 +217,8 @@
 		B59B6977FE1E3E11D55CD470 /* ReaderAppearanceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderAppearanceSheet.swift; sourceTree = "<group>"; };
 		B6CB6C6D16048A9BB11F0766 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
 		B7566082E0D91905F11E43B6 /* VoicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicesView.swift; sourceTree = "<group>"; };
+		B77664F53036C39CBCF5CAA1 /* SyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTests.swift; sourceTree = "<group>"; };
+		B8F210889CB9BA7F90F3091A /* SyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCoordinator.swift; sourceTree = "<group>"; };
 		BDA4078C3A4418A89E6CF014 /* ReaderWindowHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderWindowHost.swift; sourceTree = "<group>"; };
 		BE2978B146AAED77C4B24049 /* MacPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPageView.swift; sourceTree = "<group>"; };
 		C0718A04E3BF758DD77A430C /* PadLibraryContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PadLibraryContentView.swift; sourceTree = "<group>"; };
@@ -451,6 +455,7 @@
 			children = (
 				615B234B48E1D96011BAADA0 /* DocumentParserTests.swift */,
 				2D2FEAF26A6FAC1835AD1D28 /* NodusReaderTests.swift */,
+				B77664F53036C39CBCF5CAA1 /* SyncTests.swift */,
 			);
 			path = NodusReaderTests;
 			sourceTree = "<group>";
@@ -565,6 +570,7 @@
 			children = (
 				8538AACCC8B86BBCBB64F210 /* CloudSyncService.swift */,
 				84215C3B2D70610707C931B2 /* ICloudDocumentStore.swift */,
+				B8F210889CB9BA7F90F3091A /* SyncCoordinator.swift */,
 				5766A5530202F6E711E0850B /* SyncedPreferences.swift */,
 				2DC6390B2B754114ECA06791 /* SyncJournal.swift */,
 			);
@@ -851,6 +857,7 @@
 				648061CC4A17889CB5ADBBDC /* SpeechWordAligner.swift in Sources */,
 				78B55073F0CE914B8ECD0877 /* StorageJanitor.swift in Sources */,
 				D4BB0B652DA9BA54E98A519B /* StorageSettingsView.swift in Sources */,
+				5173F711BC3B35D5EDA9213C /* SyncCoordinator.swift in Sources */,
 				BB4314423E68948DDF1B8D99 /* SyncJournal.swift in Sources */,
 				DE3C74A0A0088D2D8ED24673 /* SyncedPreferences.swift in Sources */,
 				0260B3F1B3B3E791FB3BAF64 /* TextNormalizer.swift in Sources */,
@@ -868,6 +875,7 @@
 			files = (
 				D0E873D730D51FDB14F1F4A7 /* DocumentParserTests.swift in Sources */,
 				4412BA092D7B5B51CA1FB90D /* NodusReaderTests.swift in Sources */,
+				D558825DFD17434164BEB8D2 /* SyncTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -966,7 +974,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1032,7 +1040,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
