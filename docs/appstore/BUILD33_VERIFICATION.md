@@ -25,3 +25,11 @@ Release builds contain no sample books or collections: sample seeding (`SampleLi
 | macOS unit/integration suite | 127 passed, 0 failures |
 | iPhone UI: PDF Intelligent Reading, PDF highlights/notes, PDF contents + return to narration, paged reader + bookmarks, centred transport, library/collections navigation, iCloud and storage | 7 passed, 0 failures |
 | English/Spanish catalog | 716 keys, 0 missing Spanish, 0 placeholder mismatches |
+
+## Distribution
+
+Version 0.1.0 (33), archived from merge commit `521d17b` ([PR #34](https://github.com/jorgepb96/nodus-reader/pull/34)). Both signed archives passed `codesign --verify --deep --strict`; the Release Mac binary contains no capture-tour strings; the signed Mac archive app stayed running after launch. Uploads succeeded through Xcode's account, macOS first.
+
+- iOS 33 (`9d3bc4d7-c78b-48b0-bda3-2b8eedec5f76`): **Internal** and **Nodus Reader — Public Beta**, Beta App Review submitted, **In testing** (53 invitations). Public link: https://testflight.apple.com/join/SjCk8AZ1.
+- macOS 33 (`7a1d4ade-3526-4f8c-88a0-95041a6a3f84`): **Internal** only.
+- Both carry the [English](TestFlight-33-en.txt) / [Spanish](TestFlight-33-es.txt) What to Test notes.
