@@ -715,8 +715,17 @@ final class ModelManager {
                                                                  bundle: Self.kokoroCacheDirectory)
                 return (samples, 24_000)
             }
-            let audio = try await kokoro.synthesize(text, voice: KokoroVoiceID(name))
-            return (audio.samples, Double(audio.sampleRate))
+            let inputs = try await kokoro.prepare(text, voice: KokoroVoiceID(name))
+            var samples: [Float] = []
+            for (index, input) in inputs.enumerated() {
+                try Task.checkCancellation()
+                let audio = try await kokoro.synthesizePrepared([input])
+                let chunk = NarrationPCM.kokoroChunk(audio.samples, sampleRate: Double(audio.sampleRate),
+                    continuesPrevious: index > 0 && !NarrationPCM.endsClause(inputs[index - 1].text ?? ""),
+                    continuesNext: index + 1 < inputs.count && !NarrationPCM.endsClause(input.text ?? ""))
+                NarrationPCM.append(chunk, to: &samples, sampleRate: Double(audio.sampleRate))
+            }
+            return (samples, 24_000)
         case .phonon:
             guard let phonon else { throw NeuralNarrationError.engineNotLoaded("Phonon") }
             // Voice names come from the bundle's file names, which the file system
@@ -733,7 +742,10 @@ final class ModelManager {
                phonon.language != language {
                 try await phonon.setLanguage(language)
             }
-            return (try await phonon.synthesize(text), Phonon.sampleRate)
+            var samples = try await phonon.synthesize(text)
+            try Task.checkCancellation()
+            NarrationPCM.fadeEdges(&samples, sampleRate: Phonon.sampleRate)
+            return (samples, Phonon.sampleRate)
         }
     }
 

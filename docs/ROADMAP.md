@@ -100,7 +100,8 @@ limitations.
 - [ ] Share Extension end-to-end test with signed App Group entitlements.
 - [ ] Full VoiceOver, Dynamic Type, contrast and Reduce Motion audit.
 - [ ] Large-library performance profiling.
-- [ ] App Store/TestFlight and notarised macOS distribution.
+- [x] TestFlight distribution for iOS/iPadOS and macOS (build 28 uploaded; iOS approved and in external testing, macOS waiting for Beta App Review).
+- [ ] App Store/Mac App Store release and notarised macOS distribution.
 - [ ] Final licence audit before distribution.
 
 ## Known deviations from the design

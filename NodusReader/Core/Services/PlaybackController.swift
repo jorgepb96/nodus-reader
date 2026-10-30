@@ -77,8 +77,10 @@ public struct NarrationSentence: Identifiable, Sendable {
 @Observable
 public final class PlaybackController {
     public static let speedOptions: [Double] = [0.75, 1.0, 1.25, 1.35, 1.5, 1.75, 2.0]
+    private static let speedPreferenceKey = "nodus.playback.speed"
 
     @ObservationIgnored private let library: LibraryService
+    @ObservationIgnored private let defaults: UserDefaults
     public let voices: VoiceCatalog
     @ObservationIgnored private let models: ModelManager
 
@@ -111,6 +113,8 @@ public final class PlaybackController {
     @ObservationIgnored private var cacheToken = UUID()
     @ObservationIgnored private var restartOnResume = false
     @ObservationIgnored private var restartVoiceOnResume = false
+    @ObservationIgnored private var readerResumePosition: (bookID: UUID, chapterIndex: Int, offset: Int)?
+    @ObservationIgnored private var pendingChapterSeek: (chapter: Int, offset: Int?, fraction: Double)?
     @ObservationIgnored private var voiceChangeObserver: NSObjectProtocol?
     @ObservationIgnored private var libraryDeletionObserver: NSObjectProtocol?
     @ObservationIgnored private let synthesisGate = SynthesisGate()
@@ -147,7 +151,7 @@ public final class PlaybackController {
     public var errorMessage: String?
     public var cacheErrorMessage: String?
     public var mode: ReadingMode = .listen
-    public var speedMultiplier: Double = 1.0
+    public private(set) var speedMultiplier: Double = 1.0
     public var sleepTimer: SleepTimerOption = .off
     public private(set) var sleepEndsAt: Date?
 
@@ -156,10 +160,17 @@ public final class PlaybackController {
     @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
     @ObservationIgnored private var routeObserver: NSObjectProtocol?
 
-    init(library: LibraryService, voices: VoiceCatalog, models: ModelManager) {
+    init(library: LibraryService, voices: VoiceCatalog, models: ModelManager,
+         defaults: UserDefaults = .standard) {
         self.library = library
+        self.defaults = defaults
         self.voices = voices
         self.models = models
+        let savedSpeed = defaults.double(forKey: Self.speedPreferenceKey)
+        speedMultiplier = Self.speedOptions.contains(savedSpeed) ? savedSpeed : 1.0
+        // Restore the audio rate as well as its label before any narration
+        // starts; otherwise the UI can show the saved speed while playing 1×.
+        timePitch.rate = Float(speedMultiplier)
         if let neuralFormat {
             audioEngine.attach(audioPlayer)
             audioEngine.attach(timePitch)
@@ -276,6 +287,26 @@ public final class PlaybackController {
     public var currentSentenceChapterRange: NSRange? {
         guard sentences.indices.contains(currentIndex) else { return nil }
         return sentences[currentIndex].chapterRange
+    }
+
+    /// The word being read, or the requested start inside a sentence while
+    /// audio is being prepared. Used when returning from the audio panel.
+    public var currentChapterOffset: Int? {
+        guard sentences.indices.contains(currentIndex) else { return nil }
+        return sentences[currentIndex].chapterOffset + (currentWordRange?.location ?? neuralStartOffset)
+    }
+
+    /// Transfer the audio position once when the player opens the reader.
+    /// Later visits in Read mode keep any progress made by turning pages.
+    public func requestReaderResume() {
+        guard let book = activeBook, let offset = currentChapterOffset else { return }
+        readerResumePosition = (book.id, chapterIndex, offset)
+    }
+
+    public func consumeReaderResume(for book: Book) -> (chapterIndex: Int, offset: Int)? {
+        guard let position = readerResumePosition, position.bookID == book.id else { return nil }
+        readerResumePosition = nil
+        return (position.chapterIndex, position.offset)
     }
 
     public var currentWordChapterRange: NSRange? {
@@ -418,6 +449,16 @@ public final class PlaybackController {
                 currentIndex = index
                 startOffset = wordOffset
             }
+            // The reader may select another chapter while the book text is
+            // still loading. Its latest selection takes precedence.
+            if let pending = pendingChapterSeek {
+                pendingChapterSeek = nil
+                if let destination = narrationDestination(chapter: pending.chapter, offset: pending.offset,
+                                                          fraction: pending.fraction) {
+                    currentIndex = destination.index
+                    startOffset = destination.offset
+                }
+            }
             chapterIndex = sentences[currentIndex].chapterIndex
             isLoading = false
             library.setReadingMode(book, mode: mode)
@@ -468,7 +509,7 @@ public final class PlaybackController {
     public func resume() {
         guard let book = activeBook else { return }
         if mode == .read {
-            mode = .listen
+            mode = .readAndListen
             library.setReadingMode(book, mode: mode)
         }
         if restartVoiceOnResume {
@@ -483,7 +524,7 @@ public final class PlaybackController {
         }
         if restartOnResume, !neuralPaused {
             restartOnResume = false
-            let offset = currentWordRange?.location ?? 0
+            let offset = currentWordRange?.location ?? neuralStartOffset
             stopAudio()
             isPlaying = false
             speakCurrent(fromOffset: offset)
@@ -534,6 +575,8 @@ public final class PlaybackController {
         resetPrefetch()
         currentIndex = 0
         chapterIndex = 0
+        pendingChapterSeek = nil
+        readerResumePosition = nil
         mode = .listen
         updateNowPlaying()
         if let deletedBookID {
@@ -556,6 +599,8 @@ public final class PlaybackController {
         isPlaying = false
         resetWordState()
         if clearBook {
+            readerResumePosition = nil
+            pendingChapterSeek = nil
             cancelAudioCacheGeneration()
             saveProgress()
             activeBook = nil
@@ -617,9 +662,64 @@ public final class PlaybackController {
         move(to: index)
     }
 
+    /// Follow an explicit reader jump without changing its playing/paused
+    /// state. For PDFs, `chapter` is the original page ID used by the reader.
+    @discardableResult
+    public func seek(toChapter chapter: Int, offset: Int? = nil, fraction: Double = 0) -> Bool {
+        guard activeBook != nil else { return false }
+        if isLoading, sentences.isEmpty {
+            pendingChapterSeek = (chapter, offset, fraction)
+            return true
+        }
+        guard let destination = narrationDestination(chapter: chapter, offset: offset, fraction: fraction) else {
+            // A chapter without readable text must not leave the previous
+            // chapter speaking behind the selected page.
+            pause()
+            return false
+        }
+        let wasPlaying = isPlaying
+        stopAudio()
+        resetPrefetch()
+        resetWordState()
+        isPlaying = false
+        currentIndex = destination.index
+        chapterIndex = sentences[destination.index].chapterIndex
+        neuralStartOffset = destination.offset
+        restartOnResume = true
+        restartVoiceOnResume = false
+        readerResumePosition = nil
+        errorMessage = nil
+        saveProgress()
+        if wasPlaying, mode != .read {
+            restartOnResume = false
+            speakCurrent(fromOffset: destination.offset)
+        }
+        updateNowPlaying()
+        return true
+    }
+
+    private func narrationDestination(chapter: Int, offset: Int?, fraction: Double) -> (index: Int, offset: Int)? {
+        let index: Int
+        if activeBook?.format == .pdf {
+            guard let match = chapters.firstIndex(where: { $0.id == chapter }) else { return nil }
+            index = match
+        } else {
+            index = chapter
+        }
+        guard chapters.indices.contains(index) else { return nil }
+        let length = (chapters[index].text as NSString).length
+        let position = offset ?? Int((Double(max(length - 1, 0)) * min(max(fraction, 0), 1)).rounded())
+        guard let sentence = sentenceIndex(chapter: index, offset: max(0, position)) else { return nil }
+        let inSentence = max(0, min(position - sentences[sentence].chapterOffset,
+                                    max(sentences[sentence].chapterLength - 1, 0)))
+        return (sentence, inSentence)
+    }
+
     public func setSpeed(_ multiplier: Double) {
+        guard Self.speedOptions.contains(multiplier) else { return }
         speedMultiplier = multiplier
         timePitch.rate = Float(multiplier)
+        defaults.set(multiplier, forKey: Self.speedPreferenceKey)
         guard isPlaying else {
             if activeBook != nil { restartOnResume = true }
             return
@@ -972,7 +1072,9 @@ public final class PlaybackController {
             return
         }
         audioPlayer.stop()
-        audioPlayer.scheduleBuffer(buffer, at: nil, options: []) { [weak self] in
+        // Wait until the output has played, rather than just been consumed by
+        // the render thread; stopping earlier truncates the tail and can click.
+        audioPlayer.scheduleBuffer(buffer, at: nil, options: [], completionCallbackType: .dataPlayedBack) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.neuralSentenceFinished(token: token)
             }
@@ -1112,6 +1214,14 @@ public final class PlaybackController {
                                             frameCapacity: AVAudioFrameCount(remaining)),
               let destination = sliced.floatChannelData?[0] else { return nil }
         destination.update(from: channel.advanced(by: start), count: remaining)
+        // A word seek can land on a nonzero sample inside otherwise clean PCM.
+        let fadeCount = min(Int(sampleRate * 0.010), remaining)
+        if fadeCount > 1 {
+            for index in 0..<fadeCount {
+                let phase = Double(index) / Double(fadeCount - 1)
+                destination[index] *= Float(0.5 - 0.5 * cos(.pi * phase))
+            }
+        }
         sliced.frameLength = AVAudioFrameCount(remaining)
         return sliced
     }
@@ -1236,11 +1346,12 @@ public final class PlaybackController {
 
     private func sentenceIndex(chapter: Int, offset: Int) -> Int? {
         let target = max(0, offset)
+        // A page can begin with whitespace between sentences. Start at the
+        // next sentence instead of falling back to an old playback position.
         return sentences.firstIndex { sentence in
             sentence.chapterIndex == chapter &&
-            target >= sentence.chapterOffset &&
             target < sentence.chapterOffset + max(sentence.chapterLength, 1)
-        }
+        } ?? sentences.lastIndex { $0.chapterIndex == chapter }
     }
 
     private func resetWordState() {

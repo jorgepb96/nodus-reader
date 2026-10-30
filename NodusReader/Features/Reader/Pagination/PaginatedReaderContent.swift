@@ -48,6 +48,7 @@ struct PaginatedReaderContent: View {
     var onHighlight: (Int, NSRange, AnnotationColor) -> Void
     var onNote: (Int, NSRange) -> Void
 
+    @Binding var navigationTarget: ReaderNavigationTarget?
     @Binding var pageIndex: Int
     @Binding var pageInfo: ReaderPageInfo
     @Binding var firstPageByChapter: [Int: Int]
@@ -65,6 +66,7 @@ struct PaginatedReaderContent: View {
     /// Changes only when page breaks change, so the scroll view is rebuilt
     /// at the right slice instead of animating across the book.
     @State private var layoutGeneration = UUID()
+    @State private var appliedNavigationID: UUID?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var pageTurn: PageTurnStyle {
         reduceMotion && typography.pageTurn == .curl ? .slide : typography.pageTurn
@@ -161,12 +163,18 @@ struct PaginatedReaderContent: View {
             // GeometryReader places content at its top-leading corner; the
             // first-open progress indicator belongs in the middle of the page.
             .frame(width: proxy.size.width, height: proxy.size.height)
-            .task(id: key) {
+            // A requested chapter takes priority over the background book
+            // layout, so a long book does not make contents navigation wait.
+            .task(id: "\(key)-\(navigationTarget?.id.uuidString ?? "")") {
                 await buildPages(size: size, key: key, columns: columnCount, style: pageStyle)
             }
         }
         .onChange(of: pageIndex) { _, _ in
             updatePageInfo()
+        }
+        .onChange(of: navigationTarget) { _, _ in
+            applyNavigationTarget()
+            if navigationTarget == nil { followNarrationIfNeeded() }
         }
         .onChange(of: narrationSentenceRange) { _, _ in
             followNarrationIfNeeded()
@@ -220,9 +228,12 @@ struct PaginatedReaderContent: View {
         }
 
         let hadPages = !pages.isEmpty
-        let targetChapter = min(max(hadPages ? pageInfo.chapterIndex : initialChapterIndex, 0),
+        let targetChapter = min(max(navigationTarget?.chapterIndex ?? (hadPages ? pageInfo.chapterIndex : initialChapterIndex), 0),
                                 max(chapters.count - 1, 0))
         let targetFraction: Double = {
+            if let target = navigationTarget, appliedNavigationID != target.id {
+                return min(max(target.fraction, 0), 1)
+            }
             guard hadPages else { return max(0, min(initialFraction, 1)) }
             return pageInfo.pagesInChapter > 1
                 ? Double(pageInfo.pageIndexInChapter) / Double(pageInfo.pagesInChapter - 1)
@@ -295,7 +306,9 @@ struct PaginatedReaderContent: View {
         let offset = min(max(pageInChapter, 0), max(chapterPages - 1, 0))
         pageIndex = min(start + offset, paginated.pages.count - 1)
         updatePageInfo()
-        followNarrationIfNeeded()
+        if !applyNavigationTarget() {
+            followNarrationIfNeeded()
+        }
     }
 
     /// TextKit layout of a whole book takes seconds on long books; it runs off
@@ -331,8 +344,44 @@ struct PaginatedReaderContent: View {
         }
     }
 
+    /// A chapter can be absent from the provisional pages. Keep the request
+    /// until it exists. After applying it, preserve any page turns the reader
+    /// makes while full pagination finishes remapping the chapter's pages.
+    @discardableResult
+    private func applyNavigationTarget() -> Bool {
+        guard let target = navigationTarget else { return false }
+        guard chapters.indices.contains(target.chapterIndex) else {
+            navigationTarget = nil
+            return false
+        }
+        if appliedNavigationID == target.id {
+            if shownComplete { navigationTarget = nil }
+            return true
+        }
+        let indices = pages.indices.filter { pages[$0].chapterIndex == target.chapterIndex }
+        guard let first = indices.first else { return false }
+        let destination: Int
+        if let offset = target.characterOffset {
+            destination = indices.first { index in
+                let page = pages[index]
+                return offset >= page.chapterStartOffset &&
+                    offset < max(page.chapterEndOffset, page.chapterStartOffset + 1)
+            } ?? first
+        } else {
+            let fraction = min(max(target.fraction, 0), 1)
+            let offset = Int((fraction * Double(indices.count - 1)).rounded())
+            destination = indices[offset]
+        }
+        pageIndex = destination
+        updatePageInfo()
+        appliedNavigationID = target.id
+        if shownComplete { navigationTarget = nil }
+        return true
+    }
+
     private func followNarrationIfNeeded() {
-        guard followNarration,
+        guard navigationTarget == nil || appliedNavigationID == navigationTarget?.id,
+              followNarration,
               let narrationChapterIndex,
               let narrationSentenceRange,
               !pages.isEmpty else { return }

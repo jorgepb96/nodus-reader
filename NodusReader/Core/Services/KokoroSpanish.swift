@@ -95,7 +95,16 @@ enum KokoroSpanish {
             )
         }
         guard !inputs.isEmpty else { throw KokoroError.emptyText }
-        return try await engine.synthesizePrepared(inputs).samples
+        var samples: [Float] = []
+        for (index, input) in inputs.enumerated() {
+            try Task.checkCancellation()
+            let audio = try await engine.synthesizePrepared([input])
+            let chunk = NarrationPCM.kokoroChunk(audio.samples, sampleRate: Double(audio.sampleRate),
+                continuesPrevious: index > 0 && !NarrationPCM.endsClause(inputs[index - 1].text ?? ""),
+                continuesNext: index + 1 < inputs.count && !NarrationPCM.endsClause(input.text ?? ""))
+            NarrationPCM.append(chunk, to: &samples, sampleRate: Double(audio.sampleRate))
+        }
+        return samples
     }
 
     // MARK: Bundle files

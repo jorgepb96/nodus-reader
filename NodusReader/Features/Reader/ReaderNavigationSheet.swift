@@ -144,6 +144,14 @@ private enum ReaderNavigationTab: String, CaseIterable, Identifiable {
     }
 }
 
+/// Keep navigation in chapter coordinates while pagination changes page numbers.
+struct ReaderNavigationTarget: Equatable {
+    let id = UUID()
+    let chapterIndex: Int
+    var fraction: Double = 0
+    var characterOffset: Int? = nil
+}
+
 struct ReaderNavigationSheet: View {
     @Environment(LibraryService.self) private var library
     @Environment(\.dismiss) private var dismiss
@@ -152,8 +160,8 @@ struct ReaderNavigationSheet: View {
     let book: Book
     let chapters: [ExtractedChapter]
     let pages: [ReaderPage]
-    let firstPageByChapter: [Int: Int]
-    @Binding var pageIndex: Int
+    let pageIndex: Int
+    var onNavigate: (ReaderNavigationTarget) -> Void
     var onEditAnnotation: (Annotation) -> Void
 
     @State private var tab: ReaderNavigationTab = .contents
@@ -240,7 +248,7 @@ struct ReaderNavigationSheet: View {
             ForEach(matchingChapterIndices, id: \.self) { index in
                 let chapter = chapters[index]
                 Button {
-                    pageIndex = firstPageByChapter[index] ?? 0
+                    onNavigate(ReaderNavigationTarget(chapterIndex: index))
                     dismiss()
                 } label: {
                     HStack(spacing: 10) {
@@ -282,12 +290,9 @@ struct ReaderNavigationSheet: View {
                 List {
                     ForEach(book.bookmarks.sorted { $0.createdAt > $1.createdAt }) { bookmark in
                         Button {
-                            let chapter = max(bookmark.locator.chapterIndex, 0)
-                            let chapterPages = pages.filter { $0.chapterIndex == chapter }.count
-                            let fraction = min(max(bookmark.locator.scrollFraction, 0), 1)
-                            let offset = Int((fraction * Double(max(chapterPages - 1, 0))).rounded())
-                            let start = firstPageByChapter[chapter] ?? 0
-                            pageIndex = min(start + max(0, offset), max(pages.count - 1, 0))
+                            onNavigate(ReaderNavigationTarget(
+                                chapterIndex: max(bookmark.locator.chapterIndex, 0),
+                                fraction: min(max(bookmark.locator.scrollFraction, 0), 1)))
                             dismiss()
                         } label: {
                             HStack(spacing: 10) {
@@ -338,9 +343,8 @@ struct ReaderNavigationSheet: View {
                             : $0.chapterIndex < $1.chapterIndex
                     }) { annotation in
                         Button {
-                            if let index = page(for: annotation) {
-                                pageIndex = index
-                            }
+                            onNavigate(ReaderNavigationTarget(chapterIndex: annotation.chapterIndex,
+                                                              characterOffset: annotation.startOffset))
                             dismiss()
                         } label: {
                             HStack(alignment: .top, spacing: 10) {
@@ -397,14 +401,6 @@ struct ReaderNavigationSheet: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
             }
-        }
-    }
-
-    private func page(for annotation: Annotation) -> Int? {
-        pages.firstIndex { page in
-            page.chapterIndex == annotation.chapterIndex &&
-            annotation.startOffset >= page.chapterStartOffset &&
-            annotation.startOffset < max(page.chapterEndOffset, page.chapterStartOffset + 1)
         }
     }
 

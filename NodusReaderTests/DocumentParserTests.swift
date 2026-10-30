@@ -2,7 +2,11 @@
 import CoreGraphics
 import CoreText
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 import PDFKit
 import Testing
 @testable import Nodus_Reader
@@ -812,23 +816,38 @@ func textImportRejectsAnEmptyDocument() throws {
 @MainActor
 private func makeScannedPDF() throws -> URL {
     let size = CGSize(width: 1240, height: 1754)
-    let renderer = UIGraphicsImageRenderer(size: size)
-    let image = renderer.image { context in
-        UIColor.white.setFill()
-        context.fill(CGRect(origin: .zero, size: size))
-        let muted = UIColor(white: 0.35, alpha: 1)
+    guard let bitmap = CGContext(data: nil, width: Int(size.width), height: Int(size.height),
+                                 bitsPerComponent: 8, bytesPerRow: 0,
+                                 space: CGColorSpaceCreateDeviceRGB(),
+                                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+        throw ImportError.unreadableDocument("scanned page")
+    }
+    bitmap.translateBy(x: 0, y: size.height)
+    bitmap.scaleBy(x: 1, y: -1)
+    #if canImport(UIKit)
+    UIGraphicsPushContext(bitmap)
+    defer { UIGraphicsPopContext() }
+    #else
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(cgContext: bitmap, flipped: true)
+    defer { NSGraphicsContext.restoreGraphicsState() }
+    #endif
+    do {
+        bitmap.setFillColor(gray: 1, alpha: 1)
+        bitmap.fill(CGRect(origin: .zero, size: size))
+        let muted = PlatformColor(white: 0.35, alpha: 1)
         let header = "A GENERIC RUNNING HEADER"
         header.draw(at: CGPoint(x: 180, y: 55), withAttributes: [
-            .font: UIFont.systemFont(ofSize: 24), .foregroundColor: muted
+            .font: PlatformFont.systemFont(ofSize: 24), .foregroundColor: muted
         ])
         "CHAPTER I".draw(at: CGPoint(x: 140, y: 190), withAttributes: [
-            .font: UIFont.boldSystemFont(ofSize: 46), .foregroundColor: UIColor.black
+            .font: PlatformFont.boldSystemFont(ofSize: 46), .foregroundColor: PlatformColor.black
         ])
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = 12
         let body: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 29),
-            .foregroundColor: UIColor.black,
+            .font: PlatformFont.systemFont(ofSize: 29),
+            .foregroundColor: PlatformColor.black,
             .paragraphStyle: paragraph
         ]
         ("This is the first paragraph, hard-wrapped over two lines so the reading "
@@ -838,10 +857,10 @@ private func makeScannedPDF() throws -> URL {
          + "paragraph from the first one.")
             .draw(in: CGRect(x: 140, y: 700, width: 960, height: 240), withAttributes: body)
         "1".draw(at: CGPoint(x: 610, y: 1650), withAttributes: [
-            .font: UIFont.systemFont(ofSize: 24), .foregroundColor: muted
+            .font: PlatformFont.systemFont(ofSize: 24), .foregroundColor: muted
         ])
     }
-    guard let cgImage = image.cgImage else { throw ImportError.unreadableDocument("scanned page") }
+    guard let cgImage = bitmap.makeImage() else { throw ImportError.unreadableDocument("scanned page") }
     let data = NSMutableData()
     var mediaBox = CGRect(x: 0, y: 0, width: 612, height: 792)
     guard let consumer = CGDataConsumer(data: data as CFMutableData),
@@ -856,17 +875,19 @@ private func makeScannedPDF() throws -> URL {
 }
 
 @Test @MainActor
-func scannedPDFJoinsParagraphsAndDoesNotPromoteBodyLinesToHeadings() throws {
+func scannedPDFJoinsParagraphsAndDoesNotPromoteBodyLinesToHeadings() async throws {
     let url = try makeScannedPDF()
     defer { try? FileManager.default.removeItem(at: url) }
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("NodusScannedStore-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: root) }
     let store = PDFReflowStore(fileStore: FileStore(root: root))
-    let document = try PDFReflowExtractor.extract(
-        url: url, bookID: UUID(), contentHash: "scanned-layout",
-        store: store, maxPages: 1
-    )
+    let document = try await Task.detached(priority: .userInitiated) {
+        try PDFReflowExtractor.extract(
+            url: url, bookID: UUID(), contentHash: "scanned-layout",
+            store: store, maxPages: 1
+        )
+    }.value
     #expect(document.usedOCR)
     let markdown = document.markdown()
     #expect(markdown.contains("CHAPTER I"))

@@ -70,7 +70,10 @@ metadata, chapters, duplicates, covers, collections, manual order, themes, utili
 pause-based word alignment and the durable sync outbox/tombstone rules, queued and
 folder imports, synced-book text rebuilding, synced preferences, background search and
 off-main pagination, per-book appearance, continuous-scroll slicing and PDF note
-anchoring. As of the last run: **46 tests pass** (plus the opt-in model test).
+anchoring. As of build 28: **89 test functions pass (107 runs including
+parameterised cases) and 10 opt-in model tests skip** on iPhone, iPad and macOS.
+The ten opt-in cases were run separately against real Kokoro and Phonon models; see
+the build 28 evidence below.
 
 An opt-in integration test downloads every model this machine can run (Phonon 31M
 and, on an Apple Silicon Mac, Kokoro 82M; about 500 MB), synthesizes a sentence with
@@ -163,12 +166,13 @@ Use `manifest.json` to rename the exported files. `docs/screenshots/` contains t
 
 These arguments are compiled behind `#if DEBUG` and do nothing in Release.
 
-The Mac build is not sandboxed, so these runs write to the real
-`~/Library/Application Support/NodusReader`. To test against a throwaway library,
-prefix the command with `CFFIXED_USER_HOME=/tmp/nodus-home` (create
-`/tmp/nodus-home/Library/Preferences` first).
+The Mac build is sandboxed; these runs write inside
+`~/Library/Containers/ai.nodus.reader/Data/Library/Application Support/NodusReader`.
+Remove that container to reset the debug library and its models. The unit tests still
+use `CFFIXED_USER_HOME` because their test host is built with
+`CODE_SIGNING_ALLOWED=NO` and is not sandboxed.
 
-## TestFlight (iOS/iPadOS)
+## TestFlight (iOS/iPadOS and macOS)
 
 The project signs automatically with team `6RPLS9EA4X`; `ITSAppUsesNonExemptEncryption`
 is `false` (the app only uses HTTPS), so uploads need no export-compliance answer.
@@ -193,8 +197,95 @@ test builds have no iCloud or App Group entitlements and cannot catch
 entitlement-dependent failures such as the build 1 launch crash.
 
 Use an existing `-derivedDataPath` with resolved packages: a fresh one may fail to
-clone package submodules. The Mac app is not on TestFlight yet; it needs the App
-Sandbox entitlement first (see below).
+clone package submodules. The Mac app is on TestFlight too (build 28); its archive uses
+the sandbox entitlements and the same build number.
+
+If Xcode reports `accessing build database ... disk I/O error` while archiving, use a
+fresh DerivedData outside the repository (`/tmp/...`) plus
+`-clonedSourcePackagesDirPath` pointing at an already-resolved `SourcePackages`. Build
+28 was archived this way after repeated `build.db` failures inside `build/`.
+
+### macOS
+
+The Mac app is signed with `Config/NodusReader-macOS.entitlements` (App Sandbox,
+user-selected read-only file access, outgoing network, CloudKit/iCloud Documents,
+the ubiquity container and the App Group) through the
+`CODE_SIGN_ENTITLEMENTS[sdk=macosx*]` setting. The narration stack is arm64-only,
+so archive the Mac app for arm64 only.
+
+The target also sets `LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]` to
+`@executable_path/../Frameworks`. XcodeGen's application preset uses the iOS runpath
+(`@executable_path/Frameworks`); with that value the archived and exported Mac app
+could not load its embedded SwiftPM frameworks (build 27 crashed in dyld before
+`main`). Build 28 fixes it and was launched from the signed archive.
+
+Register the build Mac as a Mac development device the first time. Then:
+
+```bash
+xcodebuild archive -project NodusReader.xcodeproj -scheme NodusReader -configuration Release \
+  -destination 'generic/platform=macOS' \
+  -archivePath build/NodusReader-macOS-0.1.0-28.xcarchive \
+  -derivedDataPath /tmp/nodus-reader-build28-mac-release \
+  -clonedSourcePackagesDirPath "$PWD/build/DerivedData-mac/SourcePackages" \
+  ARCHS=arm64 ONLY_ACTIVE_ARCH=NO -allowProvisioningUpdates
+xcodebuild -exportArchive -archivePath build/NodusReader-macOS-0.1.0-28.xcarchive \
+  -exportOptionsPlist Config/ExportOptions-macOS.plist \
+  -exportPath build/export-macOS-28 -allowProvisioningUpdates
+xcrun altool --upload-app -f "build/export-macOS-28/Nodus Reader.pkg" \
+  --apiKey <key-id> --apiIssuer <issuer-id> --p8-file-path <AuthKey.p8>
+```
+
+The App Store Connect record has a macOS version **1.0** in Prepare for Submission
+(not submitted) so the platform accepts builds. The export produces a signed `.pkg`
+whose `Distribution` declares macOS 15.0 and arm64. Allow the keychain prompts for
+the Mac App Distribution and Mac Installer Distribution certificates once. Build 28
+needed the login-keychain password for the legacy `mac-installer-legacy` key; the
+authorization was entered interactively. If `productbuild` waits for the login-keychain
+password, import both certificates into a temporary keychain with `security import ... -A`,
+unlock it and put it first with `security list-keychains -s`; restore the original
+search list after the export. A distribution-signed `.app` extracted from the `.pkg`
+does not launch outside an installed App Store location (AMFI rejects its restricted
+entitlements); verify launch with the signed archive app, not with a copied payload.
+
+TestFlight: **Internal** receives every build automatically; assign the build to
+**Nodus Reader — Public Beta** and submit it for Beta App Review. Keep
+*Test iPhone and iPad apps on Apple silicon Macs* disabled for both groups so the iOS
+build is not offered on Mac (build 26 crashed there; the native Mac build is the
+supported path).
+
+## Build 28 evidence (0.1.0 (28))
+
+Archived and uploaded on 30 October 2026 from HEAD `53d453bc78a737a49f49c09dccb0789a943771ea`
+plus the uncommitted working tree. Source fingerprint: `docs/appstore/BUILD28_SOURCE_FINGERPRINT.txt`.
+
+- TestFlight deliveries: iOS `b0465230-3fec-4a6b-887f-0982ceabb4ce` (47,276,632 bytes)
+  and macOS `2d23e765-7a58-4db6-a03c-ffc4c8bb4a52` (45,940,958 bytes).
+- iOS/iPadOS: archive `build/NodusReader-iOS-0.1.0-28.xcarchive`; IPA
+  `build/export-ios-28/Nodus Reader.ipa`, Apple Distribution, App Store provisioning
+  profile, arm64. App Store Connect: processing **VALID**, Beta App Review
+  **APPROVED**, external state **IN_BETA_TESTING**.
+- macOS: archive `build/NodusReader-macOS-0.1.0-28.xcarchive`; package
+  `build/export-macOS-28/Nodus Reader.pkg`, signed with the 3rd Party Mac Developer
+  Installer identity; app signed with Apple Distribution and the sandbox/iCloud/App
+  Group entitlements, macOS 15.0+, arm64. App Store Connect: **VALID**, Beta App
+  Review **WAITING_FOR_REVIEW** (submitted 29 October 17:09 PDT). macOS build 27 was
+  expired to free the train: it was still in beta review and its exported app had the
+  dyld runpath failure.
+- Signed archive app launch: the process stayed alive, the main thread was idle in
+  `mach_msg`, and the window/accessibility hierarchy answered (opened the Voices
+  settings sheet). The modal voice-setup sheet blocks AppKit termination; that is not
+  a hang.
+- Signed Release simulator builds launched on the iPhone 17 Pro and the iPad Pro
+  13-inch (M5) as 0.1.0 (28) without crashing.
+- Tests: macOS, iPhone and iPad unit suites 89 test functions passed / 10 opt-in
+  skipped (107 runs including parameterised cases); full iPhone UI suite 17 passed /
+  2 skipped; the iPad player regression passed and no longer needs the scroll
+  workaround; the same regression passed on iPhone. Real-model opt-in tests passed
+  for the long Kokoro/Phonon paragraph, Kokoro Spanish (three voices × five
+  sentences) and Kokoro out-of-dictionary English.
+- The iOS player is now a `.page` sheet, so the speed/voice/sleep/mode row is visible
+  without scrolling on iPad.
+- The iOS/TestFlight screenshot-feedback editor issue remains unresolved in code.
 
 ## Signing and distribution
 
@@ -203,13 +294,12 @@ Sandbox entitlement first (see below).
   `iCloud.ai.nodus.reader` and `group.ai.nodus.reader`. Automatic signing is enabled
   in `project.yml`.
 - `Config/NodusReader.entitlements` contains CloudKit, iCloud Documents, the
-  ubiquity container and the App Group. `Config/NodusReaderShare.entitlements`
-  contains the App Group.
+  ubiquity container and the App Group for iOS. `Config/NodusReader-macOS.entitlements`
+  adds the Mac App Sandbox, user-selected read-only file access and outgoing network
+  access for macOS. `Config/NodusReaderShare.entitlements` contains the App Group.
 - Unsigned builds deliberately report iCloud unavailable; constructing `CKContainer`
   without the entitlement would abort the process.
 - Before distribution:
-  - add the macOS App Sandbox entitlement with user-selected read-only file access if
-    distributing through the Mac App Store (the current Mac build is not sandboxed);
   - deploy the CloudKit development schema to production;
   - audit AGPL and third-party licences;
   - validate App Store/Mac App Store policy for model downloads and open-source licensing.
@@ -217,7 +307,8 @@ Sandbox entitlement first (see below).
 
 ## Known environment notes
 
-- The Mac app is a normal SwiftUI `WindowGroup`; the first launch uses `.defaultSize(1360 × 860)` and a minimum content size.
+- The Mac app is a normal SwiftUI `WindowGroup`; the first launch uses `.defaultSize(1360 × 860)` and a minimum content size. It is sandboxed and stores its library in `~/Library/Containers/ai.nodus.reader/Data/Library/Application Support/NodusReader`.
+- Build 28 of the Mac app was launched from its signed archive on macOS 27.0.1: the window rendered and answered accessibility queries; no hang was observed. The first run still shows the mandatory voice-setup sheet, and AppKit blocks termination while that modal sheet is open. macOS build 28 is waiting for Apple's beta review; macOS 15.8 remains the oldest tester system (the build 26 crash report).
 - The iOS 26 simulator was used for the screenshots (iPhone 17 Pro, iPad Pro 13-inch M5, iOS 26.5). iOS 18.2 runtime is also installed and supported by the deployment target.
 - Narration needs an installed Kokoro or Phonon model; there is no system-voice fallback. Tests that need narration skip when no model is installed.
 - Phonon downloads about 300 MB and Kokoro about 210 MB; Core ML additionally

@@ -14,7 +14,7 @@ settings:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: minimal
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "27"
+    CURRENT_PROJECT_VERSION: "28"
     # English is the base language and Spanish the one translation: a device
     # in Spanish shows Spanish, any other language shows English.
     SWIFT_EMIT_LOC_STRINGS: YES
@@ -43,6 +43,15 @@ packages:
   MLXSwift:
     url: https://github.com/ml-explore/mlx-swift
     exactVersion: 0.31.4
+
+schemes:
+  NodusReader-macOS:
+    build:
+      targets:
+        NodusReader: all
+    test:
+      targets:
+        - NodusReaderTests
 
 targets:
   NodusReader:
@@ -73,6 +82,11 @@ targets:
       base:
         INFOPLIST_FILE: NodusReader/Info.plist
         CODE_SIGN_ENTITLEMENTS: Config/NodusReader.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": Config/NodusReader-macOS.entitlements
+        # XcodeGen's application preset uses the iOS runpath. A macOS bundle
+        # embeds SwiftPM frameworks in Contents/Frameworks, so the archived app
+        # could not find them and aborted before starting.
+        "LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]": "@executable_path/../Frameworks"
         PRODUCT_BUNDLE_IDENTIFIER: ai.nodus.reader
         PRODUCT_NAME: Nodus Reader
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

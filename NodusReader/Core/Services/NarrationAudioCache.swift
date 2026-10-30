@@ -40,7 +40,8 @@ actor NarrationAudioCache {
     }
 
     nonisolated func key(text: String, engine: String, voice: String) -> String {
-        let digest = SHA256.hash(data: Data("v2|\(engine)|\(voice)|\(text)".utf8))
+        // Regenerate audio made before chunk-padding removal and edge fades.
+        let digest = SHA256.hash(data: Data("v3|\(engine)|\(voice)|\(text)".utf8))
         return digest.map { String(format: "%02x", $0) }.joined()
     }
 
@@ -182,6 +183,73 @@ actor NarrationAudioCache {
     private struct Meta: Codable {
         var duration: TimeInterval
         var words: [NarrationWordTiming]
+    }
+}
+
+/// PCM finishing shared by live narration, voice previews and cached audio.
+enum NarrationPCM {
+    /// A model-size split between words must not sound like punctuation.
+    /// Closing quotes/brackets belong to the preceding punctuation.
+    static func endsClause(_ text: String) -> Bool {
+        let end = text.last { !$0.isWhitespace && !"\"'”’»)]}".contains($0) }
+        return end.map { ",;:.!?…—–".contains($0) } ?? false
+    }
+
+    /// Remove only the quiet model padding at artificial chunk boundaries.
+    /// Real punctuation and silence inside a chunk keep their original timing.
+    static func kokoroChunk(_ samples: [Float], sampleRate: Double,
+                            continuesPrevious: Bool, continuesNext: Bool) -> [Float] {
+        guard !samples.isEmpty, continuesPrevious || continuesNext else { return samples }
+        let peak = samples.reduce(Float.zero) { max($0, abs($1)) }
+        guard peak > 0 else { return samples }
+        let threshold = max(Float(0.0002), peak * 0.005)
+        let window = max(1, Int(sampleRate * 0.002))
+        let margin = max(1, Int(sampleRate * 0.020))
+        func isQuiet(_ range: Range<Int>) -> Bool {
+            let energy = range.reduce(Float.zero) { $0 + samples[$1] * samples[$1] }
+            return energy / Float(range.count) < threshold * threshold
+        }
+        var first = 0
+        if continuesPrevious {
+            while first + window <= samples.count, isQuiet(first..<(first + window)) {
+                first += window
+            }
+        }
+        var last = samples.count
+        if continuesNext {
+            while last - window >= first, isQuiet((last - window)..<last) {
+                last -= window
+            }
+        }
+        guard first < last else { return samples }
+        return Array(samples[max(0, first - margin)..<min(samples.count, last + margin)])
+    }
+
+    /// Join adjacent chunks with a short linear crossfade, avoiding a sample
+    /// discontinuity after trimming. The overlap is too short to merge words.
+    static func append(_ chunk: [Float], to output: inout [Float], sampleRate: Double) {
+        let overlap = min(Int(sampleRate * 0.005), output.count, chunk.count)
+        if overlap > 0 {
+            let start = output.count - overlap
+            for index in 0..<overlap {
+                let gain = Float(index + 1) / Float(overlap + 1)
+                output[start + index] = output[start + index] * (1 - gain) + chunk[index] * gain
+            }
+        }
+        output.append(contentsOf: chunk.dropFirst(overlap))
+    }
+
+    /// A fresh decoder buffer can start/end away from zero. Ramp its outer
+    /// edges without changing duration or any word-alignment offsets.
+    static func fadeEdges(_ samples: inout [Float], sampleRate: Double) {
+        let count = min(Int(sampleRate * 0.010), samples.count / 2)
+        guard count > 1 else { return }
+        for index in 0..<count {
+            let phase = Double(index) / Double(count - 1)
+            let gain = Float(0.5 - 0.5 * cos(.pi * phase))
+            samples[index] *= gain
+            samples[samples.count - 1 - index] *= gain
+        }
     }
 }
 

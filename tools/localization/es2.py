@@ -14,6 +14,10 @@ ES = {
 "Open Access Tokens": "Abrir Access Tokens",
 "Open player": "Abrir reproductor",
 "Open player, %@": "Abrir reproductor, %@",
+"Read, %@": "Leer, %@",
+"Returns to the current reading position": "Vuelve a la posición actual de lectura",
+"Position in chapter": "Posición en el capítulo",
+"Drag the handle to move within this chapter.": "Arrastra el control para desplazarte por este capítulo.",
 "Open source": "Código abierto",
 "Open the Access Tokens page in your account settings.": "Abre la página Access Tokens en los ajustes de tu cuenta.",
 "Open the model's page. The links are below.": "Abre la página del modelo. Los enlaces están más abajo.",
@@ -439,4 +443,29 @@ ES.update({
     "Loading the voice model on this device…": "Cargando el modelo de voz en este dispositivo…",
     "Preparing the voice…": "Preparando la voz…",
     "Skip headers, footnotes & page numbers": "Omitir encabezados, notas al pie y números de página",
+})
+
+# Current reader and voice-setup strings.
+ES.update({
+    "A voice for every book.": "Una voz para cada libro.",
+    "Choose a Kokoro or Phonon voice to generate offline audio.": "Elige una voz Kokoro o Phonon para generar audio sin conexión.",
+    "Choose a voice model": "Elegir un modelo de voz",
+    "Contents entry": "Entrada del índice",
+    "Figure": "Figura",
+    "Figure on page %lld": "Figura en la página %lld",
+    "Install a Kokoro or Phonon model in the Models tab to start listening.": "Instala un modelo Kokoro o Phonon en la pestaña Modelos para empezar a escuchar.",
+    "Kokoro's English phonemizer uses MLX, which needs a Metal GPU. The Simulator does not provide one. Install Kokoro on an iPhone, iPad or Mac; Phonon works in the Simulator.": "El fonemizador de inglés de Kokoro utiliza MLX y necesita una GPU compatible con Metal. El simulador no dispone de ella. Instala Kokoro en un iPhone, iPad o Mac; Phonon funciona en el simulador.",
+    "NODUS READER": "NODUS READER",
+    "Neural voice": "Voz neuronal",
+    "No account": "Sin cuenta",
+    "No voice model": "Sin modelo de voz",
+    "No voice model installed": "No hay ningún modelo de voz instalado",
+    "No voice model is installed. Download a Kokoro or Phonon model below to enable narration.": "No hay ningún modelo de voz instalado. Descarga un modelo Kokoro o Phonon para activar la narración.",
+    "Nodus narrates with neural voices that run entirely on this device. Install one model to start listening — no account, no cloud, no system voice.": "Nodus narra con voces neuronales que se ejecutan íntegramente en este dispositivo. Instala un modelo para empezar a escuchar: sin cuenta, sin nube y sin voces del sistema.",
+    "On-device": "En el dispositivo",
+    "Only the selected model's voices appear in the reader and player.": "Solo aparecen en el lector y el reproductor las voces del modelo seleccionado.",
+    "Quote": "Cita",
+    "Scroll through pages": "Desplazarse por las páginas",
+    "Set up a voice": "Configura una voz",
+    "Works offline": "Funciona sin conexión"
 })

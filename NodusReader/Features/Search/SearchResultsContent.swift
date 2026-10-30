@@ -80,7 +80,7 @@ struct SearchResultsContent: View {
         }
         .background(palette.background)
         .readerCover(item: $readingBook)
-        .sheet(isPresented: $showPlayer) { PlayerView().presentationDragIndicator(.hidden) }
+        .playerSheet(isPresented: $showPlayer)
         .sheet(item: $editingBook) { BookInfoSheet(book: $0) }
         .sheet(isPresented: $showCollectionSheet) { AddToCollectionSheet(books: collectionBooks) }
         .confirmationDialog("Delete from Library?", isPresented: $showDeleteConfirmation,

@@ -15,6 +15,7 @@ struct ReaderContentsSheet: View {
     @Binding var currentPage: Int
     @Binding var jumpToPage: Int?
     var annotations: [Annotation] = []
+    var onNavigatePage: (Int) -> Void = { _ in }
     var onOpenAnnotation: (Annotation) -> Void = { _ in }
     var onEditAnnotation: (Annotation) -> Void = { _ in }
 
@@ -113,6 +114,7 @@ struct ReaderContentsSheet: View {
                     Button {
                         jumpToPage = row.pageIndex
                         currentPage = row.pageIndex
+                        onNavigatePage(row.pageIndex)
                         dismiss()
                     } label: {
                         HStack(spacing: 8) {
@@ -201,6 +203,7 @@ struct ReaderContentsSheet: View {
                     let target = min(max(draftPage - 1, 0), max(pageCount - 1, 0))
                     jumpToPage = target
                     currentPage = target
+                    onNavigatePage(target)
                     dismiss()
                 }
                 .foregroundStyle(palette.accent)

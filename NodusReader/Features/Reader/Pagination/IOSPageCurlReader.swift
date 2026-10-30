@@ -21,6 +21,9 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
     private var generation = UUID()
     private(set) var currentIndex = 0
     private var transitioning = false
+    private var lastRequestedIndex = 0
+    private var pendingConfiguration: ((Int?) -> Void)?
+    private var hasPendingNavigation = false
 
     /// Slide and Vertical use a plain scroll transition that follows the
     /// finger; Reduce Motion turns the curl into a slide. Programmatic page
@@ -61,6 +64,21 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
                    onNote: @escaping (Int, NSRange) -> Void,
                    onPageChanged: @escaping (Int) -> Void) {
         let pagesChanged = generation != self.generation || pages.count != self.pages.count
+        if transitioning {
+            // Keep the displayed pages and data source stable until UIKit
+            // finishes the gesture. The latest requested jump wins, including
+            // when pagination replaces all the page IDs during the turn.
+            hasPendingNavigation = hasPendingNavigation || pagesChanged || requestedIndex != lastRequestedIndex
+            pendingConfiguration = { [weak self] visibleIndex in
+                self?.configure(pages: pages, style: style, generation: generation,
+                                requestedIndex: visibleIndex ?? requestedIndex,
+                                highlightsProvider: highlightsProvider,
+                                onWordTap: onWordTap, onHighlight: onHighlight,
+                                onNote: onNote, onPageChanged: onPageChanged)
+            }
+            return
+        }
+        lastRequestedIndex = requestedIndex
         self.pages = pages
         self.style = style
         self.generation = generation
@@ -86,15 +104,17 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
             if let targetHost = host(at: target) {
                 setViewControllers(spread(targetHost, index: target), direction: .forward, animated: false)
             }
-        } else if transitioning {
-            // A page is mid-curl: touching its views now re-captures it and
-            // makes it shake. Highlights catch up when the turn ends.
-            return
         } else if target != self.currentIndex {
             setPage(target, animated: false)
         } else {
             refreshHighlights()
         }
+    }
+
+    /// Validate deferred SwiftUI binding writes against the current layout
+    /// and visible page, so an old swipe cannot undo a later chapter jump.
+    func isShowingPage(_ index: Int, generation: UUID) -> Bool {
+        self.generation == generation && currentIndex == index && !transitioning
     }
 
     func setPage(_ index: Int, animated: Bool) {
@@ -203,14 +223,31 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
                             previousViewControllers: [UIViewController],
                             transitionCompleted completed: Bool) {
         transitioning = false
-        guard completed,
-              let host = pageViewController.viewControllers?.first(where: { $0 is ReaderPageHostController })
-                  as? ReaderPageHostController,
-              let index = pages.firstIndex(where: { $0.id == host.page.id }) else {
+        let visibleIndex = (pageViewController.viewControllers?.first(where: { $0 is ReaderPageHostController })
+            as? ReaderPageHostController).flatMap { host in
+                pages.firstIndex { $0.id == host.page.id }
+            }
+        // Compare a pending destination with the page UIKit actually shows,
+        // including a jump back to the page where the gesture started.
+        if let visibleIndex { currentIndex = visibleIndex }
+        let pending = pendingConfiguration
+        let navigationPending = hasPendingNavigation
+        pendingConfiguration = nil
+        hasPendingNavigation = false
+        if navigationPending {
+            // The requested destination takes precedence over the gesture's
+            // result. Do not report the old swipe back to SwiftUI.
+            pending?(nil)
+            return
+        }
+        guard completed, let index = visibleIndex else {
+            pending?(currentIndex)
             refreshHighlights()
             return
         }
         currentIndex = index
+        // A highlights-only update must retain the page the gesture reached.
+        pending?(index)
         trimHosts()
         refreshHighlights()
         onPageChanged?(index)
@@ -245,7 +282,10 @@ struct PageCurlReader: UIViewControllerRepresentable {
             onNote: onNote,
             onPageChanged: { index in
                 if pageIndex != index {
-                    DispatchQueue.main.async {
+                    let previousIndex = pageIndex
+                    DispatchQueue.main.async { [weak controller] in
+                        guard pageIndex == previousIndex,
+                              controller?.isShowingPage(index, generation: generation) == true else { return }
                         pageIndex = index
                     }
                 }

@@ -719,6 +719,7 @@ struct PDFSourcePanel: View {
                     }
                     .disabled(pageIndex >= document.pageCount - 1)
                     .accessibilityLabel("Next page")
+                    .accessibilityIdentifier("PDFSourceNextPage")
                 }
                 .buttonStyle(.plain)
 
