@@ -1,0 +1,7 @@
+La sincronización con iCloud responde a los cambios de tu biblioteca: posiciones guardadas de lectura y escucha, marcapáginas, notas, importaciones de libros, colecciones y eliminaciones.
+
+Los cambios se conservan en una cola persistente, se agrupan por elemento y se envían sin solapar sincronizaciones. Las operaciones fallidas se reintentan automáticamente, también al recuperar la conexión. Los cambios realizados durante una subida quedan pendientes para la siguiente pasada.
+
+Se comprueban los fallos de CloudKit por registro, se protegen los cambios simultáneos y ya no se descartan silenciosamente transferencias o eliminaciones de archivos pendientes. También mejora la gestión de portadas y de libros que están solo en iCloud. El estado distingue los cambios pendientes de una sincronización completada.
+
+Los cambios de otros dispositivos se comprueban al abrir o volver a la app y cada minuto mientras está activa. La lectura y la narración siguen funcionando sin conexión.

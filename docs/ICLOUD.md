@@ -50,6 +50,7 @@ The metadata can arrive before the file. A book whose file is not local is marke
 
 | Piece | File |
 |---|---|
+| Serial event scheduling, follow-ups and retry deadlines | `NodusReader/Core/Sync/SyncCoordinator.swift` |
 | Durable outbox and tombstones | `NodusReader/Core/Sync/SyncJournal.swift` |
 | SwiftData models | `NodusReader/Core/Persistence/Models.swift` |
 | CloudKit + downloads | `NodusReader/Core/Sync/CloudSyncService.swift` |
@@ -73,17 +74,49 @@ SwiftData.
 
 1. `CloudSyncService.start()` refreshes account/iCloud Drive availability.
 2. When enabled, it creates the custom zone `NodusReader` if needed.
-3. `pushOutbox()` drains entries in creation order. Each entry becomes a CloudKit
-   record with an `updatedAt`.
-4. A remote tombstone that is newer than the local record deletes the local record.
+3. `SyncCoordinator` serializes network passes. Local saves request a pass within
+   one second; a burst cannot postpone the first deadline. Events during a pass
+   request a follow-up and never cancel the active upload. Parents are pushed
+   before memberships, bookmarks and annotations.
+4. Each upsert reads the existing record and saves with its change tag using
+   `ifServerRecordUnchanged`. A concurrent server edit causes a retry instead of
+   an unconditional overwrite. Only `unknownItem` means a record is absent;
+   network and authentication failures keep the operation queued.
+5. A remote tombstone that is newer than the local record deletes the local record.
    A newer remote record is applied instead of being overwritten by a stale queued
    edit.
-5. `pullChanges()` uses `recordZoneChanges(inZoneWith:since:)` with a persisted
+6. `pullChanges()` uses `recordZoneChanges(inZoneWith:since:)` with a persisted
    server change token. An expired token resets and refetches.
-6. Upserts and tombstones applied from the server suspend outbox recording, save on
+7. Upserts and tombstones applied from the server suspend outbox recording, save on
    the main actor and update the UI.
-7. Retries use exponential backoff (5 s doubling to 300 s) and store the last error
-   on the outbox entry.
+8. Every CloudKit save/delete result is checked individually. Partial failures
+   keep the operation queued. A failed per-record pull does not advance the
+   change token past that failure.
+9. Retries use exponential backoff (10 s initially, doubling to 300 s), respect
+   CloudKit's longer `retryAfterSeconds`, and store the error and deadline in
+   SwiftData. The coordinator automatically wakes for the earliest pending
+   deadline; no additional user action is needed. A failed older push cannot
+   back off or acknowledge a newer edit/delete for the same entity.
+10. Own incoming tombstones cannot acknowledge unfinished iCloud file cleanup.
+    Remote tombstones are retained locally so records from later pages cannot
+    resurrect an older entity. Physical CloudKit deletions have no timestamp;
+    only the corresponding tombstone authorizes removal.
+
+Pausing narration already saves the complete narration cursor through
+`LibraryService.updateProgress`, so it follows the same durable save event as
+bookmarks, notes, imports, favourites, collection creation/renaming/membership and
+single or bulk deletions. Queue bookkeeping and remote applies do not generate
+additional user-change events.
+
+Recovery is triggered on network restoration, iCloud account change, app startup,
+foreground entry and Sync Now. While the app is active, a 60-second reconciliation
+fallback discovers changes made only on another device. This release does not
+register APNs subscriptions: remote changes are discovered at these reconciliation
+points, not by a guaranteed immediate push. iOS background entry requests a final
+pass under a bounded background-task assertion; iOS may suspend the app before it
+finishes, and the durable queue resumes on the next opportunity. Disabling sync
+invalidates future work without cancelling a network write already in progress.
+A later generation cannot acknowledge the previous generation's operations.
 
 Themes and reading preferences (app theme, reader theme, custom themes, typography,
 page turn) sync as one `Preference` record (`preference-settings`), last writer
@@ -113,8 +146,11 @@ edits is still future work.
 
 ### Files
 
-- Uploading a `Book` after a successful metadata push copies the local document and
-  cover into the ubiquity container. iCloud Drive performs the transfer.
+- Before publishing a local `Book`, its original and cover are staged into the
+  ubiquity container. iCloud Drive performs the actual transfer. Failures throw
+  and retain the outbox entry. Immutable originals and `.icloud` placeholders are
+  reused; changed covers are atomically replaced even when the original already
+  exists. A failed copy preserves the previous remote file.
 - Downloading uses a scoped `NSMetadataQuery` to find the item even when only a
   hidden `.icloud` placeholder exists, calls
   `startDownloadingUbiquitousItem(at:)`, polls `ubiquitousItemDownloadingStatus`
@@ -161,3 +197,20 @@ edits is still future work.
 - [ ] `Remove Download` on one device; verify other devices keep their downloads.
 - [ ] Airplane mode during import/annotation/download; verify the queue drains later.
 - [ ] Confirm models, audio and OCR caches are absent from CloudKit and iCloud Drive.
+
+## Build 30 regression coverage
+
+`NodusReaderTests/SyncTests.swift` exercises event bursts, requests during an
+in-flight pass, automatic retry scheduling, disabling/re-enabling in flight,
+CloudKit per-record acknowledgement, server retry-after deadlines, stale failure
+versus a newer delete, bookkeeping without event loops, own-tombstone file cleanup,
+remote tombstone ordering, newer local edits, idempotent file upload/removal,
+replacement/clearing of covers, failed atomic replacement and queue persistence
+after reopening an on-disk store. Existing tests cover import batches, bookmarks,
+collections and exact narration cursor persistence. Live two-device iCloud testing
+remains a separate signed-device validation; simulator tests do not exercise an
+authenticated CloudKit account.
+
+CloudKit result semantics and change-tag conflicts follow Apple's documentation:
+[modifyRecords](https://developer.apple.com/documentation/cloudkit/ckdatabase/modifyrecords(saving:deleting:savepolicy:atomically:))
+and [serverRecordChanged](https://developer.apple.com/documentation/cloudkit/ckerror/serverrecordchanged).

@@ -113,6 +113,7 @@ struct RootView: View {
                 showVoiceSetup = !installed && !voiceSetupBypassed
             }
             .onChange(of: scenePhase) { _, phase in
+                sync.setSceneActive(phase == .active)
                 if phase != .active { playback.persistPosition() }
                 if phase == .active {
                     Task {
@@ -121,7 +122,10 @@ struct RootView: View {
                         await sync.syncNow()
                     }
                 } else if phase == .background {
-                    Task { await cleanUpStorage() }
+                    Task {
+                        await sync.syncBeforeSuspending()
+                        await cleanUpStorage()
+                    }
                 }
             }
     }
