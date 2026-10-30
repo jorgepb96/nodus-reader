@@ -1,0 +1,9 @@
+{
+  "sourceCommit": "f30797479cd04dab71f86fd28c56408d36e53d8d",
+  "mergeCommit": "2c04868ea470805418ec120d0eb27e1247e3793f",
+  "version": "0.1.0",
+  "build": "31",
+  "iOSExecutableSHA256": "0ec71d13fd5c71042186667babe5f4297a94a0f92c7e3ca68e55403d9336e482",
+  "macOSExecutableSHA256": "91a99bd481d41afb90d7e87cd8e0837adea39e38f6e71ffa03e9a63401e94622",
+  "macOSPackageSHA256": "39a7d0ec634f09988f654fa48e20a1f2c4b8e30d9837fdda6fb6186b1557efc3"
+}

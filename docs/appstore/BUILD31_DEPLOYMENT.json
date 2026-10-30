@@ -1,0 +1,58 @@
+[
+  {
+    "type": "buildUploads",
+    "id": "539f5858-02d5-4d52-9670-0737f5651c03",
+    "attributes": {
+      "cfBundleShortVersionString": "0.1.0",
+      "cfBundleVersion": "31",
+      "createdDate": "2026-10-30T11:56:08-07:00",
+      "state": {
+        "errors": [],
+        "warnings": [],
+        "infos": [],
+        "state": "PROCESSING"
+      },
+      "platform": "MAC_OS",
+      "uploadedDate": "2026-10-30T11:58:09-07:00"
+    },
+    "relationships": {
+      "buildUploadFiles": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/buildUploads/539f5858-02d5-4d52-9670-0737f5651c03/relationships/buildUploadFiles",
+          "related": "https://api.appstoreconnect.apple.com/v1/buildUploads/539f5858-02d5-4d52-9670-0737f5651c03/buildUploadFiles"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/buildUploads/539f5858-02d5-4d52-9670-0737f5651c03"
+    }
+  },
+  {
+    "type": "buildUploads",
+    "id": "73e4a625-cbcd-47a1-9b57-32cf2dddb490",
+    "attributes": {
+      "cfBundleShortVersionString": "0.1.0",
+      "cfBundleVersion": "31",
+      "createdDate": "2026-10-30T11:50:38-07:00",
+      "state": {
+        "errors": [],
+        "warnings": [],
+        "infos": [],
+        "state": "PROCESSING"
+      },
+      "platform": "IOS",
+      "uploadedDate": "2026-10-30T11:52:29-07:00"
+    },
+    "relationships": {
+      "buildUploadFiles": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/buildUploads/73e4a625-cbcd-47a1-9b57-32cf2dddb490/relationships/buildUploadFiles",
+          "related": "https://api.appstoreconnect.apple.com/v1/buildUploads/73e4a625-cbcd-47a1-9b57-32cf2dddb490/buildUploadFiles"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/buildUploads/73e4a625-cbcd-47a1-9b57-32cf2dddb490"
+    }
+  }
+]

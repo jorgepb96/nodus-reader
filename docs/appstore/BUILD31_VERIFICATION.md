@@ -17,4 +17,4 @@ The location control beside the sleep timer returns to the current spoken positi
 
 ## Distribution
 
-Version 0.1.0 (31). Signed iOS archive/upload in progress. iOS is distributed first. macOS public beta review remains withdrawn.
+Version 0.1.0 (31). Both signed archives passed deep/strict signature verification. The macOS installer signature also passed. Uploads succeeded in the requested order: iOS (`73e4a625-cbcd-47a1-9b57-32cf2dddb490`), then macOS (`539f5858-02d5-4d52-9670-0737f5651c03`). Apple processing is in progress. iOS is assigned to the public beta after processing; macOS remains internal only. macOS public beta review remains withdrawn.
