@@ -31,13 +31,46 @@ public enum Persistence {
     /// Sync is done by `CloudSyncService`; the store stays in this app's
     /// Application Support.
     static func configuration(inMemory: Bool = false) -> ModelConfiguration {
-        ModelConfiguration(
+        if !inMemory, LibraryStorageScope.isIsolated {
+            let directory = LibraryStorageScope.fileRoot()
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            return ModelConfiguration("NodusReaderSamples", schema: schema,
+                                      url: directory.appendingPathComponent("NodusReaderSamples.store"),
+                                      cloudKitDatabase: .none)
+        }
+        return ModelConfiguration(
             "NodusReader",
             schema: schema,
             isStoredInMemoryOnly: inMemory,
             groupContainer: .none,
             cloudKitDatabase: .none
         )
+    }
+}
+
+/// Development fixtures and test hosts must never open the personal library.
+enum LibraryStorageScope {
+    static func isIsolated(arguments: [String], environment: [String: String]) -> Bool {
+        #if DEBUG
+        arguments.contains("-NodusSampleLibrary") || arguments.contains("-NodusLongContentsSample") ||
+            environment["XCTestConfigurationFilePath"] != nil || environment["XCTestBundlePath"] != nil
+        #else
+        false
+        #endif
+    }
+
+    static var isIsolated: Bool {
+        isIsolated(arguments: ProcessInfo.processInfo.arguments, environment: ProcessInfo.processInfo.environment)
+    }
+
+    static func fileRoot(isolated: Bool = isIsolated, fileManager: FileManager = .default) -> URL {
+        let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? fileManager.temporaryDirectory
+        return base.appendingPathComponent(isolated ? "NodusReaderSamples" : "NodusReader", isDirectory: true)
+    }
+
+    static var defaults: UserDefaults {
+        isIsolated ? UserDefaults(suiteName: "ai.nodus.reader.sample-library")! : .standard
     }
 }
 

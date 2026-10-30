@@ -151,8 +151,8 @@ final class MacHighlightOverlayView: NSView {
             }
             for rect in rects {
                 let path = span.rounded
-                    ? NSBezierPath(roundedRect: rect.insetBy(dx: 0, dy: -1), xRadius: 3, yRadius: 3)
-                    : NSBezierPath(rect: rect.insetBy(dx: 0, dy: -1))
+                    ? NSBezierPath(roundedRect: rect, xRadius: 3, yRadius: 3)
+                    : NSBezierPath(rect: rect)
                 span.fill.setFill()
                 path.fill()
                 if let underline = span.underline {

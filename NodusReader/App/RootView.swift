@@ -27,7 +27,7 @@ struct RootView: View {
     var body: some View {
         @Bindable var imports = imports
 
-        platformRoot
+        rootContent
             .environment(navigation)
             .focusedSceneValue(\.nodusNavigation, navigation)
             .nodusPalette(palette)
@@ -38,11 +38,6 @@ struct RootView: View {
             #if os(iOS)
             .fullScreenCover(isPresented: $showVoiceSetup) {
                 voiceSetup
-            }
-            #else
-            .sheet(isPresented: $showVoiceSetup) {
-                voiceSetup
-                    .frame(minWidth: 620, minHeight: 760)
             }
             #endif
             .onChange(of: imports.bookToOpen?.id) { _, _ in
@@ -107,7 +102,7 @@ struct RootView: View {
                     showVoiceSetup = true
                 }
                 #endif
-                await imports.consumeSharedInbox()
+                if !LibraryStorageScope.isIsolated { await imports.consumeSharedInbox() }
                 openPendingImportedBook()
                 updateVoiceSetup()
                 await sync.start()
@@ -118,9 +113,10 @@ struct RootView: View {
                 showVoiceSetup = !installed && !voiceSetupBypassed
             }
             .onChange(of: scenePhase) { _, phase in
+                if phase != .active { playback.persistPosition() }
                 if phase == .active {
                     Task {
-                        await imports.consumeSharedInbox()
+                        if !LibraryStorageScope.isIsolated { await imports.consumeSharedInbox() }
                         await sync.refreshAvailability()
                         await sync.syncNow()
                     }
@@ -132,6 +128,21 @@ struct RootView: View {
 
     private var voiceSetup: some View {
         VoiceSetupView()
+    }
+
+    @ViewBuilder
+    private var rootContent: some View {
+        #if os(macOS)
+        // A modal setup sheet prevents AppKit from terminating normally.
+        // Keep setup in the window so Quit and the window controls work.
+        if showVoiceSetup {
+            voiceSetup.frame(minWidth: 1100, minHeight: 700)
+        } else {
+            platformRoot
+        }
+        #else
+        platformRoot
+        #endif
     }
 
     private func updateVoiceSetup() {

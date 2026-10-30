@@ -36,7 +36,7 @@ Import EPUB and PDF files and listen with neural voices that run on your device.
 
 **Description**:
 
-Nodus Reader is a free, open-source reading and listening app for iPhone and iPad. It opens EPUB and PDF books and documents, keeps them in a local library and reads them aloud with neural voices that run on your device. Books, notes and audio are not sent to a Nodus server. There are no ads, subscriptions or accounts.
+Nodus Reader is a free, open-source reading and listening app for iPhone, iPad and Mac. It opens EPUB and PDF books and documents, keeps them in a local library and reads them aloud with neural voices that run on your device. Your library is stored on your device, with optional sync through your personal iCloud account. There are no ads, subscriptions or accounts.
 
 IMPORT
 • Import EPUB, PDF, TXT, Markdown, HTML and RTF files from Files, from other apps with the Share button, or a whole folder at once.
@@ -80,7 +80,7 @@ Importa EPUB y PDF y escúchalos con voces neuronales que funcionan en tu dispos
 
 **Description**:
 
-Nodus Reader es una app gratuita y de código abierto para leer y escuchar en iPhone y iPad. Abre libros y documentos EPUB y PDF, los guarda en una biblioteca local y los lee en voz alta con voces neuronales que funcionan en tu dispositivo. Los libros, las notas y el audio no se envían a un servidor de Nodus. Sin anuncios, suscripciones ni cuentas.
+Nodus Reader es una app gratuita y de código abierto para leer y escuchar en iPhone, iPad y Mac. Abre libros y documentos EPUB y PDF, los guarda en una biblioteca local y los lee en voz alta con voces neuronales que funcionan en tu dispositivo. Tu biblioteca se guarda en tu dispositivo, con sincronización opcional a través de tu cuenta personal de iCloud. Sin anuncios, suscripciones ni cuentas.
 
 IMPORTAR
 • Importa archivos EPUB, PDF, TXT, Markdown, HTML y RTF desde Archivos, desde otras apps con el botón Compartir o una carpeta entera de una vez.

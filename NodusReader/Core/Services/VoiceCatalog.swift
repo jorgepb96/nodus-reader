@@ -40,7 +40,8 @@ public final class VoiceCatalog {
         }
     }
 
-    /// Voices of the selected model, which the reader and player offer.
+    /// Voices of the global model. A book's own voice can belong to any
+    /// installed model, independently of this selection.
     public private(set) var voices: [Voice] = []
     /// Voices of every installed neural model, selected or not. The Voices
     /// screen lists them so any model can be tried.
@@ -81,8 +82,18 @@ public final class VoiceCatalog {
     public func voice(withID id: String?,
                       engine: String? = nil) -> Voice? {
         guard let id else { return nil }
-        return (voices + installedNeuralVoices).first {
+        let available = voices + installedNeuralVoices
+        if let exact = available.first(where: {
             $0.id == id && (engine == nil || $0.engineRaw == engine)
+        }) {
+            return exact
+        }
+        // Older builds saved Spanish Phonon voices as "phonon:<name>".
+        // Current IDs include the checkpoint so equal names stay distinct.
+        guard id.hasPrefix("phonon:"), engine == nil || engine == "phonon" else { return nil }
+        let name = String(id.dropFirst("phonon:".count))
+        return available.first {
+            $0.modelID == "phonon-40m-es" && $0.name == name
         }
     }
 
@@ -90,14 +101,20 @@ public final class VoiceCatalog {
     public var allInstalledVoices: [Voice] { installedNeuralVoices }
 
     /// Resolves a saved per-book voice ID to a real installed neural voice.
-    /// A missing voice falls back to the selected model's first voice.
+    /// Voice IDs identify the engine and checkpoint as well as the voice.
+    /// A missing voice uses a temporary language-aware fallback; callers
+    /// retain the saved preference so reinstalling its model restores it.
     public func narrationVoice(preferredID: String?, language: String?) -> Voice? {
-        if let preferredID, let exact = voices.first(where: { $0.id == preferredID }) {
+        if let exact = voice(withID: preferredID) {
             return exact
         }
-        if let language {
-            let prefix = String(language.prefix(2)).lowercased()
-            if let match = voices.first(where: { $0.language.lowercased().hasPrefix(prefix) }) {
+        if let language = Self.languageCode(language) {
+            if let preferred = defaultVoice, Self.languageCode(preferred.language) == language {
+                return preferred
+            }
+            if let match = (voices + installedNeuralVoices).first(where: {
+                Self.languageCode($0.language) == language
+            }) {
                 return match
             }
         }

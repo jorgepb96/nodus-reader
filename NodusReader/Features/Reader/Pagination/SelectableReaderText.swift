@@ -18,9 +18,20 @@ struct SelectableReaderText {
     /// Columns take the height they are given; otherwise the text's height.
     var fillsProposedHeight = false
     var accessibilityLabel: String?
+    /// Stable chapter/page range of the spoken word. Independent of which
+    /// highlight layers the user chose to display.
+    var narrationFollowRange: NSRange?
     var onWordTap: (Int) -> Void = { _ in }
     var onHighlight: (NSRange, AnnotationColor) -> Void = { _, _ in }
     var onNote: (NSRange) -> Void = { _ in }
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var localNarrationRange: NSRange? {
+        guard let narrationFollowRange else { return nil }
+        // Only the block containing the word's start may move the viewport.
+        return mapping.localRange(NSRange(location: narrationFollowRange.location, length: 1))
+    }
 }
 
 #if os(iOS)
@@ -40,6 +51,13 @@ extension SelectableReaderText: UIViewRepresentable {
         view.setText(text)
         view.textView.accessibilityLabel = accessibilityLabel
         view.setHighlights(highlights)
+        view.narrationFollowRange = localNarrationRange
+        let range = localNarrationRange
+        let animated = !reduceMotion
+        DispatchQueue.main.async { [weak view] in
+            guard let view, let range, view.narrationFollowRange == range else { return }
+            view.followNarration(range, animated: animated)
+        }
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: ReaderSelectableTextView,
@@ -51,12 +69,43 @@ extension SelectableReaderText: UIViewRepresentable {
         return CGSize(width: width, height: uiView.fittingHeight(width: width))
     }
 }
+
+extension ReaderSelectableTextView {
+    /// The outer SwiftUI scroll view owns scrolling; the UITextView itself
+    /// stays non-scrolling so selections and highlights share one text layout.
+    func followNarration(_ range: NSRange, animated: Bool) {
+        guard window != nil, textView.selectedRange.length == 0 else { return }
+        var ancestor = superview
+        while let view = ancestor, !(view is UIScrollView) { ancestor = view.superview }
+        guard let scroll = ancestor as? UIScrollView,
+              !scroll.isDragging, !scroll.isDecelerating, !scroll.isTracking,
+              NSMaxRange(range) <= textView.attributedText.length else { return }
+        layoutIfNeeded()
+        let layout = textView.layoutManager
+        layout.ensureLayout(for: textView.textContainer)
+        let glyphs = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+        guard glyphs.length > 0 else { return }
+        let line = layout.lineFragmentRect(forGlyphAt: glyphs.location, effectiveRange: nil)
+            .offsetBy(dx: textView.textContainerInset.left, dy: textView.textContainerInset.top)
+        let rect = textView.convert(line, to: scroll)
+        let insets = scroll.adjustedContentInset
+        let height = scroll.bounds.height - insets.top - insets.bottom
+        let visibleTop = scroll.contentOffset.y + insets.top
+        guard height > 0,
+              rect.midY < visibleTop + height * 0.22 || rect.midY > visibleTop + height * 0.55 else { return }
+        let maximum = max(-insets.top, scroll.contentSize.height - scroll.bounds.height + insets.bottom)
+        let target = min(maximum, max(-insets.top, rect.midY - height * 0.35 - insets.top))
+        guard abs(target - scroll.contentOffset.y) > 1 else { return }
+        scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: target), animated: animated)
+    }
+}
 #else
 /// A self-sizing Mac text block built on the same text view and overlay as
 /// the two-page spread.
 final class ReaderMacSelectableView: NSView {
     let textView = ReaderMacTextView()
     let overlay = MacHighlightOverlayView()
+    var narrationFollowRange: NSRange?
     var horizontalInset: CGFloat = 0 {
         didSet { needsLayout = true }
     }
@@ -123,6 +172,13 @@ extension SelectableReaderText: NSViewRepresentable {
                                                 underlineWidth: span.underlineWidth, rounded: span.rounded)
         }
         view.needsLayout = true
+        view.narrationFollowRange = localNarrationRange
+        let range = localNarrationRange
+        let animated = !reduceMotion
+        DispatchQueue.main.async { [weak view] in
+            guard let view, let range, view.narrationFollowRange == range else { return }
+            view.followNarration(range, animated: animated)
+        }
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: ReaderMacSelectableView,
@@ -132,6 +188,39 @@ extension SelectableReaderText: NSViewRepresentable {
             return CGSize(width: width, height: height)
         }
         return CGSize(width: width, height: nsView.fittingHeight(width: width))
+    }
+}
+
+extension ReaderMacSelectableView {
+    func followNarration(_ range: NSRange, animated: Bool) {
+        guard window != nil, textView.selectedRange().length == 0,
+              let scroll = enclosingScrollView, let document = scroll.documentView,
+              let layout = textView.layoutManager, let container = textView.textContainer,
+              NSMaxRange(range) <= (textView.textStorage?.length ?? 0),
+              NSEvent.pressedMouseButtons == 0 else { return }
+        layoutSubtreeIfNeeded()
+        layout.ensureLayout(for: container)
+        let glyphs = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+        guard glyphs.length > 0 else { return }
+        let line = layout.lineFragmentRect(forGlyphAt: glyphs.location, effectiveRange: nil)
+            .offsetBy(dx: textView.textContainerOrigin.x, dy: textView.textContainerOrigin.y)
+        let rect = textView.convert(line, to: document)
+        let visible = scroll.contentView.documentVisibleRect
+        guard visible.height > 0,
+              rect.midY < visible.minY + visible.height * 0.22 || rect.midY > visible.minY + visible.height * 0.55 else { return }
+        let maximum = max(0, document.bounds.height - visible.height)
+        let target = min(maximum, max(0, rect.midY - visible.height * 0.35))
+        guard abs(target - visible.minY) > 1 else { return }
+        let origin = NSPoint(x: visible.minX, y: target)
+        if animated {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.25
+                scroll.contentView.animator().setBoundsOrigin(origin)
+            }
+        } else {
+            scroll.contentView.scroll(to: origin)
+        }
+        scroll.reflectScrolledClipView(scroll.contentView)
     }
 }
 #endif

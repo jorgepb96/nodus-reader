@@ -29,9 +29,8 @@ actor NarrationAudioCache {
     /// empty) the app's cache.
     init(fileManager: FileManager = .default, root: URL? = nil) {
         self.fileManager = fileManager
-        let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? fileManager.temporaryDirectory
-        self.root = root ?? base.appendingPathComponent("NodusReader/Audio", isDirectory: true)
+        self.root = root ?? LibraryStorageScope.fileRoot(fileManager: fileManager)
+            .appendingPathComponent("Audio", isDirectory: true)
         try? fileManager.createDirectory(at: self.root, withIntermediateDirectories: true)
         var values = URLResourceValues()
         values.isExcludedFromBackup = true

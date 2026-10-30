@@ -19,6 +19,8 @@ struct SyncedPreferences: Codable, Equatable {
     var weightIndex: Int
     var pageTurn: String
     var flow: String?
+    var narrationHighlight: String?
+    var autoScrollNarration: Bool?
 
     @MainActor
     init(theme: ThemeManager, reading: ReaderPreferences) {
@@ -34,6 +36,8 @@ struct SyncedPreferences: Codable, Equatable {
         weightIndex = reading.weightIndex
         pageTurn = reading.pageTurn.rawValue
         flow = reading.flow.rawValue
+        narrationHighlight = reading.narrationHighlight.rawValue
+        autoScrollNarration = reading.autoScrollNarration
     }
 
     @MainActor
@@ -54,6 +58,11 @@ struct SyncedPreferences: Codable, Equatable {
         if reading.weightIndex != weightIndex { reading.weightIndex = weightIndex }
         if let turn = PageTurnStyle(rawValue: pageTurn), reading.pageTurn != turn { reading.pageTurn = turn }
         if let flow, let value = ReadingFlow(rawValue: flow), reading.flow != value { reading.flow = value }
+        if let narrationHighlight, let value = NarrationHighlightStyle(rawValue: narrationHighlight),
+           reading.narrationHighlight != value { reading.narrationHighlight = value }
+        if let autoScrollNarration, reading.autoScrollNarration != autoScrollNarration {
+            reading.autoScrollNarration = autoScrollNarration
+        }
     }
 
     /// Deterministic bytes, so "changed since last sync" is a byte comparison.

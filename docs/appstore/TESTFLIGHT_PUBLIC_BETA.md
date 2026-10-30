@@ -1,5 +1,23 @@
 # Public TestFlight beta
 
+## Current release — 30 October 2026
+
+Build **0.1.0 (29)** has been uploaded and processed as VALID for iOS/iPadOS and native macOS. Both platforms are assigned to **Internal** (automatic access) and **Nodus Reader — Public Beta**.
+
+- iOS/iPadOS 29: **APPROVED / IN_BETA_TESTING** for the public beta and available internally.
+- macOS 29: **IN_BETA_TESTING** internally; **READY_FOR_BETA_SUBMISSION** externally. Withdrawn from Apple review at the user's request; do not resubmit until explicitly requested.
+- The macOS 28 and 29 review submissions have both been withdrawn without expiring their builds. iOS 28 was unchanged.
+- The [public link](https://testflight.apple.com/join/SjCk8AZ1) and screenshot feedback remain enabled. iOS builds on Apple silicon Macs remain disabled for both groups.
+- No App Store production submission was created.
+
+See [build 29 verification and delivery](BUILD29_VERIFICATION.md), the [source fingerprint](BUILD29_SOURCE_FINGERPRINT.txt), and the [English](TestFlight-29-en.txt) / [Spanish](TestFlight-29-es.txt) notes for the eight feedback fixes and exact test results.
+
+See [post-build-29 macOS fixes and description updates](POST29_MACOS_AND_COPY.md) for changes not included in the uploaded binary.
+
+## Previous-release reference — build 28
+
+The following records describe the prior build and original beta setup.
+
 Status on 30 October 2026. Build `0.1.0 (28)` is valid for iOS and macOS. The iOS build is approved, assigned to both groups and `IN_BETA_TESTING` for external testers. The native macOS build is `IN_BETA_TESTING` for the internal group and `WAITING_FOR_BETA_REVIEW` for the external group (submitted 29 October at 17:09 PDT). The earlier macOS build 27 was expired: it was stuck in beta review and its exported app crashed in dyld because of the runpath bug fixed in 28. The iOS build is no longer offered on Apple silicon Macs: *Test iPhone and iPad apps on Apple silicon Macs* is disabled for both groups. The public link remains enabled. This does not publish an App Store version.
 
 ## Strategy in the other Nodus apps
@@ -36,7 +54,7 @@ Reader follows Drift: the beta is tested through a public TestFlight link, not t
 
 **Beta App Description**
 
-Nodus Reader is a free, open-source reading and listening app for iPhone, iPad and Mac. Import EPUB and PDF documents from Files or the Share button; keep a local library and collections; use reading themes, bookmarks, highlights, notes and search; and rebuild PDFs for reading with on-device OCR. Choose and download a Kokoro or Phonon voice on first launch, then listen with neural narration that runs on the device. Optional iCloud sync uses your own account. No Nodus accounts, ads, tracking or telemetry, and no book or audio is sent to a Nodus server.
+Nodus Reader is a free, open-source reading and listening app for iPhone, iPad and Mac. Import EPUB, PDF, TXT, Markdown, HTML and RTF documents; organize your local library with collections; and read with themes, bookmarks, highlights, notes and search. Intelligent Reading rebuilds PDF text with on-device OCR. Download a Kokoro or Phonon voice model, then listen offline with neural narration that runs on your device. Optional synchronization uses your personal iCloud account. Voice models and generated audio stay on each device. No ads, tracking or telemetry.
 
 **Feedback email**
 
@@ -98,7 +116,7 @@ The private Beta App Review contact fields use the same owner contact as Nodus D
 
 ## Manual steps left
 
-1. Confirm that the App Privacy answer is still **Data Not Collected** for the current build. The app has no analytics, tracking or developer-operated server. Apple, Hugging Face and TestFlight are disclosed in the policy as separate services.
+1. Confirm that the App Privacy answer is still **Data Not Collected** for the current build. The app has no analytics or tracking; document processing and narration run on the device. Apple, Hugging Face and TestFlight are disclosed in the policy as separate services.
 2. Confirm the free-app agreement, tax and banking sections are active.
 3. The iOS build 28 is approved and assigned to **Nodus Reader — Public Beta**; external testers can install it.
 4. The macOS build 28 is assigned to **Nodus Reader — Public Beta** and submitted for Beta App Review; wait for Apple's approval, then confirm it appears for the external group. Do not resubmit while it is `WAITING_FOR_REVIEW`.

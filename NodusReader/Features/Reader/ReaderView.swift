@@ -144,6 +144,7 @@ struct ReaderView: View {
                 // read-along audio. Narration-driven turns already agree
                 // with playback.chapterIndex and must not seek a second time.
                 if !old.isProvisional, !new.isProvisional,
+                   !(narrationActive && playback.isPlaying && typography.autoScrollNarration),
                    old.chapterIndex != new.chapterIndex,
                    playback.activeBook?.id == book.id, playback.mode == .readAndListen,
                    playback.chapterIndex != new.chapterIndex,
@@ -244,6 +245,7 @@ struct ReaderView: View {
                 currentSearchMatch: search.isPresented ? search.currentMatch : nil,
                 columns: paginationColumns,
                 followNarration: playback.mode == .readAndListen && playback.isPlaying,
+                usesNarrationScrolling: narrationActive && playback.mode == .readAndListen && typography.autoScrollNarration,
                 onWordTap: { chapter, offset in startNarration(chapter: chapter, offset: offset) },
                 onHighlight: { chapter, range, color in
                     presentAnnotation(chapter: chapter, range: range, color: color, note: false)
@@ -496,7 +498,8 @@ struct ReaderView: View {
     private func toggleReaderNarration() {
         if playback.activeBook?.id == book.id, playback.isPlaying {
             playback.pause()
-        } else if readerShowsPlaybackPosition {
+        } else if playback.activeBook?.id == book.id,
+                  readerShowsPlaybackPosition || book.locator.narrationPosition != nil {
             playback.setMode(.readAndListen)
         } else {
             prepareReaderNarration(openPlayer: false)
@@ -517,7 +520,8 @@ struct ReaderView: View {
     }
 
     /// Prepare only after an explicit action; simply opening a book keeps
-    /// other audio untouched. Play begins at the text on the visible page.
+    /// other audio untouched. Restore a saved pause unless the user has
+    /// deliberately navigated elsewhere; otherwise start on the visible page.
     private func prepareReaderNarration(openPlayer: Bool) {
         guard narrationReady, !preparingNarration else { return }
         let chapter: Int
@@ -531,11 +535,13 @@ struct ReaderView: View {
             offset = page.chapterStartOffset
         }
         preparingNarration = true
+        let resumesSavedPosition = !hasTurnedPage && book.locator.narrationPosition != nil
         Task { @MainActor in
             defer { preparingNarration = false }
             if book.format == .pdf, !openPlayer { pdfMode = .intelligent }
             await playback.start(book: book, mode: openPlayer ? .read : .readAndListen,
-                                 startingChapterIndex: chapter, startingChapterOffset: offset)
+                                 startingChapterIndex: resumesSavedPosition ? nil : chapter,
+                                 startingChapterOffset: resumesSavedPosition ? nil : offset)
             if openPlayer || playback.errorMessage != nil { showPlayer = true }
         }
     }
@@ -619,6 +625,18 @@ struct ReaderView: View {
 
     private func showPlaybackPosition() {
         let requested = playback.consumeReaderResume(for: book)
+        if playback.activeBook?.id != book.id,
+           book.readingMode != .read, let saved = book.locator.narrationPosition {
+            if book.format == .pdf {
+                pdfPageIndex = saved.chapterIndex
+                pdfJumpPage = saved.chapterIndex
+                if book.readingMode == .readAndListen { pdfMode = .intelligent }
+            } else {
+                navigationTarget = ReaderNavigationTarget(chapterIndex: saved.chapterIndex,
+                                                          characterOffset: saved.characterOffset)
+            }
+            return
+        }
         guard playback.activeBook?.id == book.id,
               requested != nil || playback.mode != .read,
               let offset = requested?.offset ?? playback.currentChapterOffset else { return }
@@ -835,6 +853,30 @@ struct ReaderNarrationCapsule: View {
     }
 
     var body: some View {
+        HStack(spacing: 0) {
+            playerSummary
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+
+            transportControls
+                .fixedSize(horizontal: true, vertical: false)
+
+            sleepTimer
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
+        }
+        .padding(.horizontal, 6)
+        .frame(height: 62)
+        .background(
+            (theme.isDark ? Color.white.opacity(0.07) : Color.white.opacity(0.88)),
+            in: Capsule()
+        )
+        .overlay(Capsule().stroke(theme.line, lineWidth: 1))
+        .shadow(color: theme.isDark ? Color.black.opacity(0.35) : Color.black.opacity(0.12),
+                radius: 18, y: 8)
+    }
+
+    /// Equal-width side columns keep Play/Pause at the centre of the bar,
+    /// regardless of the length of the voice name or the selected language.
+    private var transportControls: some View {
         HStack(spacing: 2) {
             Button {
                 if hasNarration { playback.previousSentence() } else { onPreviousPage() }
@@ -878,47 +920,44 @@ struct ReaderNarrationCapsule: View {
             .disabled(isLoading || (hasNarration ? playback.currentIndex + 1 >= playback.sentenceCount : !canGoNextPage))
             .accessibilityHidden(book.format == .pdf && !hasNarration)
             .accessibilityLabel(hasNarration ? "Next sentence" : "Next page")
-
-            Button(action: onOpenPlayer) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(mode.label.uppercased())
-                        .font(.system(size: 10, weight: .semibold))
-                        .tracking(1.4)
-                        .foregroundStyle(theme.accent)
-                    Text("\(voiceLabel) · \(playback.speedLabel)")
-                        .font(.system(size: 13))
-                        .foregroundStyle(theme.text)
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 6)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(isPreparing || (!isReady && !isActiveBook))
-            .accessibilityLabel("Open player")
-
-            Menu {
-                ForEach(SleepTimerOption.allCases) { option in
-                    Button(option.label) { playback.setSleepTimer(option) }
-                }
-            } label: {
-                Image(systemName: "moon")
-                    .font(.system(size: 17))
-                    .foregroundStyle(playback.sleepTimer == .off ? theme.text : theme.accent)
-                    .frame(width: 42, height: 44)
-            }
-            .disabled(!isActiveBook || isPreparing)
-            .accessibilityLabel("Sleep timer")
         }
-        .padding(.horizontal, 6)
-        .frame(height: 62)
-        .background(
-            (theme.isDark ? Color.white.opacity(0.07) : Color.white.opacity(0.88)),
-            in: Capsule()
-        )
-        .overlay(Capsule().stroke(theme.line, lineWidth: 1))
-        .shadow(color: theme.isDark ? Color.black.opacity(0.35) : Color.black.opacity(0.12),
-                radius: 18, y: 8)
+    }
+
+    private var playerSummary: some View {
+        Button(action: onOpenPlayer) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(mode.label.uppercased())
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(0.8)
+                    .foregroundStyle(theme.accent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                Text("\(voiceLabel) · \(playback.speedLabel)")
+                    .font(.system(size: 13))
+                    .foregroundStyle(theme.text)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .padding(.horizontal, 6)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(isPreparing || (!isReady && !isActiveBook))
+        .accessibilityLabel("Open player")
+    }
+
+    private var sleepTimer: some View {
+        Menu {
+            ForEach(SleepTimerOption.allCases) { option in
+                Button(option.label) { playback.setSleepTimer(option) }
+            }
+        } label: {
+            Image(systemName: "moon")
+                .font(.system(size: 17))
+                .foregroundStyle(playback.sleepTimer == .off ? theme.text : theme.accent)
+                .frame(width: 44, height: 44)
+        }
+        .disabled(!isActiveBook || isPreparing)
+        .accessibilityLabel("Sleep timer")
     }
 }

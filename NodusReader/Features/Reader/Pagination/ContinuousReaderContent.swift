@@ -19,12 +19,25 @@ struct ContinuousReaderContent: View {
     var columnHeight: CGFloat?
     @Binding var pageIndex: Int
     var style: ReaderPageStyle
+    var narrationChapterIndex: Int?
+    var narrationRange: NSRange?
+    var narrationBottomPadding: CGFloat
     var highlightsProvider: (ReaderPage) -> ReaderPageHighlights
     var onWordTap: (Int, Int) -> Void
     var onHighlight: (Int, NSRange, AnnotationColor) -> Void
     var onNote: (Int, NSRange) -> Void
 
     @State private var visibleID: Int?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var narrationPageID: Int? {
+        guard axis == .vertical, let narrationChapterIndex, let narrationRange else { return nil }
+        return pages.first { page in
+            page.chapterIndex == narrationChapterIndex &&
+            narrationRange.location >= page.chapterStartOffset &&
+            narrationRange.location < page.chapterEndOffset
+        }?.id
+    }
 
     var body: some View {
         ScrollView(axis == .vertical ? .vertical : .horizontal) {
@@ -32,6 +45,7 @@ struct ContinuousReaderContent: View {
                 LazyVStack(spacing: 0) { slices }
                     .scrollTargetLayout()
                     .padding(.vertical, 16)
+                    .padding(.bottom, narrationBottomPadding)
             } else {
                 LazyHStack(spacing: 0) { slices }
                     .scrollTargetLayout()
@@ -56,6 +70,12 @@ struct ContinuousReaderContent: View {
         .scrollIndicators(axis == .vertical ? .automatic : .hidden)
         .background(Color(platformColor: style.background))
         .onAppear { visibleID = pageIndex }
+        .onChange(of: narrationPageID, initial: true) { _, id in
+            // Bring distant lazy slices into existence (a seek or chapter jump).
+            // Adjacent slices are already laid out; their text views follow the
+            // narrated line without snapping back to the start of each slice.
+            if let id, abs(id - (visibleID ?? pageIndex)) > 1 { visibleID = id }
+        }
         .onChange(of: visibleID) { _, id in
             // The user scrolled: report the slice at the leading edge.
             if let id, id != pageIndex { pageIndex = id }
@@ -63,7 +83,7 @@ struct ContinuousReaderContent: View {
         .onChange(of: pageIndex) { _, index in
             // A contents jump, bookmark or narration follow moved the reader.
             if visibleID != index {
-                withAnimation(.easeInOut(duration: 0.25)) { visibleID = index }
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { visibleID = index }
             }
         }
     }
@@ -78,6 +98,7 @@ struct ContinuousReaderContent: View {
                 horizontalInset: style.margin,
                 fillsProposedHeight: axis == .horizontal,
                 accessibilityLabel: "\(page.chapterTitle), part \(page.pageIndexInChapter + 1) of \(max(page.pagesInChapter, 1))",
+                narrationFollowRange: page.id == narrationPageID ? narrationRange : nil,
                 onWordTap: { offset in onWordTap(page.chapterIndex, offset) },
                 onHighlight: { range, color in onHighlight(page.chapterIndex, range, color) },
                 onNote: { range in onNote(page.chapterIndex, range) }

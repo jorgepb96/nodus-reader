@@ -88,9 +88,14 @@ they are not uploaded as models themselves.
 Deleting a collection deletes its membership rows (cascade) but not the books. Deleting a book cascades its memberships. Deleting a parent collection recursively deletes its descendants and their memberships.
 
 `ReadingLocator` is a small Codable value (`chapterIndex`, `scrollFraction`, optional
-`pageIndex`). Paginated text stores the chapter plus a page fraction; PDFs also store
-the page index. EPUB CFI is not implemented. Positions are stored as JSON to keep
-schema migration cheap.
+`pageIndex`, optional `narrationPosition`). Paginated text stores the chapter plus a
+page fraction; PDFs also store the page index. The independent narration cursor
+stores the sentence's UTF-16 offset and text, the current character offset, voice
+ID and audio time. Pause, close and scene inactivity persist it before playback
+state is reset. Visual page saves preserve it; completing narration clears it.
+Reopening restores the cached audio at the saved instant, or the word offset when
+the voice/text changed or the cached audio is unavailable. Older JSON locators
+decode without this field. EPUB CFI is not implemented.
 
 ## Persistence and file storage
 
@@ -211,3 +216,14 @@ that mutates the library.
   filter and iCloud status/storage.
 - Unsigned simulator builds skip CloudKit and App Group operations by design.
 - Screenshots are stored in `docs/screenshots/` and compared with `design/screens/`.
+
+
+## Development library isolation
+
+`LibraryStorageScope` selects a separate SwiftData store, file/audio root and
+preference suite for explicit DEBUG sample launches and XCTest hosts. Those
+sessions cannot enable iCloud or consume personal shared imports. Normal and
+Release launches retain the production layout. `LegacySampleLibraryCleanup`
+recognizes older generated fixtures by their content, backs up files and user
+annotations before deletion, and only prunes identifiable empty seed collections.
+macOS model setup is window content so standard app termination remains available.

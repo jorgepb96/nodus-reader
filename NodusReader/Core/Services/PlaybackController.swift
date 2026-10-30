@@ -106,6 +106,10 @@ public final class PlaybackController {
     @ObservationIgnored private var neuralWords: [NarrationWordTiming] = []
     @ObservationIgnored private var neuralBufferDuration: TimeInterval = 0
     @ObservationIgnored private var neuralStartTime: TimeInterval = 0
+    /// Absolute time in the full sentence, without the highlight's visual lead.
+    @ObservationIgnored private var neuralPositionTime: TimeInterval?
+    @ObservationIgnored private var neuralPositionVoiceID: String?
+    @ObservationIgnored private var narrationFinished = false
     @ObservationIgnored private var neuralStartOffset: Int = 0
     @ObservationIgnored private var neuralPlaybackToken = UUID()
     @ObservationIgnored private var neuralPaused = false
@@ -171,6 +175,12 @@ public final class PlaybackController {
         // Restore the audio rate as well as its label before any narration
         // starts; otherwise the UI can show the saved speed while playing 1×.
         timePitch.rate = Float(speedMultiplier)
+        #if DEBUG
+        // UI tests exercise the real playback clock without audible output.
+        if ProcessInfo.processInfo.arguments.contains("-NodusSilentAudioTests") {
+            audioPlayer.volume = 0
+        }
+        #endif
         if let neuralFormat {
             audioEngine.attach(audioPlayer)
             audioEngine.attach(timePitch)
@@ -198,7 +208,7 @@ public final class PlaybackController {
             Task { @MainActor [weak self] in
                 guard let self, self.activeBook != nil else { return }
                 self.cancelAudioCacheGeneration()
-                let offset = self.currentWordRange?.location ?? 0
+                let offset = self.currentWordRange?.location ?? self.neuralStartOffset
                 if self.isPlaying {
                     self.stopAudio()
                     self.isPlaying = false
@@ -389,7 +399,9 @@ public final class PlaybackController {
                 stopAudio()
                 isPlaying = false
                 currentIndex = found
+                narrationFinished = false
                 chapterIndex = sentences[found].chapterIndex
+                neuralStartOffset = max(0, offset)
                 library.setReadingMode(book, mode: mode)
                 mode == .read ? pause() : speakCurrent(fromOffset: offset)
                 return
@@ -399,7 +411,9 @@ public final class PlaybackController {
                 stopAudio()
                 isPlaying = false
                 currentIndex = index
+                narrationFinished = false
                 chapterIndex = sentences[index].chapterIndex
+                neuralStartOffset = max(0, wordOffset)
                 library.setReadingMode(book, mode: mode)
                 mode == .read ? pause() : speakCurrent(fromOffset: wordOffset)
                 return
@@ -413,6 +427,7 @@ public final class PlaybackController {
         let token = UUID()
         loadToken = token
         activeBook = book
+        narrationFinished = false
         self.mode = mode
         isLoading = true
         errorMessage = nil
@@ -439,8 +454,12 @@ public final class PlaybackController {
             } else {
                 resumeChapter = min(max(book.locator.chapterIndex, 0), max(chapters.count - 1, 0))
             }
-            currentIndex = sentences.firstIndex { $0.chapterIndex == resumeChapter } ?? 0
+            let legacyOffset = Int(Double(max((loaded[resumeChapter].text as NSString).length - 1, 0)) *
+                                   min(max(book.locator.scrollFraction, 0), 1))
+            currentIndex = sentenceIndex(chapter: resumeChapter, offset: legacyOffset)
+                ?? sentences.firstIndex { $0.chapterIndex > resumeChapter } ?? 0
             var startOffset = 0
+            var startTime: TimeInterval?
             if let startingChapterIndex, let startingChapterOffset,
                let found = sentenceIndex(chapter: startingChapterIndex, offset: startingChapterOffset) {
                 currentIndex = found
@@ -448,6 +467,16 @@ public final class PlaybackController {
             } else if let startingSentence, let index = sentenceIndex(matching: startingSentence) {
                 currentIndex = index
                 startOffset = wordOffset
+            } else if let saved = book.locator.narrationPosition,
+                      let destination = narrationDestination(chapter: saved.chapterIndex, offset: saved.characterOffset, fraction: 0) {
+                currentIndex = destination.index
+                startOffset = destination.offset
+                let sentence = sentences[currentIndex]
+                if sentence.chapterOffset == saved.sentenceOffset, sentence.text == saved.sentenceText,
+                   saved.voiceID == activeVoice?.id,
+                   let time = saved.audioTime, time.isFinite, time >= 0 {
+                    startTime = time
+                }
             }
             // The reader may select another chapter while the book text is
             // still loading. Its latest selection takes precedence.
@@ -457,15 +486,19 @@ public final class PlaybackController {
                                                           fraction: pending.fraction) {
                     currentIndex = destination.index
                     startOffset = destination.offset
+                    startTime = nil
                 }
             }
             chapterIndex = sentences[currentIndex].chapterIndex
+            neuralStartOffset = startOffset
+            neuralPositionTime = startTime
+            neuralPositionVoiceID = startTime == nil ? nil : activeVoice?.id
             isLoading = false
             library.setReadingMode(book, mode: mode)
             library.open(book)
             if mode != .read {
                 configureAudioSession()
-                speakCurrent(fromOffset: startOffset)
+                speakCurrent(fromOffset: startOffset, fromTime: startTime)
             }
         } catch {
             guard token == loadToken else { return }
@@ -480,6 +513,7 @@ public final class PlaybackController {
     }
 
     public func pause() {
+        captureNarrationTime()
         if isNeuralVoice {
             if audioPlayer.isPlaying {
                 audioPlayer.pause()
@@ -490,7 +524,6 @@ public final class PlaybackController {
                 neuralProgressTask?.cancel()
                 neuralProgressTask = nil
                 isPlaying = false
-                saveProgress()
                 updateNowPlaying()
             } else if isPlaying {
                 neuralTask?.cancel()
@@ -498,12 +531,20 @@ public final class PlaybackController {
                 neuralPaused = false
                 isPlaying = false
                 isLoading = false
-                saveProgress()
                 updateNowPlaying()
             }
+            // Also save an already-paused/restored cursor before dismissal.
+            saveProgress()
             return
         }
         isPlaying = false
+        saveProgress()
+    }
+
+    /// Save before the scene goes inactive without interrupting background audio.
+    public func persistPosition() {
+        captureNarrationTime()
+        saveProgress()
     }
 
     public func resume() {
@@ -515,7 +556,7 @@ public final class PlaybackController {
         if restartVoiceOnResume {
             restartVoiceOnResume = false
             restartOnResume = false
-            let offset = currentWordRange?.location ?? 0
+            let offset = currentWordRange?.location ?? neuralStartOffset
             stopAudio()
             isPlaying = false
             speakCurrent(fromOffset: offset)
@@ -525,9 +566,10 @@ public final class PlaybackController {
         if restartOnResume, !neuralPaused {
             restartOnResume = false
             let offset = currentWordRange?.location ?? neuralStartOffset
+            let time = neuralPositionTime
             stopAudio()
             isPlaying = false
-            speakCurrent(fromOffset: offset)
+            speakCurrent(fromOffset: offset, fromTime: time)
             updateNowPlaying()
             return
         }
@@ -544,7 +586,8 @@ public final class PlaybackController {
                 isPlaying = true
                 startNeuralProgress()
             } else {
-                speakCurrent()
+                speakCurrent(fromOffset: currentWordRange?.location ?? neuralStartOffset,
+                             fromTime: neuralPositionTime)
             }
             updateNowPlaying()
             return
@@ -589,6 +632,8 @@ public final class PlaybackController {
     }
 
     public func stopSpeaking(clearBook: Bool) {
+        // Capture the clock and persist the cursor before resetting playback.
+        persistPosition()
         loadToken = UUID()
         sleepTask?.cancel()
         sleepTask = nil
@@ -599,10 +644,11 @@ public final class PlaybackController {
         isPlaying = false
         resetWordState()
         if clearBook {
+            restartOnResume = false
+            restartVoiceOnResume = false
             readerResumePosition = nil
             pendingChapterSeek = nil
             cancelAudioCacheGeneration()
-            saveProgress()
             activeBook = nil
             chapters = []
             sentences = []
@@ -683,6 +729,7 @@ public final class PlaybackController {
         resetWordState()
         isPlaying = false
         currentIndex = destination.index
+        narrationFinished = false
         chapterIndex = sentences[destination.index].chapterIndex
         neuralStartOffset = destination.offset
         restartOnResume = true
@@ -816,6 +863,9 @@ public final class PlaybackController {
                                            commonFormat: .pcmFormatFloat32, interleaved: false)
                 try file.write(from: buffer)
                 let player = try AVAudioPlayer(contentsOf: url)
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-NodusSilentAudioTests") { player.volume = 0 }
+                #endif
                 guard token == self.sampleToken else {
                     self.isPlayingSample = false
                     return
@@ -965,11 +1015,8 @@ public final class PlaybackController {
         var result: [NarrationSentence] = []
         for (chapterIndex, chapter) in chapters.enumerated() {
             let ns = chapter.text as NSString
-            guard ns.length > 0 else { continue }
-            ns.enumerateSubstrings(in: NSRange(location: 0, length: ns.length),
-                                   options: [.bySentences, .substringNotRequired]) { _, range, _, _ in
+            for range in SentenceTokenizer.ranges(from: chapter.text) {
                 let text = ns.substring(with: range)
-                guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
                 result.append(NarrationSentence(id: result.count, chapterIndex: chapterIndex,
                                                 text: text, chapterOffset: range.location,
                                                 chapterLength: range.length))
@@ -985,24 +1032,26 @@ public final class PlaybackController {
         isPlaying = false
         resetWordState()
         currentIndex = index
+        narrationFinished = false
         chapterIndex = sentences[index].chapterIndex
         saveProgress()
         if wasPlaying { speakCurrent() }
     }
 
-    private func speakCurrent(fromOffset offset: Int = 0) {
+    private func speakCurrent(fromOffset offset: Int = 0, fromTime time: TimeInterval? = nil) {
         guard let book = activeBook, sentences.indices.contains(currentIndex) else { return }
         guard let voice = voices.narrationVoice(preferredID: book.preferredVoiceID,
                                                 language: book.language) else {
             errorMessage = String(localized: "No voice is available for this document.")
             return
         }
-        speakNeuralCurrent(voice: voice, fromOffset: offset)
+        speakNeuralCurrent(voice: voice, fromOffset: offset, fromTime: time)
     }
 
     // MARK: Neural playback
 
-    private func speakNeuralCurrent(voice: VoiceCatalog.Voice, fromOffset offset: Int) {
+    private func speakNeuralCurrent(voice: VoiceCatalog.Voice, fromOffset offset: Int,
+                                    fromTime time: TimeInterval? = nil) {
         guard let book = activeBook, sentences.indices.contains(currentIndex) else { return }
         // The engine keeps running between sentences: with nothing playing
         // while the next one is made, iOS suspends a locked phone's app.
@@ -1014,6 +1063,9 @@ public final class PlaybackController {
         resetWordState()
         neuralPaused = false
         neuralStartOffset = clamped
+        neuralPositionTime = time
+        neuralPositionVoiceID = voice.id
+        narrationFinished = false
         chapterIndex = sentence.chapterIndex
         isPlaying = true
         isLoading = true
@@ -1028,18 +1080,28 @@ public final class PlaybackController {
             guard let self else { return }
             await self.prepareNeuralSentence(index: index, text: text, voice: voice,
                                              chapterIndex: sentence.chapterIndex,
-                                             offset: clamped, token: token)
+                                             offset: clamped, audioTime: time, token: token)
         }
     }
 
     private func prepareNeuralSentence(index: Int, text: String, voice: VoiceCatalog.Voice,
-                                       chapterIndex: Int, offset: Int, token: UUID) async {
+                                       chapterIndex: Int, offset: Int, audioTime: TimeInterval?, token: UUID) async {
         guard let book = activeBook else { return }
         var cached: CachedNarration?
         if let ready = prefetched[index], ready.voiceID == voice.id {
             cached = ready.narration
         }
         prefetched = prefetched.filter { $0.key > index && $0.value.voiceID == voice.id }
+        var restoredTime = audioTime
+        if cached == nil, audioTime != nil {
+            let cache = models.narrationCache
+            let key = cache.key(text: text, engine: voice.engineRaw, voice: voice.id)
+            cached = await cache.load(bookID: book.id, key: key)
+            // Newly generated speech can have different timings (especially
+            // on another device). Keep the word cursor if the original audio
+            // has been evicted rather than seek into a different timeline.
+            if cached == nil { restoredTime = nil }
+        }
         if cached == nil {
             do {
                 cached = try await narration(for: text, voice: voice, book: book)
@@ -1061,8 +1123,11 @@ public final class PlaybackController {
         }
         neuralWords = cached.words
         neuralBufferDuration = cached.duration
-        let start = startTime(for: offset, in: cached)
+        let start = restoredTime.flatMap { time in
+            time.isFinite && time >= 0 && time < cached.duration ? time : nil
+        } ?? startTime(for: offset, in: cached)
         neuralStartTime = start
+        neuralPositionTime = start
         let buffer = slice(cached.buffer, from: start) ?? cached.buffer
         neuralBufferDuration = Double(buffer.frameLength) / cached.buffer.format.sampleRate
 
@@ -1278,10 +1343,24 @@ public final class PlaybackController {
         // Bluetooth). The highlight itself reaches the screen a couple of
         // frames after it is set, so it is set that much ahead.
         let heard = rendered - outputLatency()
+        neuralPositionTime = max(neuralStartTime, min(neuralStartTime + neuralBufferDuration,
+                                                     neuralStartTime + heard))
         let absolute = neuralStartTime + heard + Self.highlightDisplayLead
         if let word = neuralWords.last(where: { $0.start <= absolute }) {
             setNeuralWord(word)
         }
+    }
+
+    /// Read the audio clock at the pause/close action, not just the last UI
+    /// highlight (which is deliberately slightly ahead of audible playback).
+    private func captureNarrationTime() {
+        guard isPlaying, !neuralPaused, audioPlayer.isPlaying,
+              let nodeTime = audioPlayer.lastRenderTime,
+              let playerTime = audioPlayer.playerTime(forNodeTime: nodeTime) else { return }
+        let heard = Double(playerTime.sampleTime) / max(playerTime.sampleRate, 1) - outputLatency()
+        let time = max(neuralStartTime, min(neuralStartTime + neuralBufferDuration, neuralStartTime + heard))
+        neuralPositionTime = time
+        if let word = neuralWords.last(where: { $0.start <= time }) { setNeuralWord(word) }
     }
 
     /// Time from setting the word to it being drawn: the main-actor hop,
@@ -1324,6 +1403,8 @@ public final class PlaybackController {
         }
         currentIndex = nextIndex
         chapterIndex = nextChapter
+        neuralPositionTime = nil
+        neuralStartOffset = 0
         resetWordState()
         saveProgress()
         speakCurrent()
@@ -1340,6 +1421,9 @@ public final class PlaybackController {
         neuralWords = []
         neuralBufferDuration = 0
         neuralStartTime = 0
+        neuralPositionTime = nil
+        neuralPositionVoiceID = nil
+        neuralStartOffset = 0
         neuralPlaybackToken = UUID()
         isLoading = false
     }
@@ -1376,6 +1460,7 @@ public final class PlaybackController {
 
     private func finishBook() {
         guard !sentences.isEmpty else { return }
+        narrationFinished = true
         stopAudio()
         if let book = activeBook {
             let locator: ReadingLocator
@@ -1385,7 +1470,7 @@ public final class PlaybackController {
             } else {
                 locator = ReadingLocator(chapterIndex: max(chapters.count - 1, 0), scrollFraction: 1)
             }
-            library.updateProgress(book, locator: locator, progress: 1)
+            library.updateProgress(book, locator: locator, progress: 1, preservingNarrationPosition: false)
         }
         isPlaying = false
         resetWordState()
@@ -1393,18 +1478,31 @@ public final class PlaybackController {
     }
 
     private func saveProgress() {
-        guard let book = activeBook, !sentences.isEmpty else { return }
+        guard let book = activeBook, sentences.indices.contains(currentIndex),
+              !narrationFinished else { return }
+        let sentence = sentences[currentIndex]
+        let pageOrChapter = book.format == .pdf && chapters.indices.contains(chapterIndex)
+            ? chapters[chapterIndex].id : chapterIndex
+        let position = NarrationPosition(
+            chapterIndex: pageOrChapter,
+            sentenceOffset: sentence.chapterOffset,
+            characterOffset: sentence.chapterOffset + (currentWordRange?.location ?? neuralStartOffset),
+            sentenceText: sentence.text,
+            audioTime: neuralPositionTime,
+            voiceID: neuralPositionTime == nil ? activeVoice?.id : neuralPositionVoiceID
+        )
         if book.format == .pdf {
             // PDF chapters are stored by original page id, not by array index.
             let pageID = chapters.indices.contains(chapterIndex)
                 ? chapters[chapterIndex].id
                 : max(book.locator.pageIndex ?? 0, 0)
             let locator = ReadingLocator(chapterIndex: pageID, scrollFraction: chapterProgress,
-                                         pageIndex: pageID)
+                                         pageIndex: pageID, narrationPosition: position)
             library.updateProgress(book, locator: locator, progress: overallProgress)
             return
         }
-        var locator = ReadingLocator(chapterIndex: chapterIndex, scrollFraction: chapterProgress)
+        var locator = ReadingLocator(chapterIndex: chapterIndex, scrollFraction: chapterProgress,
+                                     narrationPosition: position)
         locator.pageIndex = book.locator.pageIndex
         library.updateProgress(book, locator: locator, progress: overallProgress)
     }

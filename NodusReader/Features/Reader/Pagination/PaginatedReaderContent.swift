@@ -44,6 +44,7 @@ struct PaginatedReaderContent: View {
     let currentSearchMatch: ReaderSearchMatch?
     let columns: Int
     let followNarration: Bool
+    let usesNarrationScrolling: Bool
     var onWordTap: (Int, Int) -> Void
     var onHighlight: (Int, NSRange, AnnotationColor) -> Void
     var onNote: (Int, NSRange) -> Void
@@ -72,7 +73,13 @@ struct PaginatedReaderContent: View {
         reduceMotion && typography.pageTurn == .curl ? .slide : typography.pageTurn
     }
 
-    private var flow: ReadingFlow { typography.flow }
+    private var flow: ReadingFlow { usesNarrationScrolling ? .scrollVertical : typography.flow }
+
+    private var narrationScrollRange: NSRange? {
+        guard followNarration, typography.autoScrollNarration, flow == .scrollVertical,
+              navigationTarget == nil else { return nil }
+        return narrationWordRange ?? narrationSentenceRange
+    }
 
     /// Pages shown side by side: the Mac spread in paged mode, otherwise one.
     private var visibleColumns: Int {
@@ -124,6 +131,9 @@ struct PaginatedReaderContent: View {
                         columnHeight: flow == .scrollHorizontal ? proxy.size.height : nil,
                         pageIndex: $pageIndex,
                         style: pageStyle,
+                        narrationChapterIndex: narrationChapterIndex,
+                        narrationRange: narrationScrollRange,
+                        narrationBottomPadding: usesNarrationScrolling ? proxy.size.height * 0.6 : 0,
                         highlightsProvider: highlights(for:),
                         onWordTap: onWordTap,
                         onHighlight: onHighlight,
@@ -380,6 +390,9 @@ struct PaginatedReaderContent: View {
     }
 
     private func followNarrationIfNeeded() {
+        // Continuous narration follows the actual line, independently of the
+        // slice at the viewport's top edge. Page jumps would fight that scroll.
+        if flow == .scrollVertical, typography.autoScrollNarration { return }
         guard navigationTarget == nil || appliedNavigationID == navigationTarget?.id,
               followNarration,
               let narrationChapterIndex,
@@ -450,28 +463,12 @@ struct PaginatedReaderContent: View {
         }
 
         if narrationChapterIndex == page.chapterIndex {
-            if let sentence = narrationSentenceRange,
-               let trimmed = trimmedHighlightRange(sentence, chapterIndex: page.chapterIndex) {
-                spans.append(ReaderPageHighlightSpan(
-                    range: trimmed,
-                    fill: PlatformColor(theme.narration),
-                    underline: nil,
-                    underlineWidth: 0,
-                    rounded: true
-                ))
-            }
-            if let word = narrationWordRange,
-               let trimmed = trimmedHighlightRange(word, chapterIndex: page.chapterIndex) {
-                spans.append(ReaderPageHighlightSpan(
-                    range: trimmed,
-                    fill: style.isDark
-                        ? PlatformColor(hex: NodusHex.lavender, alpha: 0.55)
-                        : PlatformColor(hex: NodusHex.violet, alpha: 0.38),
-                    underline: style.isDark ? PlatformColor(hex: NodusHex.lavender) : PlatformColor(hex: NodusHex.violet),
-                    underlineWidth: 2,
-                    rounded: true
-                ))
-            }
+            spans += ReaderPageHighlights.narration(
+                sentence: narrationSentenceRange.flatMap { trimmedHighlightRange($0, chapterIndex: page.chapterIndex) },
+                word: narrationWordRange.flatMap { trimmedHighlightRange($0, chapterIndex: page.chapterIndex) },
+                style: typography.narrationHighlight,
+                theme: theme
+            )
         }
         return ReaderPageHighlights(spans: spans)
     }

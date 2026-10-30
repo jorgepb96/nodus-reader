@@ -16,8 +16,8 @@ extension Notification.Name {
 /// Device-local management of the optional neural narration engines.
 ///
 /// Weight files are downloaded on request into Application Support, are excluded
-/// from backup and iCloud sync, and can be deleted at any time. Nothing here is
-/// uploaded; the app never contacts a Nodus server.
+/// from backup and iCloud sync, and can be deleted at any time.
+/// Model weights and generated audio stay on this device.
 @MainActor
 @Observable
 final class ModelManager {

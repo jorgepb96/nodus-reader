@@ -367,8 +367,13 @@ public final class LibraryService {
         save()
     }
 
-    public func updateProgress(_ book: Book, locator: ReadingLocator, progress: Double) {
-        book.locator = locator
+    public func updateProgress(_ book: Book, locator: ReadingLocator, progress: Double,
+                               preservingNarrationPosition: Bool = true) {
+        var updated = locator
+        if preservingNarrationPosition, updated.narrationPosition == nil {
+            updated.narrationPosition = book.locator.narrationPosition
+        }
+        book.locator = updated
         book.progress = min(max(progress, 0), 1)
         book.lastOpenedAt = Date()
         book.lastPositionDevice = DeviceInfo.name
@@ -541,6 +546,7 @@ public final class LibraryService {
     }
 
     public func setPreferredVoice(_ book: Book, voiceID: String?) {
+        guard book.preferredVoiceID != voiceID else { return }
         book.preferredVoiceID = voiceID
         book.touch()
         save()

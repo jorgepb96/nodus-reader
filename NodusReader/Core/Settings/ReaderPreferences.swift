@@ -49,6 +49,26 @@ public enum ReadingFlow: String, CaseIterable, Codable, Identifiable, Sendable {
     public var isContinuous: Bool { self != .paged }
 }
 
+/// Which parts of the spoken text are highlighted during Read & Listen.
+public enum NarrationHighlightStyle: String, CaseIterable, Codable, Identifiable, Sendable {
+    case sentenceAndWord
+    case sentence
+    case word
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .sentenceAndWord: String(localized: "Sentence and word")
+        case .sentence: String(localized: "Sentence only")
+        case .word: String(localized: "Word only")
+        }
+    }
+
+    public var highlightsSentence: Bool { self != .word }
+    public var highlightsWord: Bool { self != .sentence }
+}
+
 /// A complete set of reading typography. The global preferences and a book's
 /// own override are both expressed as this value.
 public struct ReaderTypography: Codable, Equatable, Sendable {
@@ -61,6 +81,8 @@ public struct ReaderTypography: Codable, Equatable, Sendable {
     public var weightIndex: Int = 0
     public var pageTurn: PageTurnStyle = .curl
     public var flow: ReadingFlow = .paged
+    public var narrationHighlight: NarrationHighlightStyle = .sentenceAndWord
+    public var autoScrollNarration: Bool = true
 
     public init() {}
 
@@ -100,6 +122,8 @@ public struct ReaderTypography: Codable, Equatable, Sendable {
         weightIndex = try container.decodeIfPresent(Int.self, forKey: .weightIndex) ?? defaults.weightIndex
         pageTurn = (try? container.decodeIfPresent(PageTurnStyle.self, forKey: .pageTurn)) ?? defaults.pageTurn
         flow = (try? container.decodeIfPresent(ReadingFlow.self, forKey: .flow)) ?? defaults.flow
+        narrationHighlight = (try? container.decodeIfPresent(NarrationHighlightStyle.self, forKey: .narrationHighlight)) ?? defaults.narrationHighlight
+        autoScrollNarration = try container.decodeIfPresent(Bool.self, forKey: .autoScrollNarration) ?? defaults.autoScrollNarration
     }
 }
 
@@ -116,6 +140,8 @@ public final class ReaderPreferences {
         static let weight = "nodus.reader.weight"
         static let pageTurn = "nodus.reader.pageTurn"
         static let flow = "nodus.reader.flow"
+        static let narrationHighlight = "nodus.reader.narrationHighlight"
+        static let autoScrollNarration = "nodus.reader.autoScrollNarration"
     }
 
     private let defaults: UserDefaults
@@ -146,6 +172,12 @@ public final class ReaderPreferences {
     public var flow: ReadingFlow {
         didSet { defaults.set(flow.rawValue, forKey: Key.flow) }
     }
+    public var narrationHighlight: NarrationHighlightStyle {
+        didSet { defaults.set(narrationHighlight.rawValue, forKey: Key.narrationHighlight) }
+    }
+    public var autoScrollNarration: Bool {
+        didSet { defaults.set(autoScrollNarration, forKey: Key.autoScrollNarration) }
+    }
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -157,6 +189,8 @@ public final class ReaderPreferences {
         self.weightIndex = defaults.object(forKey: Key.weight) as? Int ?? 0
         self.pageTurn = (defaults.string(forKey: Key.pageTurn)).flatMap(PageTurnStyle.init(rawValue:)) ?? .curl
         self.flow = (defaults.string(forKey: Key.flow)).flatMap(ReadingFlow.init(rawValue:)) ?? .paged
+        self.narrationHighlight = (defaults.string(forKey: Key.narrationHighlight)).flatMap(NarrationHighlightStyle.init(rawValue:)) ?? .sentenceAndWord
+        self.autoScrollNarration = defaults.object(forKey: Key.autoScrollNarration) as? Bool ?? true
     }
 
     /// The global typography as one value. Setting it writes only the fields
@@ -172,6 +206,8 @@ public final class ReaderPreferences {
             value.weightIndex = weightIndex
             value.pageTurn = pageTurn
             value.flow = flow
+            value.narrationHighlight = narrationHighlight
+            value.autoScrollNarration = autoScrollNarration
             return value
         }
         set {
@@ -183,6 +219,8 @@ public final class ReaderPreferences {
             if weightIndex != newValue.weightIndex { weightIndex = newValue.weightIndex }
             if pageTurn != newValue.pageTurn { pageTurn = newValue.pageTurn }
             if flow != newValue.flow { flow = newValue.flow }
+            if narrationHighlight != newValue.narrationHighlight { narrationHighlight = newValue.narrationHighlight }
+            if autoScrollNarration != newValue.autoScrollNarration { autoScrollNarration = newValue.autoScrollNarration }
         }
     }
 

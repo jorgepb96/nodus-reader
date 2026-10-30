@@ -1,8 +1,8 @@
 # Nodus Reader Privacy Policy
 
-_Last updated: 2026-10-27_
+_Last updated: 2026-10-30_
 
-Nodus Reader is local-first. Nodus Research does not operate a server for books, reading data, narration or analytics, and the app does not require a Nodus account.
+Nodus Reader stores your library and reading data on your device. Narration and document processing run locally. Optional synchronization uses your personal iCloud account.
 
 ## Data the app handles
 
@@ -31,7 +31,7 @@ All of the above is stored locally by default. iCloud sync is optional and off b
 
 ## iCloud (optional)
 
-When you enable sync, it uses your personal iCloud account through Apple frameworks: a CloudKit private database for metadata, collections, bookmarks, annotations, reading positions and deletions, and iCloud Documents for original files and covers. Nodus Research does not run a sync server and cannot read your library. Sync is off by default, and the app works fully with a local-only library.
+When you enable sync, it uses your personal iCloud account through Apple frameworks: a CloudKit private database for metadata, collections, bookmarks, annotations, reading positions and deletions, and iCloud Documents for original files and covers. Sync is off by default, and the app works fully with a local-only library.
 
 The following will never be uploaded: neural model weights, voice embeddings, downloaded voices, generated audio, OCR caches, the Hugging Face token and hardware-specific settings.
 
@@ -49,7 +49,7 @@ The following will never be uploaded: neural model weights, voice embeddings, do
 
 ## Network access
 
-The app accesses the network only for explicit model downloads from pinned Hugging Face revisions, for the one-time download of Apple's speech recognition model for a language when precise word timing needs it (performed by the operating system, not by Nodus Research), for an optional Hugging Face sign-in or token verification you request (sign-in opens Hugging Face's own page in the system sign-in sheet; Nodus Reader never sees your password and receives only an access token limited to your public profile and the gated models you accepted), when you share a web link to Nodus Reader (the Share Extension downloads that page or file from its own site so it can be imported), and, when sync is enabled, Apple's CloudKit/iCloud services. It does not send documents, audio, reading data or telemetry to Nodus Research. The About/Privacy links open GitHub in the system browser.
+The app accesses the network only for explicit model downloads from pinned Hugging Face revisions, for the one-time download of Apple's speech recognition model for a language when precise word timing needs it (performed by the operating system, not by Nodus Research), for an optional Hugging Face sign-in or token verification you request (sign-in opens Hugging Face's own page in the system sign-in sheet; Nodus Reader never sees your password and receives only an access token limited to your public profile and the gated models you accepted), when you share a web link to Nodus Reader (the Share Extension downloads that page or file from its own site so it can be imported), and, when sync is enabled, Apple's CloudKit/iCloud services. The About/Privacy links open GitHub in the system browser.
 
 ## Children and sensitive data
 

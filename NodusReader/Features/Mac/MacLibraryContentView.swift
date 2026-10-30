@@ -384,13 +384,17 @@ struct BookInspector: View {
     }
 
     private var bookVoices: [VoiceCatalog.Voice] {
-        let prefix = String(book.language.prefix(2))
-        let matching = voices.voices.filter { $0.language.hasPrefix(prefix) }
-        return matching.isEmpty ? voices.voices : matching
+        let installed = voices.allInstalledVoices
+        guard let language = VoiceCatalog.languageCode(book.language) else { return installed }
+        let matching = installed.filter { VoiceCatalog.languageCode($0.language) == language }
+        return matching.isEmpty ? installed : matching
     }
 
     private var currentVoiceName: String {
-        voices.voice(withID: book.preferredVoiceID)?.name ?? String(localized: "Book default")
+        if let voice = voices.voice(withID: book.preferredVoiceID) {
+            return "\(voice.name) · \(voice.engineLabel)"
+        }
+        return book.preferredVoiceID == nil ? String(localized: "Book default") : String(localized: "Book voice not installed")
     }
 
     var body: some View {
@@ -503,7 +507,7 @@ struct BookInspector: View {
                             Button(String(localized: "Book default")) { library.setPreferredVoice(book, voiceID: nil) }
                             Divider()
                             ForEach(bookVoices) { voice in
-                                Button("\(voice.name) · \(voice.languageName)") {
+                                Button("\(voice.name) · \(voice.engineLabel) · \(voice.languageName)") {
                                     library.setPreferredVoice(book, voiceID: voice.id)
                                 }
                             }

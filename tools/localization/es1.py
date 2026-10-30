@@ -77,7 +77,6 @@ ES = {
 "Bookmark this page": "Añadir marcador en esta página",
 "Bookmarks": "Marcadores",
 "Books %@": "Libros %@",
-"Books, PDFs and notes are read and stored on this device. Nodus Reader has no servers and no Nodus account.": "Los libros, los PDF y las notas se leen y se guardan en este dispositivo. Nodus Reader no tiene servidores ni cuentas de Nodus.",
 "Books, collections, text and notes": "Libros, colecciones, texto y notas",
 "CHAPTER %lld": "CAPÍTULO %lld",
 "CHAPTER 1": "CAPÍTULO 1",
@@ -272,7 +271,6 @@ ES = {
 "Name": "Nombre",
 "Narration position": "Posición de la narración",
 "Narration unavailable": "Narración no disponible",
-"Narration, OCR and document analysis run locally. Documents and generated audio are never sent to a remote service.": "La narración, el OCR y el análisis de documentos se ejecutan en el dispositivo. Los documentos y el audio generado nunca se envían a un servicio remoto.",
 "Neural engines": "Motores neuronales",
 "New Collection": "Nueva colección",
 "New Subcollection": "Nueva subcolección",
@@ -323,5 +321,4 @@ ES = {
 "On": "Sí",
 "On this %@": "En este %@",
 "On this device": "En este dispositivo",
-"One library across your devices through your personal iCloud account. Nodus Reader never runs a sync server.": "Una sola biblioteca en todos tus dispositivos a través de tu cuenta personal de iCloud. Nodus Reader nunca usa un servidor de sincronización propio.",
 }

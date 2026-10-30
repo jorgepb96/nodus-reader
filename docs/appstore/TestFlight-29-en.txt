@@ -1,0 +1,14 @@
+Nodus Reader 0.1.0 (29)
+
+Reader and narration fixes based on your screenshot feedback:
+- Choose sentence-only, word-only or combined read-along highlighting in Appearance.
+- Optional auto-scroll keeps the spoken line in a comfortable area of the screen. It stops on pause and respects Reduce Motion.
+- Play/Pause is centred in the reader's bottom bar.
+- Sentence and word highlights no longer stack their backgrounds; the word underline has been removed.
+- Decorative separators such as underscores, dashes and asterisks are skipped during narration instead of stopping Kokoro or being spoken by Phonon.
+- Pause, close the book or app, then reopen: narration restores the saved sentence, word and audio instant. If the cached audio is unavailable or the voice changes, it resumes at the saved word.
+- Each book remembers its chosen voice and model independently of the global model and other books.
+
+Please check these behaviours with EPUBs and Intelligent Reading PDFs, including long chapters and books in different languages. Previous sessions saved by earlier builds do not contain an exact audio timestamp; make a new pause in this build to test exact resume.
+
+Native macOS requires Apple silicon and macOS 15 or later. Screenshot feedback remains enabled in TestFlight.

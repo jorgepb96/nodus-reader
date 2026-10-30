@@ -772,16 +772,6 @@
         }
       }
     },
-    "All books": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Todos los libros"
-          }
-        }
-      }
-    },
     "All languages": {
       "localizations": {
         "es": {
@@ -868,6 +858,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Autor"
+          }
+        }
+      }
+    },
+    "Auto-scroll while listening": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desplazamiento automático al escuchar"
           }
         }
       }
@@ -982,22 +982,12 @@
         }
       }
     },
-    "Books, PDFs and notes are read and stored on this device. Nodus Reader has no servers and no Nodus account.": {
+    "Books, PDFs and notes are read and stored on this device.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los libros, los PDF y las notas se leen y se guardan en este dispositivo. Nodus Reader no tiene servidores ni cuentas de Nodus."
-          }
-        }
-      }
-    },
-    "Books, collections, text and notes": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Libros, colecciones, texto y notas"
+            "value": "Los libros, los PDF y las notas se leen y se guardan en este dispositivo."
           }
         }
       }
@@ -1228,6 +1218,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Elegir voz…"
+          }
+        }
+      }
+    },
+    "Choose whether to highlight the sentence, the current word, or both while listening.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige si quieres resaltar la frase, la palabra actual o ambas durante la narración."
           }
         }
       }
@@ -1608,6 +1608,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Oscuro"
+          }
+        }
+      }
+    },
+    "Default model for new books. Each book can keep its own voice and model.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo predeterminado para libros nuevos. Cada libro puede conservar su propia voz y modelo."
           }
         }
       }
@@ -2238,16 +2248,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vista de cuadrícula"
-          }
-        }
-      }
-    },
-    "Group books into folders and subfolders. A book can be in several collections without being copied.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Agrupa los libros en carpetas y subcarpetas. Un libro puede estar en varias colecciones sin copiarse."
           }
         }
       }
@@ -3182,16 +3182,6 @@
         }
       }
     },
-    "Narration position": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Posición de la narración"
-          }
-        }
-      }
-    },
     "Narration unavailable": {
       "localizations": {
         "es": {
@@ -3202,12 +3192,12 @@
         }
       }
     },
-    "Narration, OCR and document analysis run locally. Documents and generated audio are never sent to a remote service.": {
+    "Narration, OCR and document analysis run on this device. Generated audio stays on this device.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La narración, el OCR y el análisis de documentos se ejecutan en el dispositivo. Los documentos y el audio generado nunca se envían a un servicio remoto."
+            "value": "La narración, el OCR y el análisis de documentos se ejecutan en este dispositivo. El audio generado permanece en él."
           }
         }
       }
@@ -3722,12 +3712,12 @@
         }
       }
     },
-    "Nodus narrates with neural voices that run entirely on this device. Install one model to start listening — no account, no cloud, no system voice.": {
+    "Nodus narrates with neural voices that run entirely on this device. Download a voice model to start listening offline.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nodus narra con voces neuronales que se ejecutan íntegramente en este dispositivo. Instala un modelo para empezar a escuchar: sin cuenta, sin nube y sin voces del sistema."
+            "value": "Nodus narra con voces neuronales que funcionan íntegramente en este dispositivo. Descarga un modelo de voz para empezar a escuchar sin conexión."
           }
         }
       }
@@ -3902,22 +3892,12 @@
         }
       }
     },
-    "One library across your devices through your personal iCloud account. Nodus Reader never runs a sync server.": {
+    "One library across your devices through your personal iCloud account.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Una sola biblioteca en todos tus dispositivos a través de tu cuenta personal de iCloud. Nodus Reader nunca usa un servidor de sincronización propio."
-          }
-        }
-      }
-    },
-    "Only the selected model's voices appear in the reader and player.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Solo aparecen en el lector y el reproductor las voces del modelo seleccionado."
+            "value": "Una sola biblioteca en todos tus dispositivos a través de tu cuenta personal de iCloud."
           }
         }
       }
@@ -4492,6 +4472,16 @@
         }
       }
     },
+    "Quit Nodus Reader": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salir de Nodus Reader"
+          }
+        }
+      }
+    },
     "Quote": {
       "localizations": {
         "es": {
@@ -4562,6 +4552,16 @@
         }
       }
     },
+    "Read & Listen uses vertical scrolling to keep the spoken line near the centre of the screen.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leer y escuchar usa el desplazamiento vertical para mantener la línea narrada cerca del centro de la pantalla."
+          }
+        }
+      }
+    },
     "Read the full privacy policy": {
       "localizations": {
         "es": {
@@ -4588,6 +4588,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Leer, %@"
+          }
+        }
+      }
+    },
+    "Read-along highlighting": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resaltado durante la narración"
           }
         }
       }
@@ -5132,6 +5142,26 @@
         }
       }
     },
+    "Sentence and word": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frase y palabra"
+          }
+        }
+      }
+    },
+    "Sentence only": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo frase"
+          }
+        }
+      }
+    },
     "Sepia": {
       "localizations": {
         "es": {
@@ -5652,12 +5682,12 @@
         }
       }
     },
-    "Sync is optional and off by default. When you enable it, Nodus Reader uses your personal iCloud account through CloudKit and iCloud Drive. Nodus Research does not operate a sync server and cannot read your library.": {
+    "Sync is optional and off by default. When you enable it, Nodus Reader uses your personal iCloud account through CloudKit and iCloud Drive.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La sincronización es opcional y está desactivada de forma predeterminada. Si la activas, Nodus Reader usa tu cuenta personal de iCloud mediante CloudKit e iCloud Drive. Nodus Research no tiene un servidor de sincronización y no puede leer tu biblioteca."
+            "value": "La sincronización es opcional y está desactivada de forma predeterminada. Si la activas, Nodus Reader usa tu cuenta personal de iCloud mediante CloudKit e iCloud Drive."
           }
         }
       }
@@ -6648,6 +6678,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Con Reducir movimiento activado, «Curva» se muestra como «Deslizar»."
+          }
+        }
+      }
+    },
+    "Word only": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo palabra"
           }
         }
       }
