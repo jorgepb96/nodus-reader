@@ -198,9 +198,10 @@ struct CollectionSummaryRow: View {
 
     private var subtitle: String {
         var parts: [String] = []
-        if subcollectionCount == 1 { parts.append("1 subcollection") }
-        if subcollectionCount > 1 { parts.append("\(subcollectionCount) subcollections") }
-        if bookCount == 1 { parts.append("1 book") } else { parts.append("\(bookCount) books") }
+        // Plain strings are not looked up: these counts stayed in English.
+        if subcollectionCount == 1 { parts.append(String(localized: "1 subcollection")) }
+        if subcollectionCount > 1 { parts.append(String(localized: "\(subcollectionCount) subcollections")) }
+        if bookCount == 1 { parts.append(String(localized: "1 book")) } else { parts.append(String(localized: "\(bookCount) books")) }
         return parts.joined(separator: " · ")
     }
 }

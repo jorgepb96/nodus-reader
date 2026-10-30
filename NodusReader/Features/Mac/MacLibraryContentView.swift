@@ -71,7 +71,7 @@ struct MacLibraryContentView: View {
             }
         }
         .navigationTitle(title)
-        .navigationSubtitle("\(shownBooks.count) books")
+        .navigationSubtitle(shownBooks.count == 1 ? String(localized: "1 book") : String(localized: "\(shownBooks.count) books"))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 MacImportToolbarButton()
@@ -201,7 +201,7 @@ struct MacLibraryContentView: View {
                 Text(relativeDate(book.lastOpenedAt))
                     .foregroundStyle(palette.muted)
             }
-            .width(90)
+            .width(min: 90, ideal: 120)
 
             TableColumn("") { book in
                 if book.downloadState == .cloudOnly {
@@ -215,6 +215,8 @@ struct MacLibraryContentView: View {
             }
             .width(24)
         }
+        // Empty alternating rows drew a column of grey bars under short lists.
+        .alternatingRowBackgrounds(.disabled)
         .contextMenu(forSelectionType: Book.ID.self) { ids in
             if let book = selected(from: ids) {
                 BookContextActions(
@@ -402,9 +404,12 @@ struct BookInspector: View {
                     PhotosPicker(selection: $photoItem, matching: .images) {
                         Text("Change Cover…")
                             .font(.caption)
+                            .foregroundStyle(palette.accent)
                     }
+                    .buttonStyle(.plain)
                     if book.coverFileName != nil {
                         Button("Reset") { library.clearCustomCover(book) }
+                            .buttonStyle(.plain)
                             .font(.caption)
                             .foregroundStyle(palette.muted)
                     }
@@ -475,8 +480,10 @@ struct BookInspector: View {
                                 .foregroundStyle(palette.muted)
                                 .frame(width: 24, height: 24)
                                 .overlay(Capsule().stroke(palette.line, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
+                                .contentShape(Capsule())
                         }
-                        .menuIndicator(.hidden)
+                        .nodusMenuLabelStyle()
+                        .accessibilityLabel("Add to collection")
                     }
                 }
 
@@ -484,12 +491,14 @@ struct BookInspector: View {
                     HStack {
                         Text("Status").foregroundStyle(palette.muted)
                         Spacer()
-                        Menu(book.status.label) {
+                        Menu {
                             ForEach(ReadingStatus.allCases) { status in
                                 Button(status.label) { library.setStatus(book, status: status) }
                             }
+                        } label: {
+                            menuValue(book.status.label)
                         }
-                        .menuIndicator(.hidden)
+                        .nodusMenuLabelStyle()
                     }
                     .padding(.horizontal, 10)
                     .frame(height: 34)
@@ -497,7 +506,7 @@ struct BookInspector: View {
                     HStack {
                         Text("Voice for this book").foregroundStyle(palette.muted)
                         Spacer()
-                        Menu(currentVoiceName) {
+                        Menu {
                             Button(String(localized: "Book default")) { library.setPreferredVoice(book, voiceID: nil) }
                             Divider()
                             ForEach(bookVoices) { voice in
@@ -505,8 +514,10 @@ struct BookInspector: View {
                                     library.setPreferredVoice(book, voiceID: voice.id)
                                 }
                             }
+                        } label: {
+                            menuValue(currentVoiceName)
                         }
-                        .menuIndicator(.hidden)
+                        .nodusMenuLabelStyle()
                     }
                     .padding(.horizontal, 10)
                     .frame(height: 34)
@@ -515,6 +526,7 @@ struct BookInspector: View {
                         Text("File").foregroundStyle(palette.muted)
                         Spacer()
                         Text(fileState)
+                            .foregroundStyle(palette.text)
                     }
                     .padding(.horizontal, 10)
                     .frame(height: 34)
@@ -541,6 +553,18 @@ struct BookInspector: View {
                 photoItem = nil
             }
         }
+    }
+
+    /// A row value that opens a menu: the value and a small chevron.
+    private func menuValue(_ text: String) -> some View {
+        HStack(spacing: 4) {
+            Text(text)
+                .lineLimit(1)
+            Image(systemName: "chevron.down")
+                .font(.system(size: 8, weight: .semibold))
+        }
+        .foregroundStyle(palette.text)
+        .contentShape(Rectangle())
     }
 
     private func inspectorField(_ label: LocalizedStringKey, text: Binding<String>) -> some View {

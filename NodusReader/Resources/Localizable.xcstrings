@@ -372,6 +372,16 @@
         }
       }
     },
+    "%lld subcollections": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld subcolecciones"
+          }
+        }
+      }
+    },
     "%lld subcollections · %lld books": {
       "localizations": {
         "es": {
@@ -442,6 +452,26 @@
         }
       }
     },
+    "1 book · Local library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 libro · Biblioteca local"
+          }
+        }
+      }
+    },
+    "1 book · iCloud": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 libro · iCloud"
+          }
+        }
+      }
+    },
     "1 collection": {
       "localizations": {
         "es": {
@@ -498,6 +528,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 resultado"
+          }
+        }
+      }
+    },
+    "1 subcollection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 subcolección"
           }
         }
       }
@@ -768,6 +808,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Añadir a Favoritos"
+          }
+        }
+      }
+    },
+    "Add to collection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir a una colección"
           }
         }
       }

@@ -52,6 +52,9 @@ struct ReaderView: View {
         self.book = book
         self.onClose = onClose
         _pdfPageIndex = State(initialValue: max(book.locator.pageIndex ?? 0, 0))
+        #if os(macOS) && DEBUG
+        if MacScreenCapture.opensPDFInIntelligentReading { _pdfMode = State(initialValue: .intelligent) }
+        #endif
     }
 
     private func closeReader() {
@@ -119,6 +122,11 @@ struct ReaderView: View {
                 bottomBar(theme)
             }
         }
+        #if os(macOS)
+        // The Reading window hides its title bar: the reader bar takes that
+        // strip beside the window buttons instead of leaving it empty.
+        .ignoresSafeArea(.container, edges: .top)
+        #endif
         .preferredColorScheme(theme.isDark ? .dark : .light)
         // Sheets and popovers presented from the reader use its colour scheme,
         // so they take the matching palette: never dark labels on a dark
@@ -431,12 +439,20 @@ struct ReaderView: View {
             }
         }
         .padding(.horizontal, 6)
+        #if os(macOS)
+        .padding(.leading, Self.windowButtonsWidth)
+        #endif
         .frame(height: 44)
         .background(theme.background)
         .overlay(alignment: .bottom) {
             Rectangle().fill(theme.line).frame(height: 0.5)
         }
     }
+
+    #if os(macOS)
+    /// Room for the close, minimise and zoom buttons of the Reading window.
+    private static let windowButtonsWidth: CGFloat = 70
+    #endif
 
     private func bottomBar(_ theme: ReaderTheme) -> some View {
         VStack(spacing: 8) {
@@ -462,6 +478,8 @@ struct ReaderView: View {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 6)
+        // The capsule is capped; the bar and its separator span the window.
+        .frame(maxWidth: .infinity)
         .background(theme.background)
         .overlay(alignment: .top) {
             Rectangle().fill(theme.line).frame(height: 0.5)
@@ -993,6 +1011,7 @@ struct ReaderNarrationCapsule: View {
                 .foregroundStyle(playback.sleepTimer == .off ? theme.text : theme.accent)
                 .frame(width: 44, height: 44)
         }
+        .nodusMenuLabelStyle()
         .disabled(!isActiveBook || isPreparing)
         .accessibilityLabel("Sleep timer")
     }

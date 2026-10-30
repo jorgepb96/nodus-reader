@@ -112,8 +112,13 @@ struct HomeView: View {
         #endif
     }
 
+    /// Read and Listen keep the iPad width on the Mac instead of filling it.
     private var wideButtonWidth: CGFloat? {
+        #if os(macOS)
+        190
+        #else
         DeviceInfo.isPad ? 190 : nil
+        #endif
     }
 
     private func continueCard(_ book: Book) -> some View {
