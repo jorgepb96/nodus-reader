@@ -35,4 +35,9 @@ Both uploads succeeded through Xcode's account into App Store Connect:
 - iOS 0.1.0 (35): `Nodus Reader.ipa` uploaded at 17:02 (Europe/Madrid) on 31 October 2026.
 - macOS 0.1.0 (35): `Nodus Reader.pkg` uploaded at 17:04 (Europe/Madrid) on 31 October 2026.
 
-The Internal group receives every Xcode build automatically. The What to Test notes are [English](TestFlight-35-en.txt) / [Spanish](TestFlight-35-es.txt); build IDs and the TestFlight state are confirmed in App Store Connect once processing finishes.
+The Internal group receives every Xcode build automatically. The What to Test notes are [English](TestFlight-35-en.txt) / [Spanish](TestFlight-35-es.txt).
+
+TestFlight state on 31 October 2026, confirmed in App Store Connect:
+
+- iOS 0.1.0 (35): English and Spanish What to Test notes saved; added to Internal and to the external group "Nodus Reader — Public Beta" (64 testers, notified automatically) and submitted to Beta App Review, which approved it at once: "In testing" for both groups.
+- macOS 0.1.0 (35): English and Spanish What to Test notes saved; Internal only. It was not added to any external group or submitted to Apple review.
