@@ -102,7 +102,7 @@ enum TextPaginator {
                 chapterLength: chapterLength,
                 prefixLength: prefixLength,
                 fullRange: characterRange,
-                attributed: full.attributedSubstring(from: characterRange),
+                attributed: pageText(full, range: characterRange),
                 pageIndexInChapter: pages.count,
                 pagesInChapter: 0
             ))
@@ -127,9 +127,57 @@ enum TextPaginator {
                            chapterString(chapters[page.chapterIndex], index: page.chapterIndex, style: style).0)
             }
             guard let full = current?.string, NSMaxRange(page.fullRange) <= full.length else { return book }
-            pages.append(page.with(attributed: full.attributedSubstring(from: page.fullRange)))
+            pages.append(page.with(attributed: pageText(full, range: page.fullRange)))
         }
         return PaginatedBook(pages: pages, firstPageByChapter: book.firstPageByChapter)
+    }
+
+    /// A page's slice of the chapter, laid out as it was in the chapter. A
+    /// page that opens in the middle of a paragraph continues it, so its first
+    /// line takes no first-line indent. A page that ends in the middle of a
+    /// paragraph carries the next word, hidden: its last line then stays
+    /// justified, keeps its hyphen and its line spacing, instead of being set
+    /// as the end of a paragraph.
+    private static func pageText(_ full: NSAttributedString, range: NSRange) -> NSAttributedString {
+        let ns = full.string as NSString
+        let opensMidParagraph = range.location > 0 && ns.character(at: range.location - 1) != 10
+        let end = NSMaxRange(range)
+        let endsMidParagraph = end < full.length && ns.character(at: end - 1) != 10 &&
+            ns.character(at: end) != 10
+        guard opensMidParagraph || endsMidParagraph else { return full.attributedSubstring(from: range) }
+
+        let page = NSMutableAttributedString(attributedString: full.attributedSubstring(from: range))
+        if opensMidParagraph {
+            let paragraph = (page.string as NSString).paragraphRange(for: NSRange(location: 0, length: 0))
+            page.enumerateAttribute(.paragraphStyle, in: paragraph) { value, subrange, _ in
+                guard let style = value as? NSParagraphStyle, style.firstLineHeadIndent != style.headIndent,
+                      let flush = style.mutableCopy() as? NSMutableParagraphStyle else { return }
+                flush.firstLineHeadIndent = style.headIndent
+                page.addAttribute(.paragraphStyle, value: flush, range: subrange)
+            }
+        }
+        if endsMidParagraph {
+            // The rest of a hyphenated word, or the next word, up to a space.
+            var tail = end
+            var sawWord = false
+            while tail < full.length, tail - end < 64 {
+                let character = ns.character(at: tail)
+                if character == 10 { break }
+                let isSpace = character == 32 || character == 9 || character == 0xA0
+                if isSpace, sawWord { break }
+                sawWord = sawWord || !isSpace
+                tail += 1
+            }
+            if tail > end {
+                let word = NSMutableAttributedString(attributedString:
+                    full.attributedSubstring(from: NSRange(location: end, length: tail - end)))
+                let whole = NSRange(location: 0, length: word.length)
+                word.addAttribute(.foregroundColor, value: PlatformColor.clear, range: whole)
+                word.addAttribute(.readerContinuation, value: true, range: whole)
+                page.append(word)
+            }
+        }
+        return page
     }
 
     private static func chapterString(_ chapter: ExtractedChapter, index: Int,

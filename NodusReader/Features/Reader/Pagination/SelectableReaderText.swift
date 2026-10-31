@@ -174,6 +174,14 @@ final class ReaderMacSelectableView: NSView {
         container.containerSize = CGSize(width: max(1, width - horizontalInset * 2),
                                          height: .greatestFiniteMagnitude)
         layoutManager.ensureLayout(for: container)
+        let visible = textView.textStorage?.readerVisibleLength ?? 0
+        if let storage = textView.textStorage, visible > 0, visible < storage.length {
+            // The block ends with the line before the hidden continuation
+            // word, line spacing included; the word's own line stays out of view.
+            let glyph = layoutManager.glyphIndexForCharacter(at: visible - 1)
+            // Exact, not rounded up: the next slice's highlight must meet this one's.
+            return layoutManager.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil).maxY
+        }
         return ceil(layoutManager.usedRect(for: container).height)
     }
 }

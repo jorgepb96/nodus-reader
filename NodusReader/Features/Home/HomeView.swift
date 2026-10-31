@@ -8,10 +8,11 @@ struct HomeView: View {
     @Environment(ImportCoordinator.self) private var imports
     @Environment(PlaybackController.self) private var playback
     @Environment(\.nodusPalette) private var palette
+    @Environment(\.usesPadLayout) private var usesPadLayout
 
     @Query(sort: \Book.addedAt, order: .reverse) private var books: [Book]
 
-    var titleSize: CGFloat = DeviceInfo.isPad ? 44 : 36
+    var titleSize: CGFloat = 36
     var showsBrand: Bool = true
 
     @State private var readingBook: Book?
@@ -50,9 +51,9 @@ struct HomeView: View {
                     upNextSection
                 }
             }
-            .frame(maxWidth: DeviceInfo.isPad ? 900 : .infinity, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: DeviceInfo.isPad ? .center : .leading)
-            .padding(.horizontal, DeviceInfo.isPad ? 40 : 20)
+            .frame(maxWidth: usesPadLayout ? 900 : .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: usesPadLayout ? .center : .leading)
+            .padding(.horizontal, usesPadLayout ? 40 : 20)
             .padding(.top, 12)
             .padding(.bottom, 120)
         }
@@ -104,7 +105,7 @@ struct HomeView: View {
     // MARK: Continue card
 
     private var continueCoverSize: CGSize {
-        if DeviceInfo.isPad { return CGSize(width: 120, height: 180) }
+        if usesPadLayout { return CGSize(width: 120, height: 180) }
         #if os(macOS)
         return CGSize(width: 112, height: 168)
         #else
@@ -117,7 +118,7 @@ struct HomeView: View {
         #if os(macOS)
         190
         #else
-        DeviceInfo.isPad ? 190 : nil
+        usesPadLayout ? 190 : nil
         #endif
     }
 
@@ -199,7 +200,7 @@ struct HomeView: View {
     // MARK: Up next
 
     private var shelfCoverWidth: CGFloat {
-        if DeviceInfo.isPad { return 132 }
+        if usesPadLayout { return 132 }
         #if os(macOS)
         return 120
         #else
@@ -208,7 +209,7 @@ struct HomeView: View {
     }
 
     private var shelfSpacing: CGFloat {
-        DeviceInfo.isPad ? 16 : 14
+        usesPadLayout ? 16 : 14
     }
 
     private var upNextSection: some View {
@@ -269,7 +270,7 @@ struct HomeView: View {
         #if os(macOS)
         navigation.sidebarSelection = .allBooks
         #else
-        if DeviceInfo.isPad {
+        if usesPadLayout {
             navigation.sidebarSelection = .allBooks
         } else {
             navigation.phoneTab = .library
@@ -329,10 +330,14 @@ extension View {
 #if !os(macOS)
 private struct ReaderCoverHost: View {
     @Environment(\.dismiss) private var dismiss
+    /// Absent for the cover the scene root presents for imported books.
+    @Environment(NavigationModel.self) private var navigation: NavigationModel?
     let book: Book
 
     var body: some View {
         ReaderView(book: book) { dismiss() }
+            .onAppear { navigation?.openReaders += 1 }
+            .onDisappear { navigation.map { $0.openReaders = max(0, $0.openReaders - 1) } }
     }
 }
 #endif

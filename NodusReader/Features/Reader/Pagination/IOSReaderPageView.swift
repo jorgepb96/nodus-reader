@@ -80,8 +80,24 @@ final class ReaderSelectableTextView: UIView, UITextViewDelegate {
     /// Height needed to show all the text at `width`, insets included.
     func fittingHeight(width: CGFloat) -> CGFloat {
         let textWidth = max(1, width - contentInsets.left - contentInsets.right)
-        let size = textView.sizeThatFits(CGSize(width: textWidth, height: .greatestFiniteMagnitude))
-        return ceil(size.height) + contentInsets.top + contentInsets.bottom
+        let text: NSAttributedString = textView.attributedText ?? NSAttributedString()
+        let visible = text.readerVisibleLength
+        guard visible > 0, visible < text.length else {
+            let size = textView.sizeThatFits(CGSize(width: textWidth, height: .greatestFiniteMagnitude))
+            return ceil(size.height) + contentInsets.top + contentInsets.bottom
+        }
+        // The block ends with the line before the hidden continuation word,
+        // line spacing included; the word's own line stays out of view.
+        let storage = NSTextStorage(attributedString: text)
+        let layout = NSLayoutManager()
+        storage.addLayoutManager(layout)
+        let container = NSTextContainer(size: CGSize(width: textWidth, height: .greatestFiniteMagnitude))
+        container.lineFragmentPadding = 0
+        layout.addTextContainer(container)
+        let glyph = layout.glyphIndexForCharacter(at: visible - 1)
+        let bottom = layout.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil).maxY
+        // Exact, not rounded up: the next slice's highlight must meet this one's.
+        return bottom + contentInsets.top + contentInsets.bottom
     }
 
     // MARK: Selection menu
@@ -204,6 +220,19 @@ final class ReaderPageBackController: UIViewController {
 /// Draws sentence, word and annotation tint behind the text: it is a sibling
 /// placed below the clear text view, so glyphs are always drawn on top.
 final class ReaderHighlightOverlayView: UIView {
+    /// The bottom of a slice's last visible line, line spacing included. The
+    /// text view lays out only what fits its frame, so when the hidden
+    /// continuation word is left out TextKit sets that line without spacing.
+    static func continuedLineBottom(_ layoutManager: NSLayoutManager, text: NSAttributedString,
+                                    visibleLength: Int) -> CGFloat {
+        let glyph = layoutManager.glyphIndexForCharacter(at: visibleLength - 1)
+        let line = layoutManager.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil)
+        let hidden = layoutManager.glyphIndexForCharacter(at: visibleLength)
+        guard layoutManager.textContainer(forGlyphAt: hidden, effectiveRange: nil) == nil else { return line.maxY }
+        let style = text.attribute(.paragraphStyle, at: visibleLength - 1, effectiveRange: nil) as? NSParagraphStyle
+        return line.maxY + (style?.lineSpacing ?? 0)
+    }
+
     struct Span: Equatable {
         var range: NSRange
         var fill: UIColor
@@ -222,6 +251,7 @@ final class ReaderHighlightOverlayView: UIView {
         let layoutManager = textView.layoutManager
         let container = textView.textContainer
         layoutManager.ensureLayout(for: container)
+        let visibleLength = textView.attributedText.readerVisibleLength
 
         for span in spans {
             guard span.range.length > 0, NSMaxRange(span.range) <= textView.attributedText.length else { continue }
@@ -233,12 +263,22 @@ final class ReaderHighlightOverlayView: UIView {
                 rects.append(glyphRect.offsetBy(dx: textView.textContainerInset.left,
                                                 dy: textView.textContainerInset.top))
             }
-            for lineRect in rects {
+            // A span that runs on into the next slice fills this slice's last
+            // line down to its line spacing, so it meets the next slice's.
+            var fills = rects
+            if visibleLength < textView.attributedText.length, NSMaxRange(span.range) >= visibleLength,
+               let last = fills.indices.max(by: { fills[$0].maxY < fills[$1].maxY }) {
+                let bottom = Self.continuedLineBottom(layoutManager, text: textView.attributedText,
+                                                      visibleLength: visibleLength)
+                    + textView.textContainerInset.top
+                fills[last].size.height = max(fills[last].height, min(bounds.maxY, bottom) - fills[last].minY)
+            }
+            for (lineRect, fillRect) in zip(rects, fills) {
                 // Stay inside TextKit's line bounds so adjacent lines never
                 // blend their highlight backgrounds at tight line spacing.
                 let path = span.rounded
-                    ? UIBezierPath(roundedRect: lineRect, cornerRadius: 3)
-                    : UIBezierPath(rect: lineRect)
+                    ? UIBezierPath(roundedRect: fillRect, cornerRadius: 3)
+                    : UIBezierPath(rect: fillRect)
                 span.fill.setFill()
                 path.fill()
                 if let underline = span.underline {
