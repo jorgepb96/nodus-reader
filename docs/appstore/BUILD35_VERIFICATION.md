@@ -25,3 +25,14 @@ Build 35 contains build 34 plus fixes for two TestFlight reports on build 33 (iP
 The Duo's fold control needs the simulator panel, so the opened window was emulated with the width rule applied while the book and library were checked; the temporary rule was then removed, the final code recompiled, and the cover screen confirmed on the iPhone layout. The final code switches on the small side of the window (at least 600 pt both ways).
 
 Not verifiable in the simulator: Kokoro narration (MLX needs a Metal device), two-device iCloud sync, the Share Extension on a device and a VoiceOver/large-text audit.
+
+## Distribution
+
+Version 0.1.0 (35), archived from merge commit `51fefc7` ([PR #36](https://github.com/jorgepb96/nodus-reader/pull/36)). Both archives sign automatically with team `6RPLS9EA4X` and pass `codesign --verify --deep --strict`; the Mac app is arm64 only, its binary contains none of the capture-tour strings, and a Release build launched and stayed running on the iPhone 17 Pro simulator.
+
+Both uploads succeeded through Xcode's account into App Store Connect:
+
+- iOS 0.1.0 (35): `Nodus Reader.ipa` uploaded at 17:02 (Europe/Madrid) on 31 October 2026.
+- macOS 0.1.0 (35): `Nodus Reader.pkg` uploaded at 17:04 (Europe/Madrid) on 31 October 2026.
+
+The Internal group receives every Xcode build automatically. The What to Test notes are [English](TestFlight-35-en.txt) / [Spanish](TestFlight-35-es.txt); build IDs and the TestFlight state are confirmed in App Store Connect once processing finishes.
