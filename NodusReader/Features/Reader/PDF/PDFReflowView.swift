@@ -196,6 +196,7 @@ struct PDFReflowView: View {
     @Environment(LibraryService.self) private var library
     @Environment(ReaderPreferences.self) private var preferences
     @Environment(PlaybackController.self) private var playback
+    @Environment(\.windowFitsPadLayout) private var windowFitsPadLayout
 
     let book: Book
     let url: URL
@@ -621,11 +622,13 @@ struct PDFReflowView: View {
         }
     }
 
+    /// Follows the reader's own size, so an iPhone Duo opened mid-book
+    /// reads like an iPad.
     private var isWide: Bool {
         #if os(macOS)
         true
         #else
-        DeviceInfo.isPad
+        windowFitsPadLayout
         #endif
     }
 

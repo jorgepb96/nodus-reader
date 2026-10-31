@@ -9,6 +9,7 @@ struct CollectionDetailView: View {
     @Environment(NavigationModel.self) private var navigation
     @Environment(\.dismiss) private var dismiss
     @Environment(\.nodusPalette) private var palette
+    @Environment(\.usesPadLayout) private var usesPadLayout
 
     let collectionID: UUID
     var showsBrand: Bool = true
@@ -207,7 +208,7 @@ struct CollectionDetailView: View {
     private func header(_ collection: LibraryCollection) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Eyebrow(([String(localized: "Library")] + path.map(\.name)).joined(separator: " / "))
-            DisplayTitle(collection.name, size: DeviceInfo.isPad ? 44 : 36)
+            DisplayTitle(collection.name, size: usesPadLayout ? 44 : 36)
             Text("\(children.count) subcollections · \(totalBookCount) books")
                 .font(.footnote)
                 .foregroundStyle(palette.muted)

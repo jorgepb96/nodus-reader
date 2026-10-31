@@ -13,6 +13,13 @@ struct RootView: View {
     @Environment(PlaybackController.self) private var playback
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
+    #if os(iOS)
+    /// The window, safe areas included; it decides the layout.
+    @State private var windowSize = CGSize.zero
+    /// The layout on screen; it follows the window, except while a reader
+    /// presented by the current layout is open.
+    @State private var usesPadLayout = DeviceInfo.isPad
+    #endif
     /// Per window (Mac) or scene (iPad multitasking): two library windows no
     /// longer mirror each other's sidebar selection and navigation.
     @State private var navigation = NavigationModel()
@@ -28,6 +35,18 @@ struct RootView: View {
         @Bindable var imports = imports
 
         rootContent
+            #if os(iOS)
+            .environment(\.usesPadLayout, usesPadLayout)
+            .environment(\.windowFitsPadLayout, prefersPadLayout)
+            .onGeometryChange(for: CGSize.self) { proxy in
+                CGSize(width: proxy.size.width + proxy.safeAreaInsets.leading + proxy.safeAreaInsets.trailing,
+                       height: proxy.size.height + proxy.safeAreaInsets.top + proxy.safeAreaInsets.bottom)
+            } action: { size in
+                windowSize = size
+            }
+            .onChange(of: prefersPadLayout, initial: true) { _, _ in updateLayout() }
+            .onChange(of: navigation.readerIsOpen) { _, _ in updateLayout() }
+            #endif
             .environment(navigation)
             .focusedSceneValue(\.nodusNavigation, navigation)
             .nodusPalette(palette)
@@ -181,11 +200,26 @@ struct RootView: View {
         MacRootView()
             .frame(minWidth: 1100, minHeight: 700)
         #elseif os(iOS)
-        if DeviceInfo.isPad {
+        if usesPadLayout {
             PadRootView()
         } else {
             PhoneRootView()
         }
         #endif
     }
+
+    #if os(iOS)
+    private var prefersPadLayout: Bool {
+        // Until the window is measured, keep the device's own layout.
+        windowSize == .zero ? DeviceInfo.isPad : DeviceInfo.prefersPadLayout(windowSize: windowSize)
+    }
+
+    /// Opening or folding an iPhone Duo swaps the tabs for the sidebar. A book
+    /// open full screen keeps reading; the library follows once it closes.
+    private func updateLayout() {
+        guard usesPadLayout != prefersPadLayout, !navigation.readerIsOpen else { return }
+        navigation.adoptLayout(pad: prefersPadLayout)
+        usesPadLayout = prefersPadLayout
+    }
+    #endif
 }

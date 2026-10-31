@@ -28,7 +28,12 @@ struct ReaderPage: Identifiable, Equatable {
         min(chapterLength, max(0, NSMaxRange(fullRange) - prefixLength))
     }
 
+    /// The page ends in the middle of a paragraph: its text carries the next
+    /// word, hidden, after `fullRange`.
+    var continuesParagraph: Bool { attributed.length > fullRange.length }
+
     func chapterOffset(forLocalIndex index: Int) -> Int? {
+        guard index < fullRange.length else { return nil }
         let fullIndex = fullRange.location + index
         let offset = fullIndex - prefixLength
         guard offset >= 0, offset < chapterLength else { return nil }
@@ -43,6 +48,27 @@ struct ReaderPage: Identifiable, Equatable {
         let length = clippedEnd - clippedStart
         guard start >= 0, start + length <= attributed.length else { return nil }
         return NSRange(location: start, length: length)
+    }
+}
+
+extension NSAttributedString.Key {
+    /// Marks the hidden word a page carries from the next page (see
+    /// `TextPaginator.pageText`). It is laid out but never shown or measured.
+    static let readerContinuation = NSAttributedString.Key("NodusReaderContinuation")
+}
+
+extension NSAttributedString {
+    /// The length of the text a reader page shows, without its hidden
+    /// continuation word.
+    var readerVisibleLength: Int {
+        var visible = length
+        enumerateAttribute(.readerContinuation, in: NSRange(location: 0, length: length)) { value, range, stop in
+            if value != nil {
+                visible = range.location
+                stop.pointee = true
+            }
+        }
+        return visible
     }
 }
 

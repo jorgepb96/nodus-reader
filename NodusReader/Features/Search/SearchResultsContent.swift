@@ -7,6 +7,7 @@ struct SearchResultsContent: View {
     @Environment(LibraryService.self) private var library
     @Environment(PlaybackController.self) private var playback
     @Environment(\.nodusPalette) private var palette
+    @Environment(\.usesPadLayout) private var usesPadLayout
 
     let query: String
 
@@ -43,7 +44,7 @@ struct SearchResultsContent: View {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
                     Eyebrow("Search")
-                    DisplayTitle("Results", size: DeviceInfo.isPad ? 44 : 36)
+                    DisplayTitle("Results", size: usesPadLayout ? 44 : 36)
                     Text(results.count == 1 ? "1 match for “\(query)”" : "\(results.count) matches for “\(query)”")
                         .font(.footnote)
                         .foregroundStyle(palette.muted)
@@ -74,7 +75,7 @@ struct SearchResultsContent: View {
             }
             .frame(maxWidth: 900)
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, DeviceInfo.isPad ? 40 : 20)
+            .padding(.horizontal, usesPadLayout ? 40 : 20)
             .padding(.top, 8)
             .padding(.bottom, 110)
         }

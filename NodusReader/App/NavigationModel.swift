@@ -45,12 +45,51 @@ public final class NavigationModel {
     public var phoneTab: AppTab = .home
     public var sidebarSelection: SidebarDestination = .allBooks
     public var columnVisibility: NavigationSplitViewVisibility = .all
+    /// A full-screen reader is open. The iPhone and iPad layouts present it
+    /// from their own views, so the layout waits for it to close.
+    public var openReaders = 0
+    public var readerIsOpen: Bool { openReaders > 0 }
 
     public init() {}
+
+    /// Carries the current place across a switch between the iPhone tabs and
+    /// the iPad sidebar (a foldable iPhone opened or closed).
+    public func adoptLayout(pad: Bool) {
+        if pad {
+            switch phoneTab {
+            case .home: sidebarSelection = .home
+            case .library, .search: sidebarSelection = .allBooks
+            case .collections, .settings: break
+            }
+        } else {
+            switch sidebarSelection {
+            case .home: phoneTab = .home
+            case .collection: phoneTab = .collections
+            default: phoneTab = .library
+            }
+        }
+    }
 
     public func showAllBooks() {
         phoneTab = .library
         sidebarSelection = .allBooks
+    }
+}
+
+extension EnvironmentValues {
+    /// The iPad layout (sidebar, wider measures) is in use: always on iPad, and
+    /// on an iPhone whose window is at least 600 pt both ways, such as the
+    /// opened iPhone Duo. A Pro Max in landscape (956 × 440) keeps the iPhone
+    /// layout, as does the Duo's cover screen (466 × 678).
+    @Entry var usesPadLayout: Bool = DeviceInfo.isPad
+    /// The window is large enough for the iPad layout right now. Unlike
+    /// `usesPadLayout` it changes while a reader is open.
+    @Entry var windowFitsPadLayout: Bool = DeviceInfo.isPad
+}
+
+extension DeviceInfo {
+    static func prefersPadLayout(windowSize: CGSize) -> Bool {
+        isPad || min(windowSize.width, windowSize.height) >= 600
     }
 }
 

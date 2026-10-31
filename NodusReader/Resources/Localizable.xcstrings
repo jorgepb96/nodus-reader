@@ -962,16 +962,6 @@
         }
       }
     },
-    "BOOK DEFAULT": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PREDETERMINADA DEL LIBRO"
-          }
-        }
-      }
-    },
     "Back to library": {
       "localizations": {
         "es": {

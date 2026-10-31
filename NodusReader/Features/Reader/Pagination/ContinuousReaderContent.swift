@@ -28,7 +28,10 @@ struct ContinuousReaderContent: View {
     var onHighlight: (Int, NSRange, AnnotationColor) -> Void
     var onNote: (Int, NSRange) -> Void
 
-    @State private var visibleID: Int?
+    /// The slice last reported from scrolling. A `pageIndex` that differs
+    /// from it came from elsewhere (contents, bookmark, search) and scrolls.
+    @State private var leadingID: Int?
+    @State private var atEnd = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var narrationPageID: Int? {
@@ -41,52 +44,72 @@ struct ContinuousReaderContent: View {
     }
 
     var body: some View {
-        ScrollView(axis == .vertical ? .vertical : .horizontal) {
-            if axis == .vertical {
-                LazyVStack(spacing: 0) { slices }
-                    .scrollTargetLayout()
-                    .padding(.vertical, 16)
-                    .padding(.bottom, narrationBottomPadding)
-            } else {
-                LazyHStack(spacing: 0) { slices }
-                    .scrollTargetLayout()
+        // Scrolling has a single owner. The narration follow moves the offset
+        // line by line, so jumps are one-shot `scrollTo` calls: a
+        // `scrollPosition(id:)` binding would re-anchor the leading slice's
+        // top edge on every layout change and fight the follow.
+        ScrollViewReader { proxy in
+            ScrollView(axis == .vertical ? .vertical : .horizontal) {
+                if axis == .vertical {
+                    LazyVStack(spacing: 0) { slices }
+                        .scrollTargetLayout()
+                        .padding(.vertical, 16)
+                        .padding(.bottom, narrationBottomPadding)
+                } else {
+                    LazyHStack(spacing: 0) { slices }
+                        .scrollTargetLayout()
+                }
+            }
+            .onScrollTargetVisibilityChange(idType: Int.self, threshold: 0.01) { ids in
+                // The user or the narration follow scrolled: report the slice
+                // at the leading edge.
+                guard let first = ids.min() else { return }
+                report(atEnd ? pages.indices.last ?? first : first)
+            }
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                // The last slice can never reach the leading edge, so the end of
+                // the content counts as being on the last page.
+                // `visibleRect` already accounts for the reader's top and bottom
+                // bars (content insets), unlike offset + container size.
+                if axis == .vertical {
+                    return geometry.visibleRect.maxY >= geometry.contentSize.height - 2
+                }
+                return geometry.visibleRect.maxX >= geometry.contentSize.width - 2
+            } action: { _, isAtEnd in
+                atEnd = isAtEnd
+                if isAtEnd, let last = pages.indices.last { report(last) }
+            }
+            .scrollIndicators(axis == .vertical ? .automatic : .hidden)
+            .background(Color(platformColor: style.background))
+            .onAppear {
+                leadingID = pageIndex
+                proxy.scrollTo(pageIndex, anchor: anchor)
+            }
+            .onChange(of: narrationPageID, initial: true) { _, id in
+                // Bring distant lazy slices into existence (a seek or chapter jump).
+                // Adjacent slices are already laid out; their text views follow the
+                // narrated line without snapping back to the start of each slice.
+                if let id, abs(id - (leadingID ?? pageIndex)) > 1 {
+                    leadingID = id
+                    proxy.scrollTo(id, anchor: anchor)
+                }
+            }
+            .onChange(of: pageIndex) { _, index in
+                // A contents jump, bookmark or narration follow moved the reader.
+                guard index != leadingID else { return }
+                leadingID = index
+                withAnimation(reduceMotion || narrationReturnTarget != nil ? nil : .easeInOut(duration: 0.25)) {
+                    proxy.scrollTo(index, anchor: anchor)
+                }
             }
         }
-        .scrollPosition(id: $visibleID, anchor: axis == .vertical ? .top : .leading)
-        .onScrollGeometryChange(for: Bool.self) { geometry in
-            // The last slice can never reach the leading edge, so the end of
-            // the content counts as being on the last page.
-            // `visibleRect` already accounts for the reader's top and bottom
-            // bars (content insets), unlike offset + container size.
-            if axis == .vertical {
-                return geometry.visibleRect.maxY >= geometry.contentSize.height - 2
-            }
-            return geometry.visibleRect.maxX >= geometry.contentSize.width - 2
-        } action: { _, atEnd in
-            if atEnd, let last = pages.indices.last, pageIndex != last {
-                visibleID = last
-                pageIndex = last
-            }
-        }
-        .scrollIndicators(axis == .vertical ? .automatic : .hidden)
-        .background(Color(platformColor: style.background))
-        .onAppear { visibleID = pageIndex }
-        .onChange(of: narrationPageID, initial: true) { _, id in
-            // Bring distant lazy slices into existence (a seek or chapter jump).
-            // Adjacent slices are already laid out; their text views follow the
-            // narrated line without snapping back to the start of each slice.
-            if let id, abs(id - (visibleID ?? pageIndex)) > 1 { visibleID = id }
-        }
-        .onChange(of: visibleID) { _, id in
-            // The user scrolled: report the slice at the leading edge.
-            if let id, id != pageIndex { pageIndex = id }
-        }
-        .onChange(of: pageIndex) { _, index in
-            // A contents jump, bookmark or narration follow moved the reader.
-            if visibleID != index {
-                withAnimation(reduceMotion || narrationReturnTarget != nil ? nil : .easeInOut(duration: 0.25)) { visibleID = index }
-            }
-        }
+    }
+
+    private var anchor: UnitPoint { axis == .vertical ? .top : .leading }
+
+    private func report(_ id: Int) {
+        leadingID = id
+        if pageIndex != id { pageIndex = id }
     }
 
     private func scrollRequest(for page: ReaderPage) -> ReaderTextScrollRequest? {
@@ -117,6 +140,9 @@ struct ContinuousReaderContent: View {
             )
             .frame(width: columnWidth, height: columnHeight.map { $0 - 16 })
             .padding(.vertical, axis == .horizontal ? 8 : 0)
+            // TextKit leaves out the line spacing after the last line of a
+            // slice that ends a paragraph; a slice that continues one keeps it.
+            .padding(.bottom, axis == .vertical && !page.continuesParagraph ? style.lineSpacing : 0)
             // Breathing room before each new chapter in the vertical column.
             .padding(.top, axis == .vertical && page.pageIndexInChapter == 0 && page.id > 0 ? 48 : 0)
             .overlay(alignment: .trailing) {

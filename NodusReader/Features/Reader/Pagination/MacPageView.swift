@@ -149,10 +149,28 @@ final class MacHighlightOverlayView: NSView {
                 rects.append(rect.offsetBy(dx: textView.textContainerOrigin.x,
                                             dy: textView.textContainerOrigin.y))
             }
-            for rect in rects {
+            // A span that runs on into the next slice fills this slice's last
+            // line down to its line spacing, so it meets the next slice's.
+            var fills = rects
+            let visibleLength = text.readerVisibleLength
+            if visibleLength < text.length, NSMaxRange(span.range) >= visibleLength,
+               let last = fills.indices.max(by: { fills[$0].maxY < fills[$1].maxY }) {
+                // The text view lays out only what fits its container; when the
+                // hidden word is left out, TextKit sets that line without spacing.
+                let glyph = layoutManager.glyphIndexForCharacter(at: visibleLength - 1)
+                var bottom = layoutManager.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil).maxY
+                let hidden = layoutManager.glyphIndexForCharacter(at: visibleLength)
+                if layoutManager.textContainer(forGlyphAt: hidden, effectiveRange: nil) == nil {
+                    let style = text.attribute(.paragraphStyle, at: visibleLength - 1, effectiveRange: nil) as? NSParagraphStyle
+                    bottom += style?.lineSpacing ?? 0
+                }
+                bottom += textView.textContainerOrigin.y
+                fills[last].size.height = max(fills[last].height, min(bounds.maxY, bottom) - fills[last].minY)
+            }
+            for (rect, fill) in zip(rects, fills) {
                 let path = span.rounded
-                    ? NSBezierPath(roundedRect: rect, xRadius: 3, yRadius: 3)
-                    : NSBezierPath(rect: rect)
+                    ? NSBezierPath(roundedRect: fill, xRadius: 3, yRadius: 3)
+                    : NSBezierPath(rect: fill)
                 span.fill.setFill()
                 path.fill()
                 if let underline = span.underline {

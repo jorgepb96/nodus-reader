@@ -687,32 +687,67 @@ struct VoicePickerSheet: View {
         VoiceCatalog.baseLanguages(of: filtered)
     }
 
-    /// Model and language filters, as on the Voices screen.
+    /// Installed models side by side, one tap each, when they fit; a menu
+    /// otherwise (many models, or a single one with nothing to compare).
     private var filterRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                VoiceFilterMenu(title: String(localized: "Model"), systemImage: "cpu",
-                                value: modelLabel, isActive: modelFilter != nil) {
-                    Button("All models") { modelFilter = nil }
-                    Divider()
-                    ForEach(installedModels) { model in
-                        Button(model.name) { modelFilter = model.id }
-                    }
+        ViewThatFits(in: .horizontal) {
+            if installedModels.count > 1 {
+                HStack(spacing: 8) {
+                    modelSegments
+                    languageMenu
+                    Spacer(minLength: 0)
                 }
-                VoiceFilterMenu(title: String(localized: "Language"), systemImage: "globe",
-                                value: languageFilter.map { voices.languageName(for: $0) },
-                                isActive: languageFilter != nil) {
-                    Button("All languages") { languageFilter = nil }
-                    Divider()
-                    ForEach(availableLanguages, id: \.self) { language in
-                        Button(voices.languageName(for: language)) { languageFilter = language }
-                    }
+                VStack(alignment: .leading, spacing: 8) {
+                    modelSegments
+                    languageMenu
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            HStack(spacing: 6) {
+                modelMenu
+                languageMenu
+                Spacer(minLength: 0)
+            }
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(palette.background)
+    }
+
+    private var modelSegments: some View {
+        Picker(String(localized: "Model"), selection: $modelFilter) {
+            Text("All").tag(String?.none)
+            ForEach(installedModels) { model in
+                Text(model.name).tag(Optional(model.id))
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+        .accessibilityLabel("Model")
+    }
+
+    private var modelMenu: some View {
+        VoiceFilterMenu(title: String(localized: "Model"), systemImage: "cpu",
+                        value: modelLabel, isActive: modelFilter != nil) {
+            Button("All models") { modelFilter = nil }
+            Divider()
+            ForEach(installedModels) { model in
+                Button(model.name) { modelFilter = model.id }
+            }
+        }
+    }
+
+    private var languageMenu: some View {
+        VoiceFilterMenu(title: String(localized: "Language"), systemImage: "globe",
+                        value: languageFilter.map { voices.languageName(for: $0) },
+                        isActive: languageFilter != nil) {
+            Button("All languages") { languageFilter = nil }
+            Divider()
+            ForEach(availableLanguages, id: \.self) { language in
+                Button(voices.languageName(for: language)) { languageFilter = language }
+            }
+        }
     }
 
     var body: some View {
