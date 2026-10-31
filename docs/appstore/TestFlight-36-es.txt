@@ -1,0 +1,1 @@
+Filtrar voces por género. La pantalla Voces y el selector de voz del libro tienen un nuevo filtro Género (Todos, Femenina, Masculina) junto a Modelo e Idioma, con el género que publica cada voz de Kokoro y Phonon. Las voces sin género, como las voces de personaje de Phonon, aparecen en Todos. Incluye todas las correcciones de la build 35.

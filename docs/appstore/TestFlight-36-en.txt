@@ -1,0 +1,1 @@
+Filter voices by gender. The Voices screen and the book's voice picker have a new Gender filter (All, Female, Male) next to Model and Language, using each voice's published gender for Kokoro and Phonon. Voices without one, such as Phonon's character voices, appear under All. Includes all build 35 fixes.
