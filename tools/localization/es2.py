@@ -506,3 +506,7 @@ ES.update({
     "1 subcollection": "1 subcolección",
     "%lld subcollections": "%lld subcolecciones",
 })
+ES.update({
+    "Base voice": "Voz base",
+    "DEFAULT": "PREDETERMINADA",
+})

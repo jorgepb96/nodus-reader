@@ -106,7 +106,8 @@ struct PaginatedReaderContent: View {
             let pageStyle: ReaderPageStyle = {
                 var adjusted = style
                 if columnCount == 1, flow != .scrollHorizontal {
-                    let readableWidth: CGFloat = 720
+                    // About 70 characters per line at any text size.
+                    let readableWidth = min(720, style.fontSize * 30)
                     adjusted.margin = max(style.margin, (availableWidth - readableWidth) / 2)
                 }
                 return adjusted

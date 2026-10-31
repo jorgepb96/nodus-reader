@@ -421,8 +421,19 @@ struct ReaderAppearancePopover: View {
         ScrollView {
             ReaderAppearanceControls(target: .book(book), style: .compact, onMoreSettings: onMoreSettings)
                 .padding(16)
+                // Clears the bottom fade once scrolled to the end.
+                .padding(.bottom, 12)
         }
-        .scrollIndicators(.hidden)
+        // On iPhone the content scrolls: the indicator flashes and the bottom
+        // fades so the last row does not look cut off.
+        .scrollIndicatorsFlash(onAppear: true)
+        .overlay(alignment: .bottom) {
+            LinearGradient(colors: [palette.panelRaised.opacity(0), palette.panelRaised],
+                           startPoint: .top, endPoint: .bottom)
+                .frame(height: 28)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
         // Tall enough to show every control on iPad and Mac without scrolling;
         // on iPhone the system limits it to the screen and the content scrolls.
         .frame(idealWidth: 340, maxWidth: 380, idealHeight: 860, maxHeight: 920)

@@ -129,7 +129,7 @@ struct LibraryView: View {
         HStack(alignment: .firstTextBaseline) {
             DisplayTitle("Library")
             Spacer()
-            Text("\(filteredBooks.count) books")
+            Text(filteredBooks.count == 1 ? "1 book" : "\(filteredBooks.count) books")
                 .font(.footnote)
                 .foregroundStyle(palette.muted)
         }
