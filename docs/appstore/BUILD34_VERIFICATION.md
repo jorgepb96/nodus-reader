@@ -19,7 +19,7 @@ As in build 33: sample seeding and the Mac capture tour are Debug-only, so Relea
 | Check | Result |
 | --- | --- |
 | iPhone 17 Pro unit/integration suite | 127 passed, 0 failures |
-| macOS unit/integration suite | see below |
+| macOS unit/integration suite | not run: the XCTest host hung waiting for `testmanagerd` (system daemon, needs a restart); macOS Debug and Release builds succeed and the signed archive was launched |
 | iPhone UI: phone screens, library/collections, paged reader + bookmarks, appearance popover + continuous scroll, centred transport, voice picker by book language, PDF Intelligent Reading, PDF highlights/notes, PDF search + scrollbar, PDF contents + return to narration | 10 passed, 0 failures |
 | iPad UI: iPad screens | 1 passed |
 | English/Spanish catalog | 718 keys, 0 missing Spanish, 0 placeholder mismatches |
