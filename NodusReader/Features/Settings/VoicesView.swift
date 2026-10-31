@@ -247,7 +247,7 @@ struct VoicesView: View {
                             .foregroundStyle(palette.text)
                             .lineLimit(1)
                         if voices.defaultVoiceID == voice.id {
-                            Text("BOOK DEFAULT")
+                            Text("DEFAULT")
                                 .font(.system(size: 9, weight: .semibold))
                                 .tracking(0.7)
                                 .foregroundStyle(palette.accent)

@@ -156,7 +156,7 @@ struct PadLibraryContentView: View {
             HStack(alignment: .firstTextBaseline) {
                 DisplayTitle(title, size: 44)
                 Spacer()
-                Text("\(filteredBooks.count) books")
+                Text(filteredBooks.count == 1 ? "1 book" : "\(filteredBooks.count) books")
                     .font(.footnote)
                     .foregroundStyle(palette.muted)
             }

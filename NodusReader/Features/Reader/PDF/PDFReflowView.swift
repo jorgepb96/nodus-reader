@@ -51,20 +51,47 @@ struct PDFReaderContainer: View {
     var onStartNarration: (Int, Int) -> Void = { _, _ in }
     var onAnnotate: (Int, NSRange, String, AnnotationColor) -> Void = { _, _, _, _ in }
 
+    @State private var width: CGFloat = 0
+    /// The original page opens as a sheet when there is no room for the panel.
+    @State private var showSourceSheet = false
+    @State private var sourceAvailable = false
+
+    private var showsSourceButton: Bool {
+        mode == .intelligent && width > 0 && width <= PDFReflowView.sourcePanelMinWidth
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            Picker("PDF reading mode", selection: $mode) {
-                ForEach(PDFReadingMode.allCases) { mode in
-                    Text(LocalizedStringKey(mode.rawValue)).tag(mode)
+            HStack(spacing: 10) {
+                Picker("PDF reading mode", selection: $mode) {
+                    ForEach(PDFReadingMode.allCases) { mode in
+                        Text(LocalizedStringKey(mode.rawValue)).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                // macOS draws a segmented picker's label beside it.
+                .labelsHidden()
+                .frame(maxWidth: 360)
+                // Beside the picker, so it never covers the first line of text.
+                if showsSourceButton {
+                    Button {
+                        showSourceSheet = true
+                    } label: {
+                        Image(systemName: "rectangle.righthalf.inset.filled")
+                            .font(.system(size: 16))
+                            .foregroundStyle(theme.text)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!sourceAvailable)
+                    .accessibilityLabel("Original page panel")
                 }
             }
-            .pickerStyle(.segmented)
-            // macOS draws a segmented picker's label beside it.
-            .labelsHidden()
-            .frame(maxWidth: 360)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.vertical, showsSourceButton ? 0 : 8)
+            .frame(minHeight: 48)
             .background(theme.background)
 
             Rectangle().fill(theme.line).frame(height: 0.5)
@@ -79,11 +106,14 @@ struct PDFReaderContainer: View {
                 PDFReflowView(book: book, url: url, theme: theme,
                               pdfPageIndex: $pdfPageIndex, jumpToPage: $jumpToPage,
                               narrationReturnTarget: $narrationReturnTarget,
+                              showSourceSheet: $showSourceSheet,
+                              sourceAvailable: $sourceAvailable,
                               search: search,
                               onStartNarration: onStartNarration,
                               onAnnotate: onAnnotate)
             }
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .task(id: originalSearchKey) { await runOriginalSearch() }
     }
 
@@ -174,6 +204,9 @@ struct PDFReflowView: View {
     /// Contents, bookmarks and "go to page" requests from the reader chrome.
     @Binding var jumpToPage: Int?
     @Binding var narrationReturnTarget: ReaderNavigationTarget?
+    /// The original page as a sheet, opened from the reader's mode bar.
+    @Binding var showSourceSheet: Bool
+    @Binding var sourceAvailable: Bool
     /// The reader's find state; the reflow runs it over its canonical page text.
     var search: ReaderSearchModel?
     /// Tap a word: Read & Listen from there (page, canonical offset).
@@ -184,7 +217,6 @@ struct PDFReflowView: View {
     @State private var job = PDFReflowJob()
     @State private var showImages = true
     @State private var skipHeaders = true
-    @State private var showSourceSheet = false
     /// Page at the top of the reflow, used by the reader bar, the original
     /// page panel and the scrollbar.
     @State private var scrollPosition: Int?
@@ -198,9 +230,12 @@ struct PDFReflowView: View {
         PDFReflowStore(fileStore: library.fileStore)
     }
 
+    /// Narrower readers open the original page as a sheet instead of a panel.
+    static let sourcePanelMinWidth: CGFloat = 820
+
     var body: some View {
         GeometryReader { proxy in
-            let showPanel = proxy.size.width > 820
+            let showPanel = proxy.size.width > Self.sourcePanelMinWidth
             HStack(spacing: 0) {
                 reflowContent(viewportHeight: proxy.size.height)
                     .frame(maxWidth: .infinity)
@@ -218,26 +253,10 @@ struct PDFReflowView: View {
                     .frame(width: 300)
                 }
             }
-            .overlay(alignment: .topTrailing) {
-                if !showPanel, job.document != nil {
-                    Button {
-                        showSourceSheet = true
-                    } label: {
-                        Image(systemName: "rectangle.righthalf.inset.filled")
-                            .font(.system(size: 16))
-                            .foregroundStyle(theme.text)
-                            .frame(width: 44, height: 44)
-                            .background(theme.background.opacity(0.94), in: Circle())
-                            .overlay(Circle().stroke(theme.line, lineWidth: 1))
-                    }
-                    .buttonStyle(.plain)
-                    .padding(12)
-                    .accessibilityLabel("Original page panel")
-                }
-            }
         }
         .background(theme.background)
         .task { await loadReflow() }
+        .onChange(of: job.document != nil, initial: true) { _, loaded in sourceAvailable = loaded }
         .task(id: reflowSearchKey) { await runReflowSearch() }
         .onChange(of: search?.current) { _, _ in
             guard let page = search?.currentMatch?.chapterIndex else { return }

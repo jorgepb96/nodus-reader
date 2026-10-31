@@ -992,6 +992,16 @@
         }
       }
     },
+    "Base voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voz base"
+          }
+        }
+      }
+    },
     "Blue": {
       "localizations": {
         "es": {
@@ -1688,6 +1698,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Los temas personalizados se aplican al lector. Se guardan en este dispositivo y se sincronizarán con iCloud junto con el resto de tus preferencias de lectura."
+          }
+        }
+      }
+    },
+    "DEFAULT": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PREDETERMINADA"
           }
         }
       }

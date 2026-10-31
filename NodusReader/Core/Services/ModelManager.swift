@@ -1187,7 +1187,8 @@ final class ModelManager {
     }
 
     private static let phononVoices: [Voice] = [
-        Voice(id: "phonon:default", name: "Default", language: "en-US", engine: .phonon),
+        // The checkpoint's unnamed speaker; "Default" read like a setting.
+        Voice(id: "phonon:default", name: String(localized: "Base voice"), language: "en-US", engine: .phonon),
         Voice(id: "phonon:Harper", name: "Harper", language: "en-US", engine: .phonon),
         Voice(id: "phonon:Hadley", name: "Hadley", language: "en-US", engine: .phonon),
         Voice(id: "phonon:Miles", name: "Miles", language: "en-US", engine: .phonon),
