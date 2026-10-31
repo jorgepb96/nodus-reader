@@ -641,6 +641,7 @@ struct VoicePickerSheet: View {
     @State private var languageFilter: String?
     /// An installed model's ID; nil shows every model.
     @State private var modelFilter: String?
+    @State private var genderFilter: VoiceGender?
     @State private var didSetInitialLanguage = false
 
     /// The per-book voice syncs, but voices and models are installed per
@@ -671,6 +672,7 @@ struct VoicePickerSheet: View {
         return allVoices.filter { voice in
             if let language, !voice.language.lowercased().hasPrefix(language) { return false }
             if let modelFilter, voice.modelID != modelFilter { return false }
+            if let genderFilter, voice.gender != genderFilter { return false }
             guard !trimmed.isEmpty else { return true }
             return voice.name.localizedCaseInsensitiveContains(trimmed)
                 || voice.languageName.localizedCaseInsensitiveContains(trimmed)
@@ -695,16 +697,21 @@ struct VoicePickerSheet: View {
                 HStack(spacing: 8) {
                     modelSegments
                     languageMenu
+                    genderMenu
                     Spacer(minLength: 0)
                 }
                 VStack(alignment: .leading, spacing: 8) {
                     modelSegments
-                    languageMenu
+                    HStack(spacing: 6) {
+                        languageMenu
+                        genderMenu
+                    }
                 }
             }
             HStack(spacing: 6) {
                 modelMenu
                 languageMenu
+                genderMenu
                 Spacer(minLength: 0)
             }
         }
@@ -750,6 +757,21 @@ struct VoicePickerSheet: View {
         }
     }
 
+    @ViewBuilder
+    private var genderMenu: some View {
+        let genders = VoiceCatalog.genders(of: allVoices)
+        if !genders.isEmpty {
+            VoiceFilterMenu(title: String(localized: "Gender"), systemImage: "person.2",
+                            value: genderFilter?.label, isActive: genderFilter != nil) {
+                Button("All genders") { genderFilter = nil }
+                Divider()
+                ForEach(genders, id: \.self) { gender in
+                    Button(gender.label) { genderFilter = gender }
+                }
+            }
+        }
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -787,6 +809,7 @@ struct VoicePickerSheet: View {
                             Button("Show all voices") {
                                 languageFilter = nil
                                 modelFilter = nil
+                                genderFilter = nil
                                 searchText = ""
                             }
                             .font(.footnote.weight(.semibold))

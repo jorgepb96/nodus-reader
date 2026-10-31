@@ -852,6 +852,16 @@
         }
       }
     },
+    "All genders": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos los géneros"
+          }
+        }
+      }
+    },
     "All languages": {
       "localizations": {
         "es": {
@@ -2162,6 +2172,16 @@
         }
       }
     },
+    "Female": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Femenina"
+          }
+        }
+      }
+    },
     "Figure": {
       "localizations": {
         "es": {
@@ -2278,6 +2298,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Texto completo de los documentos importados"
+          }
+        }
+      }
+    },
+    "Gender": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Género"
           }
         }
       }
@@ -3008,6 +3038,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Espejismos"
+          }
+        }
+      }
+    },
+    "Male": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masculina"
           }
         }
       }

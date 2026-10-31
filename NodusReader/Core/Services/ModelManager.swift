@@ -43,6 +43,7 @@ final class ModelManager {
         let name: String
         let language: String
         let engine: Engine
+        var gender: VoiceGender? = nil
     }
 
     struct Model: Identifiable, Sendable {
@@ -982,7 +983,7 @@ final class ModelManager {
                     language: voice.language,
                     languageName: VoiceCatalog.variantName(for: voice.language),
                     quality: 3,
-                    gender: nil,
+                    gender: voice.gender,
                     engineRaw: voice.engine.rawValue,
                     modelID: model.id,
                     modelName: model.name
@@ -1112,7 +1113,13 @@ final class ModelManager {
         case "e": "es-ES"
         default: "en-US"
         }
-        return Voice(id: "kokoro:\(entry.id)", name: name, language: language, engine: .kokoro)
+        // The second letter is the voice's gender: `af_heart`, `bm_george`.
+        let gender: VoiceGender? = switch entry.id.dropFirst().prefix(1) {
+        case "f": .female
+        case "m": .male
+        default: nil
+        }
+        return Voice(id: "kokoro:\(entry.id)", name: name, language: language, engine: .kokoro, gender: gender)
     }
 
     /// Voice files listed in the installed Kokoro runtime manifest.
@@ -1183,20 +1190,22 @@ final class ModelManager {
     /// 40M voices are prefixed with their model ("phonon-40m-es:Alba"), so the
     /// same voice in the Spanish and Multilingual checkpoints stays distinct.
     nonisolated static func voice(from file: PhononVoiceFile, modelID: String) -> Voice {
-        Voice(id: "\(modelID):\(file.name)", name: file.name, language: file.language, engine: .phonon)
+        Voice(id: "\(modelID):\(file.name)", name: file.name, language: file.language, engine: .phonon,
+              gender: file.gender)
     }
 
+    /// Genders from gradium/phonon-voices, where these voices come from.
     private static let phononVoices: [Voice] = [
         // The checkpoint's unnamed speaker; "Default" read like a setting.
         Voice(id: "phonon:default", name: String(localized: "Base voice"), language: "en-US", engine: .phonon),
-        Voice(id: "phonon:Harper", name: "Harper", language: "en-US", engine: .phonon),
-        Voice(id: "phonon:Hadley", name: "Hadley", language: "en-US", engine: .phonon),
-        Voice(id: "phonon:Miles", name: "Miles", language: "en-US", engine: .phonon),
-        Voice(id: "phonon:Preston", name: "Preston", language: "en-US", engine: .phonon),
-        Voice(id: "phonon:Maeve", name: "Maeve", language: "en-US", engine: .phonon),
-        Voice(id: "phonon:Bryony", name: "Bryony", language: "en-US", engine: .phonon),
-        Voice(id: "phonon:Edwin", name: "Edwin", language: "en-US", engine: .phonon),
-        Voice(id: "phonon:Hugh", name: "Hugh", language: "en-US", engine: .phonon)
+        Voice(id: "phonon:Harper", name: "Harper", language: "en-US", engine: .phonon, gender: .female),
+        Voice(id: "phonon:Hadley", name: "Hadley", language: "en-US", engine: .phonon, gender: .female),
+        Voice(id: "phonon:Miles", name: "Miles", language: "en-US", engine: .phonon, gender: .male),
+        Voice(id: "phonon:Preston", name: "Preston", language: "en-US", engine: .phonon, gender: .male),
+        Voice(id: "phonon:Maeve", name: "Maeve", language: "en-US", engine: .phonon, gender: .female),
+        Voice(id: "phonon:Bryony", name: "Bryony", language: "en-US", engine: .phonon, gender: .female),
+        Voice(id: "phonon:Edwin", name: "Edwin", language: "en-US", engine: .phonon, gender: .male),
+        Voice(id: "phonon:Hugh", name: "Hugh", language: "en-US", engine: .phonon, gender: .male)
     ]
 }
 
