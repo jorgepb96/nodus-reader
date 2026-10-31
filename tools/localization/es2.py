@@ -510,3 +510,9 @@ ES.update({
     "Base voice": "Voz base",
     "DEFAULT": "PREDETERMINADA",
 })
+ES.update({
+    "Gender": "Género",
+    "All genders": "Todos los géneros",
+    "Female": "Femenina",
+    "Male": "Masculina",
+})

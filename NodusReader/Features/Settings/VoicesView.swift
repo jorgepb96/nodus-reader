@@ -21,6 +21,7 @@ struct VoicesView: View {
     @State private var languageFilter: String?
     @State private var qualityFilter: Int?
     @State private var engineFilter: String?
+    @State private var genderFilter: VoiceGender?
     @State private var didSetInitialLanguage = false
     @State private var hfToken = ""
     @State private var hfStatus: String?
@@ -49,6 +50,7 @@ struct VoicesView: View {
                !voice.language.lowercased().hasPrefix(code) { return false }
             if let qualityFilter, voice.quality != qualityFilter { return false }
             if let engineFilter, voice.modelID != engineFilter { return false }
+            if let genderFilter, voice.gender != genderFilter { return false }
             let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty {
                 return voice.name.localizedCaseInsensitiveContains(trimmed)
@@ -60,7 +62,8 @@ struct VoicesView: View {
     }
 
     private var hasFilters: Bool {
-        languageFilter != nil || qualityFilter != nil || engineFilter != nil || !searchText.isEmpty
+        languageFilter != nil || qualityFilter != nil || engineFilter != nil || genderFilter != nil
+            || !searchText.isEmpty
     }
 
     var body: some View {
@@ -834,6 +837,7 @@ struct VoicesView: View {
         HStack(spacing: 6) {
             modelFilterMenu
             languageFilterMenu
+            genderFilterMenu
             qualityFilterMenu
             Spacer(minLength: 0)
             clearFiltersButton
@@ -865,6 +869,21 @@ struct VoicesView: View {
         }
     }
 
+    @ViewBuilder
+    private var genderFilterMenu: some View {
+        let genders = VoiceCatalog.genders(of: voices.allInstalledVoices)
+        if !genders.isEmpty {
+            filterMenu(title: String(localized: "Gender"), systemImage: "person.2",
+                       value: genderFilter?.label, isActive: genderFilter != nil) {
+                Button("All genders") { genderFilter = nil }
+                Divider()
+                ForEach(genders, id: \.self) { gender in
+                    Button(gender.label) { genderFilter = gender }
+                }
+            }
+        }
+    }
+
     private var qualityFilterMenu: some View {
         filterMenu(title: String(localized: "Quality"), systemImage: "waveform",
                    value: qualityFilter == nil ? nil : qualityLabel(for: qualityFilter),
@@ -885,6 +904,7 @@ struct VoicesView: View {
                 languageFilter = nil
                 qualityFilter = nil
                 engineFilter = nil
+                genderFilter = nil
             } label: {
                 Label("Clear", systemImage: "xmark.circle.fill")
                     .labelStyle(.iconOnly)
@@ -917,7 +937,7 @@ struct VoicesView: View {
     }
 }
 
-/// A filter chip with a menu (Model, Language, Quality), shared by the Voices
+/// A filter chip with a menu (Model, Language, Gender, Quality), shared by the Voices
 /// screen and the book's voice picker.
 struct VoiceFilterMenu<Content: View>: View {
     let title: String

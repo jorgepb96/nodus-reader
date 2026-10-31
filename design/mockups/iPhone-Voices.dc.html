@@ -43,9 +43,12 @@ svg.i{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke
     </label>
 
     <div style="display: flex; gap: 8px; align-items: center">
-      <button aria-haspopup="menu" aria-expanded="true" style="height: 36px; padding: 0 12px; border-radius: 18px; border: 1px solid rgba(196,181,253,0.45); background: #1E1A2B; color: #F2EFE8; font-size: 13px; font-family: inherit; display: flex; align-items: center; gap: 6px"><span style="color: #A8A3B5">Model</span>All<svg class="i" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
-      <button aria-haspopup="menu" style="height: 36px; padding: 0 12px; border-radius: 18px; border: 0; background: #C4B5FD; color: #16121F; font-size: 13px; font-weight: 600; font-family: inherit; display: flex; align-items: center; gap: 6px"><span style="font-weight: 400">Language</span>Español<svg class="i" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
-      <button style="margin-left: auto; height: 36px; padding: 0 4px; border: 0; background: transparent; color: #C4B5FD; font-size: 13px; font-family: inherit">Clear</button>
+      <div aria-label="Filters" style="display: flex; gap: 8px; align-items: center; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none">
+      <button aria-haspopup="menu" aria-expanded="true" style="flex-shrink: 0; height: 36px; padding: 0 12px; border-radius: 18px; border: 1px solid rgba(196,181,253,0.45); background: #1E1A2B; color: #F2EFE8; font-size: 13px; font-family: inherit; display: flex; align-items: center; gap: 6px"><span style="color: #A8A3B5">Model</span>All<svg class="i" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+      <button aria-haspopup="menu" style="flex-shrink: 0; height: 36px; padding: 0 12px; border-radius: 18px; border: 0; background: #C4B5FD; color: #16121F; font-size: 13px; font-weight: 600; font-family: inherit; display: flex; align-items: center; gap: 6px"><span style="font-weight: 400">Language</span>Español<svg class="i" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+      <button aria-haspopup="menu" style="flex-shrink: 0; height: 36px; padding: 0 12px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.1); background: #17151F; color: #F2EFE8; font-size: 13px; font-family: inherit; display: flex; align-items: center; gap: 6px"><span style="color: #A8A3B5">Gender</span>All<svg class="i" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+      </div>
+      <button style="flex-shrink: 0; height: 36px; padding: 0 4px; border: 0; background: transparent; color: #C4B5FD; font-size: 13px; font-family: inherit">Clear</button>
     </div>
 
     <div style="display: flex; flex-direction: column">

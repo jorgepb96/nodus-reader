@@ -2,6 +2,20 @@
 import Foundation
 import Observation
 
+/// A voice's gender as its publisher lists it. Voices without one (Phonon's
+/// base and character voices) appear only when no gender filter is chosen.
+public enum VoiceGender: String, CaseIterable, Hashable, Sendable {
+    case female
+    case male
+
+    public var label: String {
+        switch self {
+        case .female: String(localized: "Female")
+        case .male: String(localized: "Male")
+        }
+    }
+}
+
 /// The neural voices installed on this device. Nodus Reader never enumerates,
 /// offers or uploads the system's AVSpeechSynthesisVoice list.
 @MainActor
@@ -13,7 +27,7 @@ public final class VoiceCatalog {
         public var language: String
         public var languageName: String
         public var quality: Int
-        public var gender: String?
+        public var gender: VoiceGender?
         public var engineRaw: String
         /// The neural model this voice belongs to, and its display name: two
         /// Phonon checkpoints can share a voice name.
@@ -147,6 +161,12 @@ public final class VoiceCatalog {
 
     /// "English (United Kingdom)" for `en-GB`; the plain language name when
     /// the code has no region.
+    /// The genders present among `voices`, for a filter that offers only
+    /// choices that match something.
+    public static func genders(of voices: [Voice]) -> [VoiceGender] {
+        VoiceGender.allCases.filter { gender in voices.contains { $0.gender == gender } }
+    }
+
     public static func variantName(for code: String) -> String {
         let identifier = code.replacingOccurrences(of: "-", with: "_")
         return sentenceCase(Locale.current.localizedString(forIdentifier: identifier)

@@ -856,6 +856,43 @@ func voiceCatalogPrefersTheBookLanguage() async throws {
     #expect(empty.allInstalledVoices.isEmpty)
 }
 
+@Test @MainActor
+func neuralVoicesCarryTheirPublishedGender() throws {
+    let suite = "nodus.tests.voice-gender.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    func voices(_ id: String) throws -> [ModelManager.Voice] {
+        try #require(manager.models.first { $0.id == id }).voices
+    }
+
+    // Kokoro names its gender in the file name: af_heart, em_alex.
+    let kokoro = try voices("kokoro-82m")
+    #expect(kokoro.first { $0.id == "kokoro:af_heart" }?.gender == .female)
+    #expect(kokoro.first { $0.id == "kokoro:bm_george" }?.gender == .male)
+    #expect(kokoro.first { $0.id == "kokoro:em_alex" }?.gender == .male)
+    #expect(kokoro.allSatisfy { $0.gender != nil })
+
+    // Gradium's voices.jsonl: 48 female, 42 male, and 12 character voices with none.
+    let multilingual = try voices(ModelManager.phonon40MultilingualID)
+    #expect(multilingual.filter { $0.gender == .female }.count == 48)
+    #expect(multilingual.filter { $0.gender == .male }.count == 42)
+    #expect(multilingual.filter { $0.gender == nil }.allSatisfy { $0.language == "en" })
+    #expect(try voices(ModelManager.phonon40SpanishID).allSatisfy { $0.gender != nil })
+
+    let phonon31 = try voices("phonon-31m-en")
+    #expect(phonon31.first { $0.name == "Harper" }?.gender == .female)
+    #expect(phonon31.first { $0.name == "Hugh" }?.gender == .male)
+    #expect(phonon31.first { $0.id == "phonon:default" }?.gender == nil)
+
+    let female = VoiceCatalog.Voice(id: "a", name: "A", language: "en-US", languageName: "English",
+                                    quality: 3, gender: .female, engineRaw: "kokoro")
+    let unknown = VoiceCatalog.Voice(id: "b", name: "B", language: "en", languageName: "English",
+                                     quality: 3, gender: nil, engineRaw: "phonon")
+    #expect(VoiceCatalog.genders(of: [female, unknown]) == [.female])
+    #expect(VoiceCatalog.genders(of: [unknown]).isEmpty)
+}
+
 // MARK: - Defensive paths
 
 @Test
