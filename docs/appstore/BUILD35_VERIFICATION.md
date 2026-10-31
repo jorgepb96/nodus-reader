@@ -14,7 +14,7 @@ Build 35 contains build 34 plus fixes for two TestFlight reports on build 33 (iP
 | Check | Result |
 | --- | --- |
 | iPhone 17 Pro unit/integration suite | 127 passed, 0 failures |
-| macOS unit/integration suite | 127 passed, 0 failures |
+| macOS unit/integration suite | 127 passed, 0 failures (run before the final window-size rule, which is iOS-only; the macOS Release archive compiles the final code) |
 | iPhone UI suite | 20 passed, 2 skipped (iPad capture, opt-in App Store screenshots); `testPhoneScreens` timed out synthesizing a tap on Voices › Models once and passed on rerun |
 | iPhone UI layout, final code | `testPhoneScreens` passed |
 | iPad UI: iPad screens, final code | 1 passed |
