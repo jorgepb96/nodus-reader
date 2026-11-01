@@ -111,6 +111,11 @@ struct RootView: View {
                 if ProcessInfo.processInfo.arguments.contains("-NodusResetReadingState") {
                     SampleLibrary.resetReadingState(library: library)
                 }
+                // `-NodusImportFile <path> -NodusOpenBookAt <0…1>` opens a real book.
+                if let path = UserDefaults.standard.string(forKey: "NodusImportFile"),
+                   let book = await StoryCompanionDebug.importAndPlace(path: path, library: library) {
+                    imports.bookToOpen = book
+                }
                 #endif
                 #if DEBUG
                 if ProcessInfo.processInfo.arguments.contains("-NodusSkipVoiceSetup") {

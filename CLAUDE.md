@@ -99,6 +99,14 @@ user clones by recording a paragraph or adding an audio file: the transcript is
 suggested by on-device speech recognition, consent is required, and clips stay on the
 Mac (`MingVoiceStore`). Ming is not offered on iOS.
 
+On devices with Apple Intelligence (iOS/macOS 26+), the reader offers recaps and a
+character list (`StoryCompanion`, Settings › Recaps & Characters, on by default). Only
+`SystemLanguageModel` runs, on the device, never Private Cloud Compute; only text before
+the reader's position is used, after front matter (licence, contents, prefaces) is
+skipped by finding the first chapter heading followed by prose. Read passages are
+summarised in the background while a book is open and cached in `Companion/`
+(device-local, never synced). Elsewhere the feature does not appear.
+
 Kokoro speaks English (SDK phonemizer) and Spanish (`SpanishG2P`, rule-based, matching
 espeak-ng) and is unavailable in the Simulator (MLX needs a Metal device).
 Phonon 31M is English and downloads in the app. Phonon 40M Spanish and Multilingual
@@ -111,11 +119,12 @@ See `docs/ROADMAP.md`, `docs/ICLOUD.md` and `docs/NARRATION_SYNC.md`.
 
 ## Verification
 
-- 60 unit/integration tests (plus four opt-in model tests) cover EPUB/PDF import (chapter splitting at contents
+- Unit/integration tests (plus four opt-in model tests) cover EPUB/PDF import (chapter splitting at contents
   anchors, paragraph joining, folder packages, DRM detection), duplicate detection, collections,
   themes (including reader-follows-app), text utilities, pause-based word alignment,
   page-boundary highlight clipping, path-traversal defenses, language-aware voice
-  choice and the durable sync outbox, including suspended remote saves.
+  choice, the durable sync outbox (including suspended remote saves) and the recap
+  engine's front-matter skipping, passages and character grouping.
 - 12 UI tests cover the phone screens, reader search, the reader appearance popover with continuous
   scrolling, PDF Intelligent Reading highlights and notes, reader, page turn, bookmarks, system
   narration, tap-a-word, PDF Intelligent Reading, Phonon narration (behavioural:

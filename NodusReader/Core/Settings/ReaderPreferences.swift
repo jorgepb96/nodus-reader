@@ -142,6 +142,8 @@ public final class ReaderPreferences {
         static let flow = "nodus.reader.flow"
         static let narrationHighlight = "nodus.reader.narrationHighlight"
         static let autoScrollNarration = "nodus.reader.autoScrollNarration"
+        static let storyCompanion = "nodus.reader.storyCompanion"
+        static let recapAfterBreak = "nodus.reader.recapAfterBreak"
     }
 
     private let defaults: UserDefaults
@@ -178,6 +180,16 @@ public final class ReaderPreferences {
     public var autoScrollNarration: Bool {
         didSet { defaults.set(autoScrollNarration, forKey: Key.autoScrollNarration) }
     }
+    /// Recaps and characters with Apple Intelligence, where it is available.
+    /// Not part of the typography: it is the same for every book.
+    public var storyCompanion: Bool {
+        didSet { defaults.set(storyCompanion, forKey: Key.storyCompanion) }
+    }
+    /// Offer a recap on opening a book not read for `recapBreak`.
+    public var recapAfterBreak: Bool {
+        didSet { defaults.set(recapAfterBreak, forKey: Key.recapAfterBreak) }
+    }
+    public static let recapBreak: TimeInterval = 2 * 24 * 60 * 60
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -191,6 +203,8 @@ public final class ReaderPreferences {
         self.flow = (defaults.string(forKey: Key.flow)).flatMap(ReadingFlow.init(rawValue:)) ?? .paged
         self.narrationHighlight = (defaults.string(forKey: Key.narrationHighlight)).flatMap(NarrationHighlightStyle.init(rawValue:)) ?? .sentenceAndWord
         self.autoScrollNarration = defaults.object(forKey: Key.autoScrollNarration) as? Bool ?? true
+        self.storyCompanion = defaults.object(forKey: Key.storyCompanion) as? Bool ?? true
+        self.recapAfterBreak = defaults.object(forKey: Key.recapAfterBreak) as? Bool ?? true
     }
 
     /// The global typography as one value. Setting it writes only the fields

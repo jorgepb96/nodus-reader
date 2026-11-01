@@ -652,6 +652,26 @@
         }
       }
     },
+    "A reminder of the story so far and of the people in it, from the pages you have read.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un recordatorio de la historia hasta ahora y de sus personajes, a partir de las páginas que has leído."
+          }
+        }
+      }
+    },
+    "A reminder of where you left off.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un recordatorio de dónde lo dejaste."
+          }
+        }
+      }
+    },
     "A voice for every book.": {
       "localizations": {
         "es": {
@@ -892,6 +912,16 @@
         }
       }
     },
+    "Adds a button to the reader with a recap and a list of characters.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añade al lector un botón con un resumen y una lista de personajes."
+          }
+        }
+      }
+    },
     "After %lld days": {
       "localizations": {
         "es": {
@@ -1008,6 +1038,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apariencia y tipografía"
+          }
+        }
+      }
+    },
+    "Apple Intelligence can’t read this book’s language yet.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence todavía no puede leer el idioma de este libro."
+          }
+        }
+      }
+    },
+    "Apple Intelligence is getting ready on this device. Recaps will be available when it finishes.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence se está preparando en este dispositivo. Los resúmenes estarán disponibles cuando termine."
+          }
+        }
+      }
+    },
+    "Apple Intelligence isn’t ready on this device right now. Try again later.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence no está lista en este dispositivo ahora mismo. Inténtalo más tarde."
+          }
+        }
+      }
+    },
+    "Apple Intelligence writes everything on this device. The book’s text never leaves it.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence lo escribe todo en este dispositivo. El texto del libro nunca sale de él."
           }
         }
       }
@@ -1348,6 +1418,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Capítulo %1$lld · %2$@"
+          }
+        }
+      }
+    },
+    "Characters": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personajes"
           }
         }
       }
@@ -1912,6 +1992,26 @@
         }
       }
     },
+    "Delete Saved Recaps": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar resúmenes guardados"
+          }
+        }
+      }
+    },
+    "Delete Saved Recaps?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar los resúmenes guardados?"
+          }
+        }
+      }
+    },
     "Delete Theme": {
       "localizations": {
         "es": {
@@ -2012,6 +2112,16 @@
         }
       }
     },
+    "Describing the people you have met…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Describiendo a las personas que has conocido…"
+          }
+        }
+      }
+    },
     "Description": {
       "localizations": {
         "es": {
@@ -2028,6 +2138,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Datos locales del dispositivo"
+          }
+        }
+      }
+    },
+    "Dismiss": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar"
           }
         }
       }
@@ -2392,6 +2512,16 @@
         }
       }
     },
+    "Finding the people you have met…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscando a las personas que has conocido…"
+          }
+        }
+      }
+    },
     "Finished": {
       "localizations": {
         "es": {
@@ -2408,6 +2538,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Libros terminados"
+          }
+        }
+      }
+    },
+    "First appears on page %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aparece por primera vez en la página %lld"
           }
         }
       }
@@ -2498,6 +2638,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Generando cada frase con %@…"
+          }
+        }
+      }
+    },
+    "Going over the earlier chapters…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repasando los capítulos anteriores…"
           }
         }
       }
@@ -2608,6 +2758,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Inicio"
+          }
+        }
+      }
+    },
+    "How it works": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cómo funciona"
           }
         }
       }
@@ -3582,6 +3742,16 @@
         }
       }
     },
+    "Narration, OCR, document analysis and recaps run on this device; recaps use Apple Intelligence’s on-device model. Generated audio stays on this device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La narración, el OCR, el análisis de documentos y los resúmenes se ejecutan en este dispositivo; los resúmenes usan el modelo local de Apple Intelligence. El audio generado se queda en este dispositivo."
+          }
+        }
+      }
+    },
     "Natural narration in seven languages, with 106 built-in English and Mandarin voices and voices you clone from a short recording.": {
       "localizations": {
         "es": {
@@ -3878,6 +4048,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No se encontraron capítulos"
+          }
+        }
+      }
+    },
+    "No named characters in the pages read so far.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay personajes con nombre en las páginas leídas hasta ahora."
           }
         }
       }
@@ -4222,6 +4402,16 @@
         }
       }
     },
+    "Offer a recap after a break": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ofrecer un resumen tras un descanso"
+          }
+        }
+      }
+    },
     "Offline audio": {
       "localizations": {
         "es": {
@@ -4282,12 +4472,32 @@
         }
       }
     },
+    "Once you have read further, the story so far will appear here.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando hayas leído algo más, aquí aparecerá la historia hasta ahora."
+          }
+        }
+      }
+    },
     "One library across your devices through your personal iCloud account.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Una sola biblioteca en todos tus dispositivos a través de tu cuenta personal de iCloud."
+          }
+        }
+      }
+    },
+    "Only the pages before the one you are reading are used, so nothing ahead is given away. Prefaces and tables of contents are skipped.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo se usan las páginas hasta la que estás leyendo, así que no se desvela nada de lo que viene. Se omiten los prólogos y los índices."
           }
         }
       }
@@ -4722,6 +4932,16 @@
         }
       }
     },
+    "Preparing the book’s text…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando el texto del libro…"
+          }
+        }
+      }
+    },
     "Preparing the voice…": {
       "localizations": {
         "es": {
@@ -4942,6 +5162,26 @@
         }
       }
     },
+    "Read a few more pages and a recap will be ready here.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lee unas páginas más y aquí tendrás un resumen."
+          }
+        }
+      }
+    },
+    "Read a few more pages and the people in the story will appear here.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lee unas páginas más y aquí aparecerán los personajes de la historia."
+          }
+        }
+      }
+    },
     "Read the full privacy policy": {
       "localizations": {
         "es": {
@@ -5042,12 +5282,82 @@
         }
       }
     },
+    "Reading the last pages…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leyendo las últimas páginas…"
+          }
+        }
+      }
+    },
     "Ready to import in Nodus Reader.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Listo para importar en Nodus Reader."
+          }
+        }
+      }
+    },
+    "Recap": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumen"
+          }
+        }
+      }
+    },
+    "Recap and characters": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumen y personajes"
+          }
+        }
+      }
+    },
+    "Recap or characters": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumen o personajes"
+          }
+        }
+      }
+    },
+    "Recaps & Characters": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resúmenes y personajes"
+          }
+        }
+      }
+    },
+    "Recaps and characters": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resúmenes y personajes"
+          }
+        }
+      }
+    },
+    "Recaps aren’t available for this book.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay resúmenes disponibles para este libro."
           }
         }
       }
@@ -5358,6 +5668,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Guardar token"
+          }
+        }
+      }
+    },
+    "Saved recaps": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resúmenes guardados"
           }
         }
       }
@@ -6152,6 +6472,16 @@
         }
       }
     },
+    "Summaries are generated and can contain mistakes.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los resúmenes son generados y pueden contener errores."
+          }
+        }
+      }
+    },
     "Sync Now": {
       "localizations": {
         "es": {
@@ -6472,6 +6802,16 @@
         }
       }
     },
+    "The recap could not be written. Try again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo escribir el resumen. Inténtalo de nuevo."
+          }
+        }
+      }
+    },
     "The recording could not start. Check that a microphone is connected.": {
       "localizations": {
         "es": {
@@ -6508,6 +6848,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "El código fuente se publica con licencia AGPL-3.0-only para que cualquiera pueda comprobar estas garantías de privacidad."
+          }
+        }
+      }
+    },
+    "The story so far": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La historia hasta aquí"
           }
         }
       }
@@ -6588,6 +6938,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No hay analíticas, SDK de publicidad, píxeles de seguimiento ni informes de uso. La app no recoge identificadores."
+          }
+        }
+      }
+    },
+    "They are written again the next time you ask for a recap.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se vuelven a escribir la próxima vez que pidas un resumen."
           }
         }
       }
@@ -6912,6 +7272,16 @@
         }
       }
     },
+    "Turn on Apple Intelligence in the system Settings to use recaps.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activa Apple Intelligence en los Ajustes del sistema para usar los resúmenes."
+          }
+        }
+      }
+    },
     "Two facing pages, like an open book.": {
       "localizations": {
         "es": {
@@ -7232,6 +7602,16 @@
         }
       }
     },
+    "Welcome back": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hola de nuevo"
+          }
+        }
+      }
+    },
     "What is Hugging Face and how do I get a token?": {
       "localizations": {
         "es": {
@@ -7248,6 +7628,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "¿Qué es Hugging Face?"
+          }
+        }
+      }
+    },
+    "When you open a book you have not read for two days or more.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al abrir un libro que no has leído en dos días o más."
+          }
+        }
+      }
+    },
+    "Where you left off": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dónde lo dejaste"
+          }
+        }
+      }
+    },
+    "While a book is open, the pages you have read are summarised a little at a time, so the next recap is quick. This pauses in Low Power Mode.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mientras un libro está abierto, las páginas que has leído se resumen poco a poco, para que el siguiente resumen sea rápido. Se detiene en el modo de bajo consumo."
           }
         }
       }
@@ -7298,6 +7708,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Escribe las palabras exactas del clip (al menos %lld caracteres para su duración)."
+          }
+        }
+      }
+    },
+    "Written on this device by Apple Intelligence from the pages you have read (%@), so nothing ahead is given away. It can make mistakes.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escrito en este dispositivo por Apple Intelligence a partir de las páginas que has leído (%@), así que no se desvela nada de lo que viene. Puede contener errores."
           }
         }
       }

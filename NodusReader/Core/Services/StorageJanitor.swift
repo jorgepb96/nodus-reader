@@ -114,6 +114,7 @@ final class StorageJanitor {
         }
         let known = Set(books.map(\.id))
         let ocrRoot = library.fileStore.root.appendingPathComponent("Reflow", isDirectory: true)
+        let companion = StoryCompanionStore(fileStore: library.fileStore)
         let info = books.map { (id: $0.id, lastOpened: $0.lastOpenedAt ?? $0.addedAt, finished: $0.status == .finished) }
         let policy = self.policy
         let cache = self.cache
@@ -145,6 +146,10 @@ final class StorageJanitor {
                 let folder = ocrRoot.appendingPathComponent(id.uuidString)
                 report.freedBytes += FileStore.directorySize(folder, fileManager: .default)
                 try? FileManager.default.removeItem(at: folder)
+            }
+            for id in companion.bookIDs() where !known.contains(id) {
+                report.freedBytes += FileStore.fileSize(at: companion.url(for: id))
+                companion.remove(bookID: id)
             }
             return report
         }

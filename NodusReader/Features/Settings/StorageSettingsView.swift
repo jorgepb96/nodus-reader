@@ -553,7 +553,7 @@ struct PrivacyView: View {
                 )
                 section(
                     title: "No remote processing",
-                    body: "Narration, OCR and document analysis run on this device. Generated audio stays on this device."
+                    body: "Narration, OCR, document analysis and recaps run on this device; recaps use Apple Intelligence’s on-device model. Generated audio stays on this device."
                 )
                 section(
                     title: "Your iCloud",

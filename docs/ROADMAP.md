@@ -38,6 +38,11 @@ limitations.
 - [x] PDF Intelligent Reading: reading-order reconstruction, multi-column handling,
       repeated-header filtering, Vision OCR fallback, table crops, original-page
       overlay and a versioned cache.
+- [x] Recaps and characters with Apple Intelligence's on-device model (iOS/macOS 26+,
+      eligible devices only): "where you left off", "the story so far" and a character
+      list from the text before the reader's position, front matter skipped, a
+      welcome-back offer after two days away, background summaries cached per book,
+      and a setting to turn it off.
 
 ### Narration
 
@@ -87,6 +92,7 @@ limitations.
 | Phonon Spanish/Multilingual | Listed as unavailable, no download | The CC BY-NC 40M checkpoints are gated and no Core ML bundle is published; Nodus Reader does not offer downloads it cannot run |
 | iCloud live validation | Build must be signed with the `iCloud.ai.nodus.reader` container | Unsigned builds deliberately report iCloud unavailable instead of crashing |
 | iCloud conflict UI | Scalar last-writer-wins with timestamps; concurrent annotation edits keep the newer record | A recoverable side-by-side conflict UI is still future work |
+| Recaps and characters | Apple's on-device model (about 3B parameters, 4,096-token context) makes factual slips in character descriptions and can merge separate stories in a collection; a long book read far ahead of the background summaries gets a coarser "story so far" | The model reads about 6,000 characters at a time; quality depends on the system model, and the sheet says it can make mistakes |
 | PDF tap-to-play | Original PDF page does not map taps to narration | Intelligent Reading reflow does; original-page mapping is future work |
 | EPUB locators | Chapter + page/fraction locator, not CFI | Stable chapter offsets survive re-parses; CFI is future work |
 | Translation | Interface is English | Strings are localization-ready |
