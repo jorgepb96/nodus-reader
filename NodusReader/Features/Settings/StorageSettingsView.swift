@@ -24,7 +24,7 @@ struct StorageSettingsView: View {
     }
 
     private var modelBytes: Int64 {
-        models.storage.kokoroBytes + models.storage.phononBytes
+        models.storage.kokoroBytes + models.storage.phononBytes + models.storage.mingBytes
     }
 
     private var audioBytes: Int64 {

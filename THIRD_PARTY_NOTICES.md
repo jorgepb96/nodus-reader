@@ -46,8 +46,17 @@ Resolved versions are pinned in
 |---|---|---|---|---|
 | ZIPFoundation | <https://github.com/weichsel/ZIPFoundation> | 0.9.20 | MIT, © 2017-2025 Thomas Zoechling | EPUB reading, EPUB folder packages, fixtures |
 | KokoroTTS (`kokoro-coreml`) | <https://github.com/mattmireles/kokoro-coreml> | revision `43ef023` | Apache-2.0 | Kokoro Core ML pipeline and English G2P (`KokoroG2P`, derived from FluidAudio v0.17.4, Apache-2.0) |
-| MisakiSwift | <https://github.com/mattmireles/MisakiSwift> | revision `3a27756` | Apache-2.0 | Kokoro English phonemizer |
-| MLX Swift | <https://github.com/ml-explore/mlx-swift> | 0.31.4 | MIT, © 2023 ml-explore | MisakiSwift's fallback network; also linked directly to clear its GPU cache when voice engines unload |
+| MisakiSwift | <https://github.com/mattmireles/MisakiSwift> | revision `3a27756`, vendored in `Modules/MisakiSwift/` with its mlx-swift pin raised to 0.33.0 (see `NODUS_VENDOR.md`) | Apache-2.0 | Kokoro English phonemizer |
+| MLX Swift | <https://github.com/ml-explore/mlx-swift> | 0.33.0 | MIT, © 2023 ml-explore | MisakiSwift's fallback network and Ming; also linked directly to clear its GPU cache when voice engines unload |
+| MLXAudio (`mlx-audio-swift`), macOS only | <https://github.com/Blaizzy/mlx-audio-swift> | revision `0dda61b` | MIT, © 2024 Prince Canuma | Ming 3.0 speech synthesis and its CAM++ speaker encoder (`MLXAudioTTS`, `MLXAudioCore`, `MLXAudioCodecs`) |
+| swift-transformers | <https://github.com/huggingface/swift-transformers> | 1.3.5 | Apache-2.0 | MLXAudio dependency: Ming's tokenizer |
+| swift-huggingface | <https://github.com/huggingface/swift-huggingface> | 0.13.0 | Apache-2.0 | MLXAudio dependency (the app downloads Ming itself) |
+| swift-jinja | <https://github.com/huggingface/swift-jinja> | 2.5.2 | Apache-2.0 | swift-transformers dependency |
+| swift-collections | <https://github.com/apple/swift-collections> | 1.7.5 | Apache-2.0 with Runtime Library Exception | swift-transformers dependency |
+| swift-crypto, swift-asn1 | <https://github.com/apple/swift-crypto>, <https://github.com/apple/swift-asn1> | 4.5.2, 1.7.3 | Apache-2.0 | swift-huggingface dependencies |
+| EventSource | <https://github.com/mattt/EventSource> | 1.5.1 | MIT, © 2025 Mattt | swift-huggingface dependency |
+| yyjson | <https://github.com/ibireme/yyjson> | 0.12.0 | MIT, © 2020 YaoYuan | swift-transformers dependency |
+| Zstandard | <https://github.com/facebook/zstd> | 1.5.7 | BSD-3-Clause (dual BSD/GPLv2; used under BSD) | MLXAudio dependency |
 | MLXUtilsLibrary | <https://github.com/mlalma/MLXUtilsLibrary> | 0.0.6 | Apache-2.0 | MisakiSwift dependency |
 | Swift Numerics | <https://github.com/apple/swift-numerics> | 1.1.1 | Apache-2.0 with Runtime Library Exception | MLX Swift dependency |
 | NemoTextProcessing (binary) | <https://github.com/FluidInference/text-processing-rs> | v0.3.1 | Apache-2.0 | English text normalization for Kokoro |
@@ -90,6 +99,8 @@ the device that downloaded it.
 | Phonon voices by Gradium | <https://huggingface.co/gradium/phonon-voices> at `0ee1720` (9 English voices with 31M; 25 Spanish voices with 40M Spanish; all 102 with 40M Multilingual) | Apache-2.0 | Downloaded and hash-checked |
 | Phonon 40M Spanish by Gradium | <https://huggingface.co/gradium/phonon-40m-es> at `f0d2f39` | CC BY-NC 4.0, gated | Downloaded with **the user's own** Hugging Face access after they accept Gradium's conditions, converted to Core ML on the device, weights deleted after conversion |
 | Phonon 40M Multilingual by Gradium | <https://huggingface.co/gradium/phonon-40m-multilingual> at `1537ce4` | CC BY-NC 4.0, gated | Same as Phonon 40M Spanish |
+| Ming 3.0 0.5B by inclusionAI (Mac only) | 8-bit MLX conversion <https://huggingface.co/mlx-community/Ming-3.0-tts-0.5B-8bit> at `c807b99` (weights, tokenizer and CAM++ speaker encoder), from <https://huggingface.co/inclusionAI/Ming-3.0-tts-0.5B> | MIT (CAM++ from 3D-Speaker, Apache-2.0) | Downloaded on request; every file verified against its pinned size and SHA-256 |
+| `es-dave` reference clip (bundled) | 9.8 s clip `0000000003` of `es_ES/dave` from <https://github.com/OHF-Voice/voice-datasets> (release v1.0.0), as Nodus ships it | CC0 1.0 | **Bundled** in `NodusReader/Resources/MingVoices/` as Ming's included cloned voice; `NOTICE.md` credits the dataset |
 
 Phonon 40M models: the Core ML conversion is an adaptation of the original weights made
 on the user's device for non-commercial use, as CC BY-NC 4.0

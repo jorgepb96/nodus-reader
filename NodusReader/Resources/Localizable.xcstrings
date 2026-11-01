@@ -62,6 +62,16 @@
         }
       }
     },
+    "%@ s of speech after trimming silence": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ s de voz tras recortar los silencios"
+          }
+        }
+      }
+    },
     "%@ theme": {
       "localizations": {
         "es": {
@@ -88,6 +98,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ · %2$@ · %3$@"
+          }
+        }
+      }
+    },
+    "%@ · %lld s · %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$lld s · %3$@"
           }
         }
       }
@@ -592,6 +612,16 @@
         }
       }
     },
+    "6 to 15 seconds give the best result. Nodus Reader asks for the microphone the first time.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre 6 y 15 segundos dan el mejor resultado. Nodus Reader pide permiso para usar el micrófono la primera vez."
+          }
+        }
+      }
+    },
     "60 minutes": {
       "localizations": {
         "es": {
@@ -658,6 +688,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Acerca de"
+          }
+        }
+      }
+    },
+    "About 1.6 GB download": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga de unos 1,6 GB"
           }
         }
       }
@@ -778,6 +818,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Añadir nota…"
+          }
+        }
+      }
+    },
+    "Add a voice from a file": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir una voz desde un archivo"
+          }
+        }
+      }
+    },
+    "Add audio file…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir archivo de audio…"
           }
         }
       }
@@ -912,6 +972,16 @@
         }
       }
     },
+    "Another paragraph": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otro párrafo"
+          }
+        }
+      }
+    },
     "App": {
       "localizations": {
         "es": {
@@ -948,6 +1018,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Caché de audio %@"
+          }
+        }
+      }
+    },
+    "Audio file": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo de audio"
           }
         }
       }
@@ -1282,6 +1362,26 @@
         }
       }
     },
+    "Choose Another File…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir otro archivo…"
+          }
+        }
+      }
+    },
+    "Choose Audio File…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir archivo de audio…"
+          }
+        }
+      }
+    },
     "Choose a Kokoro or Phonon voice before generating audio.": {
       "localizations": {
         "es": {
@@ -1508,6 +1608,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Compilando para este dispositivo. La primera vez puede tardar un minuto."
+          }
+        }
+      }
+    },
+    "Confirm that this is your voice or that you have its owner's permission.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirma que es tu voz o que tienes permiso de su dueño."
           }
         }
       }
@@ -1752,6 +1862,16 @@
         }
       }
     },
+    "Delete %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar %@"
+          }
+        }
+      }
+    },
     "Delete Collection": {
       "localizations": {
         "es": {
@@ -1878,6 +1998,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Borrar su audio y caché OCR una semana después de abrirlos por última vez"
+          }
+        }
+      }
+    },
+    "Delete this voice?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar esta voz?"
           }
         }
       }
@@ -2142,6 +2272,16 @@
         }
       }
     },
+    "Exact words spoken": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palabras exactas"
+          }
+        }
+      }
+    },
     "Export bookmarks and notes": {
       "localizations": {
         "es": {
@@ -2298,6 +2438,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Liberados %@"
+          }
+        }
+      }
+    },
+    "From a file": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desde un archivo"
           }
         }
       }
@@ -2762,6 +2912,16 @@
         }
       }
     },
+    "Included · CC0": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluida · CC0"
+          }
+        }
+      }
+    },
     "Install a Kokoro or Phonon model in the Models tab to start listening.": {
       "localizations": {
         "es": {
@@ -2838,6 +2998,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Puede que se haya eliminado en otro dispositivo."
+          }
+        }
+      }
+    },
+    "Its recording is deleted from this Mac. Books that use it read with their default voice.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Su grabación se elimina de este Mac. Los libros que la usan se leen con su voz predeterminada."
           }
         }
       }
@@ -3072,6 +3242,16 @@
         }
       }
     },
+    "Mac only. It runs on this Mac's GPU and generates speech at about real time; voices you clone stay on this Mac.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo en Mac. Se ejecuta en la GPU de este Mac y genera la voz más o menos en tiempo real; las voces que clones se quedan en este Mac."
+          }
+        }
+      }
+    },
     "Male": {
       "localizations": {
         "es": {
@@ -3192,6 +3372,46 @@
         }
       }
     },
+    "Ming": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ming"
+          }
+        }
+      }
+    },
+    "Ming copies a voice from 6 to 15 seconds of clear speech and its exact words. Clone only your own voice or one you have permission to use. Recordings stay on this Mac and are never synced.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ming copia una voz a partir de 6 a 15 segundos de habla clara y sus palabras exactas. Clona solo tu propia voz o una que tengas permiso para usar. Las grabaciones se quedan en este Mac y nunca se sincronizan."
+          }
+        }
+      }
+    },
+    "Ming reads the clip together with these words, so they must match what is said, including any slips. At least %lld characters for this clip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ming lee el clip junto con estas palabras, así que deben coincidir con lo que se dice, incluidos los tropiezos. Al menos %lld caracteres para este clip."
+          }
+        }
+      }
+    },
+    "Ming voices": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voces de Ming"
+          }
+        }
+      }
+    },
     "Mode": {
       "localizations": {
         "es": {
@@ -3302,6 +3522,16 @@
         }
       }
     },
+    "My voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mi voz"
+          }
+        }
+      }
+    },
     "NODUS READER": {
       "localizations": {
         "es": {
@@ -3348,6 +3578,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "La narración, el OCR y el análisis de documentos se ejecutan en este dispositivo. El audio generado permanece en él."
+          }
+        }
+      }
+    },
+    "Natural narration in seven languages, with five built-in English voices and voices you clone from a short recording.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Narración natural en siete idiomas, con cinco voces en inglés incluidas y las voces que clones a partir de una grabación breve."
           }
         }
       }
@@ -3788,6 +4028,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nodus Reader"
+          }
+        }
+      }
+    },
+    "Nodus Reader cannot use the microphone. Allow it in System Settings › Privacy & Security › Microphone.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodus Reader no puede usar el micrófono. Permítelo en Ajustes del Sistema › Privacidad y seguridad › Micrófono."
           }
         }
       }
@@ -4712,6 +4962,16 @@
         }
       }
     },
+    "Read this aloud in a quiet room, at your usual pace:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lee esto en voz alta en una habitación tranquila, a tu ritmo habitual:"
+          }
+        }
+      }
+    },
     "Read, %@": {
       "localizations": {
         "es": {
@@ -4808,6 +5068,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Abiertos recientemente"
+          }
+        }
+      }
+    },
+    "Recognizing the words on this Mac…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconociendo las palabras en este Mac…"
+          }
+        }
+      }
+    },
+    "Record": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabar"
+          }
+        }
+      }
+    },
+    "Record a voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabar una voz"
+          }
+        }
+      }
+    },
+    "Record a voice…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabar una voz…"
+          }
+        }
+      }
+    },
+    "Record again": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabar de nuevo"
+          }
+        }
+      }
+    },
+    "Recorded": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabada"
+          }
+        }
+      }
+    },
+    "Recording": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabación"
           }
         }
       }
@@ -5008,6 +5338,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Guardar"
+          }
+        }
+      }
+    },
+    "Save Voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar voz"
           }
         }
       }
@@ -5722,6 +6062,16 @@
         }
       }
     },
+    "Spanish, English, French, German, Chinese, Japanese, Korean": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Español, inglés, francés, alemán, chino, japonés, coreano"
+          }
+        }
+      }
+    },
     "Speed": {
       "localizations": {
         "es": {
@@ -5748,6 +6098,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Estado"
+          }
+        }
+      }
+    },
+    "Stop": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detener"
           }
         }
       }
@@ -5972,6 +6332,26 @@
         }
       }
     },
+    "The clip can last 30 seconds at most. Use one of 6 to 15 seconds.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El clip puede durar como máximo 30 segundos. Usa uno de 6 a 15 segundos."
+          }
+        }
+      }
+    },
+    "The clip needs at least 3 seconds of speech.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El clip necesita al menos 3 segundos de voz."
+          }
+        }
+      }
+    },
     "The collection and its subcollections are removed. Documents stay in your library.": {
       "localizations": {
         "es": {
@@ -6092,6 +6472,16 @@
         }
       }
     },
+    "The recording could not start. Check that a microphone is connected.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo empezar a grabar. Comprueba que hay un micrófono conectado."
+          }
+        }
+      }
+    },
     "The sign-in response did not match this request. Try again.": {
       "localizations": {
         "es": {
@@ -6148,6 +6538,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "La voz elegida para este libro no está instalada en este dispositivo"
+          }
+        }
+      }
+    },
+    "The words could not be recognized automatically. Type them, exactly as spoken.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron reconocer las palabras automáticamente. Escríbelas tal como se dicen."
           }
         }
       }
@@ -6302,12 +6702,32 @@
         }
       }
     },
+    "This file could not be read as audio.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este archivo no se pudo leer como audio."
+          }
+        }
+      }
+    },
     "This folder is not a complete Kokoro or Phonon Core ML bundle. Choose the folder that contains the model packages and their manifest.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Esta carpeta no es un paquete Core ML completo de Kokoro o Phonon. Elige la carpeta que contiene los paquetes del modelo y su manifiesto."
+          }
+        }
+      }
+    },
+    "This is my voice, or I have its owner's permission to clone it.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Es mi voz, o tengo permiso de su dueño para clonarla."
           }
         }
       }
@@ -6772,6 +7192,16 @@
         }
       }
     },
+    "WAV, M4A, MP3 or AIFF with one person speaking clearly, without music. 6 to 15 seconds give the best result; up to 30 are accepted.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WAV, M4A, MP3 o AIFF con una sola persona hablando con claridad, sin música. Entre 6 y 15 segundos dan el mejor resultado; se aceptan hasta 30."
+          }
+        }
+      }
+    },
     "Waiting for a connection": {
       "localizations": {
         "es": {
@@ -6858,6 +7288,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Escribe una nota…"
+          }
+        }
+      }
+    },
+    "Write the exact words spoken in the clip (at least %lld characters for its length).": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escribe las palabras exactas del clip (al menos %lld caracteres para su duración)."
           }
         }
       }

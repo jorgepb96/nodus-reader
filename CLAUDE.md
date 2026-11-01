@@ -25,7 +25,9 @@ Non-negotiable principles:
 - `Modules/PhononTTS` vendors the Apache-2.0/MIT `ptts` 0.4.1 Swift package; its
   `PhononCore` binary target is downloaded from the pinned GitHub release.
 - Swift packages: ZIPFoundation (MIT), KokoroTTS (Apache-2.0, pinned revision),
-  MisakiSwift/MLX (Apache-2.0/MIT) and NemoTextProcessing (Apache-2.0 binary). MLX is
+  MisakiSwift/MLX (Apache-2.0/MIT; MisakiSwift vendored in `Modules/MisakiSwift` so it
+  resolves mlx-swift 0.33.0) and NemoTextProcessing (Apache-2.0 binary). On macOS only,
+  MLXAudio (`mlx-audio-swift`, MIT, pinned revision) runs Ming 3.0 0.5B (8-bit). MLX is
   also linked directly (same version) only to clear its cache when engines unload.
 - Hugging Face sign-in is OAuth with PKCE; its client id is the metadata document
   `oauth/huggingface-client.json` served by jsDelivr at tag `hf-oauth-v1`. Do not move
@@ -90,6 +92,12 @@ language unless the user has chosen a per-book voice. Book covers always draw a 
 fallback while the real cover loads. The interface is localized in English (base)
 and Spanish through `NodusReader/Resources/Localizable.xcstrings`; see
 `tools/localization/README.md` before adding UI text.
+
+On the Mac, Ming 3.0 0.5B (8-bit MLX, MIT) narrates in seven languages at about real
+time with five built-in English voices, the bundled CC0 `es-dave` clip and voices the
+user clones by recording a paragraph or adding an audio file: the transcript is
+suggested by on-device speech recognition, consent is required, and clips stay on the
+Mac (`MingVoiceStore`). Ming is not offered on iOS.
 
 Kokoro speaks English (SDK phonemizer) and Spanish (`SpanishG2P`, rule-based, matching
 espeak-ng) and is unavailable in the Simulator (MLX needs a Metal device).
