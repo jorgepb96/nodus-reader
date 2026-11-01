@@ -7702,6 +7702,16 @@
         }
       }
     },
+    "Stops playback and closes the player": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detiene la reproducción y cierra el reproductor"
+          }
+        }
+      }
+    },
     "Storage": {
       "localizations": {
         "es": {

@@ -55,6 +55,10 @@ struct MacPlayerBar: View {
                     playerButton("forward.end", label: "Next sentence") {
                         playback.nextSentence()
                     }
+                    // Ends narration and removes the player bar.
+                    playerButton("stop.fill", label: "Stop narration") {
+                        playback.stopAndClose()
+                    }
                 }
                 NodusProgressBar(value: playback.overallProgress, height: 3)
                     .frame(width: 280)

@@ -775,3 +775,5 @@ ES.update({
     "Delete All Sounds": "Eliminar todos los sonidos",
     "Immersive Audio stays silent until a pack is downloaded again.": "El audio inmersivo no sonará hasta que vuelvas a descargar un paquete.",
 })
+
+ES.update({"Stops playback and closes the player": "Detiene la reproducción y cierra el reproductor"})
