@@ -24,3 +24,7 @@ Not verified by hand: the 1.6 GB download itself, recording through a real micro
 ## Distribution
 
 Version 0.1.0 (38). What to Test: [English](TestFlight-38-macos-en.txt) / [Spanish](TestFlight-38-macos-es.txt).
+
+Archived from merge commit `ebbed57` ([PR #50](https://github.com/jorgepb96/nodus-reader/pull/50)) with a fresh DerivedData in `/tmp`. The archive signs automatically with team `6RPLS9EA4X` and passes `codesign --verify --deep --strict`; the app is arm64 only, carries the App Sandbox, iCloud and microphone (`com.apple.security.device.audio-input`) entitlements and the microphone usage text, bundles the `es-dave` clip, contains none of the debug-hook strings, and the signed archive launched and stayed running.
+
+- macOS 0.1.0 (38): `Nodus Reader.pkg` uploaded through Xcode's account at 08:41 (Europe/Madrid) on 1 November 2026, for the Internal group only. The What to Test notes are entered by hand in App Store Connect.
