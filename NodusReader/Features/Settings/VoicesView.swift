@@ -4,8 +4,8 @@ import DesignSystem
 import SwiftUI
 
 enum VoicesMode: String, CaseIterable, Identifiable {
-    case voices = "Voices"
     case models = "Models"
+    case voices = "Voices"
     var id: String { rawValue }
 }
 
@@ -32,6 +32,9 @@ struct VoicesView: View {
     @State private var isSigningIn = false
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showBundleImporter = false
+    /// The gated model whose Download button was selected, shown in the
+    /// Hugging Face notice before anything is downloaded.
+    @State private var gatedModelToDownload: ModelManager.Model?
     /// Choosing a voice in the list switches the model without moving the
     /// filters under the user's finger.
     @State private var keepFiltersOnModelChange = false
@@ -102,6 +105,23 @@ struct VoicesView: View {
         }
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)
+        .sheet(isPresented: $showTokenGuide) {
+            HuggingFaceGuideView(gatedModels: models.models.filter(\.requiresAcceptedLicense))
+        }
+        .alert("Hugging Face account required",
+               isPresented: Binding(get: { gatedModelToDownload != nil },
+                                    set: { if !$0 { gatedModelToDownload = nil } }),
+               presenting: gatedModelToDownload) { model in
+            if hasHuggingFaceAccess {
+                Button("Download") { models.install(model) }
+            } else {
+                Button("Sign in with Hugging Face") { signInWithHuggingFace() }
+            }
+            Button("Show the guide") { showTokenGuide = true }
+            Button("Cancel", role: .cancel) {}
+        } message: { model in
+            Text("\(model.name) is published by Gradium with a gated licence. To download it, sign in to Hugging Face and accept Gradium's conditions on the model's page with the same account. The guide explains each step.")
+        }
         .onChange(of: models.selectedModelID) { _, _ in
             guard didSetInitialLanguage else { return }
             if keepFiltersOnModelChange {
@@ -317,18 +337,10 @@ struct VoicesView: View {
         Eyebrow("Neural engines")
             .padding(.top, 8)
 
-        ForEach(models.models.filter { !$0.requiresAcceptedLicense }) { model in
-            modelCard(model)
-        }
-
-        // The account section sits right above the models whose licence must
-        // be accepted on Hugging Face.
-        Eyebrow("Hugging Face")
-            .padding(.top, 6)
-
-        huggingFaceCard
-
-        ForEach(models.models.filter(\.requiresAcceptedLicense)) { model in
+        // Every model in one list, so the gated ones are found without
+        // scrolling past the account section. Their Download button explains
+        // the Hugging Face requirement first.
+        ForEach(models.models) { model in
             modelCard(model)
         }
 
@@ -353,6 +365,11 @@ struct VoicesView: View {
                 .padding(.horizontal, 4)
                 .fixedSize(horizontal: false, vertical: true)
         }
+
+        Eyebrow("Hugging Face")
+            .padding(.top, 6)
+
+        huggingFaceCard
 
         HStack {
             Text("Models and audio on this \(DeviceInfo.platformName)")
@@ -620,13 +637,18 @@ struct VoicesView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Button {
-                    models.install(model)
+                    if model.requiresAcceptedLicense {
+                        gatedModelToDownload = model
+                    } else {
+                        models.install(model)
+                    }
                 } label: {
-                    Label("Download \(model.sizeText)", systemImage: "arrow.down.circle")
+                    Label("Download", systemImage: "arrow.down.circle")
                         .font(.footnote.weight(.semibold))
                 }
                 .buttonStyle(.bordered)
                 .tint(palette.accent)
+                .accessibilityLabel("Download \(model.name)")
             } else if model.isAvailable {
                 // Not downloadable in the app: say how to get it, and offer
                 // the folder picker right here.
@@ -650,11 +672,17 @@ struct VoicesView: View {
         }
     }
 
+    /// A sign-in or a saved token; the licence itself is checked by Hugging
+    /// Face when the download starts.
+    private var hasHuggingFaceAccess: Bool {
+        hfSession != nil || tokenSaved
+    }
+
     private var huggingFaceCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Hugging Face account (optional)")
                 .font(.subheadline.weight(.medium))
-            Text("The Kokoro and Phonon bundles used here are public, so no account is required. Sign-in details and tokens are kept in this device's Keychain only and are never written to iCloud, the library or logs.")
+            Text("Kokoro 82M and Phonon 31M are public and need no account. Phonon 40M Multilingual and Spanish need an account that has accepted Gradium's conditions. Sign-in details and tokens are kept in this device's Keychain only and are never written to iCloud, the library or logs.")
                 .font(.caption)
                 .foregroundStyle(palette.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -669,9 +697,6 @@ struct VoicesView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(palette.accent)
-            .sheet(isPresented: $showTokenGuide) {
-                HuggingFaceGuideView(gatedModels: models.models.filter(\.requiresAcceptedLicense))
-            }
             huggingFaceSignIn
             Text("Or paste an access token")
                 .font(.caption.weight(.medium))

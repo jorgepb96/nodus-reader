@@ -235,21 +235,6 @@ final class ModelManager {
             availability: .available
         ),
         Model(
-            id: ModelManager.phonon40SpanishID,
-            engine: .phonon,
-            name: String(localized: "Phonon 40M Spanish"),
-            detail: String(localized: "Spanish narration with 25 voices from Spain and Mexico."),
-            language: String(localized: "Spanish"),
-            sizeText: String(localized: "About 130 MB download"),
-            license: "CC BY-NC 4.0",
-            source: URL(string: "https://huggingface.co/gradium/phonon-40m-es")!,
-            voices: ModelManager.phonon40SpanishVoices,
-            availability: .available,
-            requiresAcceptedLicense: true,
-            phononLanguage: .spanish,
-            installNote: String(localized: "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.")
-        ),
-        Model(
             id: ModelManager.phonon40MultilingualID,
             engine: .phonon,
             name: String(localized: "Phonon 40M Multilingual"),
@@ -263,7 +248,22 @@ final class ModelManager {
             availability: .available,
             requiresAcceptedLicense: true,
             phononLanguage: .english,
-            installNote: String(localized: "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.")
+            installNote: String(localized: "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in below). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.")
+        ),
+        Model(
+            id: ModelManager.phonon40SpanishID,
+            engine: .phonon,
+            name: String(localized: "Phonon 40M Spanish"),
+            detail: String(localized: "Spanish narration with 25 voices from Spain and Mexico."),
+            language: String(localized: "Spanish"),
+            sizeText: String(localized: "About 130 MB download"),
+            license: "CC BY-NC 4.0",
+            source: URL(string: "https://huggingface.co/gradium/phonon-40m-es")!,
+            voices: ModelManager.phonon40SpanishVoices,
+            availability: .available,
+            requiresAcceptedLicense: true,
+            phononLanguage: .spanish,
+            installNote: String(localized: "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in below). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.")
         )
     ]
 

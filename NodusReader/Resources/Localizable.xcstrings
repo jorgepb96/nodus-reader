@@ -42,6 +42,16 @@
         }
       }
     },
+    "%@ is published by Gradium with a gated licence. To download it, sign in to Hugging Face and accept Gradium's conditions on the model's page with the same account. The guide explains each step.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gradium publica %@ con una licencia restringida. Para descargarlo, inicia sesión en Hugging Face y acepta las condiciones de Gradium en la página del modelo con la misma cuenta. La guía explica cada paso."
+          }
+        }
+      }
+    },
     "%@ is the default voice": {
       "localizations": {
         "es": {
@@ -2492,6 +2502,16 @@
         }
       }
     },
+    "Hugging Face account required": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hace falta una cuenta de Hugging Face"
+          }
+        }
+      }
+    },
     "Hugging Face did not accept your sign-in. Sign in again and retry.": {
       "localizations": {
         "es": {
@@ -2838,6 +2858,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kokoro"
+          }
+        }
+      }
+    },
+    "Kokoro 82M and Phonon 31M are public and need no account. Phonon 40M Multilingual and Spanish need an account that has accepted Gradium's conditions. Sign-in details and tokens are kept in this device's Keychain only and are never written to iCloud, the library or logs.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kokoro 82M y Phonon 31M son públicos y no necesitan cuenta. Phonon 40M Multilingüe y Español necesitan una cuenta que haya aceptado las condiciones de Gradium. Los datos de inicio de sesión y los tokens se guardan solo en el llavero de este dispositivo y nunca se escriben en iCloud, en la biblioteca ni en registros."
           }
         }
       }
@@ -3322,22 +3352,22 @@
         }
       }
     },
-    "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.": {
+    "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in below). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más arriba). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 130 MB de descarga y 200 MB instalado. Gradium distribuye este modelo con licencia CC BY-NC 4.0, solo para uso no comercial; esa licencia se aplica por separado, con independencia de la AGPL-3.0 de Nodus Reader."
+            "value": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más abajo). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 130 MB de descarga y 200 MB instalado. Gradium distribuye este modelo con licencia CC BY-NC 4.0, solo para uso no comercial; esa licencia se aplica por separado, con independencia de la AGPL-3.0 de Nodus Reader."
           }
         }
       }
     },
-    "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in above). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.": {
+    "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in below). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más arriba). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 150 MB de descarga y 230 MB instalado. Cada voz lee en su propio idioma. Gradium distribuye este modelo con licencia CC BY-NC 4.0, solo para uso no comercial; esa licencia se aplica por separado, con independencia de la AGPL-3.0 de Nodus Reader."
+            "value": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más abajo). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 150 MB de descarga y 230 MB instalado. Cada voz lee en su propio idioma. Gradium distribuye este modelo con licencia CC BY-NC 4.0, solo para uso no comercial; esa licencia se aplica por separado, con independencia de la AGPL-3.0 de Nodus Reader."
           }
         }
       }
@@ -5422,6 +5452,16 @@
         }
       }
     },
+    "Show the guide": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver la guía"
+          }
+        }
+      }
+    },
     "Shows the expanded player": {
       "localizations": {
         "es": {
@@ -5928,16 +5968,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "El motor %@ no está cargado. Abre Ajustes › Voces y modelos e instálalo de nuevo."
-          }
-        }
-      }
-    },
-    "The Kokoro and Phonon bundles used here are public, so no account is required. Sign-in details and tokens are kept in this device's Keychain only and are never written to iCloud, the library or logs.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Los paquetes de Kokoro y Phonon que se usan aquí son públicos, así que no hace falta cuenta. Los datos de inicio de sesión y los tokens se guardan solo en el llavero de este dispositivo y nunca se escriben en iCloud, en la biblioteca ni en registros."
           }
         }
       }
