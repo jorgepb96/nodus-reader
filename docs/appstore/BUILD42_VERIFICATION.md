@@ -21,3 +21,9 @@ Not verified: a background download on a real iPhone with the app closed.
 ## Distribution
 
 Version 0.1.0 (42). What to Test: iOS [English](TestFlight-42-ios-en.txt) / [Spanish](TestFlight-42-ios-es.txt); macOS [English](TestFlight-42-macos-en.txt) / [Spanish](TestFlight-42-macos-es.txt).
+
+Archived from `733534e` on `feature/immersive-audio` ([PR #59](https://github.com/jorgepb96/nodus-reader/pull/59)).
+
+- iOS 0.1.0 (42): `Nodus Reader.ipa` uploaded at 23:28 (Europe/Madrid) on 1 November 2026. Not submitted to beta review.
+- macOS 0.1.0 (42): signed `Nodus Reader.pkg` exported to `build/export-macOS-42/`; uploading needs the maintainer's App Store Connect API key or Transporter. Internal group only.
+- What to Test: to enter in App Store Connect (English and Spanish) from the files above.
