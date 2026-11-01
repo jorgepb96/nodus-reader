@@ -22,3 +22,8 @@ Not verified: listening with headphones, a real iPhone (routes, Bluetooth, calls
 ## Distribution
 
 Version 0.1.0 (41). What to Test: iOS [English](TestFlight-41-ios-en.txt) / [Spanish](TestFlight-41-ios-es.txt); macOS [English](TestFlight-41-macos-en.txt) / [Spanish](TestFlight-41-macos-es.txt). Content rights in App Store Connect must change before external testing or review (see `metadata.md`).
+
+Archived from `feature/immersive-audio` ([PR #59](https://github.com/jorgepb96/nodus-reader/pull/59)) with fresh DerivedData, before merging. Both archives are 0.1.0 (41); the Mac app is arm64 only and passes `codesign --verify --deep --strict`; the iOS binary has no debug-hook strings and bundles the catalog manifest.
+
+- iOS 0.1.0 (41): `Nodus Reader.ipa` uploaded at 22:47 (Europe/Madrid) on 1 November 2026. Not submitted to beta review.
+- macOS 0.1.0 (41): signed `Nodus Reader.pkg` exported (`build/export-macOS-41/`); the upload needs the App Store Connect API key (`xcrun altool --upload-app`, see `docs/BUILD.md`) or Transporter, done by the maintainer. Internal group only; macOS is not to be submitted for review.
