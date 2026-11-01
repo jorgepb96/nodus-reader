@@ -1,0 +1,1 @@
+Interface fixes. On iPad, Settings now opens beside the sidebar instead of in a separate sheet. Playing a voice sample shows a spinner while the voice loads; select it again to stop. Voices & Models opens on Models. The Nodus Reader name and the toolbar buttons no longer show an extra bubble behind them. Includes recaps and characters from build 39.

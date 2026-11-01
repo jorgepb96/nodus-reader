@@ -174,7 +174,7 @@ use `CFFIXED_USER_HOME` because their test host is built with
 
 ## TestFlight (iOS/iPadOS and macOS)
 
-Current delivery: **0.1.0 (39)** on iOS and macOS. See [build 39](appstore/BUILD39_VERIFICATION.md).
+Current delivery: **0.1.0 (40)** on iOS and macOS. See [build 40](appstore/BUILD40_VERIFICATION.md).
 
 The project signs automatically with team `6RPLS9EA4X`; `ITSAppUsesNonExemptEncryption`
 is `false` (the app only uses HTTPS), so uploads need no export-compliance answer.
