@@ -24,6 +24,6 @@ Version 0.1.0 (42). What to Test: iOS [English](TestFlight-42-ios-en.txt) / [Spa
 
 Archived from `733534e` on `feature/immersive-audio` ([PR #59](https://github.com/jorgepb96/nodus-reader/pull/59)).
 
-- iOS 0.1.0 (42): `Nodus Reader.ipa` uploaded at 23:28 (Europe/Madrid) on 1 November 2026. Not submitted to beta review.
+- iOS 0.1.0 (42): `Nodus Reader.ipa` uploaded at 23:28 (Europe/Madrid) on 1 November 2026; Internal group and Nodus Reader — Public Beta (74 testers), submitted to beta review the same night with automatic tester notification.
 - macOS 0.1.0 (42): signed `Nodus Reader.pkg` exported to `build/export-macOS-42/`; uploading needs the maintainer's App Store Connect API key or Transporter. Internal group only.
-- What to Test: to enter in App Store Connect (English and Spanish) from the files above.
+- What to Test entered in App Store Connect in English (U.S.) and Spanish (Spain) on the iOS build, from the files above. Build 41 (iOS, Internal only) has no What to Test text: 42 supersedes it.
