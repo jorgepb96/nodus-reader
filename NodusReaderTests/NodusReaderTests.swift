@@ -2432,3 +2432,139 @@ func mingBuiltinVoicesAreInvocable() {
     #expect(voices.first { $0.name == "灵信远" }?.id == "ming:灵信远_中性")
     #expect(voices.first { $0.name == "灵小柔" }?.id == "ming:灵小柔")
 }
+
+// MARK: - Recaps and characters
+
+@Test("The story starts at the first chapter heading followed by prose, after the licence and contents")
+func storyTextSkipsFrontMatter() {
+    let prose = String(repeating: "Ishmael walked along the quay and looked at the ships waiting in the harbour. ", count: 4)
+    let front = """
+    The Project Gutenberg eBook of Moby-Dick
+
+    *** START OF THE PROJECT GUTENBERG EBOOK MOBY-DICK ***
+
+    CONTENTS
+    CHAPTER 1. Loomings.
+    CHAPTER 2. The Carpet-Bag.
+    CHAPTER 3. The Spouter-Inn.
+    CHAPTER 4. The Counterpane.
+
+    ETYMOLOGY. A pale usher, threadbare in coat, heart, body and brain, loved to dust his old grammars.
+    """
+    let body = "CHAPTER 1. Loomings.\n\n\(prose)\n\n\(prose)"
+    let story = StoryText(chapters: [front, body])
+    let start = story.text.substring(from: story.storyStart)
+    #expect(start.hasPrefix("CHAPTER 1. Loomings.\n\nIshmael"))
+
+    // Spanish and roman-numeral headings, and no heading at all.
+    let spanish = StoryText(chapters: ["Índice\n\n-I-,\n\n-II-,\n\n-III-\n\n-I-\nPerdido\n\n\(prose)"])
+    #expect(spanish.text.substring(from: spanish.storyStart).hasPrefix("-I-\nPerdido"))
+    let plain = StoryText(chapters: [prose])
+    #expect(plain.storyStart == 0)
+
+    // The reader keeps headings as titles: the first chapter is found by its title.
+    let titled = StoryText(chapters: ["Tasa. Testimonio de las erratas. El Rey.", "Sancho Panza y Rocinante, versos.", prose],
+                           titles: ["por Miguel de Cervantes Saavedra", "Al libro", "Capítulo primero. Que trata de la condición del hidalgo"])
+    #expect(titled.storyStart == titled.chapterStarts[2])
+}
+
+@Test("Passages cover the story in order, end at paragraph breaks and map back to chapters")
+func storyTextPassagesAndOffsets() {
+    let paragraph = String(repeating: "word ", count: 300)  // 1,500 characters
+    let chapters = (0..<3).map { _ in Array(repeating: paragraph, count: 6).joined(separator: "\n") }
+    let story = StoryText(chapters: chapters)
+    #expect(story.passageStarts.first == story.storyStart)
+    #expect(zip(story.passageStarts, story.passageStarts.dropFirst()).allSatisfy { $0 < $1 })
+    for start in story.passageStarts.dropFirst() {
+        #expect(story.text.character(at: start - 1) == 10)  // "\n"
+        #expect(start - story.storyStart <= story.passageStarts.count * StoryText.passageLength)
+    }
+    let offset = story.offset(chapter: 2, characterOffset: 10)
+    #expect(story.location(of: offset) == (2, 10))
+    #expect(story.completePassages(before: 0) == 0)
+    #expect(story.completePassages(before: story.length) == story.passageStarts.count)
+}
+
+@Test("Spellings of one character are grouped; titles alone and shared surnames are not characters")
+func storyCharacterGrouping() {
+    let found: [String: [Int]] = [
+        "Starbuck": [10, 20, 30, 40], "Mr. Starbuck": [50, 60],
+        "Don Quijote": [1, 2, 3], "don Quijote": [4, 5],
+        "Queequeg": Array(100..<140), "Queequeg Pip": [150],
+        "Mrs": [7, 8, 9],
+        "Bennet": [11, 12], "Mr. Bennet": [13, 14, 15], "Mrs. Bennet": [16, 17, 18],
+    ]
+    let characters = StoryCharacterFinder.group(found)
+    let byName = Dictionary(uniqueKeysWithValues: characters.map { ($0.name, $0) })
+    #expect(byName["Starbuck"]?.mentions == 6)
+    #expect(byName["Starbuck"]?.variants.contains("Mr. Starbuck") == true)
+    #expect(byName["Don Quijote"]?.mentions == 5)
+    // A one-off join of two names does not swallow a main character.
+    #expect(byName["Queequeg"]?.mentions == 40)
+    #expect(byName["Mrs"] == nil)
+    #expect(byName["Bennet"] == nil)
+    #expect(byName["Mr. Bennet"]?.mentions == 3 && byName["Mrs. Bennet"]?.mentions == 3)
+    #expect(characters.first?.name == "Queequeg")
+}
+
+@Test("Background summaries spread out over the book before filling it in")
+func storyRefinementOrder() {
+    #expect(StoryAnswers.refinementOrder(0).isEmpty)
+    let order = StoryAnswers.refinementOrder(10)
+    #expect(order.sorted() == Array(0..<10))
+    #expect(order.prefix(3) == [5, 2, 7])
+    #expect(StoryAnswers.refinementOrder(1) == [0])
+}
+
+@Test("Saved summaries survive a language change but not a different text")
+func storyCompanionCacheAdapts() {
+    var cache = StoryCompanionCache(contentKey: "abc-100", language: "es")
+    cache.digests = [0: "Ishmael went to sea.", 1: ""]
+    cache.whereYouLeftOff = StoryRecapPart(position: 50, text: "Ishmael se embarcó.", createdAt: Date())
+    #expect(cache.adapted(contentKey: "abc-100", language: "es") == cache)
+    let english = cache.adapted(contentKey: "abc-100", language: "en")
+    #expect(english.digests == cache.digests)
+    #expect(english.whereYouLeftOff == nil)
+    #expect(cache.adapted(contentKey: "other-100", language: "es").digests.isEmpty)
+}
+
+@Test("Model answers are cut to plain prose and to the sentences asked for")
+func storyCompanionCleansAnswers() {
+    let answer = "**Ahab** wanted revenge. He said so on deck.\n\n**Excerpts:**\n- one\n- two"
+    #expect(StoryAnswers.plainText(answer) == "Ahab wanted revenge. He said so on deck.")
+    #expect(StoryAnswers.plainText("They read *Don Quijote* aloud.") == "They read Don Quijote aloud.")
+    #expect(StoryAnswers.plainText("Mr. Darcy arrived at Rosings. He was proud and") ==
+            "Mr. Darcy arrived at Rosings.")
+    #expect(StoryAnswers.firstSentences("Mr. Bennet laughed. Jane smiled. Lydia ran off.", 2) ==
+            "Mr. Bennet laughed. Jane smiled.")
+}
+
+@Test("The reader learns how long a book went unread, once, ignoring the reader reopening it")
+@MainActor
+func libraryReportsReadingBreak() throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let library = fixture.service
+    let book = Book(title: "Break", author: "", format: .txt, fileName: "b.txt", relativePath: "b.txt", fileSize: 1, contentHash: "h")
+    library.context.insert(book)
+    book.lastPositionDate = Date().addingTimeInterval(-3 * 86_400)
+    library.open(book)
+    library.open(book)
+    let gap = try #require(library.takeReadingBreak(for: book))
+    #expect(gap > 2.9 * 86_400)
+    #expect(library.takeReadingBreak(for: book) == nil)
+}
+
+@Test("Characters are found in English and Spanish text, only before the position")
+func storyCharacterFinderFindsNames() {
+    let english = Array(repeating: "Captain Ahab spoke to Starbuck on deck. Starbuck answered Ahab quietly while Stubb watched.", count: 4)
+        .joined(separator: " ")
+    let spanish = Array(repeating: "Don Quijote habló con Sancho Panza junto al camino. Sancho respondió a don Quijote con prudencia.", count: 4)
+        .joined(separator: " ")
+    let story = StoryText(chapters: [english, spanish])
+    let all = StoryCharacterFinder.characters(in: story, upTo: story.length).map(\.name)
+    #expect(all.contains { $0.contains("Starbuck") })
+    #expect(all.contains { $0.contains("Sancho") })
+    let early = StoryCharacterFinder.characters(in: story, upTo: (english as NSString).length).map(\.name)
+    #expect(!early.contains { $0.contains("Sancho") })
+}

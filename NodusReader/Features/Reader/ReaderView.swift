@@ -47,6 +47,10 @@ struct ReaderView: View {
     @State private var preparingNarration = false
     @State private var annotationDraft: ReaderAnnotationDraft?
     @State private var search = ReaderSearchModel()
+    @State private var story = ReaderStoryModel()
+    @State private var showStory = false
+    @State private var storyTab: ReaderStoryTab = .recap
+    @State private var showWelcomeRecap = false
 
     init(book: Book, onClose: @escaping () -> Void) {
         self.book = book
@@ -118,8 +122,18 @@ struct ReaderView: View {
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if chromeVisible {
-                bottomBar(theme)
+            VStack(spacing: 10) {
+                if showWelcomeRecap {
+                    ReaderWelcomeRecapCard(theme: theme, onOpen: {
+                        showWelcomeRecap = false
+                        openStory(.recap)
+                    }, onDismiss: {
+                        showWelcomeRecap = false
+                    })
+                }
+                if chromeVisible {
+                    bottomBar(theme)
+                }
             }
         }
         #if os(macOS)
@@ -134,6 +148,7 @@ struct ReaderView: View {
         .nodusPalette(theme.isDark ? .dark : .light)
         .tint((theme.isDark ? NodusPalette.dark : NodusPalette.light).accent)
         .animation(.easeInOut(duration: 0.2), value: chromeVisible)
+        .animation(.easeInOut(duration: 0.25), value: showWelcomeRecap)
         .task {
             await load()
             #if os(macOS) && DEBUG
@@ -149,6 +164,13 @@ struct ReaderView: View {
         .onDisappear {
             progressSaveTask?.cancel()
             saveProgress()
+            story.stop()
+        }
+        .onChange(of: preferences.storyCompanion) { _, isOn in
+            if !isOn {
+                story.stop()
+                showWelcomeRecap = false
+            }
         }
         .onChange(of: pageInfo) { old, new in
             // Same pagination, different page: the reader turned a page (or
@@ -169,11 +191,16 @@ struct ReaderView: View {
                                         offset: readerPages[new.pageIndex].chapterStartOffset)
                 }
             }
+            updateStoryPosition()
             scheduleProgressSave()
+        }
+        .onChange(of: hasTurnedPage) { _, turned in
+            if turned { showWelcomeRecap = false }
         }
         .onChange(of: pdfPageIndex) { old, new in
             // Pages restored while opening arrive before the page count.
             if pdfPageCount > 0, old != new { hasTurnedPage = true }
+            updateStoryPosition()
             scheduleProgressSave()
         }
         .sheet(isPresented: $showContents) {
@@ -203,6 +230,10 @@ struct ReaderView: View {
                 onEditAnnotation: editAnnotation
             )
             .readerPresentation(readerTheme)
+        }
+        .sheet(isPresented: $showStory) {
+            ReaderStorySheet(book: book, pageNumber: storyPageNumber, model: story, tab: $storyTab)
+                .readerPresentation(readerTheme)
         }
         .sheet(isPresented: $showAppearanceSheet) {
             ReaderAppearanceSheet(book: book)
@@ -323,6 +354,67 @@ struct ReaderView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // MARK: Recap and characters
+
+    /// Recaps need Apple Intelligence and the setting on; on other devices
+    /// the reader shows nothing of them.
+    private var storyAvailable: Bool {
+        preferences.storyCompanion && StoryCompanionAvailability.current == .available
+    }
+
+    private func openStory(_ tab: ReaderStoryTab) {
+        storyTab = tab
+        showStory = true
+        if book.format == .pdf {
+            Task { await story.configureIfNeeded(book: book) }
+        }
+    }
+
+    /// Sets the recap model up once the chapters are in, and offers a recap
+    /// when the book was last read a while ago.
+    private func prepareStory(chapters: [ExtractedChapter]) async {
+        let readingBreak = library.takeReadingBreak(for: book)
+        guard storyAvailable else { return }
+        let locator = book.locator
+        let chapterIndex = min(max(locator.chapterIndex, 0), chapters.count - 1)
+        let length = (chapters[chapterIndex].text as NSString).length
+        story.updatePosition(chapter: chapterIndex, offset: Int(Double(length) * min(max(locator.scrollFraction, 0), 1)))
+        await story.configure(book: book, chapters: chapters)
+        updateStoryPosition()
+        if preferences.recapAfterBreak, let readingBreak, readingBreak >= ReaderPreferences.recapBreak,
+           !hasTurnedPage, story.hasReadEnough {
+            story.loadRecap(includingStory: false)
+            showWelcomeRecap = true
+        }
+        #if DEBUG
+        if let tab = StoryCompanionDebug.initialTab {
+            try? await Task.sleep(for: .seconds(1))
+            openStory(tab)
+        }
+        #endif
+    }
+
+    /// Pages as the reader numbers them; a PDF's chapters are its pages.
+    private func storyPageNumber(chapter: Int, offset: Int) -> Int? {
+        if book.format == .pdf { return chapter + 1 }
+        return readerPages.firstIndex {
+            $0.chapterIndex == chapter && offset >= $0.chapterStartOffset && offset < max($0.chapterEndOffset, $0.chapterStartOffset + 1)
+        }.map { $0 + 1 }
+    }
+
+    /// The end of the last page on screen: what the reader has in front of
+    /// them is not a spoiler.
+    private func updateStoryPosition() {
+        guard storyAvailable else { return }
+        if book.format == .pdf {
+            story.updatePosition(chapter: pdfPageIndex, offset: Int.max / 2)
+            return
+        }
+        guard !readerPages.isEmpty, readerPages.indices.contains(pageIndex) else { return }
+        let last = readerPages[min(pageIndex + max(pageStep, 1) - 1, readerPages.count - 1)]
+        story.updatePosition(chapter: last.chapterIndex, offset: last.chapterEndOffset)
+    }
+
     // MARK: Search
 
     private func openSearch() {
@@ -399,6 +491,20 @@ struct ReaderView: View {
             .keyboardShortcut("f", modifiers: .command)
             .accessibilityLabel("Search in book")
             .accessibilityIdentifier("ReaderSearchButton")
+
+            if storyAvailable {
+                Button {
+                    openStory(.recap)
+                } label: {
+                    Image(systemName: "text.book.closed")
+                        .font(.system(size: 17))
+                        .foregroundStyle(theme.text)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Recap and characters")
+                .accessibilityIdentifier("ReaderStoryButton")
+            }
 
             Button {
                 showContents = true
@@ -610,6 +716,7 @@ struct ReaderView: View {
             library.refreshChapterTitlesIfNeeded(book, chapters: loaded)
             showPlaybackPosition()
             content = .chapters(loaded)
+            await prepareStory(chapters: loaded)
         } catch {
             content = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
         }

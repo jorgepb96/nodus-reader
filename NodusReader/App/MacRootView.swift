@@ -95,6 +95,14 @@ struct MacRootView: View {
                let book = books.first(where: { $0.title == "Moby-Dick" }) {
                 navigation.macReaderBookID = book.id
             }
+            // `-NodusImportFile <path> -NodusOpenBookAt <0…1> [-NodusBookBreakDays <n>]`
+            // imports a document into the sample library and opens it there.
+            if let path = UserDefaults.standard.string(forKey: "NodusImportFile"),
+               let book = await StoryCompanionDebug.importAndPlace(path: path, library: library) {
+                // Let the library table take the new row before it goes.
+                try? await Task.sleep(for: .seconds(2))
+                navigation.macReaderBookID = book.id
+            }
             #endif
         }
     }

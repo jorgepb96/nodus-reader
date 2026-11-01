@@ -18,16 +18,19 @@ All of the above is stored locally by default. iCloud sync is optional and off b
 ## Data the app does not collect
 
 - No telemetry, analytics, crash reporting SDK, advertising identifier or usage profiling.
-- No location, contacts, calendar, health data, microphone or camera access.
+- No location, contacts, calendar, health data or camera access. The microphone is used only on the Mac, and only while you record a voice to clone for Ming (see below).
 - No Nodus account, email address or password.
-- No remote inference, OCR or text-to-speech. Kokoro and Phonon run locally after an explicit model download. The gated Phonon 40M models are downloaded with your own Hugging Face access and converted to Core ML on the device.
-- No microphone. Precise word timing (iOS 26 and later, on by default, Settings › Voices & Models) runs Apple's on-device speech recognition on the audio the app has just generated, never on recorded sound, to time the read-along highlight.
+- No remote inference, OCR or text-to-speech. Kokoro and Phonon (and Ming on the Mac) run locally after an explicit model download. The gated Phonon 40M models are downloaded with your own Hugging Face access and converted to Core ML on the device.
+- Recaps and characters (iOS and macOS 26 and later, on devices with Apple Intelligence; on by default, Settings › Recaps & Characters) are written by Apple Intelligence's on-device model from the pages before your reading position. The app uses only the on-device model, never Apple's Private Cloud Compute; the summaries are saved on the device, are not synced and can be deleted in that screen.
+- Precise word timing (iOS 26 and later, on by default, Settings › Voices & Models) runs Apple's on-device speech recognition on the audio the app has just generated to time the read-along highlight.
+- On the Mac, a Ming voice can be cloned from a recording or an audio file you choose. The recording is made only after you press Record and grant microphone access; the clip and its transcript (recognized on the Mac) stay on that Mac and are never synced.
 
 ## Permissions
 
 - **Files / document picker** — read-only access to files the user explicitly selects. The app copies them into its container. On macOS it supports Open With and drag & drop.
 - **Photos** — only when you choose a custom cover; the selected image is converted and stored locally.
-- **Audio session** — used for narration and background/lock-screen playback. No recording is performed.
+- **Audio session** — used for narration and background/lock-screen playback.
+- **Microphone (macOS only)** — used only while you record a voice to clone for Ming.
 
 ## iCloud (optional)
 

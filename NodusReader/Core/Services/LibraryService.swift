@@ -355,8 +355,23 @@ public final class LibraryService {
 
     // MARK: Open / progress
 
+    /// When each book opened since launch had last been read, before `open`
+    /// moved it to now. The reader offers a recap after a long break.
+    @ObservationIgnored private var lastReadBeforeOpening: [UUID: Date] = [:]
+
+    /// The time since `book` was last read before this opening, once: a
+    /// second call returns nil.
+    public func takeReadingBreak(for book: Book) -> TimeInterval? {
+        lastReadBeforeOpening.removeValue(forKey: book.id).map { Date().timeIntervalSince($0) }
+    }
+
     public func open(_ book: Book) {
         let now = Date()
+        // The library opens a book and the reader opens it again a moment
+        // later; only a real gap counts.
+        if let previous = book.lastPositionDate, now.timeIntervalSince(previous) > 60 {
+            lastReadBeforeOpening[book.id] = previous
+        }
         book.lastOpenedAt = now
         if book.status == .toRead {
             book.status = .inProgress

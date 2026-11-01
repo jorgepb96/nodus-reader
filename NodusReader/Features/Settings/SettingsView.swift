@@ -90,6 +90,16 @@ struct SettingsView: View {
                         SettingsRow(title: "Reading & Typography", value: preferences.summary)
                     }
                     divider
+                    // Only where Apple Intelligence exists; other devices
+                    // never see the feature.
+                    if storyAvailability != .unsupported {
+                        NavigationLink {
+                            StoryCompanionSettingsView()
+                        } label: {
+                            SettingsRow(title: "Recaps & Characters", value: storyValue)
+                        }
+                        divider
+                    }
                     NavigationLink {
                         PrivacyView()
                     } label: {
@@ -140,6 +150,13 @@ struct SettingsView: View {
         Divider()
             .overlay(palette.line)
             .padding(.leading, 14)
+    }
+
+    private let storyAvailability = StoryCompanionAvailability.current
+
+    private var storyValue: String {
+        guard storyAvailability == .available else { return String(localized: "Unavailable") }
+        return preferences.storyCompanion ? String(localized: "On") : String(localized: "Off")
     }
 
     private var syncValue: String {
