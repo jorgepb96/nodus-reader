@@ -134,7 +134,15 @@ struct ReaderView: View {
         .nodusPalette(theme.isDark ? .dark : .light)
         .tint((theme.isDark ? NodusPalette.dark : NodusPalette.light).accent)
         .animation(.easeInOut(duration: 0.2), value: chromeVisible)
-        .task { await load() }
+        .task {
+            await load()
+            #if os(macOS) && DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-NodusOpenSamplePlayer") {
+                try? await Task.sleep(for: .seconds(2))
+                openReaderPlayer()
+            }
+            #endif
+        }
         .task(id: search.isPresented ? search.query : "") {
             await runSearch()
         }
@@ -302,12 +310,14 @@ struct ReaderView: View {
             Button("Close") { closeReader() }
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(theme.accent)
+                .nodusTextButtonStyle()
             Button("Try Again") {
                 content = .loading
                 Task { await load() }
             }
             .font(.subheadline.weight(.medium))
             .foregroundStyle(theme.muted)
+            .nodusTextButtonStyle()
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -479,7 +479,10 @@ struct ReaderContentsScrollView<Content: View>: View {
                     }
                     .padding(.horizontal, ReaderContentsLayout.horizontalInset)
                 }
-                .scrollIndicators(.hidden)
+                // `.never`, not `.hidden`: the Mac keeps its own scroller with
+                // `.hidden` when scroll bars are set to always show, and this
+                // list draws its own beside it.
+                .scrollIndicators(.never)
                 .onScrollGeometryChange(for: ContentsScrollMetrics.self) { geometry in
                     ContentsScrollMetrics(
                         contentHeight: geometry.contentSize.height,

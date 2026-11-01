@@ -23,7 +23,6 @@
 		27F9823D7762B1767AC481D6 /* KokoroTTS in Frameworks */ = {isa = PBXBuildFile; productRef = 42019C581B56EBFC1C0EA303 /* KokoroTTS */; };
 		2816587FB924F9E9459981FF /* IOSPageCurlReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9F14E25401EF76966FA4D8 /* IOSPageCurlReader.swift */; };
 		282DC7F73378FFA864F78FBD /* LegacySampleLibraryCleanup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A717B6B0E95196C14F3754A /* LegacySampleLibraryCleanup.swift */; };
-		2B5E038808D963791F8791A7 /* ReaderWindowHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA4078C3A4418A89E6CF014 /* ReaderWindowHost.swift */; };
 		302318C2606A1ACDD02905D1 /* CloudSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8538AACCC8B86BBCBB64F210 /* CloudSyncService.swift */; };
 		311EDDB1440A45317B5542F6 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24F5DE2AF8C0440722A84BCA /* ShareViewController.swift */; };
 		3A9889EBB86CB1A29B87CCBA /* SharedImportInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0299B9EB01C2108D51F868EC /* SharedImportInbox.swift */; };
@@ -96,6 +95,7 @@
 		E6EAD3855323035240D9B71A /* DocumentExtraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF27C98D03CA7B77D5353E99 /* DocumentExtraction.swift */; };
 		E739A3298B8DE66AA6F6BF31 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44842233DC53215E5317E6AF /* PlayerView.swift */; };
 		E9CA7DC6B61AB9E6A4ACE8A3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B201867985D495B5C0CED08B /* SettingsView.swift */; };
+		EAD21702848ADCBBA2E1D396 /* MacReaderHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FB1020F73FB02783C83624 /* MacReaderHost.swift */; };
 		EB553A663F661C23A8A6D43A /* DocumentExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE36EC19E2D87BCF092916A9 /* DocumentExtractor.swift */; };
 		EDD19D020AF4FA6DC7E180F7 /* PadLibraryContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0718A04E3BF758DD77A430C /* PadLibraryContentView.swift */; };
 		F2385B3E6098B2265F0F7868 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96C2916DCF1FCAA262923B78 /* ReaderView.swift */; };
@@ -179,6 +179,7 @@
 		40A191E547B3FA244E030216 /* PDFReflowEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReflowEngine.swift; sourceTree = "<group>"; };
 		411AF1A170335684302EFFE6 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		44842233DC53215E5317E6AF /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
+		47FB1020F73FB02783C83624 /* MacReaderHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacReaderHost.swift; sourceTree = "<group>"; };
 		482C91BD01D7902D6B10D7D4 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		4850038DA7CFCCE5A5054726 /* NodusReaderShare.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = NodusReaderShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4ECD64B338813C089B0F2DEE /* ReaderPageStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPageStyle.swift; sourceTree = "<group>"; };
@@ -220,7 +221,6 @@
 		B7566082E0D91905F11E43B6 /* VoicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicesView.swift; sourceTree = "<group>"; };
 		B77664F53036C39CBCF5CAA1 /* SyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTests.swift; sourceTree = "<group>"; };
 		B8F210889CB9BA7F90F3091A /* SyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCoordinator.swift; sourceTree = "<group>"; };
-		BDA4078C3A4418A89E6CF014 /* ReaderWindowHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderWindowHost.swift; sourceTree = "<group>"; };
 		BE2978B146AAED77C4B24049 /* MacPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPageView.swift; sourceTree = "<group>"; };
 		C0718A04E3BF758DD77A430C /* PadLibraryContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PadLibraryContentView.swift; sourceTree = "<group>"; };
 		C1079D52B6E17772F269D44B /* SpeechWordAligner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechWordAligner.swift; sourceTree = "<group>"; };
@@ -280,13 +280,13 @@
 		069EE8175D71B164709DFAD8 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				47FB1020F73FB02783C83624 /* MacReaderHost.swift */,
 				638DEE4E57C7085D36B92FB0 /* MacRootView.swift */,
 				CC87EA8C3C2FC93A24565D37 /* MacScreenCapture.swift */,
 				7B92988CA90EC86D1C75F894 /* NavigationModel.swift */,
 				5CFF6B8EDA004F101CAF1458 /* NodusReaderApp.swift */,
 				791ABB10006E5F268A2EB6E9 /* PadRootView.swift */,
 				70D5A0ACAF87A9110D217753 /* PhoneRootView.swift */,
-				BDA4078C3A4418A89E6CF014 /* ReaderWindowHost.swift */,
 				482C91BD01D7902D6B10D7D4 /* RootView.swift */,
 			);
 			path = App;
@@ -815,6 +815,7 @@
 				F4D3008382E0BAB90EE21BD8 /* MacLibraryContentView.swift in Sources */,
 				159BB6150EA90581C93DF756 /* MacPageView.swift in Sources */,
 				65AA4F18D40C7D764BBEF98D /* MacPlayerBar.swift in Sources */,
+				EAD21702848ADCBBA2E1D396 /* MacReaderHost.swift in Sources */,
 				7811592388EAB8C07E8E48AC /* MacRootView.swift in Sources */,
 				50D610110186BFCE9A734E87 /* MacScreenCapture.swift in Sources */,
 				1B08F42EED4D914256217EF2 /* MiniPlayerBar.swift in Sources */,
@@ -847,7 +848,6 @@
 				E6C6B661DB54BF0BCA6FFDE9 /* ReaderPresentation.swift in Sources */,
 				7C220B5498C11A56ED2972E0 /* ReaderSearch.swift in Sources */,
 				F2385B3E6098B2265F0F7868 /* ReaderView.swift in Sources */,
-				2B5E038808D963791F8791A7 /* ReaderWindowHost.swift in Sources */,
 				974F446B03E4C8C7BE1B677E /* ReadingSettingsView.swift in Sources */,
 				76B09484C08564F659686167 /* RootView.swift in Sources */,
 				E645DD6D83D107365FBB786E /* SampleLibrary.swift in Sources */,
@@ -978,7 +978,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 36;
+				CURRENT_PROJECT_VERSION = 37;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1044,7 +1044,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 36;
+				CURRENT_PROJECT_VERSION = 37;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;

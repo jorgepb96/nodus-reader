@@ -137,6 +137,8 @@ struct LibrarySortMenu: View {
             .font(.footnote)
             .foregroundStyle(palette.muted)
         }
+        .nodusMenuLabelStyle()
+        .fixedSize()
         .accessibilityLabel("Sort books")
     }
 }
@@ -484,6 +486,17 @@ extension View {
 
 
 extension View {
+    /// A text button drawn as an accent link. On the Mac the default style
+    /// would draw a push-button bezel behind it.
+    @ViewBuilder
+    func nodusTextButtonStyle() -> some View {
+        #if os(macOS)
+        self.buttonStyle(.plain)
+        #else
+        self
+        #endif
+    }
+
     /// A menu that shows its custom label as drawn. AppKit otherwise wraps it
     /// in a bordered pop-up button (a white box with its own chevron).
     @ViewBuilder

@@ -998,6 +998,7 @@ struct VoiceFilterMenu<Content: View>: View {
             .background(isActive ? palette.accent : palette.panel, in: Capsule())
             .overlay(Capsule().stroke(isActive ? Color.clear : palette.line, lineWidth: 1))
         }
+        .nodusMenuLabelStyle()
         .menuIndicator(.hidden)
         .accessibilityLabel(Text("Filter by \(title)"))
         .accessibilityValue(value ?? String(localized: "All"))

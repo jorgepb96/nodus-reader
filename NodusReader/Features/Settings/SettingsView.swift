@@ -102,6 +102,8 @@ struct SettingsView: View {
                         SettingsRow(title: "About Nodus Reader", value: version)
                     }
                 }
+                // Rows, not push buttons: the Mac would draw a bezel on each.
+                .buttonStyle(.plain)
                 .panelCard(radius: 20)
             }
             .padding(.horizontal, 20)

@@ -93,32 +93,6 @@ struct NodusReaderApp: App {
         }
         #endif
         #if os(macOS)
-        WindowGroup("Reading", id: "reader", for: UUID.self) { $bookID in
-            Group {
-                if let bookID {
-                    ReaderWindowHost(bookID: bookID)
-                        .defaultAppStorage(appDefaults)
-                } else {
-                    ContentUnavailableView("No book selected", systemImage: "book.closed")
-                }
-            }
-            .environment(theme)
-            .environment(preferences)
-            .environment(navigation)
-            .environment(voices)
-            .environment(library)
-            .environment(imports)
-            .environment(playback)
-            .environment(sync)
-            .environment(models)
-            .environment(janitor)
-            .modelContainer(container)
-        }
-        .defaultSize(width: 1180, height: 920)
-        .windowStyle(.hiddenTitleBar)
-        .defaultLaunchBehavior(.suppressed)
-        .restorationBehavior(.disabled)
-
         Settings {
             MacSettingsRoot()
             .defaultAppStorage(appDefaults)
@@ -143,12 +117,25 @@ struct NodusReaderApp: App {
 private struct MacSettingsRoot: View {
     @Environment(ThemeManager.self) private var theme
     @Environment(\.colorScheme) private var colorScheme
+    #if DEBUG
+    @State private var opensVoices = false
+    #endif
 
     var body: some View {
         let palette = theme.palette(colorScheme: colorScheme)
         NavigationStack {
             SettingsView(showsBrand: false)
+                #if DEBUG
+                .navigationDestination(isPresented: $opensVoices) { VoicesView(initialMode: .voices) }
+                .task {
+                    if ProcessInfo.processInfo.arguments.contains("-NodusOpenVoicesSettings") {
+                        try? await Task.sleep(for: .seconds(1))
+                        opensVoices = true
+                    }
+                }
+                #endif
         }
+        .toggleStyle(.switch)
         .nodusPalette(palette)
         .tint(palette.accent)
         .preferredColorScheme(theme.appTheme.preferredColorScheme)

@@ -283,6 +283,7 @@ struct CollectionDetailView: View {
                     Button("Add Books…") { showAddBooks = true }
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(palette.accent)
+                        .nodusTextButtonStyle()
                 }
                 .padding(.vertical, 12)
             }

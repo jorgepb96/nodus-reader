@@ -111,5 +111,5 @@ limitations.
 | iPhone mini player | `tabViewBottomAccessory` on iOS 26 | Stable `safeAreaInset` above the tab bar | Revisit when a stable accessory API/invalidation pattern is available; the accessory branch reset tab state when playback started |
 | Voices/Models | Kokoro and Phonon catalogue with multiple model filters | One Kokoro and one Phonon model; a first-run screen sends users to Models; no system voices | Add more hosted bundles and runtimes when published |
 | Phonon voices | Spanish and multilingual catalogue | English Phonon 31M only; system-voice fallback removed | Add Core ML 40M bundles if the vendor publishes them |
-| Mac reader | Separate window with inspector | Dedicated `Reading` window with a two-page spread; contents/bookmarks/notes are reached from the reader | The window can be taken full screen natively; add the inspector if required |
+| Mac reader | Separate window with inspector | The reader replaces the library in the main window, with a two-page spread; contents/bookmarks/notes are reached from the reader | The window can be taken full screen natively; add the inspector if required |
 | Sample content | Moby-Dick et al. | Real generated EPUB/PDF files, public-domain or original placeholder text | Debug-only |

@@ -81,7 +81,7 @@ Phonon Core ML; word-level alignment; and a partial audio cache with prefetch an
 deletion.
 
 The reader follows the app theme by default, hides the status bar on iOS and opens
-in a dedicated full-window Reading window on macOS. The iOS layout follows the window,
+in place of the library in the main window on macOS (no second window). The iOS layout follows the window,
 not the idiom: an iPhone window at least 600 pt both ways (the opened iPhone Duo)
 uses the iPad layout, and the switch waits while a full-screen reader is open. The selected model supplies
 the global default; each book can retain a voice from any installed model through
