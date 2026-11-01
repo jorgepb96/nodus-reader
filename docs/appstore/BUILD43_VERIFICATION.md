@@ -14,3 +14,9 @@ Not verified: the Stop button on a real device. Unit tests were last run on buil
 ## Distribution
 
 Version 0.1.0 (43). What to Test is the same as build 42: iOS [English](TestFlight-43-ios-en.txt) / [Spanish](TestFlight-43-ios-es.txt); macOS [English](TestFlight-43-macos-en.txt) / [Spanish](TestFlight-43-macos-es.txt). iOS: Internal and Nodus Reader — Public Beta. macOS: Internal (private beta) only.
+
+Archived from `6588101` on `feature/immersive-audio` ([PR #59](https://github.com/jorgepb96/nodus-reader/pull/59)).
+
+- iOS 0.1.0 (43): uploaded at 00:16 (Europe/Madrid) on 2 November 2026; Internal and Nodus Reader — Public Beta, submitted to beta review with automatic notification.
+- macOS 0.1.0 (43): uploaded at 00:27 through `xcodebuild -exportArchive` (`destination` = `upload`); Internal (private beta) only, not submitted for review. macOS 42 is also in Internal with the same notes.
+- What to Test entered in English (U.S.) and Spanish (Spain) on iOS 43, macOS 42 and macOS 43, the same text as build 42.
