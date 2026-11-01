@@ -1,6 +1,6 @@
 # Build 40 — One Mac window, Studio
 
-Build 40 contains build 39 plus the interface fixes from the macOS review ([PR #56](https://github.com/jorgepb96/nodus-reader/pull/56)). It is distributed on iOS to the Internal group and on macOS to the Internal group only.
+Build 40 contains build 39 plus the interface fixes from the macOS review ([PR #56](https://github.com/jorgepb96/nodus-reader/pull/56)). It is distributed on iOS to the Internal group and the public beta, and on macOS to the Internal group only.
 
 ## Changes
 
@@ -22,3 +22,9 @@ Not verified: UI tests, a real iPhone, and the new Mac window on screen (reader 
 ## Distribution
 
 Version 0.1.0 (40). What to Test: iOS [English](TestFlight-40-ios-en.txt) / [Spanish](TestFlight-40-ios-es.txt); macOS [English](TestFlight-40-macos-en.txt) / [Spanish](TestFlight-40-macos-es.txt).
+
+Archived from merge commit `7d25d84` ([PR #57](https://github.com/jorgepb96/nodus-reader/pull/57)) with fresh DerivedData. Both archives are signed as 0.1.0 (40) and pass `codesign --verify --deep --strict`; neither contains the debug-hook strings. The Mac app is arm64 only and keeps the App Sandbox, iCloud and microphone entitlements. The signed archives were not launch-checked (a copy of Nodus Reader installed in `/Applications` was running).
+
+- iOS 0.1.0 (40): `Nodus Reader.ipa` uploaded by `xcodebuild -exportArchive` at 15:00 (Europe/Madrid) on 1 November 2026; Internal group and Nodus Reader — Public Beta (72 testers), submitted to beta review with automatic tester notification.
+- macOS 0.1.0 (40): `Nodus Reader.pkg` uploaded by `xcodebuild -exportArchive` (export options with `destination` set to `upload`) at 15:30; Internal group only, not submitted for review.
+- What to Test entered in App Store Connect in English (U.S.) and Spanish (Spain) on both builds, from the files above, and checked after a reload.
