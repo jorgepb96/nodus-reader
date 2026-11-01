@@ -89,6 +89,7 @@
 		AEF7B8FFD4BD9DDA067FAF20 /* NOTICE.md in Resources */ = {isa = PBXBuildFile; fileRef = 4A9B61F4F3F5F72D87930DFD /* NOTICE.md */; };
 		AF0DBD74F8D47484A0F92C14 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 886CDC450EFF2D9E2916008F /* ZIPFoundation */; };
 		B2D9C79E2BF4240F1B16B2B5 /* PaginatedReaderContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D593BBC908B5D057F4618106 /* PaginatedReaderContent.swift */; };
+		B34EB6BFC3032E37DA6D1425 /* ImmersiveDownloadSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC017679A5C771409F257C7F /* ImmersiveDownloadSession.swift */; };
 		B441BB46C3BA8F5060EDAB1B /* ReaderAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = E689078A482D385E80EABEB6 /* ReaderAppearance.swift */; };
 		B7E3C8E5CA2A17C139C3A5B5 /* ImmersiveCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10BCF0CD0392ECD76A1025EF /* ImmersiveCatalog.swift */; };
 		BB4314423E68948DDF1B8D99 /* SyncJournal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC6390B2B754114ECA06791 /* SyncJournal.swift */; };
@@ -290,6 +291,7 @@
 		C82CE5961581728B2A01BA11 /* JustifiedText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JustifiedText.swift; sourceTree = "<group>"; };
 		C8407DC14C3175CA38B9D21D /* ReaderPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPreferences.swift; sourceTree = "<group>"; };
 		C9511B52EA6C7414D8572A72 /* PDFReflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReflowView.swift; sourceTree = "<group>"; };
+		CC017679A5C771409F257C7F /* ImmersiveDownloadSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveDownloadSession.swift; sourceTree = "<group>"; };
 		CC87EA8C3C2FC93A24565D37 /* MacScreenCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacScreenCapture.swift; sourceTree = "<group>"; };
 		D3A948B31F01AEE2881D6EFA /* KokoroSpanish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KokoroSpanish.swift; sourceTree = "<group>"; };
 		D593BBC908B5D057F4618106 /* PaginatedReaderContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginatedReaderContent.swift; sourceTree = "<group>"; };
@@ -356,6 +358,7 @@
 				01715E0E5DA3F1333A3EA37B /* ImmersiveAudioEngine.swift */,
 				8C8DF7344A79D3338D9C1748 /* ImmersiveAudioLibrary.swift */,
 				10BCF0CD0392ECD76A1025EF /* ImmersiveCatalog.swift */,
+				CC017679A5C771409F257C7F /* ImmersiveDownloadSession.swift */,
 				290255DE715BCBCFED33BEFD /* ImmersivePlaybackPolicy.swift */,
 				E9CB6BAFD866723B1DDE6837 /* ImmersiveVocabulary.swift */,
 				A555DFD85F387971CD9CF0E1 /* OnDeviceModelGate.swift */,
@@ -955,6 +958,7 @@
 				F353A14E936234EB4BD02D5D /* ImmersiveAudioPreferences.swift in Sources */,
 				C4785DD0D1E3C312DDDE10CE /* ImmersiveAudioSettingsView.swift in Sources */,
 				B7E3C8E5CA2A17C139C3A5B5 /* ImmersiveCatalog.swift in Sources */,
+				B34EB6BFC3032E37DA6D1425 /* ImmersiveDownloadSession.swift in Sources */,
 				CFACFA9BBE2296F8C9FE2506 /* ImmersivePacksView.swift in Sources */,
 				78A4432C8BA86EC6AFFC7B24 /* ImmersivePlaybackPolicy.swift in Sources */,
 				6265779C51DF08D7A26B12CE /* ImmersiveQuickControls.swift in Sources */,
@@ -1148,7 +1152,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 40;
+				CURRENT_PROJECT_VERSION = 42;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1214,7 +1218,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 40;
+				CURRENT_PROJECT_VERSION = 42;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;

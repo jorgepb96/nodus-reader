@@ -8,6 +8,10 @@ import AppKit
 
 @main
 struct NodusReaderApp: App {
+    #if os(iOS)
+    /// Wakes the app for sound packs that finish downloading in the background.
+    @UIApplicationDelegateAdaptor(NodusAppDelegate.self) private var appDelegate
+    #endif
     private let container: ModelContainer
     private let appDefaults: UserDefaults
     @State private var theme: ThemeManager

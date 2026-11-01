@@ -2342,6 +2342,26 @@
         }
       }
     },
+    "Delete All Sounds": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar todos los sonidos"
+          }
+        }
+      }
+    },
+    "Delete All Sounds?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar todos los sonidos?"
+          }
+        }
+      }
+    },
     "Delete Collection": {
       "localizations": {
         "es": {
@@ -2438,6 +2458,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eliminar tema"
+          }
+        }
+      }
+    },
+    "Delete all sounds": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar todos los sonidos"
           }
         }
       }
@@ -3558,6 +3588,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "El audio inmersivo está desactivado"
+          }
+        }
+      }
+    },
+    "Immersive Audio stays silent until a pack is downloaded again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El audio inmersivo no sonará hasta que vuelvas a descargar un paquete."
           }
         }
       }

@@ -7,6 +7,7 @@ struct ImmersivePacksView: View {
     @Environment(ImmersiveAudioController.self) private var immersive
     @Environment(\.nodusPalette) private var palette
     @State private var pendingDelete: ImmersiveCatalog.Pack?
+    @State private var confirmDeleteAll = false
 
     private var library: ImmersiveAudioLibrary { immersive.library }
 
@@ -28,21 +29,29 @@ struct ImmersivePacksView: View {
                     packCard(pack)
                 }
                 HStack {
-                    Text("On this device")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(palette.text)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("On this device")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(palette.text)
+                        Text(ByteCountFormatter.string(fromByteCount: library.bytesOnDisk, countStyle: .file))
+                            .font(.footnote)
+                            .foregroundStyle(palette.muted)
+                            .monospacedDigit()
+                    }
                     Spacer()
-                    Text(ByteCountFormatter.string(fromByteCount: library.bytesOnDisk, countStyle: .file))
-                        .font(.footnote)
-                        .foregroundStyle(palette.muted)
-                        .monospacedDigit()
+                    Button("Delete all sounds", role: .destructive) { confirmDeleteAll = true }
+                        .font(.subheadline.weight(.medium))
+                        .nodusTextButtonStyle()
+                        .disabled(library.bytesOnDisk == 0 || library.isDevelopmentPack)
                 }
                 .padding(.horizontal, 14)
-                .frame(minHeight: 52)
+                .frame(minHeight: 56)
                 .panelCard(radius: 16)
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+            .padding(.top, 12)
+            // Room to scroll the last card above the mini player and tab bar.
+            .padding(.bottom, 110)
             .frame(maxWidth: 720, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
@@ -64,6 +73,12 @@ struct ImmersivePacksView: View {
             Button("Cancel", role: .cancel) { pendingDelete = nil }
         } message: {
             Text("You can download it again at any time.")
+        }
+        .confirmationDialog("Delete All Sounds?", isPresented: $confirmDeleteAll, titleVisibility: .visible) {
+            Button("Delete All Sounds", role: .destructive) { library.deleteAll() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Immersive Audio stays silent until a pack is downloaded again.")
         }
     }
 
@@ -109,7 +124,10 @@ struct ImmersivePacksView: View {
                     .tint(palette.accent)
                     .accessibilityLabel(Text("Downloading"))
                     .accessibilityValue(Text(progress.formatted(.percent.precision(.fractionLength(0)))))
-                OutlinePillButton("Pause", systemImage: "pause") { library.pause(pack) }
+                HStack {
+                    OutlinePillButton("Pause", systemImage: "pause") { library.pause(pack) }
+                    OutlinePillButton("Delete", systemImage: "trash") { pendingDelete = pack }
+                }
             }
         case .paused(let progress):
             VStack(alignment: .leading, spacing: 6) {
@@ -137,7 +155,10 @@ struct ImmersivePacksView: View {
                     .font(.caption)
                     .foregroundStyle(palette.destructive)
                     .fixedSize(horizontal: false, vertical: true)
-                PrimaryPillButton("Try again", systemImage: "arrow.clockwise") { library.install(pack) }
+                HStack {
+                    PrimaryPillButton("Try again", systemImage: "arrow.clockwise") { library.install(pack) }
+                    OutlinePillButton("Delete", systemImage: "trash") { pendingDelete = pack }
+                }
             }
         }
     }
@@ -213,7 +234,8 @@ struct ImmersiveCreditsView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+            .padding(.top, 12)
+            .padding(.bottom, 110)
             .frame(maxWidth: 720, alignment: .leading)
             .frame(maxWidth: .infinity)
         }

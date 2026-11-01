@@ -1,0 +1,23 @@
+# Build 42 — Immersive Audio downloads
+
+Build 42 contains build 41 plus fixes from the first TestFlight test on an iPhone:
+
+- Sound packs download in a background `URLSession`: every file of a pack is queued at once, keeps downloading when the reader leaves the app, and is verified (size and SHA-256) and installed even if the download finishes while the app is suspended or relaunched (`ImmersiveDownloadSession`, `NodusAppDelegate`).
+- Download progress follows the bytes of each file, so a large file no longer looks stuck.
+- Packs can be deleted while downloading, paused, failed or installed, and "Delete all sounds" removes every file.
+- The Immersive Audio, Sound packs and Credits pages leave room above the mini player and tab bar, so the last row scrolls into view.
+
+## Checks
+
+| Check | Result |
+| --- | --- |
+| Unit/integration suite (iPhone 17 Pro Simulator) | 185 passed |
+| Opt-in network test: a published file downloaded through the background session, SHA-256 verified | Passed |
+| macOS build | Succeeded |
+| Localization | 962 keys, 0 missing Spanish |
+
+Not verified: a background download on a real iPhone with the app closed.
+
+## Distribution
+
+Version 0.1.0 (42). What to Test: iOS [English](TestFlight-42-ios-en.txt) / [Spanish](TestFlight-42-ios-es.txt); macOS [English](TestFlight-42-macos-en.txt) / [Spanish](TestFlight-42-macos-es.txt).

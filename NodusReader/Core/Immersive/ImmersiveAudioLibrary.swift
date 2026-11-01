@@ -72,7 +72,17 @@ final class ImmersiveAudioLibrary {
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         Self.excludeFromBackup(root)
         refresh()
+        // Files that finished downloading while the app was in the background
+        // or not running are installed by the session; show them.
+        ImmersiveDownloadSession.shared.reconnect()
+        finishedObserver = NotificationCenter.default.addObserver(
+            forName: .immersiveDownloadFinished, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refresh() }
+        }
     }
+
+    @ObservationIgnored private var finishedObserver: NSObjectProtocol?
 
     // MARK: Queries
 
@@ -141,17 +151,34 @@ final class ImmersiveAudioLibrary {
         let tracks = catalog.tracks(in: pack).filter { !installedTrackIDs.contains($0.id) }
         states[pack.id] = .downloading(fraction(of: pack, installed: installedTrackIDs))
         let root = self.root
+        let total = max(Double(pack.bytes), 1)
         let task = Task { [weak self] in
             do {
-                for track in tracks {
-                    try Task.checkCancellation()
-                    try await Self.download(track, urls: catalog.urls(for: track), into: root)
-                    guard let self, self.tasks[pack.id]?.token == token else { return }
-                    self.installedTrackIDs.insert(track.id)
-                    self.states[pack.id] = .downloading(self.fraction(of: pack, installed: self.installedTrackIDs))
+                // Every file is queued at once in the background session, so
+                // the whole pack keeps downloading while the app is suspended.
+                try await withThrowingTaskGroup(of: String.self) { group in
+                    for track in tracks {
+                        let urls = catalog.urls(for: track)
+                        group.addTask {
+                            try await Self.download(track, urls: urls, into: root) { fraction in
+                                Task { @MainActor [weak self] in
+                                    self?.progressed(pack, token: token, track: track, fraction: fraction, total: total)
+                                }
+                            }
+                            return track.id
+                        }
+                    }
+                    for try await id in group {
+                        guard let self, self.tasks[pack.id]?.token == token else { return }
+                        self.partial[pack.id]?[id] = nil
+                        self.installedTrackIDs.insert(id)
+                        self.states[pack.id] = .downloading(self.fraction(of: pack, installed: self.installedTrackIDs))
+                        self.bytesOnDisk = FileStore.directorySize(root, fileManager: .default)
+                    }
                 }
                 guard let self, self.tasks[pack.id]?.token == token else { return }
                 self.tasks[pack.id] = nil
+                self.partial[pack.id] = nil
                 self.refresh()
             } catch is CancellationError {
                 guard let self, self.tasks[pack.id]?.token == token else { return }
@@ -165,6 +192,19 @@ final class ImmersiveAudioLibrary {
             }
         }
         tasks[pack.id] = (token, task)
+    }
+
+    /// Byte progress of files still downloading, per pack.
+    @ObservationIgnored private var partial: [String: [String: Double]] = [:]
+
+    private func progressed(_ pack: ImmersiveCatalog.Pack, token: UUID, track: CatalogTrack, fraction share: Double,
+                            total: Double) {
+        guard tasks[pack.id]?.token == token, !installedTrackIDs.contains(track.id) else { return }
+        partial[pack.id, default: [:]][track.id] = Double(track.file.bytes) * share
+        let done = fraction(of: pack, installed: installedTrackIDs)
+        let value = min(done + (partial[pack.id]?.values.reduce(0, +) ?? 0) / total, 1)
+        if case .downloading(let shown) = states[pack.id], value - shown < 0.005 { return }
+        states[pack.id] = .downloading(value)
     }
 
     /// Stops a download; files already verified are kept for the resume.
@@ -199,7 +239,8 @@ final class ImmersiveAudioLibrary {
     // MARK: Download
 
     /// Fetches one file from the first host that serves it intact.
-    nonisolated static func download(_ track: CatalogTrack, urls: [URL], into root: URL) async throws {
+    nonisolated static func download(_ track: CatalogTrack, urls: [URL], into root: URL,
+                                     progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws {
         let destination = root.appendingPathComponent(track.file.path)
         let staging = root.appendingPathComponent(".partial", isDirectory: true)
         try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: true)
@@ -209,9 +250,18 @@ final class ImmersiveAudioLibrary {
         for url in urls {
             try Task.checkCancellation()
             do {
+                if !url.isFileURL {
+                    // Web hosts: a background session, so the download goes on
+                    // when the reader leaves the app; it verifies and installs.
+                    let target = ImmersiveDownloadSession.Target(destination: destination.path, bytes: track.file.bytes,
+                                                                 sha256: track.file.sha256, title: track.title)
+                    try await ImmersiveDownloadSession.shared.download(url, target: target, onProgress: progress)
+                    return
+                }
                 var request = URLRequest(url: url)
                 request.timeoutInterval = 60
-                let (temporary, response) = try await URLSession.shared.download(for: request)
+                let delegate = DownloadProgress(progress)
+                let (temporary, response) = try await URLSession.shared.download(for: request, delegate: delegate)
                 // A file: mirror (tests, local packs) has no HTTP status.
                 if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                     try? FileManager.default.removeItem(at: temporary)
@@ -235,6 +285,22 @@ final class ImmersiveAudioLibrary {
             }
         }
         throw lastError
+    }
+
+    /// Reports a download's byte progress (0…1).
+    private final class DownloadProgress: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+        private let report: @Sendable (Double) -> Void
+        private var observation: NSKeyValueObservation?
+
+        init(_ report: @escaping @Sendable (Double) -> Void) {
+            self.report = report
+        }
+
+        func urlSession(_ session: URLSession, didCreateTask task: URLSessionTask) {
+            observation = task.progress.observe(\.fractionCompleted) { [report] progress, _ in
+                report(progress.fractionCompleted)
+            }
+        }
     }
 
     private static func excludeFromBackup(_ url: URL) {

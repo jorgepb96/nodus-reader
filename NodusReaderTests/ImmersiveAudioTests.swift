@@ -1024,3 +1024,22 @@ func processedPackFilesMatchTheManifestAndDecode() throws {
     #expect(calls.count == analysed)
     #expect(SceneMapStore(root: root).loadMap(bookID: id)?.analysedCount == analysed)
 }
+
+/// Downloads one real file from the published GitHub Release through the
+/// background session (opt-in: NODUS_NETWORK_TESTS=1).
+@Test(.enabled(if: ProcessInfo.processInfo.environment["NODUS_NETWORK_TESTS"] == "1"), .timeLimit(.minutes(3)))
+func backgroundSessionDownloadsAndVerifiesAPublishedFile() async throws {
+    let catalog = try #require(ImmersiveCatalog.bundled())
+    let track = try #require(catalog.tracks.min { $0.file.bytes < $1.file.bytes })
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent("immersive-net-\(UUID())")
+    defer { try? FileManager.default.removeItem(at: root) }
+    let progress = Box()
+    try await ImmersiveAudioLibrary.download(track, urls: catalog.urls(for: track), into: root) { fraction in
+        progress.value = max(progress.value, fraction)
+    }
+    let file = root.appendingPathComponent(track.file.path)
+    #expect(try ContentHash.sha256(of: file) == track.file.sha256)
+    #expect(progress.value > 0.99)
+}
+
+private final class Box: @unchecked Sendable { var value = 0.0 }
