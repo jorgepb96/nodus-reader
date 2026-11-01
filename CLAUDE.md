@@ -94,7 +94,7 @@ and Spanish through `NodusReader/Resources/Localizable.xcstrings`; see
 `tools/localization/README.md` before adding UI text.
 
 On the Mac, Ming 3.0 0.5B (8-bit MLX, MIT) narrates in seven languages at about real
-time with five built-in English voices, the bundled CC0 `es-dave` clip and voices the
+time with 106 built-in voices (5 English, 101 Mandarin), the bundled CC0 `es-dave` clip and voices the
 user clones by recording a paragraph or adding an audio file: the transcript is
 suggested by on-device speech recognition, consent is required, and clips stay on the
 Mac (`MingVoiceStore`). Ming is not offered on iOS.
