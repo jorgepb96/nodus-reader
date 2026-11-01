@@ -20,3 +20,9 @@ Not verified: a real iPhone.
 ## Distribution
 
 Version 0.1.0 (39). What to Test: iOS [English](TestFlight-39-ios-en.txt) / [Spanish](TestFlight-39-ios-es.txt); macOS [English](TestFlight-39-macos-en.txt) / [Spanish](TestFlight-39-macos-es.txt).
+
+Archived from merge commit `34d7f45` ([PR #54](https://github.com/jorgepb96/nodus-reader/pull/54)) with fresh DerivedData in `/tmp`. Both archives are signed as 0.1.0 (39) and pass `codesign --verify --deep --strict`; neither contains the debug-hook strings. The Mac app is arm64 only and keeps the App Sandbox, iCloud and microphone entitlements. The signed Mac archive could not be launch-checked: a copy of Nodus Reader installed in `/Applications` was running, and a second instance exits at once (the build 38 archive does the same).
+
+- macOS 0.1.0 (39): `Nodus Reader.pkg` uploaded at 13:27 (Europe/Madrid) on 1 November 2026; Internal group only, not submitted for review.
+- iOS 0.1.0 (39): `Nodus Reader.ipa` uploaded at 13:29; Internal group and Nodus Reader — Public Beta (72 testers), submitted to beta review and In Testing the same afternoon.
+- What to Test entered in App Store Connect in English (U.S.) and Spanish (Spain) on both builds, from the files above.
