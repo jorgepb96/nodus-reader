@@ -3582,12 +3582,12 @@
         }
       }
     },
-    "Natural narration in seven languages, with five built-in English voices and voices you clone from a short recording.": {
+    "Natural narration in seven languages, with 106 built-in English and Mandarin voices and voices you clone from a short recording.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Narración natural en siete idiomas, con cinco voces en inglés incluidas y las voces que clones a partir de una grabación breve."
+            "value": "Narración natural en siete idiomas, con 106 voces incluidas en inglés y chino mandarín y las voces que clones a partir de una grabación breve."
           }
         }
       }

@@ -537,7 +537,7 @@ ES.update({
     "Ming reads the clip together with these words, so they must match what is said, including any slips. At least %lld characters for this clip.": "Ming lee el clip junto con estas palabras, así que deben coincidir con lo que se dice, incluidos los tropiezos. Al menos %lld caracteres para este clip.",
     "Ming voices": "Voces de Ming",
     "My voice": "Mi voz",
-    "Natural narration in seven languages, with five built-in English voices and voices you clone from a short recording.": "Narración natural en siete idiomas, con cinco voces en inglés incluidas y las voces que clones a partir de una grabación breve.",
+    "Natural narration in seven languages, with 106 built-in English and Mandarin voices and voices you clone from a short recording.": "Narración natural en siete idiomas, con 106 voces incluidas en inglés y chino mandarín y las voces que clones a partir de una grabación breve.",
     "Nodus Reader cannot use the microphone. Allow it in System Settings › Privacy & Security › Microphone.": "Nodus Reader no puede usar el micrófono. Permítelo en Ajustes del Sistema › Privacidad y seguridad › Micrófono.",
     "Read this aloud in a quiet room, at your usual pace:": "Lee esto en voz alta en una habitación tranquila, a tu ritmo habitual:",
     "Recognizing the words on this Mac…": "Reconociendo las palabras en este Mac…",

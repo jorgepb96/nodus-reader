@@ -2419,3 +2419,16 @@ func mingVoiceStoreValidatesAndRoundTripsClips() throws {
     MingVoiceStore.delete(id: "es-dave")
     #expect(MingVoiceStore.voices().contains { $0.id == "es-dave" && $0.isBundled })
 }
+
+@Test("Ming's built-in voices: 5 English and 101 Mandarin, each invocable and with a gender")
+func mingBuiltinVoicesAreInvocable() {
+    let voices = ModelManager.mingBuiltinVoices
+    #expect(voices.count == 106)
+    #expect(voices.filter { $0.language.hasPrefix("en") }.count == 5)
+    #expect(voices.filter { $0.language == "zh-CN" }.count == 101)
+    #expect(Set(voices.map(\.id)).count == voices.count)
+    #expect(voices.allSatisfy { $0.id.hasPrefix("ming:") && $0.gender != nil && $0.engine == .ming })
+    // A voice recorded with emotions answers only to a variant: the neutral one.
+    #expect(voices.first { $0.name == "灵信远" }?.id == "ming:灵信远_中性")
+    #expect(voices.first { $0.name == "灵小柔" }?.id == "ming:灵小柔")
+}
