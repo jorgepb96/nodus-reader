@@ -333,6 +333,7 @@ struct PDFReflowView: View {
                     Task { await loadReflow(force: true) }
                 }
                 .foregroundStyle(theme.accent)
+                .nodusTextButtonStyle()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(24)
@@ -366,7 +367,9 @@ struct PDFReflowView: View {
                     .scrollTargetLayout()
                 }
                 .scrollPosition(id: $scrollPosition, anchor: .top)
-                .scrollIndicators(.hidden)
+                // `.never`: with `.hidden` the Mac adds its scroller beside
+                // the reflow scrollbar when scroll bars always show.
+                .scrollIndicators(.never)
                 .overlay(alignment: .trailing) {
                     if !job.isWorking, document.pages.count > 1 {
                         PDFReflowScrollbar(
@@ -616,6 +619,7 @@ struct PDFReflowView: View {
                         }
                         .font(.caption2)
                         .foregroundStyle(theme.accent)
+                        .nodusTextButtonStyle()
                     }
                 }
             }

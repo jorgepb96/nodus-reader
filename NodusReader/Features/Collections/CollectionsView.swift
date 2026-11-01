@@ -64,6 +64,7 @@ struct CollectionsView: View {
                     .frame(minHeight: 260)
                     Button("Clear search") { searchText = "" }
                         .foregroundStyle(palette.accent)
+                        .nodusTextButtonStyle()
                 } else {
                     HStack {
                         Text(visibleCollections.count == 1 ? "1 collection" : "\(visibleCollections.count) collections")

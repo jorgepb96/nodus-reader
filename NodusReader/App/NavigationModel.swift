@@ -49,6 +49,9 @@ public final class NavigationModel {
     /// from their own views, so the layout waits for it to close.
     public var openReaders = 0
     public var readerIsOpen: Bool { openReaders > 0 }
+    /// The book open in the Mac library window's reader, which replaces the
+    /// library in the same window until it is closed.
+    public var macReaderBookID: UUID?
 
     public init() {}
 

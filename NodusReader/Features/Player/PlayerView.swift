@@ -57,13 +57,23 @@ struct PlayerView: View {
                 errorOverlay(error)
             }
         }
-        .task { await playback.refreshAudioCacheSize() }
+        .task {
+            await playback.refreshAudioCacheSize()
+            #if os(macOS) && DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-NodusOpenVoicePicker") {
+                try? await Task.sleep(for: .seconds(2))
+                showVoicePicker = true
+            }
+            #endif
+        }
         #if os(iOS)
         // A form sheet on iPad is only 640 pt tall, which pushed the whole
         // speed/voice/sleep/mode row below the transport and forced a scroll
         // before the listener could change the speed. The page presentation
         // keeps the primary controls visible, with the same sheet on iPhone.
         .presentationSizing(.page)
+        #else
+        .frame(minWidth: 560, idealWidth: 600, minHeight: 720, idealHeight: 900)
         #endif
     }
 
@@ -97,6 +107,7 @@ struct PlayerView: View {
                     Button("Cancel") { playback.cancelAudioCacheGeneration() }
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(palette.accent)
+                        .nodusTextButtonStyle()
                 }
             } else {
                 HStack(spacing: 16) {
@@ -106,6 +117,7 @@ struct PlayerView: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(playback.isNeuralVoice ? palette.accent : palette.muted)
                     .disabled(!playback.isNeuralVoice)
+                    .nodusTextButtonStyle()
 
                     if playback.audioCacheBytes > 0 {
                         Button("Delete cache") {
@@ -113,6 +125,7 @@ struct PlayerView: View {
                         }
                         .font(.system(size: 11))
                         .foregroundStyle(palette.muted)
+                        .nodusTextButtonStyle()
                     }
                     Spacer()
                 }
@@ -194,6 +207,8 @@ struct PlayerView: View {
                     .foregroundStyle(palette.text)
                     .frame(width: 44, height: 44)
             }
+            .nodusMenuLabelStyle()
+            .fixedSize()
             .accessibilityLabel("Player options")
         }
         .padding(.bottom, 8)
@@ -367,7 +382,10 @@ struct PlayerView: View {
         } label: {
             controlTile(top: playback.speedLabel, bottom: String(localized: "Speed"), highlighted: false)
         }
-        .menuIndicator(.hidden)
+        // A menu tile has the same size and look as the button tiles; the
+        // Mac's pop-up bezel would otherwise draw around it.
+        .nodusMenuLabelStyle()
+        .frame(maxWidth: .infinity)
         .accessibilityLabel("Playback speed")
         .accessibilityValue(playback.speedLabel)
     }
@@ -404,7 +422,10 @@ struct PlayerView: View {
                 highlighted: playback.sleepTimer != .off
             )
         }
-        .menuIndicator(.hidden)
+        // A menu tile has the same size and look as the button tiles; the
+        // Mac's pop-up bezel would otherwise draw around it.
+        .nodusMenuLabelStyle()
+        .frame(maxWidth: .infinity)
         .accessibilityLabel("Sleep timer")
     }
 
@@ -446,7 +467,10 @@ struct PlayerView: View {
                 highlighted: playback.mode == .readAndListen
             )
         }
-        .menuIndicator(.hidden)
+        // A menu tile has the same size and look as the button tiles; the
+        // Mac's pop-up bezel would otherwise draw around it.
+        .nodusMenuLabelStyle()
+        .frame(maxWidth: .infinity)
         .accessibilityLabel("Reading mode")
     }
 
@@ -469,6 +493,7 @@ struct PlayerView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(highlighted ? palette.accent.opacity(0.3) : palette.line, lineWidth: 1)
         )
+        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private func controlTile(icon: String, top: String, bottom: String, highlighted: Bool) -> some View {
@@ -493,6 +518,7 @@ struct PlayerView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(highlighted ? palette.accent.opacity(0.3) : palette.line, lineWidth: 1)
         )
+        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var footer: some View {
@@ -523,6 +549,7 @@ struct PlayerView: View {
                 dismiss()
             }
             .foregroundStyle(palette.accent)
+            .nodusTextButtonStyle()
         }
         .padding(24)
         .frame(maxWidth: 320)
@@ -876,6 +903,10 @@ struct VoicePickerSheet: View {
         }
         #if os(iOS)
         .presentationDetents([.large])
+        #else
+        // A Mac sheet takes its content's size: without one the list and its
+        // filters were squeezed into a sliver.
+        .frame(minWidth: 520, idealWidth: 580, minHeight: 560, idealHeight: 680)
         #endif
     }
 }

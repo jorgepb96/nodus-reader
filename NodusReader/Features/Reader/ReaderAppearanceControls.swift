@@ -53,6 +53,7 @@ struct ReaderAppearanceControls: View {
                 .font(.footnote)
                 .foregroundStyle(palette.accent)
                 .padding(.horizontal, 4)
+                .nodusTextButtonStyle()
             }
             if let onMoreSettings {
                 Button {

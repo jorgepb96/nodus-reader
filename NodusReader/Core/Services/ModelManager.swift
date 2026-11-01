@@ -274,11 +274,14 @@ final class ModelManager {
         self.audioCache = audioCache
         self.defaults = defaults
         self.selectedModelID = defaults.string(forKey: "nodus.models.selected") ?? ""
-        #if !targetEnvironment(simulator)
+        #if os(iOS) && !targetEnvironment(simulator)
         // MLX runs only Kokoro's English fallback phonemizer (a small model for
         // words missing from its dictionary). On the GPU it is refused while
         // the app narrates in the background with the phone locked, and MLX
         // stops the app when a Metal command buffer fails. The CPU is enough.
+        // Not on the Mac: there MLX's CPU backend compiles fused kernels with
+        // the system compiler, which the App Sandbox refuses (a fatal error),
+        // and the Mac's GPU is available in the background.
         Device.setDefault(device: .cpu)
         #endif
         Self.excludeFromBackup(Self.kokoroCacheDirectory)

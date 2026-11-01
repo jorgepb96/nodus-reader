@@ -223,6 +223,7 @@ struct HomeView: View {
                 .font(.subheadline)
                 .foregroundStyle(palette.accent)
                 .accessibilityHint("Shows the whole library")
+                .nodusTextButtonStyle()
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: shelfSpacing) {
@@ -343,17 +344,17 @@ private struct ReaderCoverHost: View {
 #endif
 
 #if os(macOS)
-/// On macOS the reader gets its own window (see `ReaderWindowHost`), which
-/// fills the window and can be zoomed or taken full screen natively.
+/// On macOS the reader replaces the library in the same window (see
+/// `MacReaderHost`) instead of opening a window of its own.
 private struct MacReaderWindowPresenter: ViewModifier {
-    @Environment(\.openWindow) private var openWindow
+    @Environment(NavigationModel.self) private var navigation: NavigationModel?
     @Binding var item: Book?
 
     func body(content: Content) -> some View {
         content.onChange(of: item?.id) { _, _ in
             guard let book = item else { return }
             item = nil
-            openWindow(id: "reader", value: book.id)
+            navigation?.macReaderBookID = book.id
         }
     }
 }

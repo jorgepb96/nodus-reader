@@ -10,7 +10,6 @@ struct MacRootView: View {
     @Environment(PlaybackController.self) private var playback
     @Environment(\.nodusPalette) private var palette
     @Environment(\.openSettings) private var openSettings
-    @Environment(\.openWindow) private var openWindow
 
     @Query(sort: \Book.addedAt, order: .reverse) private var books: [Book]
     @Query(sort: \LibraryCollection.sortIndex) private var collections: [LibraryCollection]
@@ -45,9 +44,42 @@ struct MacRootView: View {
     }
 
     var body: some View {
+        // The reader replaces the library in this window; closing it brings
+        // back the library where it was (its selection lives in `navigation`).
+        Group {
+            if let bookID = navigation.macReaderBookID {
+                MacReaderHost(bookID: bookID) { navigation.macReaderBookID = nil }
+            } else {
+                libraryWindow
+            }
+        }
+        // Switches, as on iPhone and iPad and in the design, not checkboxes.
+        .toggleStyle(.switch)
+        .task {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-NodusOpenSettings") {
+                openSettings()
+            }
+            if ProcessInfo.processInfo.arguments.contains("-NodusStartSampleNarration"),
+               let book = books.first(where: { $0.title == "Moby-Dick" }) {
+                await playback.start(book: book, mode: .listen)
+            }
+            if ProcessInfo.processInfo.arguments.contains("-NodusCaptureScreens") {
+                await MacScreenCapture.tour(navigation: navigation, books: { books }, collections: { collections },
+                                            openSettings: openSettings)
+            }
+            if ProcessInfo.processInfo.arguments.contains("-NodusOpenSampleReader"),
+               let book = books.first(where: { $0.title == "Moby-Dick" }) {
+                navigation.macReaderBookID = book.id
+            }
+            #endif
+        }
+    }
+
+    private var libraryWindow: some View {
         @Bindable var navigation = navigation
 
-        NavigationSplitView(columnVisibility: $navigation.columnVisibility) {
+        return NavigationSplitView(columnVisibility: $navigation.columnVisibility) {
             sidebar
                 .navigationSplitViewColumnWidth(min: 220, ideal: 244, max: 300)
         } detail: {
@@ -64,25 +96,6 @@ struct MacRootView: View {
             if !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 detailPath = NavigationPath()
             }
-        }
-        .task {
-            #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("-NodusOpenSettings") {
-                openSettings()
-            }
-            if ProcessInfo.processInfo.arguments.contains("-NodusStartSampleNarration"),
-               let book = books.first(where: { $0.title == "Moby-Dick" }) {
-                await playback.start(book: book, mode: .listen)
-            }
-            if ProcessInfo.processInfo.arguments.contains("-NodusCaptureScreens") {
-                await MacScreenCapture.tour(navigation: navigation, books: { books }, collections: { collections },
-                                            openWindow: openWindow, openSettings: openSettings)
-            }
-            if ProcessInfo.processInfo.arguments.contains("-NodusOpenSampleReader"),
-               let book = books.first(where: { $0.title == "Moby-Dick" }) {
-                openWindow(id: "reader", value: book.id)
-            }
-            #endif
         }
     }
 

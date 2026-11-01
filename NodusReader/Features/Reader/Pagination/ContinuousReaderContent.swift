@@ -79,7 +79,7 @@ struct ContinuousReaderContent: View {
                 atEnd = isAtEnd
                 if isAtEnd, let last = pages.indices.last { report(last) }
             }
-            .scrollIndicators(axis == .vertical ? .automatic : .hidden)
+            .scrollIndicators(axis == .vertical ? .automatic : .never)
             .background(Color(platformColor: style.background))
             .onAppear {
                 leadingID = pageIndex

@@ -17,7 +17,7 @@ enum MacScreenCapture {
     }
 
     static func tour(navigation: NavigationModel, books: () -> [Book], collections: () -> [LibraryCollection],
-                     openWindow: OpenWindowAction, openSettings: OpenSettingsAction) async {
+                     openSettings: OpenSettingsAction) async {
         try? FileManager.default.removeItem(at: directory)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         NSLog("NodusCaptures: %@", directory.path)
@@ -37,23 +37,23 @@ enum MacScreenCapture {
         }
         navigation.sidebarSelection = .allBooks
         if let book = books().first(where: { $0.title == "Moby-Dick" }) {
-            openWindow(id: "reader", value: book.id)
+            navigation.macReaderBookID = book.id
             await pause(5)
             capture("04-ReaderEPUB")
-            closeReaders()
+            navigation.macReaderBookID = nil
         }
         if let pdf = books().first(where: { $0.format == .pdf }) {
-            openWindow(id: "reader", value: pdf.id)
+            navigation.macReaderBookID = pdf.id
             await pause(8)
             capture("05-ReaderPDF")
-            closeReaders()
+            navigation.macReaderBookID = nil
             await pause(1)
             opensPDFInIntelligentReading = true
-            openWindow(id: "reader", value: pdf.id)
+            navigation.macReaderBookID = pdf.id
             await pause(12)
             capture("06-ReaderPDFIntelligent")
             opensPDFInIntelligentReading = false
-            closeReaders()
+            navigation.macReaderBookID = nil
         }
         openSettings()
         await pause(3)
@@ -64,12 +64,6 @@ enum MacScreenCapture {
 
     private static func pause(_ seconds: Double) async {
         try? await Task.sleep(for: .seconds(seconds))
-    }
-
-    private static func closeReaders() {
-        for window in NSApp.windows where window.identifier?.rawValue.hasPrefix("reader") == true {
-            window.close()
-        }
     }
 
     /// Every visible window, including its title bar and toolbar.

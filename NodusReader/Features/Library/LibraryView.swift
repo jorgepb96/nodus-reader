@@ -231,6 +231,7 @@ struct LibraryView: View {
                 }
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(palette.accent)
+                .nodusTextButtonStyle()
             }
         }
         .frame(minHeight: 380)

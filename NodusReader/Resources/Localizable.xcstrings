@@ -3532,16 +3532,6 @@
         }
       }
     },
-    "No book selected": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ningún libro seleccionado"
-          }
-        }
-      }
-    },
     "No bookmarks yet": {
       "localizations": {
         "es": {
@@ -4758,16 +4748,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Navegación del lector"
-          }
-        }
-      }
-    },
-    "Reading": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lectura"
           }
         }
       }
