@@ -37,12 +37,20 @@ packages:
   KokoroCoreML:
     url: https://github.com/mattmireles/kokoro-coreml.git
     revision: 43ef0237306c3c1ea0138098c9f92930ae4cf3f7
-  # Already part of Kokoro's English phonemizer (MisakiSwift). Linked directly,
-  # at the version Kokoro resolves, only to free MLX's GPU buffer cache when the
-  # voice engines are unloaded.
+  # Kokoro's English phonemizer, vendored at the revision Kokoro pins so that it
+  # resolves the same MLX as MLXAudio (see Modules/MisakiSwift/NODUS_VENDOR.md).
+  # A local package overrides the remote one with the same identity.
+  MisakiSwift:
+    path: Modules/MisakiSwift
+  # Used by Kokoro's phonemizer and Ming. Linked directly to free MLX's GPU
+  # buffer cache when the voice engines are unloaded.
   MLXSwift:
     url: https://github.com/ml-explore/mlx-swift
-    exactVersion: 0.31.4
+    exactVersion: 0.33.0
+  # Ming 3.0 speech synthesis in Swift (macOS only), MIT.
+  MLXAudio:
+    url: https://github.com/Blaizzy/mlx-audio-swift
+    revision: 0dda61b29c308175e302dceef77c3bd84551e92b
 
 schemes:
   NodusReader-macOS:
@@ -76,6 +84,12 @@ targets:
         product: KokoroTTS
       - package: MLXSwift
         product: MLX
+      - package: MLXAudio
+        product: MLXAudioTTS
+        destinationFilters: [macOS]
+      - package: MLXAudio
+        product: MLXAudioCore
+        destinationFilters: [macOS]
       - target: NodusReaderShare
         platformFilter: iOS
     settings:

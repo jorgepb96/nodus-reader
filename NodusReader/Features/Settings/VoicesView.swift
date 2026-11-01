@@ -86,6 +86,7 @@ struct VoicesView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .labelsHidden()
                 .accessibilityLabel("Voices and models")
 
                 if mode == .voices {
@@ -154,9 +155,18 @@ struct VoicesView: View {
                 if installedModels.isEmpty { mode = .models }
                 didSetInitialLanguage = true
             }
-            hfToken = HuggingFaceTokenStore.load() ?? ""
-            tokenSaved = !hfToken.isEmpty
-            hfSession = HuggingFaceSessionStore.load()
+            #if DEBUG
+            // Screen captures run a differently signed build, for which the
+            // Keychain would ask the person at the Mac before answering.
+            let readsKeychain = UserDefaults.standard.string(forKey: "NodusShowVoices") == nil
+            #else
+            let readsKeychain = true
+            #endif
+            if readsKeychain {
+                hfToken = HuggingFaceTokenStore.load() ?? ""
+                tokenSaved = !hfToken.isEmpty
+                hfSession = HuggingFaceSessionStore.load()
+            }
             await models.refreshStorage()
         }
     }
@@ -344,6 +354,12 @@ struct VoicesView: View {
             modelCard(model)
         }
 
+        #if os(macOS)
+        if let ming = models.models.first(where: { $0.engine == .ming }), models.isInstalled(ming) {
+            MingVoicesSection()
+        }
+        #endif
+
         Button {
             showBundleImporter = true
         } label: {
@@ -402,7 +418,7 @@ struct VoicesView: View {
                     }
                     engineRow(id: model.id,
                               title: model.name,
-                              detail: String(localized: "\(model.voices.count) voices · \(model.language)"),
+                              detail: String(localized: "\(models.voices(for: model).count) voices · \(model.language)"),
                               systemImage: "brain")
                 }
 

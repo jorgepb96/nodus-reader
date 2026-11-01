@@ -23,6 +23,7 @@ Nodus Reader and where it remains approximate.
 |---|---|---|---|
 | Kokoro 82M | `KokoroTTS` Core ML, 24 kHz mono Float PCM | Pause analysis + syllable-weighted DP | Per sentence `.caf` + `.json` |
 | Phonon 31M | `ptts` Core ML, 24 kHz mono Float PCM | Pause analysis + syllable-weighted DP | Per sentence `.caf` + `.json` |
+| Ming 3.0 0.5B (macOS) | MLXAudio `MingDenseModel`, 8-bit MLX, 44.1 kHz mono Float PCM | Pause analysis + syllable-weighted DP (and on-device recognition when enabled) | Per sentence `.caf` + `.json` |
 
 Kokoro's phonemizer uses MLX and needs a Metal device; the Simulator is excluded and
 the Models screen explains why. Phonon runs in the Simulator and is covered by a UI

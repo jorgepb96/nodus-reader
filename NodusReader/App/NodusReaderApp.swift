@@ -117,23 +117,11 @@ struct NodusReaderApp: App {
 private struct MacSettingsRoot: View {
     @Environment(ThemeManager.self) private var theme
     @Environment(\.colorScheme) private var colorScheme
-    #if DEBUG
-    @State private var opensVoices = false
-    #endif
 
     var body: some View {
         let palette = theme.palette(colorScheme: colorScheme)
         NavigationStack {
             SettingsView(showsBrand: false)
-                #if DEBUG
-                .navigationDestination(isPresented: $opensVoices) { VoicesView(initialMode: .voices) }
-                .task {
-                    if ProcessInfo.processInfo.arguments.contains("-NodusOpenVoicesSettings") {
-                        try? await Task.sleep(for: .seconds(1))
-                        opensVoices = true
-                    }
-                }
-                #endif
         }
         .toggleStyle(.switch)
         .nodusPalette(palette)

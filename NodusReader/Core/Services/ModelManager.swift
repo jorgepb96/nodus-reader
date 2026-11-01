@@ -24,11 +24,14 @@ final class ModelManager {
     enum Engine: String, Sendable {
         case kokoro
         case phonon
+        /// Ming 3.0 0.5B on MLX; offered only on the Mac.
+        case ming
 
         var label: String {
             switch self {
             case .kokoro: String(localized: "Kokoro")
             case .phonon: String(localized: "Phonon")
+            case .ming: String(localized: "Ming")
             }
         }
     }
@@ -102,8 +105,9 @@ final class ModelManager {
     struct StorageSummary: Equatable {
         var kokoroBytes: Int64 = 0
         var phononBytes: Int64 = 0
+        var mingBytes: Int64 = 0
         var narrationCacheBytes: Int64 = 0
-        var totalBytes: Int64 { kokoroBytes + phononBytes + narrationCacheBytes }
+        var totalBytes: Int64 { kokoroBytes + phononBytes + mingBytes + narrationCacheBytes }
     }
 
     private(set) var states: [String: State] = [:]
@@ -130,6 +134,11 @@ final class ModelManager {
     }
     /// Which Phonon checkpoint `phonon` holds (English 31M or Spanish 40M).
     @ObservationIgnored private var phononModelID: String?
+    #if os(macOS)
+    @ObservationIgnored private var ming: MingSpeech?
+    #endif
+    /// Voices cloned for Ming on this Mac, and the bundled one.
+    private(set) var mingClones: [MingVoiceStore.ClonedVoice] = []
 
     // Memory: loaded engines hold hundreds of MB of Core ML models (and Kokoro
     // MLX buffers). They are released when narration has not needed them for
@@ -156,6 +165,10 @@ final class ModelManager {
     nonisolated private static let phonon40MultilingualDirectory = FileManager.default
         .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("NodusReader/Models/Phonon-40m-multilingual", isDirectory: true)
+
+    nonisolated private static let mingDirectory = FileManager.default
+        .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("NodusReader/Models/Ming-3.0-0.5B-8bit", isDirectory: true)
 
     nonisolated private static let modelsDirectory = FileManager.default
         .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -190,6 +203,7 @@ final class ModelManager {
             case phonon40MultilingualID: phonon40MultilingualDirectory
             default: phononDirectory
             }
+        case .ming: mingDirectory
         }
     }
 
@@ -265,7 +279,7 @@ final class ModelManager {
             phononLanguage: .spanish,
             installNote: String(localized: "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in below). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.")
         )
-    ]
+    ] + ModelManager.macOnlyModels
 
     init(voices: VoiceCatalog,
          audioCache: NarrationAudioCache = NarrationAudioCache(),
@@ -288,6 +302,8 @@ final class ModelManager {
         Self.excludeFromBackup(Self.phononDirectory)
         Self.excludeFromBackup(Self.phonon40SpanishDirectory)
         Self.excludeFromBackup(Self.phonon40MultilingualDirectory)
+        Self.excludeFromBackup(Self.mingDirectory)
+        mingClones = MingVoiceStore.voices()
         // Nothing is installing yet: any conversion folder was left by an
         // interrupted one.
         Self.removeInterruptedConversions(in: Self.modelsDirectory)
@@ -359,6 +375,16 @@ final class ModelManager {
             return model.id == "kokoro-82m" && Self.kokoroBundleIsComplete(at: Self.kokoroCacheDirectory)
         case .phonon:
             return PhononModels.isInstalled(at: directory(for: model))
+        case .ming:
+            return Self.mingCheckpointIsComplete(at: Self.mingDirectory)
+        }
+    }
+
+    /// Every pinned file is present at its size (each was hash-checked when
+    /// it was downloaded).
+    nonisolated private static func mingCheckpointIsComplete(at directory: URL) -> Bool {
+        mingFiles.allSatisfy { file in
+            FileStore.fileSize(at: directory.appendingPathComponent(file.path)) == file.bytes
         }
     }
 
@@ -406,10 +432,12 @@ final class ModelManager {
         let sizes = await Task.detached(priority: .utility) {
             (Self.directorySize(Self.kokoroCacheDirectory),
              Self.directorySize(Self.phononDirectory) + Self.directorySize(Self.phonon40SpanishDirectory)
-                + Self.directorySize(Self.phonon40MultilingualDirectory))
+                + Self.directorySize(Self.phonon40MultilingualDirectory),
+             Self.directorySize(Self.mingDirectory) + Self.directorySize(MingVoiceStore.directory))
         }.value
         summary.kokoroBytes = sizes.0
         summary.phononBytes = sizes.1
+        summary.mingBytes = sizes.2
         summary.narrationCacheBytes = await audioCache.totalBytes()
         storage = summary
     }
@@ -474,6 +502,13 @@ final class ModelManager {
             try? FileManager.default.removeItem(at: Self.kokoroCacheDirectory)
         case .phonon:
             if phononModelID == model.id { phonon = nil }
+            try? FileManager.default.removeItem(at: directory(for: model))
+        case .ming:
+            #if os(macOS)
+            ming = nil
+            #endif
+            // Cloned voices are the user's recordings: they stay for a
+            // reinstall, and are deleted one by one.
             try? FileManager.default.removeItem(at: directory(for: model))
         }
         states[model.id] = .notInstalled
@@ -544,6 +579,25 @@ final class ModelManager {
                 guard installTokens[model.id] == token else { return }
                 phonon = loaded
                 phononModelID = model.id
+            case .ming:
+                #if os(macOS)
+                let destination = directory(for: model)
+                try await Self.downloadMing(to: destination) { [weak self] fraction in
+                    Task { @MainActor [weak self] in
+                        guard let self, self.installTokens[model.id] == token else { return }
+                        self.states[model.id] = .downloading(fraction)
+                    }
+                }
+                try Task.checkCancellation()
+                guard installTokens[model.id] == token else { return }
+                Self.excludeFromBackup(destination)
+                states[model.id] = .loading
+                releaseEngines(keeping: .ming)
+                let loaded = try await MingSpeech.load(directory: destination)
+                try Task.checkCancellation()
+                guard installTokens[model.id] == token else { return }
+                ming = loaded
+                #endif
             case .phonon:
                 let directory = try await PhononModels.download(
                     from: Self.phononBundleBase,
@@ -618,6 +672,7 @@ final class ModelManager {
         case .phonon:
             modelID = detected.languages == ["es"] ? Self.phonon40SpanishID
                 : detected.languages.count > 1 ? Self.phonon40MultilingualID : "phonon-31m-en"
+        case .ming: return
         }
         guard let model = models.first(where: { $0.id == modelID }) else { return }
         guard model.isAvailable else {
@@ -631,6 +686,7 @@ final class ModelManager {
         switch engine {
         case .kokoro: kokoro = nil
         case .phonon: phonon = nil
+        case .ming: return
         }
         states[model.id] = .loading
         do {
@@ -652,6 +708,8 @@ final class ModelManager {
             case .phonon:
                 phonon = try await Phonon.load(models: destination, language: model.phononLanguage)
                 phononModelID = model.id
+            case .ming:
+                break
             }
             states[model.id] = .installed
             if selectedModelID.isEmpty {
@@ -708,7 +766,7 @@ final class ModelManager {
                 return model.engine == engine ? (model, name) : nil
             }
         guard let (model, name) = target, model.engine == engine, isInstalled(model) else {
-            throw NeuralNarrationError.engineNotLoaded(engine == .kokoro ? "Kokoro" : "Phonon")
+            throw NeuralNarrationError.engineNotLoaded(engine.label)
         }
         try await ensureLoaded(model)
         switch engine {
@@ -730,6 +788,29 @@ final class ModelManager {
                 NarrationPCM.append(chunk, to: &samples, sampleRate: Double(audio.sampleRate))
             }
             return (samples, 24_000)
+        case .ming:
+            #if os(macOS)
+            guard let ming else { throw NeuralNarrationError.engineNotLoaded("Ming") }
+            let reference: MingReference?
+            let language: String
+            if name.hasPrefix(Self.mingClonePrefix) {
+                let id = String(name.dropFirst(Self.mingClonePrefix.count))
+                reference = try await Task.detached(priority: .userInitiated) {
+                    try MingVoiceStore.reference(id: id)
+                }.value
+                language = mingClones.first { $0.id == id }?.language ?? "en-US"
+            } else {
+                reference = nil
+                language = model.voices.first { $0.name == name }?.language ?? "en-US"
+            }
+            var samples = try await ming.synthesize(text, voice: reference == nil ? name : nil, reference: reference,
+                                                    language: String(language.prefix(2)))
+            try Task.checkCancellation()
+            NarrationPCM.fadeEdges(&samples, sampleRate: MingSpeech.sampleRate)
+            return (samples, MingSpeech.sampleRate)
+            #else
+            throw NeuralNarrationError.engineNotLoaded("Ming")
+            #endif
         case .phonon:
             guard let phonon else { throw NeuralNarrationError.engineNotLoaded("Phonon") }
             // Voice names come from the bundle's file names, which the file system
@@ -786,6 +867,15 @@ final class ModelManager {
             let loaded = try await Phonon.load(models: directory(for: model), language: model.phononLanguage)
             phonon = loaded
             phononModelID = model.id
+        case .ming:
+            #if os(macOS)
+            guard ming == nil else { return }
+            if !narrationInUse { releaseEngines(keeping: .ming) }
+            loadingEngine = .ming
+            ming = try await MingSpeech.load(directory: directory(for: model))
+            #else
+            throw NeuralNarrationError.engineNotLoaded("Ming")
+            #endif
         }
     }
 
@@ -811,7 +901,11 @@ final class ModelManager {
 
     /// The engines whose models are in memory now.
     var loadedEngines: [Engine] {
-        [kokoro != nil ? Engine.kokoro : nil, phonon != nil ? Engine.phonon : nil].compactMap { $0 }
+        var engines = [kokoro != nil ? Engine.kokoro : nil, phonon != nil ? Engine.phonon : nil].compactMap { $0 }
+        #if os(macOS)
+        if ming != nil { engines.append(.ming) }
+        #endif
+        return engines
     }
 
     /// Narration (or a voice sample) is playing: keep the engine loaded so
@@ -862,6 +956,13 @@ final class ModelManager {
     /// finishes; the next one loads the engine again.
     private func releaseEngines(keeping engine: Engine?) {
         if engine != .phonon { phonon = nil }
+        #if os(macOS)
+        // Ming holds about 1.6 GB of weights on the GPU.
+        if engine != .ming, ming != nil {
+            ming = nil
+            MLX.Memory.clearCache()
+        }
+        #endif
         guard engine != .kokoro, kokoro != nil else { return }
         kokoro = nil
         // Only Kokoro's phonemizer uses MLX, so only releasing a loaded Kokoro
@@ -962,6 +1063,10 @@ final class ModelManager {
                     (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 )
             }
+        case .ming:
+            // Loaded on the first sentence: 1.6 GB is not worth holding for a
+            // library window that may never narrate.
+            break
         }
         validateSelection()
         publishVoices()
@@ -970,15 +1075,17 @@ final class ModelManager {
 
     func voices(for model: Model) -> [Voice] {
         guard isInstalled(model) else { return [] }
-        return model.voices
+        return model.engine == .ming ? model.voices + mingClones.map(Self.voice(fromClone:)) : model.voices
     }
 
     private func publishVoices() {
         let installedKokoro = Self.installedKokoroVoiceIDs()
         func catalogVoices(for model: Model) -> [VoiceCatalog.Voice] {
-            let available = model.engine == .kokoro
-                ? model.voices.filter { installedKokoro.contains(String($0.id.dropFirst("kokoro:".count))) }
-                : model.voices
+            let available = switch model.engine {
+            case .kokoro: model.voices.filter { installedKokoro.contains(String($0.id.dropFirst("kokoro:".count))) }
+            case .phonon: model.voices
+            case .ming: model.voices + mingClones.map(Self.voice(fromClone:))
+            }
             return available.map { voice in
                 VoiceCatalog.Voice(
                     id: voice.id,
@@ -1007,6 +1114,11 @@ final class ModelManager {
     func model(forVoiceID voiceID: String) -> (model: Model, name: String)? {
         if voiceID.hasPrefix("kokoro:"), let kokoro = models.first(where: { $0.engine == .kokoro }) {
             return (kokoro, String(voiceID.dropFirst("kokoro:".count)))
+        }
+        if let ming = models.first(where: { $0.engine == .ming }) {
+            // A cloned voice keeps its prefix as its name: synthesis reads its clip.
+            if voiceID.hasPrefix(MingVoiceStore.voiceIDPrefix) { return (ming, voiceID) }
+            if voiceID.hasPrefix("ming:") { return (ming, String(voiceID.dropFirst("ming:".count))) }
         }
         for model in models where model.engine == .phonon && model.id != "phonon-31m-en" {
             if voiceID.hasPrefix("\(model.id):") { return (model, String(voiceID.dropFirst(model.id.count + 1))) }
@@ -1210,6 +1322,132 @@ final class ModelManager {
         Voice(id: "phonon:Edwin", name: "Edwin", language: "en-US", engine: .phonon, gender: .male),
         Voice(id: "phonon:Hugh", name: "Hugh", language: "en-US", engine: .phonon, gender: .male)
     ]
+}
+
+// MARK: - Ming
+
+extension ModelManager {
+    static let mingID = "ming-3.0-0.5b-8bit"
+    static let mingClonePrefix = MingVoiceStore.voiceIDPrefix
+
+    /// Pinned revision of mlx-community/Ming-3.0-tts-0.5B-8bit, the checkpoint
+    /// Nodus uses on the Mac; sizes and SHA-256 come from its model card files.
+    static let mingRepository = "mlx-community/Ming-3.0-tts-0.5B-8bit"
+    static let mingRevision = "c807b99d2ea77d896fcffc917f0330d36470bb29"
+    static let mingFiles: [PhononOnDeviceConversion.RemoteFile] = [
+        .init(path: "LICENSE", bytes: 1_067, sha256: "2872f1918dfc04fdeb7f5d66d8d1b773594c9375e7c8f7bda39780bb97ad4fba"),
+        .init(path: "campplus.safetensors", bytes: 27_699_096,
+              sha256: "a479586bd8f8f96cdb414eaa2fa07c6cd54d6d1636562e2d75a0211cb3b0a6fd"),
+        .init(path: "config.json", bytes: 6_087, sha256: "8ea3e685a870fd1a535d3b4a4c975fc20c4fca56e67acdef06fe40004064c73b"),
+        .init(path: "model.safetensors", bytes: 1_573_366_591,
+              sha256: "e88a4b53cb5b705703e961389f3d7f0e8b72c240b4dad796bf9961cc018971fc"),
+        .init(path: "model.safetensors.index.json", bytes: 201_850,
+              sha256: "f59991abebed1a4f798a9488568af496d925e6eea507450aa8051a06f475a2ce"),
+        .init(path: "added_tokens.json", bytes: 1_785,
+              sha256: "34394b1e16d7da2db16618bd43a0f970902ade0075480bcd812fe62d559ec319"),
+        .init(path: "configuration.json", bytes: 51,
+              sha256: "6720b8448f6ad5b4631689a60857bdeb238053a37f6cc6a5936eb50c2a3b9296"),
+        .init(path: "merges.txt", bytes: 1_671_853,
+              sha256: "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"),
+        .init(path: "special_tokens_map.json", bytes: 2_726,
+              sha256: "2c2ec51b9da5db654ac20de8310350d0c9c1a65918ae0181b80dacd2919b4fc3"),
+        .init(path: "tokenizer.json", bytes: 11_431_389,
+              sha256: "87d54ca3b44ea2f822ba39a0a45cb1b61644bd6606d9d3536dea75367bffb06d"),
+        .init(path: "tokenizer_config.json", bytes: 16_260,
+              sha256: "12d6162c815edef24f8606e65b60d43fe0d92b0a4e150a0db8fa01c523aaf36a"),
+        .init(path: "vocab.json", bytes: 2_776_833,
+              sha256: "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"),
+    ]
+
+    /// Ming's built-in English voices (inclusionAI's catalogue). Its Chinese
+    /// voices and those that imitate film and series characters are left out.
+    static let mingBuiltinVoices: [Voice] = [
+        Voice(id: "ming:US_James", name: "US_James", language: "en-US", engine: .ming, gender: .male),
+        Voice(id: "ming:US_Stella", name: "US_Stella", language: "en-US", engine: .ming, gender: .female),
+        Voice(id: "ming:US_Emma", name: "US_Emma", language: "en-US", engine: .ming, gender: .female),
+        Voice(id: "ming:UK_George", name: "UK_George", language: "en-GB", engine: .ming, gender: .male),
+        Voice(id: "ming:UK_Charlotte", name: "UK_Charlotte", language: "en-GB", engine: .ming, gender: .female),
+    ]
+
+    /// Models only the Mac can run: Ming needs MLX on a Mac GPU.
+    static var macOnlyModels: [Model] {
+        #if os(macOS)
+        [Model(
+            id: mingID,
+            engine: .ming,
+            name: "Ming 3.0 0.5B",
+            detail: String(localized: "Natural narration in seven languages, with five built-in English voices and voices you clone from a short recording."),
+            language: String(localized: "Spanish, English, French, German, Chinese, Japanese, Korean"),
+            sizeText: String(localized: "About 1.6 GB download"),
+            license: "MIT",
+            source: URL(string: "https://huggingface.co/\(mingRepository)")!,
+            voices: mingBuiltinVoices,
+            availability: .available,
+            installNote: String(localized: "Mac only. It runs on this Mac's GPU and generates speech at about real time; voices you clone stay on this Mac.")
+        )]
+        #else
+        []
+        #endif
+    }
+
+    static func voice(fromClone clone: MingVoiceStore.ClonedVoice) -> Voice {
+        Voice(id: clone.voiceID, name: clone.name, language: clone.language, engine: .ming)
+    }
+
+    /// Downloads every pinned file into a work folder, verifying size and
+    /// SHA-256, then moves the folder into place.
+    nonisolated static func downloadMing(to destination: URL,
+                                         progress: @escaping @Sendable (Double) -> Void) async throws {
+        let fileManager = FileManager.default
+        let work = destination.deletingLastPathComponent()
+            .appendingPathComponent(".\(destination.lastPathComponent)-download", isDirectory: true)
+        try fileManager.createDirectory(at: work, withIntermediateDirectories: true)
+        let total = Double(mingFiles.reduce(0) { $0 + $1.bytes })
+        var done: Int64 = 0
+        for file in mingFiles {
+            try Task.checkCancellation()
+            let target = work.appendingPathComponent(file.path)
+            // Files from an interrupted download that already check out are kept.
+            if FileStore.fileSize(at: target) != file.bytes || (try? ContentHash.sha256(of: target)) != file.sha256 {
+                let url = URL(string: "https://huggingface.co/\(mingRepository)/resolve/\(mingRevision)/\(file.path)")!
+                let base = done
+                try await PhononOnDeviceConversion.download(URLRequest(url: url), to: target, expected: file) { fraction in
+                    progress((Double(base) + fraction * Double(file.bytes)) / total)
+                }
+            }
+            done += file.bytes
+            progress(Double(done) / total)
+        }
+        if fileManager.fileExists(atPath: destination.path) { try fileManager.removeItem(at: destination) }
+        try fileManager.moveItem(at: work, to: destination)
+    }
+
+    // MARK: Cloned voices
+
+    /// Saves a voice cloned from `clip` and lists it with Ming's voices.
+    @discardableResult
+    func addMingVoice(_ clip: MingVoiceStore.PreparedClip, name: String, language: String, transcript: String,
+                      origin: MingVoiceStore.ClonedVoice.Origin, consent: Bool) throws -> MingVoiceStore.ClonedVoice {
+        let voice = try MingVoiceStore.save(clip, name: name, language: language, transcript: transcript,
+                                            origin: origin, consent: consent)
+        reloadMingVoices()
+        return voice
+    }
+
+    func deleteMingVoice(_ voice: MingVoiceStore.ClonedVoice) {
+        guard !voice.isBundled else { return }
+        MingVoiceStore.delete(id: voice.id)
+        reloadMingVoices()
+        if voices.defaultVoiceID == voice.voiceID, let first = voices.neuralVoices.first {
+            voices.setDefault(first)
+        }
+    }
+
+    func reloadMingVoices() {
+        mingClones = MingVoiceStore.voices()
+        publishVoices()
+        Task { await refreshStorage() }
+    }
 }
 
 // MARK: - Hugging Face token

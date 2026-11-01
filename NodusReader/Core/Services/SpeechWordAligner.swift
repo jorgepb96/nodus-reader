@@ -187,6 +187,14 @@ enum SpeechWordAligner {
         }
     }
 
+    /// The words recognized in `samples`, joined: a cloned voice's suggested
+    /// transcript. Empty while the language's speech model is not installed.
+    @available(iOS 26.0, macOS 26.0, *)
+    static func recognizedText(samples: [Float], sampleRate: Double, language: String) async throws -> String {
+        try await recognize(samples: samples, sampleRate: sampleRate, language: language)
+            .map(\.text).joined(separator: " ")
+    }
+
     @available(iOS 26.0, macOS 26.0, *)
     private static func recognize(samples: [Float], sampleRate: Double,
                                   language: String) async throws -> [RecognizedWord] {

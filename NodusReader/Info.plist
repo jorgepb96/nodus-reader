@@ -103,6 +103,8 @@
 	<string>Copyright © 2026 Nodus Research. AGPL-3.0-only.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Nodus Reader records a short clip when you clone a voice for Ming narration on this Mac. The recording stays on this Mac.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

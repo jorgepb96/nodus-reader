@@ -2361,3 +2361,61 @@ func reflowKeepsFootnotesAndContentsApart() throws {
         == "Chapter 2. Sources · 41")
     #expect(PDFReflowExtractor.contentsEntry("It happened in 1936", onContentsPage: false) == nil)
 }
+
+@Test("A cloned Ming voice needs a clip of 3 to 30 seconds, its words and consent")
+@MainActor
+func mingVoiceStoreValidatesAndRoundTripsClips() throws {
+    // About three characters a second, never fewer than twelve.
+    #expect(MingVoiceStore.minimumTranscriptCharacters(forDuration: 2) == 12)
+    #expect(MingVoiceStore.minimumTranscriptCharacters(forDuration: 10) == 30)
+
+    // A 5 s tone at 22.05 kHz with half a second of silence on each side,
+    // written as a file, comes back mono at 44.1 kHz with the silence trimmed.
+    let rate = 22_050.0
+    let silence = [Float](repeating: 0, count: Int(rate * 0.5))
+    let tone = (0..<Int(rate * 5)).map { Float(sin(Double($0) * 2 * .pi * 220 / rate)) * 0.3 }
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent("ming-test-\(UUID().uuidString).wav")
+    defer { try? FileManager.default.removeItem(at: url) }
+    let format = try #require(AVAudioFormat(standardFormatWithSampleRate: rate, channels: 1))
+    let samples = silence + tone + silence
+    let buffer = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(samples.count)))
+    buffer.frameLength = AVAudioFrameCount(samples.count)
+    samples.withUnsafeBufferPointer { buffer.floatChannelData![0].update(from: $0.baseAddress!, count: samples.count) }
+    try AVAudioFile(forWriting: url, settings: format.settings).write(from: buffer)
+
+    let clip = try MingVoiceStore.prepare(url: url)
+    #expect(abs(clip.durationS - 5.3) < 0.1)
+    #expect(abs(clip.samples.map(abs).max()! - 0.89) < 0.01)
+
+    // Saving checks consent, then length, then the transcript.
+    #expect(throws: MingVoiceStore.StoreError.missingConsent) {
+        try MingVoiceStore.save(clip, name: "Test", language: "es-ES", transcript: String(repeating: "a", count: 40),
+                                origin: .imported, consent: false)
+    }
+    #expect(throws: MingVoiceStore.StoreError.tooShort) {
+        try MingVoiceStore.save(MingVoiceStore.PreparedClip(samples: Array(clip.samples.prefix(44_100))), name: "Test",
+                                language: "es-ES", transcript: String(repeating: "a", count: 40),
+                                origin: .imported, consent: true)
+    }
+    #expect(throws: MingVoiceStore.StoreError.transcriptTooShort(16)) {
+        try MingVoiceStore.save(clip, name: "Test", language: "es-ES", transcript: "test.wav",
+                                origin: .imported, consent: true)
+    }
+
+    let saved = try MingVoiceStore.save(clip, name: " Test voice ", language: "es-ES",
+                                        transcript: "Una frase leída despacio, palabra por palabra.",
+                                        origin: .recorded, consent: true)
+    defer { MingVoiceStore.delete(id: saved.id) }
+    #expect(saved.name == "Test voice")
+    #expect(saved.voiceID == "ming-clone:\(saved.id)")
+    #expect(MingVoiceStore.voices().contains { $0.id == saved.id && $0.origin == .recorded })
+    let reference = try MingVoiceStore.reference(id: saved.id)
+    #expect(reference.transcript == saved.transcript)
+    #expect(abs(Double(reference.samples.count) / 44_100 - clip.durationS) < 0.05)
+
+    MingVoiceStore.delete(id: saved.id)
+    #expect(!MingVoiceStore.voices().contains { $0.id == saved.id })
+    // The bundled CC0 voice cannot be deleted.
+    MingVoiceStore.delete(id: "es-dave")
+    #expect(MingVoiceStore.voices().contains { $0.id == "es-dave" && $0.isBundled })
+}

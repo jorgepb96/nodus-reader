@@ -245,7 +245,8 @@ enum PhononOnDeviceConversion {
         try fileManager.moveItem(at: bundle, to: destination)
     }
 
-    private static func download(_ request: URLRequest, to destination: URL, expected: RemoteFile,
+    /// Downloads one file and checks its size and SHA-256 (also used for Ming).
+    static func download(_ request: URLRequest, to destination: URL, expected: RemoteFile,
                                  progress: @escaping @Sendable (Double) -> Void) async throws {
         var request = request
         request.timeoutInterval = 60

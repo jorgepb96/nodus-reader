@@ -25,6 +25,10 @@ struct MacRootView: View {
     @State private var deleteTarget: LibraryCollection?
     @State private var showRename = false
     @State private var showDelete = false
+    #if DEBUG
+    /// `-NodusShowVoices YES`: Voices & Models in the window, for screen captures.
+    @State private var showsDebugVoices = false
+    #endif
 
     private var roots: [LibraryCollection] {
         collections
@@ -47,11 +51,23 @@ struct MacRootView: View {
         // The reader replaces the library in this window; closing it brings
         // back the library where it was (its selection lives in `navigation`).
         Group {
+            #if DEBUG
+            if showsDebugVoices, UserDefaults.standard.string(forKey: "NodusShowVoices") == "ming" {
+                ScrollView { MingVoicesSection().padding(24) }
+            } else if showsDebugVoices {
+                NavigationStack { VoicesView(initialMode: .models) }
+            } else if let bookID = navigation.macReaderBookID {
+                MacReaderHost(bookID: bookID) { navigation.macReaderBookID = nil }
+            } else {
+                libraryWindow
+            }
+            #else
             if let bookID = navigation.macReaderBookID {
                 MacReaderHost(bookID: bookID) { navigation.macReaderBookID = nil }
             } else {
                 libraryWindow
             }
+            #endif
         }
         // Switches, as on iPhone and iPad and in the design, not checkboxes.
         .toggleStyle(.switch)
@@ -60,8 +76,15 @@ struct MacRootView: View {
             if ProcessInfo.processInfo.arguments.contains("-NodusOpenSettings") {
                 openSettings()
             }
+            if UserDefaults.standard.string(forKey: "NodusShowVoices") != nil {
+                showsDebugVoices = true
+            }
             if ProcessInfo.processInfo.arguments.contains("-NodusStartSampleNarration"),
-               let book = books.first(where: { $0.title == "Moby-Dick" }) {
+               let book = books.first(where: { $0.title == UserDefaults.standard.string(forKey: "NodusSampleNarrationBook") ?? "Moby-Dick" }) {
+                // `-NodusSampleNarrationVoice <id>` reads it with that voice.
+                if let voiceID = UserDefaults.standard.string(forKey: "NodusSampleNarrationVoice") {
+                    library.setPreferredVoice(book, voiceID: voiceID)
+                }
                 await playback.start(book: book, mode: .listen)
             }
             if ProcessInfo.processInfo.arguments.contains("-NodusCaptureScreens") {
