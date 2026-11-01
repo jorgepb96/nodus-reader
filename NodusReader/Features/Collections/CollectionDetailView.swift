@@ -88,7 +88,7 @@ struct CollectionDetailView: View {
         .background(palette.background)
         .toolbar {
             if showsBrand {
-                ToolbarItem(placement: .principal) { BrandToolbar() }
+                ToolbarItem(placement: .principal) { BrandToolbar() }.nodusPlainBackground()
             }
             ToolbarItem(placement: .nodusTrailing) {
                 Menu {

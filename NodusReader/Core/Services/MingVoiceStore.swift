@@ -128,6 +128,20 @@ enum MingVoiceStore {
         return voice
     }
 
+    /// Renames one of the user's voices; the bundled voice keeps its name.
+    /// Returns the renamed voice, or nil when there is nothing to rename.
+    @discardableResult
+    static func rename(id: String, to name: String) throws -> ClonedVoice? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, isSafeID(id), !bundledVoices().contains(where: { $0.id == id }) else { return nil }
+        let file = directory.appendingPathComponent(id, isDirectory: true).appendingPathComponent("voice.json")
+        guard let data = try? Data(contentsOf: file),
+              var voice = try? JSONDecoder.mingVoices.decode(ClonedVoice.self, from: data) else { return nil }
+        voice.name = trimmed
+        try JSONEncoder.mingVoices.encode(voice).write(to: file, options: .atomic)
+        return voice
+    }
+
     static func delete(id: String) {
         guard !bundledVoices().contains(where: { $0.id == id }), isSafeID(id) else { return }
         try? FileManager.default.removeItem(at: directory.appendingPathComponent(id, isDirectory: true))

@@ -85,7 +85,7 @@ struct StoryCompanionSettingsView: View {
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)
         .toolbar {
-            ToolbarItem(placement: .principal) { BrandToolbar() }
+            ToolbarItem(placement: .principal) { BrandToolbar() }.nodusPlainBackground()
         }
         .task { await measure() }
         .confirmationDialog("Delete Saved Recaps?", isPresented: $confirmDelete, titleVisibility: .visible) {

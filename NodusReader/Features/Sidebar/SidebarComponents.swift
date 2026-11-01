@@ -56,6 +56,8 @@ struct SidebarFooter: View {
     @Environment(\.nodusPalette) private var palette
     @Environment(CloudSyncService.self) private var sync
     let bookCount: Int
+    /// Settings is the page shown beside the sidebar.
+    var settingsSelected = false
     var onSettings: (() -> Void)?
 
     /// iCloud sync state when it is on; otherwise the local library.
@@ -92,13 +94,17 @@ struct SidebarFooter: View {
             Spacer(minLength: 0)
             if let onSettings {
                 Button(action: onSettings) {
-                    Image(systemName: "gearshape")
+                    Image(systemName: settingsSelected ? "gearshape.fill" : "gearshape")
                         .font(.system(size: 14))
-                        .foregroundStyle(palette.muted)
+                        .foregroundStyle(settingsSelected ? palette.accent : palette.muted)
                         .frame(width: 30, height: 30)
+                        .background(settingsSelected ? palette.selection : .clear, in: Circle())
+                        .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .help("Settings (⌘,)")
                 .accessibilityLabel("Settings")
+                .accessibilityAddTraits(settingsSelected ? .isSelected : [])
             }
         }
         .padding(10)

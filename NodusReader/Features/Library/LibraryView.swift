@@ -79,7 +79,7 @@ struct LibraryView: View {
             }
             ToolbarItem(placement: .principal) {
                 BrandToolbar()
-            }
+            }.nodusPlainBackground()
             // One trailing item so the NODUS / READER wordmark fits on
             // iPhone; the grid/list switch sits next to Sort.
             ToolbarItem(placement: .nodusTrailing) {

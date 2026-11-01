@@ -6,7 +6,18 @@ import SwiftUI
 enum VoicesMode: String, CaseIterable, Identifiable {
     case models = "Models"
     case voices = "Voices"
+    /// Voices the user records or adds from audio files for Ming, which only
+    /// runs on the Mac.
+    case studio = "Studio"
     var id: String { rawValue }
+
+    static var available: [VoicesMode] {
+        #if os(macOS)
+        allCases
+        #else
+        [.models, .voices]
+        #endif
+    }
 }
 
 struct VoicesView: View {
@@ -16,7 +27,7 @@ struct VoicesView: View {
     @Environment(\.nodusPalette) private var palette
 
     @State private var mode: VoicesMode
-    var initialMode: VoicesMode = .voices
+    var initialMode: VoicesMode = .models
     @State private var searchText = ""
     @State private var languageFilter: String?
     @State private var qualityFilter: Int?
@@ -40,7 +51,7 @@ struct VoicesView: View {
     @State private var keepFiltersOnModelChange = false
     @AppStorage(SpeechWordAligner.enabledKey) private var preciseWordTiming = true
 
-    init(initialMode: VoicesMode = .voices) {
+    init(initialMode: VoicesMode = .models) {
         self.initialMode = initialMode
         _mode = State(initialValue: initialMode)
     }
@@ -81,7 +92,7 @@ struct VoicesView: View {
                 }
 
                 Picker("Voices and models", selection: $mode) {
-                    ForEach(VoicesMode.allCases) { mode in
+                    ForEach(VoicesMode.available) { mode in
                         Text(LocalizedStringKey(mode.rawValue)).tag(mode)
                     }
                 }
@@ -89,11 +100,18 @@ struct VoicesView: View {
                 .labelsHidden()
                 .accessibilityLabel("Voices and models")
 
-                if mode == .voices {
+                switch mode {
+                case .voices:
                     voiceSearchField
                     voicesContent
-                } else {
+                case .models:
                     modelsContent
+                case .studio:
+                    #if os(macOS)
+                    StudioSection(onShowModels: { mode = .models })
+                    #else
+                    EmptyView()
+                    #endif
                 }
             }
             .padding(.horizontal, 20)
@@ -102,7 +120,7 @@ struct VoicesView: View {
         }
         .background(palette.background)
         .toolbar {
-            ToolbarItem(placement: .principal) { BrandToolbar() }
+            ToolbarItem(placement: .principal) { BrandToolbar() }.nodusPlainBackground()
         }
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)
@@ -250,19 +268,7 @@ struct VoicesView: View {
 
     private func voiceRow(_ voice: VoiceCatalog.Voice) -> some View {
         HStack(spacing: 12) {
-            Button {
-                playback.playSample(voice: voice)
-            } label: {
-                Image(systemName: playback.isPlayingSample && playback.sampleVoiceID == voice.id
-                      ? "speaker.wave.2.fill" : "play.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(palette.text)
-                    .frame(width: 44, height: 44)
-                    .background(palette.panel, in: Circle())
-                    .overlay(Circle().stroke(palette.line, lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Play sample, \(voice.name)")
+            VoiceSampleButton(voice: voice, name: voice.name)
 
             Button {
                 // A voice from a model other than the selected one switches the
@@ -289,7 +295,7 @@ struct VoicesView: View {
                                 .background(palette.selection, in: RoundedRectangle(cornerRadius: 5))
                         }
                     }
-                    Text("\(voice.engineLabel) · \(VoiceCatalog.variantName(for: voice.language)) · \(voice.qualityLabel)")
+                    Text("\(voice.engineLabel) · \(VoiceCatalog.variantName(for: voice.language)) · \(voice.isStudio ? String(localized: "Studio") : voice.qualityLabel)")
                         .font(.caption)
                         .foregroundStyle(palette.muted)
                         .lineLimit(1)
@@ -353,12 +359,6 @@ struct VoicesView: View {
         ForEach(models.models) { model in
             modelCard(model)
         }
-
-        #if os(macOS)
-        if let ming = models.models.first(where: { $0.engine == .ming }), models.isInstalled(ming) {
-            MingVoicesSection()
-        }
-        #endif
 
         Button {
             showBundleImporter = true
@@ -1018,5 +1018,54 @@ struct VoiceFilterMenu<Content: View>: View {
         .menuIndicator(.hidden)
         .accessibilityLabel(Text("Filter by \(title)"))
         .accessibilityValue(value ?? String(localized: "All"))
+    }
+}
+
+/// Plays a voice's sample sentence. Synthesis can take seconds while a neural
+/// model loads, so the button spins until the audio starts instead of looking
+/// as if nothing happened; selecting it again stops the sample.
+struct VoiceSampleButton: View {
+    @Environment(PlaybackController.self) private var playback
+    @Environment(\.nodusPalette) private var palette
+
+    let voice: VoiceCatalog.Voice?
+    let name: String
+    var diameter: CGFloat = 44
+
+    private var isCurrent: Bool {
+        voice != nil && playback.isPlayingSample && playback.sampleVoiceID == voice?.id
+    }
+
+    private var isPreparing: Bool { isCurrent && playback.isPreparingSample }
+
+    var body: some View {
+        Button {
+            if isCurrent {
+                playback.stopSample()
+            } else if let voice {
+                playback.playSample(voice: voice)
+            }
+        } label: {
+            ZStack {
+                if isPreparing {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(palette.accent)
+                } else {
+                    Image(systemName: isCurrent ? "speaker.wave.2.fill" : "play.fill")
+                        .font(.system(size: diameter > 40 ? 14 : 13, weight: .semibold))
+                        .foregroundStyle(palette.text)
+                }
+            }
+            .frame(width: diameter, height: diameter)
+            .background(palette.panel, in: Circle())
+            .overlay(Circle().stroke(isPreparing ? palette.accent : palette.line, lineWidth: 1))
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(voice == nil)
+        .accessibilityLabel(isPreparing ? Text("Loading sample, \(name)")
+                                        : isCurrent ? Text("Stop sample, \(name)")
+                                                    : Text("Play sample, \(name)"))
     }
 }

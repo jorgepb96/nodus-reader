@@ -19,7 +19,7 @@ struct ReadingSettingsView: View {
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)
         .toolbar {
-            ToolbarItem(placement: .principal) { BrandToolbar() }
+            ToolbarItem(placement: .principal) { BrandToolbar() }.nodusPlainBackground()
         }
     }
 }

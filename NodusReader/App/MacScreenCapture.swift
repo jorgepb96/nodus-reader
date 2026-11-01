@@ -16,8 +16,7 @@ enum MacScreenCapture {
         FileManager.default.temporaryDirectory.appendingPathComponent("NodusCaptures", isDirectory: true)
     }
 
-    static func tour(navigation: NavigationModel, books: () -> [Book], collections: () -> [LibraryCollection],
-                     openSettings: OpenSettingsAction) async {
+    static func tour(navigation: NavigationModel, books: () -> [Book], collections: () -> [LibraryCollection]) async {
         try? FileManager.default.removeItem(at: directory)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         NSLog("NodusCaptures: %@", directory.path)
@@ -55,7 +54,7 @@ enum MacScreenCapture {
             opensPDFInIntelligentReading = false
             navigation.macReaderBookID = nil
         }
-        openSettings()
+        navigation.sidebarSelection = .settings
         await pause(3)
         capture("07-Settings")
         NSLog("NodusCaptures: done")

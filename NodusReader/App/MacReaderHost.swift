@@ -4,9 +4,10 @@ import DesignSystem
 import SwiftData
 import SwiftUI
 
-/// The macOS reader, shown in the library window in place of the library.
-/// It fills the window, takes the title bar strip beside the window buttons
-/// and can be taken full screen with the window.
+/// The macOS reader, shown in the detail column of the library window. With
+/// the library sidebar folded it fills the window and takes the title bar
+/// strip beside the window buttons; it can be taken full screen with the
+/// window.
 struct MacReaderHost: View {
     @Environment(ThemeManager.self) private var theme
     @Environment(\.colorScheme) private var colorScheme
@@ -41,7 +42,7 @@ struct MacReaderHost: View {
                 .preferredColorScheme(theme.appTheme.preferredColorScheme)
             }
         }
-        .frame(minWidth: 900, minHeight: 680)
+        .frame(minWidth: 760, minHeight: 680)
         .background(palette.background)
         .nodusPalette(palette)
         .tint(palette.accent)
