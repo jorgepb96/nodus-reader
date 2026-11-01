@@ -9,6 +9,7 @@ struct SettingsView: View {
     @Environment(VoiceCatalog.self) private var voices
     @Environment(ReaderPreferences.self) private var preferences
     @Environment(CloudSyncService.self) private var sync
+    @Environment(ImmersiveAudioController.self) private var immersive
     @Environment(\.nodusPalette) private var palette
 
     @State private var target: ThemeTarget = .reader
@@ -101,6 +102,13 @@ struct SettingsView: View {
                         divider
                     }
                     NavigationLink {
+                        ImmersiveAudioSettingsView()
+                    } label: {
+                        SettingsRow(title: "Immersive Audio", value: immersiveValue)
+                    }
+                    .accessibilityIdentifier("ImmersiveAudioSettingsRow")
+                    divider
+                    NavigationLink {
                         PrivacyView()
                     } label: {
                         SettingsRow(title: "Privacy", value: nil)
@@ -157,6 +165,10 @@ struct SettingsView: View {
     private var storyValue: String {
         guard storyAvailability == .available else { return String(localized: "Unavailable") }
         return preferences.storyCompanion ? String(localized: "On") : String(localized: "Off")
+    }
+
+    private var immersiveValue: String {
+        immersive.preferences.isEnabled ? immersive.preferences.mode.label : String(localized: "Off")
     }
 
     private var syncValue: String {

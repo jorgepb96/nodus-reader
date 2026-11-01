@@ -31,6 +31,8 @@ struct PlayerView: View {
                         .accessibilityIdentifier("PlayerLoadingText")
                 }
                 controlGrid
+                ImmersiveAudioCard()
+                    .padding(.top, 16)
                 audioCacheCard
                 footer
             }

@@ -134,12 +134,24 @@ attribution here.
 
 No font files are bundled. Display and reading text use the Apple system serif (New York) and SF Pro; the HTML design references Newsreader/Inter only as web stand-ins.
 
+## Immersive Audio sounds (downloaded on request, never bundled)
+
+The music and ambient recordings that Immersive Audio downloads are CC0-1.0 (public
+domain dedication) or CC-BY 3.0/4.0 (attribution: each author, source, licence and the
+changes made are credited in the app and in the provenance record). They come from OpenGameArt.org, Freesound.org and the
+Free Music Archive, selected for Nodus Reader one by one. The authors are credited in the app (Settings › Immersive Audio › Credits and licences)
+and in `docs/immersive-audio/PROVENANCE.md`, which records for every file its source page,
+licence evidence, original and processed SHA-256 and every transformation applied. Only
+the catalog manifest (`NodusReader/Resources/ImmersiveAudio/catalog.json`) ships in the app.
+
 ## Services the app can contact
 
 Only at the user's request: Hugging Face (model and voice downloads, optional sign-in
 through Hugging Face's own OAuth page), jsDelivr (serves this repository's OAuth client
 metadata, `oauth/huggingface-client.json`, which Hugging Face reads), Apple iCloud
-(optional sync) and the web pages a user shares to the app. See `PRIVACY.md`.
+(optional sync), the Immersive Audio catalog (Hugging Face dataset
+`jorgepb96/nodus-reader-immersive-audio`, mirrored as a GitHub Release of this
+repository) and the web pages a user shares to the app. See `PRIVACY.md`.
 
 ## Trademarks
 

@@ -61,6 +61,18 @@ limitations.
 - [x] Model manager with Hugging Face downloads, hash verification by the SDKs,
       pause/resume, deletion, storage accounting and optional Keychain token.
 
+### Immersive Audio (2026-11-01)
+
+- [x] Music and ambience under reading, narration and study: Automatic (on-device scene
+      analysis with Apple Foundation Models), Study, Manual and Off (default); profiles,
+      volumes, intensity, ducking, lock, per-book choices, credits. See `docs/IMMERSIVE_AUDIO.md`.
+- [x] AmbienceDirector with dwell, streaks, hysteresis, ambiguity, cooldown and natural
+      transition points; audited by simulated hour-long and random sessions.
+- [x] Separate audio engine with equal-power crossfades, gapless loops, narration-aware
+      limiter; narration route-change recovery and Ming 44.1 kHz conversion.
+- [x] Reproducible catalog pipeline and 95 verified files (83 instrumental pieces across 14 moods,
+      12 ambience beds; 66 CC0, 29 CC-BY with credits), 303 MB compressed from 3.0 GB of originals.
+
 ### Sync and sharing
 
 - [x] Share Extension with an App Group inbox; the extension only stages files and
@@ -109,6 +121,9 @@ limitations.
 - [x] TestFlight distribution for iOS/iPadOS and macOS (build 28 uploaded; iOS approved and in external testing, macOS waiting for Beta App Review).
 - [ ] App Store/Mac App Store release and notarised macOS distribution.
 - [ ] Final licence audit before distribution.
+- [ ] Immersive Audio: publish the sound packs (Hugging Face + GitHub Release, maintainer approval),
+      listen to every track with headphones, real-device route/interruption matrix, and
+      on-device classification checks with Apple Intelligence.
 
 ## Known deviations from the design
 

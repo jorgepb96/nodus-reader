@@ -16,6 +16,7 @@ struct ReaderView: View {
     @Environment(ReaderPreferences.self) private var preferences
     @Environment(ThemeManager.self) private var themeManager
     @Environment(PlaybackController.self) private var playback
+    @Environment(ImmersiveAudioController.self) private var immersive
     @Environment(CloudSyncService.self) private var sync
     @Environment(\.colorScheme) private var colorScheme
     #if os(macOS)
@@ -169,6 +170,7 @@ struct ReaderView: View {
             progressSaveTask?.cancel()
             saveProgress()
             story.stop()
+            immersive.readerClosed(book: book)
         }
         .onChange(of: preferences.storyCompanion) { _, isOn in
             if !isOn {
@@ -196,6 +198,7 @@ struct ReaderView: View {
                 }
             }
             updateStoryPosition()
+            updateImmersivePosition()
             scheduleProgressSave()
         }
         .onChange(of: hasTurnedPage) { _, turned in
@@ -205,6 +208,7 @@ struct ReaderView: View {
             // Pages restored while opening arrive before the page count.
             if pdfPageCount > 0, old != new { hasTurnedPage = true }
             updateStoryPosition()
+            updateImmersivePosition()
             scheduleProgressSave()
         }
         .sheet(isPresented: $showContents) {
@@ -417,6 +421,21 @@ struct ReaderView: View {
         guard !readerPages.isEmpty, readerPages.indices.contains(pageIndex) else { return }
         let last = readerPages[min(pageIndex + max(pageStep, 1) - 1, readerPages.count - 1)]
         story.updatePosition(chapter: last.chapterIndex, offset: last.chapterEndOffset)
+    }
+
+    /// The middle of the spread on screen, for Immersive Audio during silent
+    /// reading (narration, when playing, gives its own position).
+    private func updateImmersivePosition() {
+        if book.format == .pdf {
+            immersive.readerPosition(chapter: pdfPageIndex, offset: 0)
+            return
+        }
+        guard !readerPages.isEmpty, readerPages.indices.contains(pageIndex) else { return }
+        let first = readerPages[pageIndex]
+        let last = readerPages[min(pageIndex + max(pageStep, 1) - 1, readerPages.count - 1)]
+        let offset = first.chapterIndex == last.chapterIndex
+            ? (first.chapterStartOffset + last.chapterEndOffset) / 2 : first.chapterStartOffset
+        immersive.readerPosition(chapter: first.chapterIndex, offset: offset)
     }
 
     // MARK: Search
@@ -723,6 +742,8 @@ struct ReaderView: View {
                 pdfPageCount = pageCount
             }
             content = .pdf(localURL)
+            immersive.readerOpened(book: book, chapters: nil)
+            updateImmersivePosition()
             return
         }
 
@@ -735,6 +756,7 @@ struct ReaderView: View {
             library.refreshChapterTitlesIfNeeded(book, chapters: loaded)
             showPlaybackPosition()
             content = .chapters(loaded)
+            immersive.readerOpened(book: book, chapters: loaded)
             await prepareStory(chapters: loaded)
         } catch {
             content = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
@@ -1003,6 +1025,8 @@ struct ReaderView: View {
 
 struct ReaderNarrationCapsule: View {
     @Environment(PlaybackController.self) private var playback
+    @Environment(ImmersiveAudioController.self) private var immersive
+    @State private var showAtmosphere = false
 
     let book: Book
     let theme: ReaderTheme
@@ -1051,6 +1075,9 @@ struct ReaderNarrationCapsule: View {
                 .disabled(!hasNarration || isPreparing)
                 .accessibilityLabel("Return to narration")
                 .accessibilityIdentifier("ReturnToNarration")
+                if immersive.preferences.isEnabled {
+                    atmosphereButton
+                }
                 sleepTimer
             }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
@@ -1134,6 +1161,31 @@ struct ReaderNarrationCapsule: View {
         .buttonStyle(.plain)
         .disabled(isPreparing || (!isReady && !isActiveBook))
         .accessibilityLabel("Open player")
+    }
+
+    /// Immersive Audio's controls, only once the reader has turned it on.
+    private var atmosphereButton: some View {
+        Button {
+            showAtmosphere = true
+        } label: {
+            Image(systemName: "music.note")
+                .font(.system(size: 17))
+                .foregroundStyle(immersive.status == .playing ? theme.accent : theme.text)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Atmosphere")
+        .accessibilityValue(Text(immersive.status == .playing ? "Playing" : "Paused"))
+        .accessibilityIdentifier("ImmersiveAtmosphereButton")
+        .popover(isPresented: $showAtmosphere, arrowEdge: .bottom) {
+            ImmersiveQuickControls()
+                .padding(16)
+                .frame(minWidth: 300, idealWidth: 340, maxWidth: 380)
+                .readerPresentation(theme)
+                #if os(iOS)
+                .presentationCompactAdaptation(.popover)
+                #endif
+        }
     }
 
     private var sleepTimer: some View {

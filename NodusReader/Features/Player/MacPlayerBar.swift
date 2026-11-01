@@ -7,7 +7,9 @@ struct MacPlayerBar: View {
     @Environment(PlaybackController.self) private var playback
     @Environment(VoiceCatalog.self) private var voices
     @Environment(LibraryService.self) private var library
+    @Environment(ImmersiveAudioController.self) private var immersive
     @Environment(\.nodusPalette) private var palette
+    @State private var showAtmosphere = false
 
     var body: some View {
         HStack(spacing: 20) {
@@ -85,6 +87,22 @@ struct MacPlayerBar: View {
                     chip("\(playback.voiceLabel) · \(playback.engineLabel)")
                 }
                 .nodusMenuLabelStyle()
+
+                if immersive.preferences.isEnabled {
+                    Button {
+                        showAtmosphere = true
+                    } label: {
+                        chip(immersive.atmosphere?.music?.label ?? immersive.atmosphere?.base.label
+                             ?? String(localized: "Atmosphere"))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Atmosphere")
+                    .popover(isPresented: $showAtmosphere, arrowEdge: .top) {
+                        ImmersiveQuickControls()
+                            .padding(16)
+                            .frame(width: 340)
+                    }
+                }
 
                 HStack(spacing: 4) {
                     Text("Space")
