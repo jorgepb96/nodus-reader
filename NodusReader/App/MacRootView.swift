@@ -9,7 +9,6 @@ struct MacRootView: View {
     @Environment(LibraryService.self) private var library
     @Environment(PlaybackController.self) private var playback
     @Environment(\.nodusPalette) private var palette
-    @Environment(\.openSettings) private var openSettings
 
     @Query(sort: \Book.addedAt, order: .reverse) private var books: [Book]
     @Query(sort: \LibraryCollection.sortIndex) private var collections: [LibraryCollection]
@@ -25,6 +24,8 @@ struct MacRootView: View {
     @State private var deleteTarget: LibraryCollection?
     @State private var showRename = false
     @State private var showDelete = false
+    /// The sidebar as it was before a book opened, restored when it closes.
+    @State private var visibilityBeforeReader: NavigationSplitViewVisibility?
     #if DEBUG
     /// `-NodusShowVoices YES`: Voices & Models in the window, for screen captures.
     @State private var showsDebugVoices = false
@@ -43,30 +44,31 @@ struct MacRootView: View {
     private var selectionBinding: Binding<SidebarDestination?> {
         Binding(
             get: { navigation.sidebarSelection },
-            set: { if let newValue = $0 { navigation.sidebarSelection = newValue } }
+            set: {
+                if let newValue = $0 {
+                    navigation.sidebarSelection = newValue
+                    // A place chosen in the sidebar beside the reader closes it.
+                    navigation.macReaderBookID = nil
+                }
+            }
         )
     }
 
     var body: some View {
-        // The reader replaces the library in this window; closing it brings
-        // back the library where it was (its selection lives in `navigation`).
+        // The reader takes the detail column, beside the library sidebar,
+        // which folds away while reading; closing it brings back the library
+        // where it was (its selection lives in `navigation`).
         Group {
             #if DEBUG
             if showsDebugVoices, UserDefaults.standard.string(forKey: "NodusShowVoices") == "ming" {
-                ScrollView { MingVoicesSection().padding(24) }
+                ScrollView { StudioSection(onShowModels: {}).padding(24) }
             } else if showsDebugVoices {
                 NavigationStack { VoicesView(initialMode: .models) }
-            } else if let bookID = navigation.macReaderBookID {
-                MacReaderHost(bookID: bookID) { navigation.macReaderBookID = nil }
             } else {
                 libraryWindow
             }
             #else
-            if let bookID = navigation.macReaderBookID {
-                MacReaderHost(bookID: bookID) { navigation.macReaderBookID = nil }
-            } else {
-                libraryWindow
-            }
+            libraryWindow
             #endif
         }
         // Switches, as on iPhone and iPad and in the design, not checkboxes.
@@ -74,7 +76,7 @@ struct MacRootView: View {
         .task {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-NodusOpenSettings") {
-                openSettings()
+                navigation.sidebarSelection = .settings
             }
             if UserDefaults.standard.string(forKey: "NodusShowVoices") != nil {
                 showsDebugVoices = true
@@ -88,8 +90,7 @@ struct MacRootView: View {
                 await playback.start(book: book, mode: .listen)
             }
             if ProcessInfo.processInfo.arguments.contains("-NodusCaptureScreens") {
-                await MacScreenCapture.tour(navigation: navigation, books: { books }, collections: { collections },
-                                            openSettings: openSettings)
+                await MacScreenCapture.tour(navigation: navigation, books: { books }, collections: { collections })
             }
             if ProcessInfo.processInfo.arguments.contains("-NodusOpenSampleReader"),
                let book = books.first(where: { $0.title == "Moby-Dick" }) {
@@ -113,13 +114,35 @@ struct MacRootView: View {
         return NavigationSplitView(columnVisibility: $navigation.columnVisibility) {
             sidebar
                 .navigationSplitViewColumnWidth(min: 220, ideal: 244, max: 300)
+                // The reader bar has its own sidebar button where the
+                // toolbar's would cover it.
+                .toolbar(removing: navigation.macReaderBookID != nil ? .sidebarToggle : nil)
         } detail: {
-            NavigationStack(path: $detailPath) {
-                detailContent
-                    .searchable(text: $searchText, placement: .toolbar, prompt: "Search library")
+            if let bookID = navigation.macReaderBookID {
+                MacReaderHost(bookID: bookID) { navigation.macReaderBookID = nil }
+                    .environment(\.librarySidebarVisible, navigation.columnVisibility != .detailOnly)
+                    .environment(\.toggleLibrarySidebar) {
+                        withAnimation {
+                            navigation.columnVisibility = navigation.columnVisibility == .detailOnly ? .all : .detailOnly
+                        }
+                    }
+            } else {
+                NavigationStack(path: $detailPath) {
+                    detailContent
+                        .searchable(text: $searchText, placement: .toolbar, prompt: "Search library")
+                }
             }
         }
         .tint(palette.accent)
+        .onChange(of: navigation.macReaderBookID != nil, initial: true) { _, reading in
+            if reading {
+                visibilityBeforeReader = navigation.columnVisibility
+                navigation.columnVisibility = .detailOnly
+            } else if let visibilityBeforeReader {
+                navigation.columnVisibility = visibilityBeforeReader
+                self.visibilityBeforeReader = nil
+            }
+        }
         .onChange(of: navigation.sidebarSelection) { _, _ in
             detailPath = NavigationPath()
         }
@@ -199,9 +222,16 @@ struct MacRootView: View {
                 Button("Cancel", role: .cancel) { renameTarget = nil }
             }
 
-            SidebarFooter(bookCount: books.count, onSettings: { openSettings() })
+            SidebarFooter(bookCount: books.count,
+                          settingsSelected: navigation.sidebarSelection == .settings,
+                          onSettings: {
+                              navigation.sidebarSelection = .settings
+                              navigation.macReaderBookID = nil
+                          })
         }
-        .background(palette.sidebar)
+        // Up to the top of the window, behind the window buttons and the
+        // sidebar toggle, not only below the toolbar.
+        .background { palette.sidebar.ignoresSafeArea() }
         .alert("New Collection", isPresented: $showNewCollection) {
             TextField("Name", text: $newCollectionName)
             Button("Create") {
@@ -243,11 +273,15 @@ struct MacRootView: View {
                     HomeView(titleSize: 44, showsBrand: false)
                 case .collection(let id):
                     CollectionDetailView(collectionID: id, showsBrand: false)
+                case .settings:
+                    SettingsView(showsBrand: false)
                 default:
                     MacLibraryContentView(selection: navigation.sidebarSelection)
                 }
             }
         }
+        // One window colour under every page and its toolbar.
+        .background { palette.background.ignoresSafeArea() }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if playback.hasActiveBook {
                 MacPlayerBar()

@@ -90,7 +90,7 @@ struct CollectionsView: View {
         }
         .background(palette.background)
         .toolbar {
-            ToolbarItem(placement: .principal) { BrandToolbar() }
+            ToolbarItem(placement: .principal) { BrandToolbar() }.nodusPlainBackground()
             ToolbarItem(placement: .nodusTrailing) {
                 Button {
                     showNewCollection = true

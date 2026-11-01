@@ -18,6 +18,9 @@ public enum SidebarDestination: Hashable {
     case finished
     case inbox
     case collection(UUID)
+    /// Settings in the detail column of the iPad and Mac layouts, beside the
+    /// sidebar, instead of a sheet or a separate window.
+    case settings
 
     public var smartList: SmartList? {
         switch self {
@@ -27,13 +30,14 @@ public enum SidebarDestination: Hashable {
         case .toRead: .toRead
         case .finished: .finished
         case .inbox: .inbox
-        case .collection: nil
+        case .collection, .settings: nil
         }
     }
 
     public var title: String {
         switch self {
         case .collection: String(localized: "Collection")
+        case .settings: String(localized: "Settings")
         default: smartList?.title ?? String(localized: "Library")
         }
     }
@@ -62,12 +66,14 @@ public final class NavigationModel {
             switch phoneTab {
             case .home: sidebarSelection = .home
             case .library, .search: sidebarSelection = .allBooks
-            case .collections, .settings: break
+            case .settings: sidebarSelection = .settings
+            case .collections: break
             }
         } else {
             switch sidebarSelection {
             case .home: phoneTab = .home
             case .collection: phoneTab = .collections
+            case .settings: phoneTab = .settings
             default: phoneTab = .library
             }
         }

@@ -125,7 +125,7 @@ struct SettingsView: View {
         .background(palette.background)
         .toolbar {
             if showsBrand {
-                ToolbarItem(placement: .principal) { BrandToolbar() }
+                ToolbarItem(placement: .principal) { BrandToolbar() }.nodusPlainBackground()
             }
         }
         .inlineNavigationTitle()

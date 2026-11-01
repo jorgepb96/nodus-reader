@@ -17,7 +17,6 @@ struct PadRootView: View {
     @State private var searchText = ""
     @State private var detailPath = NavigationPath()
     @State private var showPlayer = false
-    @State private var showSettings = false
     @State private var showNewCollection = false
     @State private var newCollectionParent: UUID?
     @State private var newCollectionName = ""
@@ -60,18 +59,6 @@ struct PadRootView: View {
             .miniPlayer(showPlayer: $showPlayer)
         }
         .tint(palette.accent)
-        .sheet(isPresented: $showSettings) {
-            NavigationStack {
-                SettingsView()
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { showSettings = false }
-                        }
-                    }
-            }
-            .preferredColorScheme(themeScheme)
-            .presentationSizing(.page)
-        }
     }
 
     private var sidebar: some View {
@@ -171,9 +158,14 @@ struct PadRootView: View {
                 Button("Cancel", role: .cancel) { renameTarget = nil }
             }
 
-            SidebarFooter(bookCount: books.count, onSettings: { showSettings = true })
+            SidebarFooter(bookCount: books.count,
+                          settingsSelected: navigation.sidebarSelection == .settings,
+                          onSettings: {
+                              searchText = ""
+                              navigation.sidebarSelection = .settings
+                          })
         }
-        .background(palette.sidebar)
+        .background { palette.sidebar.ignoresSafeArea() }
         .alert("New Collection", isPresented: $showNewCollection) {
             TextField("Name", text: $newCollectionName)
             Button("Create") {
@@ -214,16 +206,11 @@ struct PadRootView: View {
                 HomeView(titleSize: 44, showsBrand: false)
             case .collection(let id):
                 CollectionDetailView(collectionID: id, showsBrand: false)
+            case .settings:
+                SettingsView(showsBrand: false)
             default:
                 PadLibraryContentView(selection: navigation.sidebarSelection)
             }
-        }
-    }
-
-    private var themeScheme: ColorScheme {
-        switch palette.isDark {
-        case true: .dark
-        case false: .light
         }
     }
 

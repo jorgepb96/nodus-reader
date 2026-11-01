@@ -1552,6 +1552,16 @@
         }
       }
     },
+    "Clone only your own voice or one you have permission to use. Recordings stay on this Mac and are never synced.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clona solo tu propia voz o una que tengas permiso para usar. Las grabaciones se quedan en este Mac y nunca se sincronizan."
+          }
+        }
+      }
+    },
     "Close": {
       "localizations": {
         "es": {
@@ -2108,6 +2118,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "¿Eliminar esta voz?"
+          }
+        }
+      }
+    },
+    "Delete…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar…"
           }
         }
       }
@@ -2718,6 +2738,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Título"
+          }
+        }
+      }
+    },
+    "Hide sidebar": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocultar barra lateral"
+          }
+        }
+      }
+    },
+    "Hide sidebar (⌃⌘S)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocultar barra lateral (⌃⌘S)"
           }
         }
       }
@@ -3362,6 +3402,16 @@
         }
       }
     },
+    "Loading sample, %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando muestra, %@"
+          }
+        }
+      }
+    },
     "Loading the voice model on this device…": {
       "localizations": {
         "es": {
@@ -3542,32 +3592,12 @@
         }
       }
     },
-    "Ming copies a voice from 6 to 15 seconds of clear speech and its exact words. Clone only your own voice or one you have permission to use. Recordings stay on this Mac and are never synced.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ming copia una voz a partir de 6 a 15 segundos de habla clara y sus palabras exactas. Clona solo tu propia voz o una que tengas permiso para usar. Las grabaciones se quedan en este Mac y nunca se sincronizan."
-          }
-        }
-      }
-    },
     "Ming reads the clip together with these words, so they must match what is said, including any slips. At least %lld characters for this clip.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Ming lee el clip junto con estas palabras, así que deben coincidir con lo que se dice, incluidos los tropiezos. Al menos %lld caracteres para este clip."
-          }
-        }
-      }
-    },
-    "Ming voices": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voces de Ming"
           }
         }
       }
@@ -3728,16 +3758,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Narración no disponible"
-          }
-        }
-      }
-    },
-    "Narration, OCR and document analysis run on this device. Generated audio stays on this device.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La narración, el OCR y el análisis de documentos se ejecutan en este dispositivo. El audio generado permanece en él."
           }
         }
       }
@@ -5432,6 +5452,16 @@
         }
       }
     },
+    "Record your voice reading a paragraph, or add a recording of 6 to 15 seconds (WAV, MP3, M4A, AIFF, FLAC or CAF) with its exact words. Ming 3.0 reads books with it, and it appears with Ming's voices as a Studio voice.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Graba tu voz leyendo un párrafo o añade una grabación de 6 a 15 segundos (WAV, MP3, M4A, AIFF, FLAC o CAF) con sus palabras exactas. Ming 3.0 lee los libros con ella y aparece entre las voces de Ming como voz de Studio."
+          }
+        }
+      }
+    },
     "Recorded": {
       "localizations": {
         "es": {
@@ -5532,12 +5562,42 @@
         }
       }
     },
+    "Rename": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renombrar"
+          }
+        }
+      }
+    },
+    "Rename %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renombrar %@"
+          }
+        }
+      }
+    },
     "Rename Collection": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Renombrar colección"
+          }
+        }
+      }
+    },
+    "Rename Voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renombrar voz"
           }
         }
       }
@@ -6012,6 +6072,26 @@
         }
       }
     },
+    "Settings (⌘,)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes (⌘,)"
+          }
+        }
+      }
+    },
+    "Settings…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes…"
+          }
+        }
+      }
+    },
     "Shared documents could not be imported": {
       "localizations": {
         "es": {
@@ -6028,6 +6108,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Documentos compartidos importados con errores"
+          }
+        }
+      }
+    },
+    "Show Models": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver modelos"
           }
         }
       }
@@ -6088,6 +6178,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mostrar u ocultar el inspector"
+          }
+        }
+      }
+    },
+    "Show sidebar": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar barra lateral"
+          }
+        }
+      }
+    },
+    "Show sidebar (⌃⌘S)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar barra lateral (⌃⌘S)"
           }
         }
       }
@@ -6442,6 +6552,16 @@
         }
       }
     },
+    "Stop sample, %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detener muestra, %@"
+          }
+        }
+      }
+    },
     "Storage": {
       "localizations": {
         "es": {
@@ -6458,6 +6578,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voz en inglés en tiempo real con nueve voces incluidas."
+          }
+        }
+      }
+    },
+    "Studio": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Studio"
+          }
+        }
+      }
+    },
+    "Studio needs Ming 3.0": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Studio necesita Ming 3.0"
+          }
+        }
+      }
+    },
+    "Studio voices": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voces de Studio"
+          }
+        }
+      }
+    },
+    "Studio voices are read by Ming 3.0 0.5B. Install it in Models to record or add a voice.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las voces de Studio las lee Ming 3.0 0.5B. Instálalo en Modelos para grabar o añadir una voz."
           }
         }
       }

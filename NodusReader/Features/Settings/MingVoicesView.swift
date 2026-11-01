@@ -5,50 +5,55 @@ import DesignSystem
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Ming's cloned voices in Voices & Models: the bundled one, the user's, and
-/// the two ways to add one (record a paragraph, or add an audio file).
-struct MingVoicesSection: View {
+/// Studio, in Voices & Models: voices the user records or adds from an audio
+/// file for Ming, plus the bundled one. They are listed with Ming's voices as
+/// Studio voices, can be renamed, and deleted after a confirmation.
+struct StudioSection: View {
+    /// Shows the Models tab, where Ming is installed.
+    var onShowModels: () -> Void
+
     @Environment(ModelManager.self) private var models
     @Environment(VoiceCatalog.self) private var voices
-    @Environment(PlaybackController.self) private var playback
     @Environment(\.nodusPalette) private var palette
 
     @State private var cloneMode: MingVoiceCloneSheet.Mode?
     @State private var pendingDelete: MingVoiceStore.ClonedVoice?
+    @State private var renameTarget: MingVoiceStore.ClonedVoice?
+    @State private var renameText = ""
+    @State private var errorMessage: String?
+
+    private var mingInstalled: Bool {
+        models.models.first { $0.engine == .ming }.map(models.isInstalled) ?? false
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Eyebrow("Ming voices")
-                .padding(.top, 8)
+            Text("Record your voice reading a paragraph, or add a recording of 6 to 15 seconds (WAV, MP3, M4A, AIFF, FLAC or CAF) with its exact words. Ming 3.0 reads books with it, and it appears with Ming's voices as a Studio voice.")
+                .font(.footnote)
+                .foregroundStyle(palette.muted)
+                .fixedSize(horizontal: false, vertical: true)
 
-            VStack(spacing: 0) {
-                ForEach(models.mingClones) { clone in
-                    row(clone)
-                    if clone.id != models.mingClones.last?.id {
-                        Divider().overlay(palette.line)
-                    }
+            if mingInstalled {
+                studioContent
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("Studio needs Ming 3.0", systemImage: "waveform.badge.mic")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(palette.text)
+                    Text("Studio voices are read by Ming 3.0 0.5B. Install it in Models to record or add a voice.")
+                        .font(.caption)
+                        .foregroundStyle(palette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("Show Models", action: onShowModels)
+                        .buttonStyle(.bordered)
+                        .tint(palette.accent)
                 }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .panelCard(radius: 18)
             }
-            .panelCard(radius: 18)
 
-            HStack(spacing: 10) {
-                Button {
-                    cloneMode = .record
-                } label: {
-                    Label("Record a voice…", systemImage: "mic")
-                        .frame(maxWidth: .infinity, minHeight: 36)
-                }
-                Button {
-                    cloneMode = .file
-                } label: {
-                    Label("Add audio file…", systemImage: "waveform.badge.plus")
-                        .frame(maxWidth: .infinity, minHeight: 36)
-                }
-            }
-            .buttonStyle(.bordered)
-            .tint(palette.accent)
-
-            Text("Ming copies a voice from 6 to 15 seconds of clear speech and its exact words. Clone only your own voice or one you have permission to use. Recordings stay on this Mac and are never synced.")
+            Text("Clone only your own voice or one you have permission to use. Recordings stay on this Mac and are never synced.")
                 .font(.caption)
                 .foregroundStyle(palette.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -73,25 +78,66 @@ struct MingVoicesSection: View {
         } message: { _ in
             Text("Its recording is deleted from this Mac. Books that use it read with their default voice.")
         }
+        .alert("Rename Voice", isPresented: Binding(
+            get: { renameTarget != nil }, set: { if !$0 { renameTarget = nil } }
+        ), presenting: renameTarget) { clone in
+            TextField("Name", text: $renameText)
+            Button("Save") {
+                do {
+                    try models.renameMingVoice(clone, to: renameText)
+                } catch {
+                    errorMessage = error.localizedDescription
+                }
+            }
+            .disabled(renameText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+
+    @ViewBuilder
+    private var studioContent: some View {
+        Eyebrow("Studio voices")
+            .padding(.top, 4)
+
+        VStack(spacing: 0) {
+            ForEach(models.mingClones) { clone in
+                row(clone)
+                if clone.id != models.mingClones.last?.id {
+                    Divider().overlay(palette.line)
+                }
+            }
+        }
+        .panelCard(radius: 18)
+
+        HStack(spacing: 10) {
+            Button {
+                cloneMode = .record
+            } label: {
+                Label("Record a voice…", systemImage: "mic")
+                    .frame(maxWidth: .infinity, minHeight: 36)
+            }
+            Button {
+                cloneMode = .file
+            } label: {
+                Label("Add audio file…", systemImage: "waveform.badge.plus")
+                    .frame(maxWidth: .infinity, minHeight: 36)
+            }
+        }
+        .buttonStyle(.bordered)
+        .tint(palette.accent)
+
+        if let errorMessage {
+            Text(errorMessage)
+                .font(.caption)
+                .foregroundStyle(palette.destructive)
+                .padding(.horizontal, 4)
+        }
     }
 
     private func row(_ clone: MingVoiceStore.ClonedVoice) -> some View {
         HStack(spacing: 12) {
             let voice = voices.allInstalledVoices.first { $0.id == clone.voiceID }
-            Button {
-                if let voice { playback.playSample(voice: voice) }
-            } label: {
-                Image(systemName: playback.isPlayingSample && playback.sampleVoiceID == clone.voiceID
-                      ? "speaker.wave.2.fill" : "play.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(palette.text)
-                    .frame(width: 36, height: 36)
-                    .background(palette.panel, in: Circle())
-                    .overlay(Circle().stroke(palette.line, lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-            .disabled(voice == nil)
-            .accessibilityLabel("Play sample, \(clone.name)")
+            VoiceSampleButton(voice: voice, name: clone.name, diameter: 36)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(clone.name)
@@ -103,19 +149,51 @@ struct MingVoicesSection: View {
             }
             Spacer()
             if !clone.isBundled {
+                Button {
+                    errorMessage = nil
+                    renameText = clone.name
+                    renameTarget = clone
+                } label: {
+                    Image(systemName: "pencil")
+                        .foregroundStyle(palette.muted)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("Rename")
+                .accessibilityLabel("Rename \(clone.name)")
+
                 Button(role: .destructive) {
                     pendingDelete = clone
                 } label: {
                     Image(systemName: "trash")
                         .foregroundStyle(palette.muted)
                         .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .help("Delete")
                 .accessibilityLabel("Delete \(clone.name)")
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
+        .contextMenu {
+            if !clone.isBundled {
+                Button {
+                    errorMessage = nil
+                    renameText = clone.name
+                    renameTarget = clone
+                } label: {
+                    Label("Rename…", systemImage: "pencil")
+                }
+                Button(role: .destructive) {
+                    pendingDelete = clone
+                } label: {
+                    Label("Delete…", systemImage: "trash")
+                }
+            }
+        }
     }
 
     private func originLabel(_ clone: MingVoiceStore.ClonedVoice) -> String {

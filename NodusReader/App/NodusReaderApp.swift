@@ -92,45 +92,10 @@ struct NodusReaderApp: App {
             NodusCommands(navigation: navigation, imports: imports, playback: playback)
         }
         #endif
-        #if os(macOS)
-        Settings {
-            MacSettingsRoot()
-            .defaultAppStorage(appDefaults)
-            .environment(theme)
-            .environment(preferences)
-            .environment(navigation)
-            .environment(voices)
-            .environment(library)
-            .environment(imports)
-            .environment(playback)
-            .environment(sync)
-            .environment(models)
-            .environment(janitor)
-            .modelContainer(container)
-            .frame(minWidth: 560, minHeight: 640)
-        }
-        #endif
     }
 }
 
 #if os(macOS)
-private struct MacSettingsRoot: View {
-    @Environment(ThemeManager.self) private var theme
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        let palette = theme.palette(colorScheme: colorScheme)
-        NavigationStack {
-            SettingsView(showsBrand: false)
-        }
-        .toggleStyle(.switch)
-        .nodusPalette(palette)
-        .tint(palette.accent)
-        .preferredColorScheme(theme.appTheme.preferredColorScheme)
-        .background(palette.background)
-    }
-}
-
 struct NodusCommands: Commands {
     let navigation: NavigationModel
     let imports: ImportCoordinator
@@ -140,6 +105,16 @@ struct NodusCommands: Commands {
 
     var body: some Commands {
         SidebarCommands()
+        // Settings is a page of the library window, beside the sidebar, not
+        // a separate window; ⌘, leaves the reader to show it.
+        CommandGroup(replacing: .appSettings) {
+            Button("Settings…") {
+                focusedNavigation?.macReaderBookID = nil
+                focusedNavigation?.sidebarSelection = .settings
+            }
+            .keyboardShortcut(",", modifiers: .command)
+            .disabled(focusedNavigation == nil)
+        }
         CommandGroup(after: .importExport) {
             Button("Import…") {
                 imports.beginImport()

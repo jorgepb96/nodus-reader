@@ -79,7 +79,7 @@ struct SearchView: View {
         .background(palette.background)
         .librarySearchable(text: $searchText, prompt: "Titles, authors, text and notes")
         .toolbar {
-            ToolbarItem(placement: .principal) { BrandToolbar() }
+            ToolbarItem(placement: .principal) { BrandToolbar() }.nodusPlainBackground()
         }
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)

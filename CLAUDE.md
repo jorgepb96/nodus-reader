@@ -83,7 +83,8 @@ Phonon Core ML; word-level alignment; and a partial audio cache with prefetch an
 deletion.
 
 The reader follows the app theme by default, hides the status bar on iOS and opens
-in place of the library in the main window on macOS (no second window). The iOS layout follows the window,
+in the detail column of the main window on macOS (no second window), with the library
+sidebar folded and a reader-bar button to show it. The iOS layout follows the window,
 not the idiom: an iPhone window at least 600 pt both ways (the opened iPhone Duo)
 uses the iPad layout, and the switch waits while a full-screen reader is open. The selected model supplies
 the global default; each book can retain a voice from any installed model through
@@ -97,7 +98,12 @@ On the Mac, Ming 3.0 0.5B (8-bit MLX, MIT) narrates in seven languages at about 
 time with 106 built-in voices (5 English, 101 Mandarin), the bundled CC0 `es-dave` clip and voices the
 user clones by recording a paragraph or adding an audio file: the transcript is
 suggested by on-device speech recognition, consent is required, and clips stay on the
-Mac (`MingVoiceStore`). Ming is not offered on iOS.
+Mac (`MingVoiceStore`). These Studio voices live in the Studio tab of Voices & Models
+(Mac only), where they can be renamed or deleted after a confirmation, and are listed
+with Ming's voices as Studio voices. Ming is not offered on iOS.
+
+On iPad and Mac, Settings is a sidebar destination (footer gear, ⌘, on the Mac) shown in
+the detail column, not a sheet or a separate window.
 
 On devices with Apple Intelligence (iOS/macOS 26+), the reader offers recaps and a
 character list (`StoryCompanion`, Settings › Recaps & Characters, on by default). Only

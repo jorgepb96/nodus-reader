@@ -244,7 +244,6 @@ final class NodusReaderUITests: XCTestCase {
         app.buttons["Settings"].tap()
         XCTAssertTrue(app.staticTexts["Settings"].firstMatch.waitForExistence(timeout: 10))
         snap("iPad-05-Settings")
-        app.buttons["Done"].tap()
     }
 
     /// App Store screenshots of the sample library in English or Spanish, on

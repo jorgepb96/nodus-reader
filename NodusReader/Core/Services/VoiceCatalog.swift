@@ -44,6 +44,9 @@ public final class VoiceCatalog {
 
         public var displayName: String { name }
 
+        /// A voice the user cloned (or the bundled clip) in Studio for Ming.
+        public var isStudio: Bool { id.contains(MingVoiceStore.voiceIDPrefix) }
+
         public var engineLabel: String {
             if let modelName { return modelName }
             switch engineRaw {

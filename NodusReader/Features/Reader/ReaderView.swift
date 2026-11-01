@@ -18,6 +18,10 @@ struct ReaderView: View {
     @Environment(PlaybackController.self) private var playback
     @Environment(CloudSyncService.self) private var sync
     @Environment(\.colorScheme) private var colorScheme
+    #if os(macOS)
+    @Environment(\.toggleLibrarySidebar) private var toggleLibrarySidebar
+    @Environment(\.librarySidebarVisible) private var librarySidebarVisible
+    #endif
 
     let book: Book
     private let onClose: () -> Void
@@ -463,6 +467,20 @@ struct ReaderView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Back to library")
 
+            #if os(macOS)
+            if let toggleLibrarySidebar {
+                Button(action: toggleLibrarySidebar) {
+                    Image(systemName: "sidebar.left")
+                        .font(.system(size: 16))
+                        .foregroundStyle(librarySidebarVisible ? theme.accent : theme.text)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .help(librarySidebarVisible ? "Hide sidebar (⌃⌘S)" : "Show sidebar (⌃⌘S)")
+                .accessibilityLabel(librarySidebarVisible ? "Hide sidebar" : "Show sidebar")
+            }
+            #endif
+
             Spacer(minLength: 2)
 
             VStack(spacing: 1) {
@@ -556,7 +574,8 @@ struct ReaderView: View {
         }
         .padding(.horizontal, 6)
         #if os(macOS)
-        .padding(.leading, Self.windowButtonsWidth)
+        // The window buttons sit over the library sidebar when it is shown.
+        .padding(.leading, librarySidebarVisible ? 0 : Self.windowButtonsWidth)
         #endif
         .frame(height: 44)
         .background(theme.background)
@@ -566,7 +585,7 @@ struct ReaderView: View {
     }
 
     #if os(macOS)
-    /// Room for the close, minimise and zoom buttons of the Reading window.
+    /// Room for the close, minimise and zoom buttons of the window.
     private static let windowButtonsWidth: CGFloat = 70
     #endif
 
@@ -1133,3 +1152,14 @@ struct ReaderNarrationCapsule: View {
         .accessibilityLabel("Sleep timer")
     }
 }
+
+#if os(macOS)
+extension EnvironmentValues {
+    /// Set by the Mac library window around its reader: shows or hides the
+    /// library sidebar from the reader bar.
+    @Entry var toggleLibrarySidebar: (() -> Void)? = nil
+    /// The library sidebar is beside the reader, so the window buttons sit
+    /// over it instead of over the reader bar.
+    @Entry var librarySidebarVisible: Bool = false
+}
+#endif

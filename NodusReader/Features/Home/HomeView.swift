@@ -62,12 +62,15 @@ struct HomeView: View {
             if showsBrand {
                 ToolbarItem(placement: .principal) {
                     BrandToolbar()
-                }
+                }.nodusPlainBackground()
             }
+            #if os(macOS)
             ToolbarItem(placement: .nodusTrailing) {
-                #if os(macOS)
                 MacImportToolbarButton()
-                #else
+            }
+            .nodusPlainBackground()
+            #else
+            ToolbarItem(placement: .nodusTrailing) {
                 Button {
                     imports.beginImport()
                 } label: {
@@ -77,8 +80,8 @@ struct HomeView: View {
                         .frame(minWidth: 44, minHeight: 44)
                 }
                 .accessibilityLabel("Import documents")
-                #endif
             }
+            #endif
         }
         .inlineNavigationTitle()
         .readerCover(item: $readingBook)

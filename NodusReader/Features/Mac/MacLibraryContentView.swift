@@ -76,6 +76,7 @@ struct MacLibraryContentView: View {
             ToolbarItem(placement: .primaryAction) {
                 MacImportToolbarButton()
             }
+            .nodusPlainBackground()
             ToolbarItem(placement: .primaryAction) {
                 Picker("View", selection: $viewMode) {
                     ForEach(LibraryViewMode.allCases) { mode in
@@ -241,6 +242,9 @@ struct MacLibraryContentView: View {
         } primaryAction: { ids in
             if let book = selected(from: ids) { open(book) }
         }
+        // The window's colour, not the grey of a system table.
+        .scrollContentBackground(.hidden)
+        .background(palette.background)
         .overlay {
             if shownBooks.isEmpty {
                 emptyState

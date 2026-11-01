@@ -1538,6 +1538,12 @@ extension ModelManager {
         return voice
     }
 
+    func renameMingVoice(_ voice: MingVoiceStore.ClonedVoice, to name: String) throws {
+        guard !voice.isBundled else { return }
+        try MingVoiceStore.rename(id: voice.id, to: name)
+        reloadMingVoices()
+    }
+
     func deleteMingVoice(_ voice: MingVoiceStore.ClonedVoice) {
         guard !voice.isBundled else { return }
         MingVoiceStore.delete(id: voice.id)

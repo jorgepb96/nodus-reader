@@ -147,6 +147,9 @@ public final class PlaybackController {
         models.setNarrationInUse(isPlaying || isPlayingSample)
     }
     public private(set) var sampleVoiceID: String?
+    /// The sample of `sampleVoiceID` is still being synthesised (a neural
+    /// model may first have to load): its play button shows progress.
+    public private(set) var isPreparingSample = false
     public private(set) var currentWordRange: NSRange?
     public private(set) var currentWord: String?
     public private(set) var audioCacheBytes: Int64 = 0
@@ -845,6 +848,7 @@ public final class PlaybackController {
             ? "Así suena esta voz al narrar tu biblioteca en Nodus Reader."
             : "This is how this voice sounds reading your library in Nodus Reader."
         isPlayingSample = true
+        isPreparingSample = true
         sampleVoiceID = voice.id
 
         sampleTask = Task { [weak self] in
@@ -856,6 +860,7 @@ public final class PlaybackController {
                 let audio = try await self.synthesize(text: sample, voice: voice)
                 guard !Task.isCancelled, token == self.sampleToken,
                       let buffer = self.makeBuffer(samples: audio.samples, sampleRate: audio.sampleRate) else {
+                    if token == self.sampleToken { self.isPreparingSample = false }
                     self.isPlayingSample = false
                     return
                 }
@@ -871,15 +876,24 @@ public final class PlaybackController {
                     return
                 }
                 self.samplePlayer = player
+                self.isPreparingSample = false
                 player.play()
                 while player.isPlaying {
                     try? await Task.sleep(for: .milliseconds(200))
                 }
                 if token == self.sampleToken { self.isPlayingSample = false }
             } catch {
-                if token == self.sampleToken { self.isPlayingSample = false }
+                if token == self.sampleToken {
+                    self.isPreparingSample = false
+                    self.isPlayingSample = false
+                }
             }
         }
+    }
+
+    /// Stops the sample being prepared or played.
+    public func stopSample() {
+        stopSamplePlayback()
     }
 
     private func stopSamplePlayback() {
@@ -889,6 +903,7 @@ public final class PlaybackController {
         samplePlayer?.stop()
         samplePlayer = nil
         isPlayingSample = false
+        isPreparingSample = false
         sampleVoiceID = nil
     }
 

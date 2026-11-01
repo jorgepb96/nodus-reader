@@ -174,7 +174,7 @@ struct StorageSettingsView: View {
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)
         .toolbar {
-            ToolbarItem(placement: .principal) { BrandToolbar() }
+            ToolbarItem(placement: .principal) { BrandToolbar() }.nodusPlainBackground()
         }
         .refreshable {
             await sync.refreshAvailability()
@@ -583,7 +583,7 @@ struct PrivacyView: View {
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)
         .toolbar {
-            ToolbarItem(placement: .principal) { BrandToolbar() }
+            ToolbarItem(placement: .principal) { BrandToolbar() }.nodusPlainBackground()
         }
     }
 
@@ -683,7 +683,7 @@ struct AboutView: View {
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)
         .toolbar {
-            ToolbarItem(placement: .principal) { BrandToolbar() }
+            ToolbarItem(placement: .principal) { BrandToolbar() }.nodusPlainBackground()
         }
     }
 

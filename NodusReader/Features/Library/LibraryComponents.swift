@@ -527,6 +527,20 @@ extension ToolbarItemPlacement {
     }
 }
 
+extension ToolbarContent {
+    /// Draws the item as it is, without the glass capsule iOS and macOS 26
+    /// put behind toolbar items: the wordmark and the accent Import capsule
+    /// would otherwise sit inside a second, grey one.
+    @ToolbarContentBuilder
+    func nodusPlainBackground() -> some ToolbarContent {
+        if #available(iOS 26, macOS 26, *) {
+            sharedBackgroundVisibility(.hidden)
+        } else {
+            self
+        }
+    }
+}
+
 extension View {
     @ViewBuilder
     func manualEditMode() -> some View {
