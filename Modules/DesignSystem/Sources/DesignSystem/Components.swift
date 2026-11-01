@@ -473,3 +473,57 @@ public struct LoadingRing: View {
         .accessibilityHidden(true)
     }
 }
+
+/// A native slider with its label and current value above it, for settings
+/// and compact panels. The value is read to VoiceOver as shown.
+public struct LabeledSlider: View {
+    @Environment(\.nodusPalette) private var palette
+
+    private let title: Text
+    private let accessibilityTitle: Text
+    @Binding private var value: Double
+    private let range: ClosedRange<Double>
+    private let step: Double?
+    private let display: String
+    private let systemImage: String?
+
+    public init(_ title: LocalizedStringKey, value: Binding<Double>, in range: ClosedRange<Double> = 0...1,
+                step: Double? = nil, display: String, systemImage: String? = nil) {
+        self.title = Text(title)
+        self.accessibilityTitle = Text(title)
+        self._value = value
+        self.range = range
+        self.step = step
+        self.display = display
+        self.systemImage = systemImage
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                if let systemImage {
+                    Image(systemName: systemImage)
+                        .foregroundStyle(palette.accent)
+                        .accessibilityHidden(true)
+                }
+                title
+                    .foregroundStyle(palette.text)
+                Spacer()
+                Text(display)
+                    .foregroundStyle(palette.muted)
+                    .monospacedDigit()
+            }
+            .font(.footnote)
+            Group {
+                if let step {
+                    Slider(value: $value, in: range, step: step)
+                } else {
+                    Slider(value: $value, in: range)
+                }
+            }
+            .tint(palette.accent)
+            .accessibilityLabel(accessibilityTitle)
+            .accessibilityValue(Text(display))
+        }
+    }
+}

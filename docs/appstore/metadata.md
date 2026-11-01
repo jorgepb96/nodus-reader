@@ -12,7 +12,7 @@ App Store Connect in step.
 | Name | Nodus Reader |
 | Primary category | Books |
 | Secondary category | Education |
-| Content rights | Does not contain, show or access third-party content (the user imports their own files; sample texts are public domain) |
+| Content rights | Yes: contains third-party content and has the necessary rights (the optional Immersive Audio packs contain CC0 and CC-BY recordings and music; see `docs/immersive-audio/PROVENANCE.md`). Changed in App Store Connect on 2 November 2026. |
 | Age rating | 4+ (every questionnaire answer "None" / "No") |
 | Support URL | https://github.com/jorgepb96/nodus-reader |
 | Marketing URL | https://nodusresearch.com/ |

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import Accelerate
 import AVFoundation
 import Foundation
 import KokoroTTS
@@ -137,6 +138,13 @@ public final class PlaybackController {
         }
     }
     public private(set) var isLoading = false
+    /// The loudest sample of the sentence playing (0…1). Immersive Audio keeps
+    /// its own mix below what is left, so narration plus music never clips.
+    public private(set) var narrationPeak: Float = 0
+    /// Narration was stopped by the system rebuilding the audio output (a
+    /// new route or device); it restarts the sentence on its own.
+    @ObservationIgnored private var stoppedByEngine = false
+    @ObservationIgnored private var engineConfigurationObserver: NSObjectProtocol?
     public private(set) var isPlayingSample = false {
         didSet { updateEngineUse() }
     }
@@ -228,6 +236,58 @@ public final class PlaybackController {
         #if os(iOS)
         observeAudioSession()
         #endif
+        observeEngineConfiguration()
+    }
+
+    /// The output changed under a running engine (headphones, AirPlay, a new
+    /// Mac output device): the system stops it. Restart the sentence where
+    /// it was instead of skipping or going silent.
+    private func observeEngineConfiguration() {
+        engineConfigurationObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: audioEngine,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.activeBook != nil else { return }
+                let wasPlaying = (self.isPlaying && !self.neuralPaused) || self.stoppedByEngine
+                self.stoppedByEngine = false
+                guard wasPlaying else { return }
+                if self.isPlaying { self.audioUnavailable() }
+                self.resume()
+            }
+        }
+    }
+
+    /// `buffer` in `format`, or the buffer itself when it already matches.
+    nonisolated static func converted(_ buffer: AVAudioPCMBuffer, to format: AVAudioFormat) -> AVAudioPCMBuffer? {
+        guard buffer.format.sampleRate != format.sampleRate
+                || buffer.format.channelCount != format.channelCount else { return buffer }
+        guard let converter = AVAudioConverter(from: buffer.format, to: format) else { return nil }
+        let ratio = format.sampleRate / buffer.format.sampleRate
+        let capacity = AVAudioFrameCount((Double(buffer.frameLength) * ratio).rounded(.up)) + 1_024
+        guard let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: capacity) else { return nil }
+        var supplied = false
+        var error: NSError?
+        let status = converter.convert(to: output, error: &error) { _, inputStatus in
+            if supplied {
+                inputStatus.pointee = .endOfStream
+                return nil
+            }
+            supplied = true
+            inputStatus.pointee = .haveData
+            return buffer
+        }
+        guard status != .error, error == nil, output.frameLength > 0 else { return nil }
+        return output
+    }
+
+    /// Largest absolute sample of a mono buffer.
+    nonisolated static func peak(of buffer: AVAudioPCMBuffer) -> Float {
+        guard let channel = buffer.floatChannelData?[0], buffer.frameLength > 0 else { return 0 }
+        var peak: Float = 0
+        vDSP_maxmgv(channel, 1, &peak, vDSP_Length(buffer.frameLength))
+        return min(peak, 1)
     }
 
     #if os(iOS)
@@ -243,7 +303,8 @@ public final class PlaybackController {
                 guard let self else { return }
                 switch type {
                 case .began:
-                    self.resumeAfterInterruption = self.isPlaying
+                    self.resumeAfterInterruption = self.isPlaying || self.stoppedByEngine
+                    self.stoppedByEngine = false
                     self.pause()
                 case .ended:
                     let optionsRaw = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
@@ -1138,13 +1199,18 @@ public final class PlaybackController {
         }
         neuralWords = cached.words
         neuralBufferDuration = cached.duration
+        narrationPeak = Self.peak(of: cached.buffer)
         let start = restoredTime.flatMap { time in
             time.isFinite && time >= 0 && time < cached.duration ? time : nil
         } ?? startTime(for: offset, in: cached)
         neuralStartTime = start
         neuralPositionTime = start
-        let buffer = slice(cached.buffer, from: start) ?? cached.buffer
-        neuralBufferDuration = Double(buffer.frameLength) / cached.buffer.format.sampleRate
+        let sliced = slice(cached.buffer, from: start) ?? cached.buffer
+        neuralBufferDuration = Double(sliced.frameLength) / cached.buffer.format.sampleRate
+        // The player is wired at 24 kHz and does not convert scheduled buffers
+        // (only files): Ming's 44.1 kHz speech is converted here, or it would
+        // play slow and low with a drifting word clock.
+        let buffer = neuralFormat.flatMap { Self.converted(sliced, to: $0) } ?? sliced
 
         configureAudioSession()
         guard startNeuralEngine() else {
@@ -1403,6 +1469,13 @@ public final class PlaybackController {
 
     private func neuralSentenceFinished(token: UUID) {
         guard token == neuralPlaybackToken, isPlaying, !neuralPaused else { return }
+        // A stopped engine (route or device change) completes its scheduled
+        // buffers at once: that is not the end of the sentence.
+        guard audioEngine.isRunning else {
+            stoppedByEngine = true
+            audioUnavailable()
+            return
+        }
         neuralProgressTask?.cancel()
         neuralProgressTask = nil
         guard currentIndex + 1 < sentences.count else {
@@ -1525,20 +1598,15 @@ public final class PlaybackController {
     // MARK: Audio session and remote controls
 
     private func configureAudioSession() {
-        #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .spokenAudio, options: [.allowBluetooth, .allowAirPlay])
-        try? session.setActive(true)
-        #endif
+        AudioSessionCoordinator.shared.claim(.narration)
     }
 
     /// Narration is over (book closed or finished): give the audio session
-    /// back so other apps resume and iOS stops showing Nodus as playing.
+    /// back so other apps resume and iOS stops showing Nodus as playing
+    /// (unless Immersive Audio is still playing under the reader).
     private func deactivateAudioSession() {
         if audioEngine.isRunning { audioEngine.stop() }
-        #if os(iOS)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        #endif
+        AudioSessionCoordinator.shared.release(.narration)
     }
 
     private func configureRemoteCommands() {

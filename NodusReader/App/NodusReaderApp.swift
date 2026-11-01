@@ -8,6 +8,10 @@ import AppKit
 
 @main
 struct NodusReaderApp: App {
+    #if os(iOS)
+    /// Wakes the app for sound packs that finish downloading in the background.
+    @UIApplicationDelegateAdaptor(NodusAppDelegate.self) private var appDelegate
+    #endif
     private let container: ModelContainer
     private let appDefaults: UserDefaults
     @State private var theme: ThemeManager
@@ -17,6 +21,7 @@ struct NodusReaderApp: App {
     @State private var library: LibraryService
     @State private var imports: ImportCoordinator
     @State private var playback: PlaybackController
+    @State private var immersive: ImmersiveAudioController
     @State private var sync: CloudSyncService
     @State private var models: ModelManager
     @State private var janitor: StorageJanitor
@@ -47,8 +52,21 @@ struct NodusReaderApp: App {
         _library = State(initialValue: library)
         _voices = State(initialValue: voices)
         _imports = State(initialValue: ImportCoordinator(library: library))
-        _playback = State(initialValue: PlaybackController(library: library, voices: voices,
-                                                           models: models, defaults: defaults))
+        let playback = PlaybackController(library: library, voices: voices, models: models, defaults: defaults)
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-NodusResetImmersive") {
+            // UI tests start with Immersive Audio off and no per-book choices.
+            for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("nodus.immersive.") {
+                defaults.removeObject(forKey: key)
+            }
+            try? FileManager.default.removeItem(at: SceneMapStore(fileStore: library.fileStore).root)
+        }
+        #endif
+        _playback = State(initialValue: playback)
+        _immersive = State(initialValue: ImmersiveAudioController(
+            preferences: ImmersiveAudioPreferences(defaults: defaults),
+            library: ImmersiveAudioLibrary(fileStore: library.fileStore),
+            playback: playback, models: models, store: SceneMapStore(fileStore: library.fileStore)))
         _models = State(initialValue: models)
         _janitor = State(initialValue: StorageJanitor(library: library, cache: models.narrationCache, defaults: defaults))
         let sync = CloudSyncService(context: container.mainContext, library: library, journal: journal, defaults: defaults)
@@ -80,6 +98,7 @@ struct NodusReaderApp: App {
                 .environment(library)
                 .environment(imports)
                 .environment(playback)
+                .environment(immersive)
                 .environment(sync)
                 .environment(models)
                 .environment(janitor)

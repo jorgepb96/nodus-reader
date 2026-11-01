@@ -52,7 +52,11 @@ The following will never be uploaded: neural model weights, voice embeddings, do
 
 ## Network access
 
-The app accesses the network only for explicit model downloads from pinned Hugging Face revisions, for the one-time download of Apple's speech recognition model for a language when precise word timing needs it (performed by the operating system, not by Nodus Research), for an optional Hugging Face sign-in or token verification you request (sign-in opens Hugging Face's own page in the system sign-in sheet; Nodus Reader never sees your password and receives only an access token limited to your public profile and the gated models you accepted), when you share a web link to Nodus Reader (the Share Extension downloads that page or file from its own site so it can be imported), and, when sync is enabled, Apple's CloudKit/iCloud services. The About/Privacy links open GitHub in the system browser.
+The app accesses the network only for explicit model downloads from pinned Hugging Face revisions, for the one-time download of Apple's speech recognition model for a language when precise word timing needs it (performed by the operating system, not by Nodus Research), for an optional Hugging Face sign-in or token verification you request (sign-in opens Hugging Face's own page in the system sign-in sheet; Nodus Reader never sees your password and receives only an access token limited to your public profile and the gated models you accepted), when you share a web link to Nodus Reader (the Share Extension downloads that page or file from its own site so it can be imported), when you download an Immersive Audio sound pack (the files of Nodus Reader's own published catalog, from a pinned Hugging Face dataset or, if that fails, the project's GitHub Release; each file is checked against the SHA-256 shipped in the app), and, when sync is enabled, Apple's CloudKit/iCloud services. The About/Privacy links open GitHub in the system browser.
+
+## Immersive Audio
+
+Music and ambient sound are optional and off until you turn them on. The sound packs are downloaded once and played offline; they are excluded from backups and never synced. In Automatic mode, Apple Intelligence's on-device model reads the passages around your position to choose the atmosphere; the private cloud model is never used, and no text, position or audio leaves the device. The resulting scene analysis is stored on the device only and can be deleted in Settings › Immersive Audio.
 
 ## Children and sensitive data
 
