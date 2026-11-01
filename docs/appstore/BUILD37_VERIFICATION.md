@@ -33,3 +33,12 @@ Not verified by hand: clicking through the Mac menus and filters (screen control
 ## Distribution
 
 Version 0.1.0 (37). What to Test: iOS [English](TestFlight-37-ios-en.txt) / [Spanish](TestFlight-37-ios-es.txt); macOS [English](TestFlight-37-macos-en.txt) / [Spanish](TestFlight-37-macos-es.txt).
+
+Archived from merge commit `0083c2d` ([PR #45](https://github.com/jorgepb96/nodus-reader/pull/45)). Both archives sign automatically with team `6RPLS9EA4X` and pass `codesign --verify --deep --strict`; the Mac app is arm64 only and its binary contains none of the capture-tour or debug-hook strings. The iOS archive needed a fresh DerivedData in `/tmp` after a `build.db` disk I/O error.
+
+Both uploads succeeded through Xcode's account into App Store Connect:
+
+- macOS 0.1.0 (37): `Nodus Reader.pkg` uploaded at 02:08 (Europe/Madrid) on 1 November 2026.
+- iOS 0.1.0 (37): `Nodus Reader.ipa` uploaded at 02:10 (Europe/Madrid) on 1 November 2026.
+
+Both go to the Internal group only (private beta). The What to Test notes are entered by hand in App Store Connect.
