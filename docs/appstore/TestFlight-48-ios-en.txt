@@ -1,0 +1,10 @@
+Nodus Reader 0.1.0 (48)
+
+- Check automatic Read & Listen scrolling in PDF Intelligent Reading: the text should follow the spoken line without jumping up and down.
+- When narration finishes, tap the circular replay arrow to listen again from the beginning of the document. Pausing should still resume where you stopped.
+- Home now groups documents into EPUB, Texts, PDF and other formats. Empty formats are hidden and appear when documents are added. See all opens the chosen format.
+- Pasted and imported TXT documents share the Texts shelf, including finished documents.
+- Settings opens on the App theme instead of the Reader theme, including when you return to Settings.
+- Open an iCloud-only document and check that the download completes before reading starts.
+
+Voice models and generated audio remain on your device. iCloud sync is optional.

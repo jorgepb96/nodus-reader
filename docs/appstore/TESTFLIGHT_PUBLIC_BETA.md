@@ -1,6 +1,22 @@
 # Public TestFlight beta
 
-## Current release — 30 October 2026
+## Current release — 2 November 2026
+
+Build **0.1.0 (48)** is processed as **VALID** on iOS/iPadOS and native macOS.
+
+- iOS/iPadOS: available to **Internal** and **Nodus Reader — Public Beta**;
+  Beta App Review **APPROVED**, external state **IN_BETA_TESTING**.
+- macOS: **Internal only**, internally **IN_BETA_TESTING**, with no public-group
+  assignment or beta review submission for build 48. Keep future Mac uploads
+  private unless the maintainer explicitly requests external distribution.
+- The [public iOS link](https://testflight.apple.com/join/SjCk8AZ1) remains enabled.
+  iOS builds on Apple silicon Macs remain disabled for both groups.
+- What to Test is entered in English (U.S.) and Spanish (Spain) on both builds.
+- No App Store production version was submitted.
+
+See [build 48 verification and delivery](BUILD48_VERIFICATION.md).
+
+## Previous release — 30 October 2026
 
 Build **0.1.0 (29)** has been uploaded and processed as VALID for iOS/iPadOS and native macOS. Both platforms are assigned to **Internal** (automatic access) and **Nodus Reader — Public Beta**.
 
