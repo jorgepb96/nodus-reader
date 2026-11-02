@@ -8,6 +8,8 @@ struct ImmersivePacksView: View {
     @Environment(\.nodusPalette) private var palette
     @State private var pendingDelete: ImmersiveCatalog.Pack?
     @State private var confirmDeleteAll = false
+    /// The result of the last check the reader asked for, shown under the button.
+    @State private var checkResult: String?
 
     private var library: ImmersiveAudioLibrary { immersive.library }
 
@@ -27,6 +29,9 @@ struct ImmersivePacksView: View {
                 }
                 ForEach(library.packs) { pack in
                     packCard(pack)
+                }
+                if !library.packs.isEmpty, !library.isDevelopmentPack {
+                    newSoundsCheck
                 }
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
@@ -64,6 +69,7 @@ struct ImmersivePacksView: View {
             ToolbarItem(placement: .principal) { BrandToolbar() }.nodusPlainBackground()
         }
         .onAppear { library.refresh() }
+        .task { await library.checkForNewSounds() }
         .confirmationDialog("Delete Sound Pack?", isPresented: Binding(
             get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }), titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
@@ -137,6 +143,17 @@ struct ImmersivePacksView: View {
                     OutlinePillButton("Delete partial download", systemImage: "trash") { pendingDelete = pack }
                 }
             }
+        case .updateAvailable(let count, let bytes):
+            VStack(alignment: .leading, spacing: 6) {
+                Label(String(localized: "\(count) new sounds · \(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))"),
+                      systemImage: "sparkles")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(palette.accent)
+                HStack {
+                    PrimaryPillButton("Download new sounds", systemImage: "arrow.down.circle") { library.install(pack) }
+                    OutlinePillButton("Delete", systemImage: "trash") { pendingDelete = pack }
+                }
+            }
         case .installed:
             HStack {
                 Label("Downloaded", systemImage: "checkmark.circle.fill")
@@ -163,6 +180,41 @@ struct ImmersivePacksView: View {
         }
     }
 
+    /// Asks for the published catalog now, whatever the daily limit.
+    private var newSoundsCheck: some View {
+        HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("New sounds")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(palette.text)
+                Text(checkResult ?? String(localized: "Checked automatically once a day while Immersive Audio is used. Only the list of sounds is read."))
+                    .font(.footnote)
+                    .foregroundStyle(palette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            if library.isCheckingCatalog {
+                ProgressView()
+                    .accessibilityLabel(Text("Checking for new sounds"))
+            } else {
+                Button("Check now") {
+                    Task {
+                        let found = await library.checkForNewSounds(force: true)
+                        checkResult = found
+                            ? String(localized: "New sounds are available in the packs above.")
+                            : String(localized: "No new sounds right now.")
+                    }
+                }
+                .font(.subheadline.weight(.medium))
+                .nodusTextButtonStyle()
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(minHeight: 56)
+        .panelCard(radius: 16)
+    }
+
     private func title(_ pack: ImmersiveCatalog.Pack) -> String {
         switch pack.id {
         case "essentials": String(localized: "Essentials")
@@ -175,7 +227,7 @@ struct ImmersivePacksView: View {
     private func detail(_ pack: ImmersiveCatalog.Pack) -> String {
         switch pack.id {
         case "essentials": String(localized: "Calm, contemplative, mysterious and focus music with rain, forest, fireplace and library beds. Enough for every mode.")
-        case "narrative": String(localized: "More moods for stories: melancholy, romance, adventure, tension, epic and solemn moments.")
+        case "narrative": String(localized: "More moods for stories: melancholy, romance, comedy, adventure, fantasy, tension, horror, epic and solemn moments.")
         case "ambience": String(localized: "More places: sea, stream, wind, storm, tavern, city, cave and forest at night.")
         default: ""
         }

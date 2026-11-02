@@ -306,6 +306,10 @@ struct MacLibraryContentView: View {
                 imports.beginImport()
             }
             .frame(maxWidth: 260)
+            OutlinePillButton("Paste text", systemImage: "doc.on.clipboard") {
+                imports.beginPasteText()
+            }
+            .frame(maxWidth: 260)
         }
         .frame(maxWidth: .infinity)
         .padding(40)
@@ -609,13 +613,10 @@ struct BookInspector: View {
 /// The library's Import action as a toolbar capsule, the same in every Mac
 /// library view (the iOS "+" is sized for touch, not for a Mac toolbar).
 struct MacImportToolbarButton: View {
-    @Environment(ImportCoordinator.self) private var imports
     @Environment(\.nodusPalette) private var palette
 
     var body: some View {
-        Button {
-            imports.beginImport()
-        } label: {
+        ImportMenu {
             HStack(spacing: 5) {
                 Image(systemName: "plus")
                     .font(.system(size: 12, weight: .semibold))
@@ -629,7 +630,7 @@ struct MacImportToolbarButton: View {
             .fixedSize()
         }
         .buttonStyle(.plain)
-        .help("Import documents (⇧⌘I)")
+        .help("Import documents (⇧⌘I) or paste text")
         .accessibilityLabel("Import documents")
     }
 }

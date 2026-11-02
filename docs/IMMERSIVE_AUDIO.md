@@ -148,6 +148,13 @@ Nothing is added to CloudKit. `StorageJanitor` removes scene maps and choices of
 
 The catalog manifest is bundled (`Resources/ImmersiveAudio/catalog.json`). Each file is downloaded from Hugging Face (pinned commit), or from the GitHub Release mirror if that fails, and kept only if its size and SHA-256 match. No text or audio leaves the device.
 
+**New sounds without an app update.** The same manifest is published as `catalog.json` in the `immersive-audio-v1` GitHub Release.
+- When it is read: while Immersive Audio is in use (a book opens with the feature on and sounds installed), at most once a day, or when the reader taps Check now in Sound packs.
+- When it is adopted: only if its version (a date) is newer and it is safe. Safe means the project's hosts only, files inside the sound folder, unique tracks and well-formed sizes and SHA-256s.
+- Where it is kept: outside the sound folder, so "Delete all sounds" keeps it. An app update whose bundled catalog is newer wins over it.
+- What the reader sees: every track records the catalog version that added it (`addedIn`). A downloaded pack that misses only such tracks shows "N new sounds · Download new sounds" instead of a paused download, and the Sound packs row shows the count. No audio is downloaded until the reader asks.
+- When publishing: upload the new `.m4a` files and the new `catalog.json` to the release (`gh release upload immersive-audio-v1 … build/immersive-audio/catalog.json --clobber`).
+
 ## Catalog
 
 **Tooling.** The catalog is built by `tools/immersive-audio/` (see its README):

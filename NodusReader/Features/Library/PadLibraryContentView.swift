@@ -139,9 +139,7 @@ struct PadLibraryContentView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("List view")
 
-                    Button {
-                        imports.beginImport()
-                    } label: {
+                    ImportMenu {
                         Label("Import", systemImage: "plus")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(palette.onAccent)
@@ -172,6 +170,10 @@ struct PadLibraryContentView: View {
             )
             PrimaryPillButton("Import documents", systemImage: "plus") {
                 imports.beginImport()
+            }
+            .frame(maxWidth: 260)
+            OutlinePillButton("Paste text", systemImage: "doc.on.clipboard") {
+                imports.beginPasteText()
             }
             .frame(maxWidth: 260)
         }

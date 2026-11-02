@@ -593,6 +593,9 @@ def cmd_manifest():
             "audio": {"integratedLUFS": out["loudness"]["I"], "truePeakDBTP": out["loudness"]["TP"],
                       "lra": out["loudness"]["LRA"], "isLoop": candidate["layer"] == "ambience", "tailStartSeconds": tail},
             "semantics": semantics,
+            # The catalog version that first listed the track; the app offers
+            # tracks added after a pack was downloaded as new sounds.
+            **({"addedIn": candidate["addedIn"]} if candidate.get("addedIn") else {}),
         })
     packs = []
     for pack in ("essentials", "narrative", "ambience"):

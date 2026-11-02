@@ -362,6 +362,26 @@
         }
       }
     },
+    "%lld new sounds": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld sonidos nuevos"
+          }
+        }
+      }
+    },
+    "%lld new sounds · %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld sonidos nuevos · %@"
+          }
+        }
+      }
+    },
     "%lld of %lld": {
       "localizations": {
         "es": {
@@ -478,6 +498,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$lld voces · %2$@"
+          }
+        }
+      }
+    },
+    "%lld words · Stays on this device, like any imported document.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld palabras · Se queda en este dispositivo, como cualquier documento importado."
           }
         }
       }
@@ -1722,6 +1752,36 @@
         }
       }
     },
+    "Check now": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobar ahora"
+          }
+        }
+      }
+    },
+    "Checked automatically once a day while Immersive Audio is used. Only the list of sounds is read.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se comprueba automáticamente una vez al día mientras usas el audio inmersivo. Solo se lee la lista de sonidos."
+          }
+        }
+      }
+    },
+    "Checking for new sounds": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscando sonidos nuevos"
+          }
+        }
+      }
+    },
     "Choose Another File…": {
       "localizations": {
         "es": {
@@ -2702,6 +2762,16 @@
         }
       }
     },
+    "Download new sounds": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar sonidos nuevos"
+          }
+        }
+      }
+    },
     "Download not removed": {
       "localizations": {
         "es": {
@@ -3612,6 +3682,16 @@
         }
       }
     },
+    "Import Files…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar archivos…"
+          }
+        }
+      }
+    },
     "Import a document or change the filters.": {
       "localizations": {
         "es": {
@@ -3662,12 +3742,12 @@
         }
       }
     },
-    "Import documents (⇧⌘I)": {
+    "Import documents (⇧⌘I) or paste text": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Importar documentos (⇧⌘I)"
+            "value": "Importar documentos (⇧⌘I) o pegar texto"
           }
         }
       }
@@ -3998,6 +4078,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Maquetando páginas"
+          }
+        }
+      }
+    },
+    "Leave it empty to use the first line. You can change it later in Edit Info.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déjalo vacío para usar la primera línea. Puedes cambiarlo después en Editar información."
           }
         }
       }
@@ -4432,12 +4522,12 @@
         }
       }
     },
-    "More moods for stories: melancholy, romance, adventure, tension, epic and solemn moments.": {
+    "More moods for stories: melancholy, romance, comedy, adventure, fantasy, tension, horror, epic and solemn moments.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Más estados de ánimo para historias: melancolía, romance, aventura, tensión y momentos épicos y solemnes."
+            "value": "Más estados de ánimo para historias: melancolía, romance, comedia, aventura, fantasía, tensión, terror, momentos épicos y solemnes."
           }
         }
       }
@@ -4602,16 +4692,6 @@
         }
       }
     },
-    "Narration, OCR and document analysis run on this device. Generated audio stays on this device.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La narración, el OCR y el análisis de documentos se ejecutan en este dispositivo. El audio generado permanece en él."
-          }
-        }
-      }
-    },
     "Narration, OCR, document analysis and recaps run on this device; recaps use Apple Intelligence’s on-device model. Generated audio stays on this device.": {
       "localizations": {
         "es": {
@@ -4768,6 +4848,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nueva colección"
+          }
+        }
+      }
+    },
+    "New sounds": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonidos nuevos"
+          }
+        }
+      }
+    },
+    "New sounds are available in the packs above.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay sonidos nuevos en los paquetes de arriba."
           }
         }
       }
@@ -4978,6 +5078,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No hay personajes con nombre en las páginas leídas hasta ahora."
+          }
+        }
+      }
+    },
+    "No new sounds right now.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora mismo no hay sonidos nuevos."
           }
         }
       }
@@ -5542,6 +5652,16 @@
         }
       }
     },
+    "Optional": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opcional"
+          }
+        }
+      }
+    },
     "Or paste an access token": {
       "localizations": {
         "es": {
@@ -5708,6 +5828,56 @@
           "stringUnit": {
             "state": "translated",
             "value": "Fragmento"
+          }
+        }
+      }
+    },
+    "Paste Text": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pegar texto"
+          }
+        }
+      }
+    },
+    "Paste Text…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pegar texto…"
+          }
+        }
+      }
+    },
+    "Paste or type the text here": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pega o escribe aquí el texto"
+          }
+        }
+      }
+    },
+    "Paste text": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pegar texto"
+          }
+        }
+      }
+    },
+    "Pasted text": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto pegado"
           }
         }
       }
@@ -8038,6 +8208,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tamaño del texto: %lld puntos"
+          }
+        }
+      }
+    },
+    "Text to import": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto para importar"
           }
         }
       }
