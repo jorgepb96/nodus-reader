@@ -151,6 +151,25 @@ private struct Session {
     // A comic chase is comedy.
     let comic = reading(.home, tone: .comic, action: .chase, kind: .dialogue, intensity: 2)
     #expect(AtmosphereMapper.music(for: comic, kind: .fiction, intensity: .expressive)?.value == .comic)
+    // A horror chase is suspense, not heroism (Dracula's wolves, the bats at Whitby).
+    let flight = reading(.snowfield, tone: .tense, action: .chase, kind: .scene, intensity: 3)
+    #expect(AtmosphereMapper.music(for: flight, kind: .fiction, intensity: .expressive)?.value == .tense)
+    let eerieFight = reading(.castle, tone: .eerie, action: .battle, kind: .scene, intensity: 3)
+    #expect(AtmosphereMapper.music(for: eerieFight, kind: .fiction, intensity: .expressive)?.value == .tense)
+}
+
+@Test func oneWordEvidenceIsALabelNotAQuote() {
+    let passage = "I ran back at once and kept him under observation until the watchman came."
+    #expect(!SceneEvidence.verify("observation", in: passage))
+    #expect(SceneEvidence.verify("kept him under observation", in: passage))
+    // A one-word reading stored as verified still counts as ungrounded.
+    var labelled = reading(.sea, tone: .tense, action: .chase, intensity: 3)
+    labelled.evidence = "observation"
+    let quoted = reading(.sea, tone: .tense, action: .chase, intensity: 3)
+    let labelledStrength = AtmosphereMapper.music(for: labelled, kind: .fiction, intensity: .balanced)?.strength ?? 0
+    let quotedStrength = AtmosphereMapper.music(for: quoted, kind: .fiction, intensity: .balanced)?.strength ?? 0
+    #expect(labelledStrength == quotedStrength - 1)
+    #expect(AtmosphereMapper.base(for: labelled, kind: .fiction)?.strength == 2)
 }
 
 @Test func baseEvidenceNeedsAClearPlaceAndAVerifiedQuote() {
@@ -531,6 +550,23 @@ private struct SeededGenerator: RandomNumberGenerator {
     #expect(policy.handle(.readerActivity) == nil) // narration must restart first
     #expect(policy.handle(.narrationStarted) == .play(fadeIn: 1.2))
     #expect(policy.handle(.sleepTimerFired) == .pause(fadeOut: 3))
+}
+
+@Test func resumingNarrationAfterLeavingTheAppResumesTheAtmosphere() {
+    var policy = ImmersivePlaybackPolicy()
+    _ = policy.handle(.enabled(true))
+    _ = policy.handle(.readerOpened)
+    _ = policy.handle(.narrationStarted)
+    #expect(policy.handle(.appActive(false)) == nil)
+    #expect(policy.handle(.narrationPaused) == .pause(fadeOut: 0.6))
+    // Another app took the audio and iOS never posted the interruption's end.
+    #expect(policy.handle(.interruptionBegan) == nil)
+    #expect(policy.handle(.narrationStarted) == .play(fadeIn: 1.2))
+    #expect(policy.handle(.appActive(true)) == nil)
+    // Immersive Audio's own play button also ends a stale interruption.
+    _ = policy.handle(.userPause)
+    _ = policy.handle(.interruptionBegan)
+    #expect(policy.handle(.userPlay) == .play(fadeIn: 1.2))
 }
 
 @Test func silentReadingStopsInTheBackgroundAndWhenIdle() {

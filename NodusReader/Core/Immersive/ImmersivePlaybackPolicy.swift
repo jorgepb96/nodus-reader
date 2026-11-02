@@ -102,6 +102,10 @@ struct ImmersivePlaybackPolicy: Equatable, Sendable {
             fade = 2
         case .narrationStarted:
             narration = .playing
+            // iOS does not always post the end of an interruption (another
+            // app took the audio while Nodus was in the background): the
+            // reader resuming narration is the end of it.
+            interrupted = false
             userPaused = false
             unplugged = false
             idle = false
@@ -140,6 +144,7 @@ struct ImmersivePlaybackPolicy: Equatable, Sendable {
             finished = true
             fade = 8
         case .userPlay:
+            interrupted = false
             userPaused = false
             unplugged = false
             idle = false

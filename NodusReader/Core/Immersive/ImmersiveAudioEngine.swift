@@ -311,10 +311,19 @@ final class ImmersiveAudioEngine: @unchecked Sendable {
                 isPaused = false
             }
             if !isOffline, !engine.isRunning {
+                // iOS stops a paused engine when the app is suspended or the
+                // session is deactivated, and the players lose what was
+                // queued: put every deck back where it was before playing.
+                for deck in decks.values.joined() where deck.isActive {
+                    deck.player.stop()
+                }
                 do { try engine.start() } catch {
                     isRunning = false
                     notify { [onFailure] in onFailure?(error) }
                     return
+                }
+                for deck in decks.values.joined() where deck.isActive {
+                    schedule(deck, from: deck.savedFrame)
                 }
             } else if isOffline, !engine.isRunning {
                 try? engine.start()

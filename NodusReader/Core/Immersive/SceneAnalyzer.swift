@@ -88,7 +88,8 @@ enum SceneEvidence {
     /// fail either way.
     static func verify(_ evidence: String, in passage: String) -> Bool {
         let quote = normalize(evidence)
-        guard quote.count >= 3 else { return false }
+        // A quote is a phrase: one word found in the passage proves nothing.
+        guard quote.count >= 3, wordCount(quote) >= 2 else { return false }
         let text = normalize(passage)
         if text.contains(quote) { return true }
         let words: Set<String> = Set(text.split(separator: " ").map(String.init))
@@ -102,6 +103,10 @@ enum SceneEvidence {
             return words.contains { (other: String) in other.hasPrefix(stem) }
         }.count
         return Double(found) / Double(content.count) >= 0.7
+    }
+
+    static func wordCount(_ text: String) -> Int {
+        normalize(text).split(separator: " ").count
     }
 
     static func normalize(_ text: String) -> String {

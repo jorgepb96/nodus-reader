@@ -1180,7 +1180,9 @@ struct ReaderNarrationCapsule: View {
         .popover(isPresented: $showAtmosphere, arrowEdge: .bottom) {
             ImmersiveQuickControls()
                 .padding(16)
-                .frame(minWidth: 300, idealWidth: 340, maxWidth: 380)
+                // A fixed width: sized to its text, the popover shifted
+                // whenever locking or pausing changed the status line.
+                .frame(width: 320)
                 .readerPresentation(theme)
                 #if os(iOS)
                 .presentationCompactAdaptation(.popover)

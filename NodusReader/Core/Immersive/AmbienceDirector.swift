@@ -395,15 +395,18 @@ struct AmbienceDirector: Sendable {
             }
             consumedThrough = map.reading(index) != nil ? index : index - 1
         }
-        provisional = !analysed
         music.evidence = musicScores
         base.evidence = baseScores
-        let analysedMood = musicScores.max { $0.value < $1.value }.flatMap {
-            $0.value >= config.startMusicEvidence ? $0.key : nil
-        }
-        let analysedBed = baseScores.max { $0.value < $1.value }.flatMap {
-            $0.value >= config.startBaseEvidence ? $0.key : nil
-        }
+        // The opening windows must agree: a value that only edges out the
+        // runner-up (one window's "battle" among calm and mysterious ones)
+        // would hold for a long time, so the defaults play instead and the
+        // first clear reading may correct them.
+        let analysedMood = Self.clearLeader(musicScores, enter: config.startMusicEvidence,
+                                            ambiguity: config.music.ambiguity)
+        let analysedBed = Self.clearLeader(baseScores, enter: config.startBaseEvidence,
+                                           ambiguity: config.base.ambiguity)
+        provisional = !analysed || (analysedMood == nil && !musicScores.isEmpty)
+            || (analysedBed == nil && !baseScores.isEmpty)
         let wantMusic = input.musicEnabled
             ? (analysedMood ?? input.defaults.music.flatMap { AtmosphereMapper.playable($0, installed: input.installedMoods) })
             : nil
@@ -418,6 +421,14 @@ struct AmbienceDirector: Sendable {
         let fade = min(input.crossfade, 4)
         return Decision(music: .change(to: wantMusic, reason: .start, crossfade: fade),
                         base: .change(to: wantBase, reason: .start, crossfade: fade))
+    }
+
+    private static func clearLeader<Value: Hashable>(_ scores: [Value: Double], enter: Double,
+                                                     ambiguity: Double) -> Value? {
+        let ranked = scores.sorted { $0.value > $1.value }
+        guard let best = ranked.first, best.value >= enter else { return nil }
+        let runnerUp = ranked.dropFirst().first?.value ?? 0
+        return best.value - runnerUp >= ambiguity ? best.key : nil
     }
 
     // MARK: Evidence

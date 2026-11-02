@@ -159,6 +159,7 @@ The provenance record for every file is `docs/immersive-audio/PROVENANCE.md`.
 
 **Licence and evidence rules.**
 - **CC0, or CC-BY 3.0/4.0 with attribution.** No ShareAlike, NonCommercial or NoDerivatives. When OpenGameArt offers CC0 among several licences, CC0 is used. Freesound and Free Music Archive pages must link the CC0 deed. CC-BY authors, sources, licences and changes are credited in the app and in PROVENANCE.md.
+- **Pixabay is not used** (checked 2026-11-02). Its Content License is not CC0 and forbids distributing content "on a Standalone basis" (substantially unchanged), which is what a downloadable sound pack and this public repository do. Its music downloads are also lossy MP3s, often below the 192 kb/s floor.
 - The licence page is fetched and hashed. Its SHA-256 and the licence statement go into the manifest; the page itself stays out of the repository.
 
 **Quality rejections.** A file is rejected for:
@@ -224,6 +225,16 @@ The App Store Connect *Content rights* answer must change to "contains third-par
   - the scheduler's look-ahead and its cache.
 - Opt-in test: `NODUS_IMMERSIVE_PACK_ROOT` decodes every processed file against the manifest.
 - UI tests: settings, profile, reader controls and lock; manual mode without Apple Intelligence.
+
+**Real-model passage tests (2026-11-02, build 44).** A command-line harness compiled from `SceneAnalyzer`, `AtmosphereMapper` and `AmbienceDirector` ran Apple's on-device model (macOS 27) on 25 consecutive windows (about 84 minutes of narration) of *Dracula* (Whitby: Lucy, the storm, the *Demeter*) and *Three Men in a Boat* (packing to Hampton Court).
+- The readings follow the text: the comedy is tagged comic while the friends pack, then calm, adventure and river once they set off; *Dracula* is tagged tense, mysterious, dramatic and stormy.
+- The director keeps the atmosphere stable as designed. On the comedy, music moves from comic to adventure at minute 47, when the trip starts. Every log passes `DirectorInvariants`.
+- Three corrections came out of these runs:
+  - a tense, eerie or mysterious chase, or an eerie or mysterious fight, now maps to tense music, not epic (*Dracula*'s bats had made the whole hour "epic");
+  - one-word "evidence" ("observation", "bats") no longer counts as a verified quote;
+  - the start needs the opening windows to agree, by the same ambiguity margin as later changes; otherwise the defaults play and the first clear reading may correct them.
+- Tried and rejected: asking for the quote before the classification raised verified quotes from 6/33 to 16/30, but brought model failures and lost the comedy's comic tone.
+- Known limit: where the readings spread across neighbouring moods (*Dracula*: tense, mysterious, dramatic), no single mood builds a streak and the atmosphere holds. That is the stability rule working, not a fault.
 
 **Pending on a physical device:**
 - Kokoro and Phonon narration with music on the speaker, wired headphones, AirPods/Bluetooth and AirPlay.

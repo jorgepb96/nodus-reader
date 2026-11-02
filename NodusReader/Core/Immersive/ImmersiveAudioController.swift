@@ -390,10 +390,13 @@ final class ImmersiveAudioController {
         guard let transition else { return }
         switch transition {
         case .play(let fade):
-            guard library.hasAnything, !engineFailed else {
+            guard library.hasAnything else {
                 updateStatus()
                 return
             }
+            // A start that failed once (the output was unavailable, the app
+            // was in the background) is retried on every resume.
+            engineFailed = false
             releaseTask?.cancel()
             AudioSessionCoordinator.shared.claim(.immersive)
             let engine = ensureEngine()

@@ -167,12 +167,18 @@ final class MacHighlightOverlayView: NSView {
                 bottom += textView.textContainerOrigin.y
                 fills[last].size.height = max(fills[last].height, min(bounds.maxY, bottom) - fills[last].minY)
             }
-            for (rect, fill) in zip(rects, fills) {
-                let path = span.rounded
+            // All lines fill as one shape: separate translucent fills leave a
+            // lighter seam where their antialiased edges meet.
+            let path = NSBezierPath()
+            let scale = window?.backingScaleFactor ?? 2
+            for fill in ReaderPageHighlights.fillRects(fills, scale: scale) {
+                path.append(span.rounded
                     ? NSBezierPath(roundedRect: fill, xRadius: 3, yRadius: 3)
-                    : NSBezierPath(rect: fill)
-                span.fill.setFill()
-                path.fill()
+                    : NSBezierPath(rect: fill))
+            }
+            span.fill.setFill()
+            path.fill()
+            for rect in rects {
                 if let underline = span.underline {
                     underline.setFill()
                     NSRect(x: rect.minX, y: rect.maxY - span.underlineWidth,

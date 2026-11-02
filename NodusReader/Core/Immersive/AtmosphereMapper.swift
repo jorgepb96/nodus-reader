@@ -56,7 +56,7 @@ enum AtmosphereMapper {
         // The on-device model often summarises instead of quoting, so an
         // unmatched phrase only weakens the reading a little; no grounding
         // at all ("none", empty) weakens it more.
-        if !reading.evidenceVerified { strength -= Self.isUngrounded(reading.evidence) ? 1 : 0.5 }
+        if !isGrounded(reading) { strength -= Self.isUngrounded(reading.evidence) ? 1 : 0.5 }
         return strength > 0 ? LayerEvidence(value: mood, strength: strength) : nil
     }
 
@@ -71,7 +71,7 @@ enum AtmosphereMapper {
         case .recollection, .exposition, .frontMatter: return nil
         }
         let clarity = Double(max(0, min(reading.settingClarity, 3)))
-        var strength = min(clarity, cap) - (reading.evidenceVerified ? 0 : (Self.isUngrounded(reading.evidence) ? 1 : 0.5))
+        var strength = min(clarity, cap) - (isGrounded(reading) ? 0 : (Self.isUngrounded(reading.evidence) ? 1 : 0.5))
         guard strength > 0 else { return nil }
         let bed: BaseAmbience?
         if clarity >= 2, reading.weather == .storm {
@@ -90,6 +90,11 @@ enum AtmosphereMapper {
         switch (reading.action, reading.tone) {
         // A comic chase is still comedy.
         case (_, .comic): return .comic
+        // A chase that is tense, eerie or mysterious (a horror novel) and an
+        // eerie or mysterious fight are suspense, not heroism.
+        case (.chase, .tense), (.chase, .eerie), (.chase, .mysterious),
+             (.battle, .eerie), (.battle, .mysterious):
+            return .tense
         case (.battle, _), (.chase, _):
             return reading.intensity >= 2 ? .epic : .tense
         case (_, .epic): return .epic
@@ -127,6 +132,15 @@ enum AtmosphereMapper {
     static func isUngrounded(_ evidence: String) -> Bool {
         let text = evidence.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return text.count < 4 || text == "none" || text == "n/a" || text == "unknown"
+            || SceneEvidence.wordCount(text) < 2
+    }
+
+    /// A verified quote of at least two words. One word found in the passage
+    /// ("observation", "dialogue", "bats") is a label the model chose, not a
+    /// quote; readings stored before verification required two words are
+    /// judged the same way.
+    private static func isGrounded(_ reading: SceneReading) -> Bool {
+        reading.evidenceVerified && SceneEvidence.wordCount(reading.evidence) >= 2
     }
 
     /// The installed value nearest to `value`: itself, or its first installed
