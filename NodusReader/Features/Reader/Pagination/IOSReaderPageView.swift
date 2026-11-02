@@ -273,14 +273,19 @@ final class ReaderHighlightOverlayView: UIView {
                     + textView.textContainerInset.top
                 fills[last].size.height = max(fills[last].height, min(bounds.maxY, bottom) - fills[last].minY)
             }
-            for (lineRect, fillRect) in zip(rects, fills) {
-                // Stay inside TextKit's line bounds so adjacent lines never
-                // blend their highlight backgrounds at tight line spacing.
-                let path = span.rounded
+            // Stay inside TextKit's line bounds so adjacent lines never
+            // blend their highlight backgrounds at tight line spacing. All
+            // lines fill as one shape: separate translucent fills leave a
+            // lighter seam where their antialiased edges meet.
+            let path = UIBezierPath()
+            for fillRect in ReaderPageHighlights.fillRects(fills, scale: traitCollection.displayScale) {
+                path.append(span.rounded
                     ? UIBezierPath(roundedRect: fillRect, cornerRadius: 3)
-                    : UIBezierPath(rect: fillRect)
-                span.fill.setFill()
-                path.fill()
+                    : UIBezierPath(rect: fillRect))
+            }
+            span.fill.setFill()
+            path.fill()
+            for lineRect in rects {
                 if let underline = span.underline {
                     let underlineRect = CGRect(x: lineRect.minX, y: lineRect.maxY - span.underlineWidth,
                                                width: lineRect.width, height: span.underlineWidth)

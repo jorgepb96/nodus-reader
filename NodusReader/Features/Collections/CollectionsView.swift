@@ -123,7 +123,7 @@ struct CollectionsView: View {
     @ViewBuilder
     private var collectionResults: some View {
         if isGrid {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 3),
+            LazyVGrid(columns: LibraryView.gridColumns,
                       alignment: .leading, spacing: 20) {
                 ForEach(visibleCollections) { collection in
                     NavigationLink(value: collection.id) {

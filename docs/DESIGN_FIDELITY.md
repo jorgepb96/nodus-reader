@@ -55,6 +55,10 @@ The 2026-10-25 visual audit is recorded in [`VISUAL_AUDIT.md`](VISUAL_AUDIT.md).
 14. **The iOS 26 tab bar is translucent.** The app draws an in-content gradient to the app background behind the floating bar so bright covers do not bleed through; the bar itself remains the system Liquid Glass control rather than an opaque custom bar.
 15. **iPad Settings uses a full page sheet** with a centered 820 pt content column instead of the default form sheet, which clipped General rows at the bottom.
 
+## Immersive Audio (new feature without a mockup, 2026-11-01)
+
+`design/` has no screen for music or ambience, and it was not edited (per `design/PROMPT.md`, a screen without a design follows the same visual language and the decision is recorded here). Settings › Immersive Audio, Sound packs and Credits reuse the Recaps & Characters page template (`DisplayTitle`, `Eyebrow`, `panelCard` rows, native `Toggle`, segmented `Picker`, `Menu`, `DisclosureGroup`); profiles are `CapsuleChip`s; levels use a new DesignSystem `LabeledSlider` on native `Slider`. In the reader, a 44 pt music-note button joins the narration capsule's right group only when the feature is on and opens a `.popover` with the same reader presentation as Appearance; the player sheet gains an Atmosphere card below the control grid (the five-tile grid is full); the Mac player bar gains an Atmosphere chip with a popover. Nothing is shown to readers who have not turned the feature on.
+
 ## Reader appearance popover (requested change, 2026-10-25)
 
 The design opens reader appearance as a sheet. At the product owner's request the

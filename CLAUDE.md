@@ -105,6 +105,15 @@ with Ming's voices as Studio voices. Ming is not offered on iOS.
 On iPad and Mac, Settings is a sidebar destination (footer gear, ⌘, on the Mac) shown in
 the detail column, not a sheet or a separate window.
 
+Immersive Audio (off by default) adds instrumental music and recorded ambiences under
+reading, narration and study: Automatic (scene analysis with `SystemLanguageModel(useCase:
+.contentTagging)` on the device, shared `OnDeviceModelGate`), Study, Manual. A conservative
+`AmbienceDirector` decides when the atmosphere changes; `ImmersiveAudioEngine` is a second
+`AVAudioEngine` beside narration's, sharing `AudioSessionCoordinator`. Only the catalog
+manifest is bundled; CC0 packs download from Hugging Face or the GitHub Release mirror.
+Build the catalog with `tools/immersive-audio/` and never add a source shared with Nodus
+Drift. See `docs/IMMERSIVE_AUDIO.md`.
+
 On devices with Apple Intelligence (iOS/macOS 26+), the reader offers recaps and a
 character list (`StoryCompanion`, Settings › Recaps & Characters, on by default). Only
 `SystemLanguageModel` runs, on the device, never Private Cloud Compute; only text before

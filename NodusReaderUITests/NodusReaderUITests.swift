@@ -976,7 +976,78 @@ final class NodusReaderUITests: XCTestCase {
         snap("iPhone-Build28-NarrationRegression")
     }
 
-    private func launch(resetReadingState: Bool = false, longContents: Bool = false) -> XCUIApplication {
+    func testImmersiveAudioSettingsAndReaderControls() throws {
+        let app = launch(resetReadingState: true, immersive: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let pad = app.windows.firstMatch.frame.width >= 700
+
+        // Settings › Immersive Audio: off by default, then on with a profile.
+        if pad {
+            app.buttons["Settings"].firstMatch.tap()
+        } else {
+            tapTab("Settings", in: app)
+        }
+        let row = app.buttons["ImmersiveAudioSettingsRow"].firstMatch
+        if !row.waitForExistence(timeout: 10) { app.swipeUp() }
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.tap()
+        let toggle = app.switches["immersive.enable"].firstMatch
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        XCTAssertEqual(toggle.value as? String, "0", "Immersive Audio must be off until the reader turns it on")
+        toggle.tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        let rain = app.buttons["Rain"].firstMatch
+        XCTAssertTrue(rain.waitForExistence(timeout: 5))
+        rain.tap()
+        XCTAssertTrue(app.staticTexts["Manual"].firstMatch.exists || app.buttons["Manual"].firstMatch.exists)
+        snap(pad ? "iPad-ImmersiveAudio-Settings" : "iPhone-ImmersiveAudio-Settings")
+        let credits = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Credits and licences")).firstMatch
+        XCTAssertTrue(credits.waitForExistence(timeout: 5))
+
+        // In the reader: the atmosphere button appears and shows the choice.
+        if pad {
+            app.staticTexts["All Books"].firstMatch.tap()
+            app.staticTexts["Moby-Dick"].firstMatch.tap()
+        } else {
+            tapTab("Home", in: app)
+            app.buttons["Read"].firstMatch.tap()
+        }
+        let atmosphere = app.buttons["ImmersiveAtmosphereButton"].firstMatch
+        XCTAssertTrue(atmosphere.waitForExistence(timeout: 20))
+        atmosphere.tap()
+        let nowPlaying = app.staticTexts["immersive.nowPlaying"].firstMatch
+        XCTAssertTrue(nowPlaying.waitForExistence(timeout: 10))
+        let started = NSPredicate(format: "label CONTAINS %@", "Rain")
+        expectation(for: started, evaluatedWith: nowPlaying)
+        waitForExpectations(timeout: 10)
+        let lock = app.buttons["immersive.lock"].firstMatch
+        XCTAssertTrue(lock.waitForExistence(timeout: 5))
+        lock.tap()
+        XCTAssertEqual(lock.value as? String, "Locked")
+        XCTAssertTrue(app.buttons["immersive.automatic"].firstMatch.waitForExistence(timeout: 5))
+        snap(pad ? "iPad-ImmersiveAudio-Reader" : "iPhone-ImmersiveAudio-Reader")
+        lock.tap()
+        XCTAssertEqual(lock.value as? String, "Unlocked")
+    }
+
+    func testImmersiveAudioManualWithoutAppleIntelligence() throws {
+        let app = launch(resetReadingState: true, immersive: true, extra: ["-NodusImmersiveForceNoAppleIntelligence"])
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        try XCTSkipIf(app.windows.firstMatch.frame.width >= 700, "This test runs on iPhone")
+        tapTab("Settings", in: app)
+        let row = app.buttons["ImmersiveAudioSettingsRow"].firstMatch
+        if !row.waitForExistence(timeout: 10) { app.swipeUp() }
+        row.tap()
+        app.switches["immersive.enable"].firstMatch.tap()
+        // Automatic is not offered; manual and study are, with an explanation.
+        XCTAssertFalse(app.buttons["Automatic"].firstMatch.exists)
+        XCTAssertTrue(app.buttons["Study"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Manual"].firstMatch.exists)
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Apple Intelligence")).firstMatch.exists)
+    }
+
+    private func launch(resetReadingState: Bool = false, longContents: Bool = false, immersive: Bool = false,
+                        extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         // The tests read English labels; the app follows the device language
         // (Spanish or English), so pin it to English whatever the simulator uses.
@@ -991,6 +1062,8 @@ final class NodusReaderUITests: XCTestCase {
             app.launchArguments.append("-NodusResetReadingState")
         }
         if longContents { app.launchArguments.append("-NodusLongContentsSample") }
+        if immersive { app.launchArguments += ["-NodusImmersiveTestPack", "-NodusResetImmersive"] }
+        app.launchArguments += extra
         app.launch()
         return app
     }

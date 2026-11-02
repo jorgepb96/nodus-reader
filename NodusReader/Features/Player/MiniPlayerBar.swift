@@ -92,6 +92,23 @@ struct MiniPlayerBar: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(playback.isPlaying ? "Pause narration" : "Play narration")
+
+            // Ends narration and removes the mini player.
+            Button {
+                playback.stopAndClose()
+            } label: {
+                Image(systemName: "stop.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(palette.text)
+                    .frame(width: 42, height: 42)
+                    .background(palette.panel, in: Circle())
+                    .overlay(Circle().stroke(palette.line, lineWidth: 1))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Stop narration")
+            .accessibilityHint("Stops playback and closes the player")
         }
         .padding(.leading, 9)
         .padding(.trailing, 8)

@@ -654,6 +654,13 @@ struct AboutView: View {
                     linkRow("Model licences", url: "https://github.com/jorgepb96/nodus-reader/blob/main/MODEL_LICENSES.md")
                     divider
                     linkRow("Privacy", url: "https://github.com/jorgepb96/nodus-reader/blob/main/PRIVACY.md")
+                    divider
+                    NavigationLink {
+                        ImmersiveCreditsView()
+                    } label: {
+                        SettingsRow(title: "Audio credits", value: nil)
+                    }
+                    .buttonStyle(.plain)
                 }
                 .panelCard(radius: 18)
 

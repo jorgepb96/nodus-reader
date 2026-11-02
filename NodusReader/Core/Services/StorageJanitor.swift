@@ -115,6 +115,7 @@ final class StorageJanitor {
         let known = Set(books.map(\.id))
         let ocrRoot = library.fileStore.root.appendingPathComponent("Reflow", isDirectory: true)
         let companion = StoryCompanionStore(fileStore: library.fileStore)
+        let immersive = SceneMapStore(fileStore: library.fileStore)
         let info = books.map { (id: $0.id, lastOpened: $0.lastOpenedAt ?? $0.addedAt, finished: $0.status == .finished) }
         let policy = self.policy
         let cache = self.cache
@@ -150,6 +151,13 @@ final class StorageJanitor {
             for id in companion.bookIDs() where !known.contains(id) {
                 report.freedBytes += FileStore.fileSize(at: companion.url(for: id))
                 companion.remove(bookID: id)
+            }
+            // Scene maps and atmosphere choices of deleted books (the sound
+            // packs themselves are only removed by the reader).
+            for id in immersive.bookIDs() where !known.contains(id) {
+                report.freedBytes += FileStore.fileSize(at: immersive.mapURL(for: id))
+                    + FileStore.fileSize(at: immersive.preferencesURL(for: id))
+                immersive.remove(bookID: id)
             }
             return report
         }

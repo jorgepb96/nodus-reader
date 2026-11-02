@@ -721,25 +721,19 @@ public actor StoryCompanionEngine {
 
     // MARK: Model
 
-    private var busy = false
-    private var waiting: [CheckedContinuation<Void, Never>] = []
-
-    /// Requests take turns: a recap asked for while a passage is being
-    /// prepared in the background waits for that one passage.
+    /// Requests take turns through the app-wide gate: a recap asked for while
+    /// a passage (or a scene for Immersive Audio) is being prepared in the
+    /// background waits for that one request.
     private func respond(instructions: String, prompt: String, limit: Int) async throws -> String {
-        if busy {
-            await withCheckedContinuation { waiting.append($0) }
-        }
-        busy = true
-        defer {
-            if waiting.isEmpty { busy = false } else { waiting.removeFirst().resume() }
-        }
-        try Task.checkCancellation()
-        let session = LanguageModelSession(model: model, instructions: instructions)
+        let model = self.model
         do {
-            let response = try await session.respond(
-                to: prompt, options: GenerationOptions(temperature: 0, maximumResponseTokens: limit))
-            return StoryAnswers.plainText(response.content)
+            let content = try await OnDeviceModelGate.shared.run(.interactive) {
+                let session = LanguageModelSession(model: model, instructions: instructions)
+                let response = try await session.respond(
+                    to: prompt, options: GenerationOptions(temperature: 0, maximumResponseTokens: limit))
+                return response.content
+            }
+            return StoryAnswers.plainText(content)
         } catch let error as LanguageModelSession.GenerationError {
             switch error {
             case .guardrailViolation, .refusal: throw StoryCompanionError.blocked

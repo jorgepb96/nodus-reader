@@ -162,9 +162,11 @@ struct LibraryView: View {
 
     // MARK: Grid and list
 
-    private var columns: [GridItem] {
-        Array(repeating: GridItem(.flexible(), spacing: 14), count: 3)
-    }
+    /// Three columns on a portrait iPhone, more as the window widens, so
+    /// covers keep their size in landscape instead of filling the screen.
+    static let gridColumns = [GridItem(.adaptive(minimum: 100), spacing: 14)]
+
+    private var columns: [GridItem] { Self.gridColumns }
 
     private var grid: some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: 20) {

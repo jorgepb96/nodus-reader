@@ -59,6 +59,27 @@ struct ReaderPageHighlights: Equatable {
         guard let range, range.location != NSNotFound, range.location >= 0, range.length > 0 else { return nil }
         return range
     }
+
+    /// Line rects of one span, ready to be filled as a single shape. Edges
+    /// snap to device pixels and sub-point gaps between stacked lines close,
+    /// so a translucent fill never leaves a seam of background between lines.
+    static func fillRects(_ rects: [CGRect], scale: CGFloat) -> [CGRect] {
+        let scale = max(scale, 1)
+        func snap(_ value: CGFloat) -> CGFloat { (value * scale).rounded() / scale }
+        var snapped = rects.map { rect in
+            CGRect(x: snap(rect.minX), y: snap(rect.minY),
+                   width: snap(rect.maxX) - snap(rect.minX), height: snap(rect.maxY) - snap(rect.minY))
+        }.sorted { $0.minY < $1.minY }
+        for index in snapped.indices.dropLast() {
+            let next = snapped[index + 1]
+            let gap = next.minY - snapped[index].maxY
+            let overlapsHorizontally = next.minX < snapped[index].maxX && snapped[index].minX < next.maxX
+            if gap > 0, gap <= 1, overlapsHorizontally {
+                snapped[index].size.height += gap
+            }
+        }
+        return snapped
+    }
 }
 
 extension PlatformColor {

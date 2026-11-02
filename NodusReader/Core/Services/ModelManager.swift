@@ -146,7 +146,15 @@ final class ModelManager {
     // a memory warning; the next sentence loads them again.
     static let idleUnloadDelay: Duration = .seconds(180)
     @ObservationIgnored private var narrationInUse = false
-    @ObservationIgnored private var synthesesInFlight = 0
+    @ObservationIgnored private var synthesesInFlight = 0 {
+        didSet {
+            let busy = synthesesInFlight > 0
+            if busy != isSynthesizing { isSynthesizing = busy }
+        }
+    }
+    /// A sentence is being generated. On-device scene analysis waits while it
+    /// is, so the language model never competes with narration for the GPU.
+    public private(set) var isSynthesizing = false
     @ObservationIgnored private var idleUnloadTask: Task<Void, Never>?
     @ObservationIgnored private var lifecycleObservers: [NSObjectProtocol] = []
 
