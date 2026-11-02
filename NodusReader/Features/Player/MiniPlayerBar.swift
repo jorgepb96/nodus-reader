@@ -78,9 +78,9 @@ struct MiniPlayerBar: View {
             Button {
                 playback.toggle()
             } label: {
-                Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
+                Image(systemName: playback.playbackActionSymbol)
                     .font(.system(size: 15, weight: .semibold))
-                    .offset(x: playback.isPlaying ? 0 : 1)
+                    .offset(x: playback.isPlaying || playback.narrationFinished ? 0 : 1)
                     .foregroundStyle(palette.onAccent)
                     .frame(width: 42, height: 42)
                     .background(palette.accent, in: Circle())
@@ -91,7 +91,7 @@ struct MiniPlayerBar: View {
                     }
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(playback.isPlaying ? "Pause narration" : "Play narration")
+            .accessibilityLabel(playback.narrationFinished ? "Replay from beginning" : playback.isPlaying ? "Pause narration" : "Play narration")
 
             // Ends narration and removes the mini player.
             Button {

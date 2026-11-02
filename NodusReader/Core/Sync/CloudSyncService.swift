@@ -88,6 +88,7 @@ final class CloudSyncService {
     private(set) var isSyncing = false
     private(set) var downloadingBookIDs: Set<UUID> = []
     private(set) var downloadError: String?
+    @ObservationIgnored private var documentDownloads: [UUID: Task<Void, Never>] = [:]
 
     @ObservationIgnored private lazy var coordinator = SyncCoordinator { [weak self] in
         await self?.performSync()
@@ -1137,11 +1138,35 @@ final class CloudSyncService {
     }
 
     func download(_ book: Book) async {
-        guard isEnabled, isAvailable, !downloadingBookIDs.contains(book.id) else { return }
+        guard isEnabled else { return }
+        // Opening a book while its context-menu download is running must wait
+        // for the same copy, rather than fail because the local file is absent.
+        if let pending = documentDownloads[book.id] {
+            await pending.value
+            return
+        }
+        let bookID = book.id
+        let pending = Task { await downloadDocument(book) }
+        documentDownloads[bookID] = pending
+        await pending.value
+        documentDownloads.removeValue(forKey: bookID)
+    }
+
+    private func downloadDocument(_ book: Book) async {
         let bookID = book.id
         downloadingBookIDs.insert(bookID)
         defer { downloadingBookIDs.remove(bookID) }
         downloadError = nil
+        // File access depends on iCloud Drive, independently of a transient
+        // CloudKit metadata failure or an availability check still starting.
+        if !fileSyncAvailable { fileSyncAvailable = await documents.refreshAvailability() }
+        guard fileSyncAvailable else {
+            downloadError = availabilityMessage.isEmpty
+                ? String(localized: "Sign in to iCloud and enable iCloud Drive for Nodus Reader to sync your library.")
+                : availabilityMessage
+            return
+        }
+        guard fetchBook(id: bookID) != nil else { return }
         book.downloadState = .downloading
         library.save()
         do {

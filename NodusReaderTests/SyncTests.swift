@@ -281,6 +281,90 @@ func fileUploadAndDeletionAreRetryableAndIdempotent() async throws {
 }
 
 @Test @MainActor
+func cloudDocumentDownloadCopiesTheOriginalAndCoverBeforeOpening() async throws {
+    let fixture = try SyncFixture()
+    defer { fixture.cleanUp() }
+    let book = try fixture.book()
+    let local = fixture.library.fileStore.documentURL(for: book)
+    try FileManager.default.createDirectory(at: local.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try Data("book".utf8).write(to: local)
+    book.coverFileName = try fixture.library.fileStore.writeCover(Data("cover".utf8), bookID: book.id)
+    let cloud = fixture.root.appendingPathComponent("cloud")
+    let documents = ICloudDocumentStore(fileStore: fixture.library.fileStore, containerURL: cloud)
+    let remote = RemoteBookFile(book)
+    try await documents.upload(remote)
+    try await documents.removeLocalDownload(for: remote)
+    try FileManager.default.removeItem(at: try #require(fixture.library.fileStore.coverForBook(book)))
+
+    let cover = try await documents.download(remote)
+    #expect(try Data(contentsOf: local) == Data("book".utf8))
+    #expect(try Data(contentsOf: try #require(fixture.library.fileStore.coverURL(for: cover))) == Data("cover".utf8))
+}
+
+@Test @MainActor
+func incompleteCloudDocumentNeverReplacesAPreviousLocalCopy() async throws {
+    let fixture = try SyncFixture()
+    defer { fixture.cleanUp() }
+    let book = try fixture.book()
+    let cloud = fixture.root.appendingPathComponent("cloud")
+    let remote = cloud.appendingPathComponent("Documents/NodusReader/Books/\(book.id.uuidString)/book.txt")
+    let local = fixture.library.fileStore.documentURL(for: book)
+    try FileManager.default.createDirectory(at: remote.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: local.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try Data("book".utf8).write(to: local)
+    try Data("incomplete".utf8).write(to: remote)
+    let documents = ICloudDocumentStore(fileStore: fixture.library.fileStore, containerURL: cloud)
+    await #expect(throws: SyncFileError.sizeMismatch) { try await documents.download(RemoteBookFile(book)) }
+    #expect(try Data(contentsOf: local) == Data("book".utf8))
+    #expect(try FileManager.default.contentsOfDirectory(atPath: local.deletingLastPathComponent().path) == ["book.txt"])
+}
+
+@Test @MainActor
+func iCloudPlaceholdersCountAsRemoteCopiesWithoutAMetadataIndex() async throws {
+    let fixture = try SyncFixture()
+    defer { fixture.cleanUp() }
+    let book = try fixture.book()
+    let cloud = fixture.root.appendingPathComponent("cloud")
+    let folder = cloud.appendingPathComponent("Documents/NodusReader/Books/\(book.id.uuidString)")
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    try Data().write(to: folder.appendingPathComponent(".book.txt.icloud"))
+    let documents = ICloudDocumentStore(fileStore: fixture.library.fileStore, containerURL: cloud)
+    #expect(await documents.hasRemoteCopy(for: RemoteBookFile(book)))
+    #expect(!FileManager.default.fileExists(atPath: fixture.library.fileStore.documentURL(for: book).path))
+}
+
+#if os(macOS)
+@Test(.enabled(if: ProcessInfo.processInfo.environment["NODUS_ICLOUD_DOWNLOAD_CONTAINER"] != nil))
+@MainActor
+func realICloudDocumentsDownloadIntoAnIsolatedLibrary() async throws {
+    let fixture = try SyncFixture()
+    defer { fixture.cleanUp() }
+    let cloud = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["NODUS_ICLOUD_DOWNLOAD_CONTAINER"]))
+    let folder = cloud.appendingPathComponent("Documents/NodusReader/Books")
+    let documents = ICloudDocumentStore(fileStore: fixture.library.fileStore, containerURL: cloud)
+    let manager = FileManager.default
+    var copied = 0
+    for directory in try manager.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil) {
+        guard let id = UUID(uuidString: directory.lastPathComponent) else { continue }
+        for file in try manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey]) {
+            let values = try file.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+            guard values.isRegularFile == true, !file.lastPathComponent.hasPrefix(".") else { continue }
+            let book = Book(id: id, title: "iCloud download validation", author: "",
+                            format: BookFormat(rawValue: file.pathExtension) ?? .txt,
+                            fileName: file.lastPathComponent, relativePath: "", fileSize: Int64(values.fileSize ?? 0),
+                            contentHash: "validation")
+            _ = try await documents.download(RemoteBookFile(book))
+            let local = fixture.library.fileStore.documentURL(for: book)
+            #expect(FileStore.fileSize(at: local) == book.fileSize)
+            #expect((try Data(contentsOf: local)).count > 0)
+            copied += 1
+        }
+    }
+    #expect(copied > 0)
+}
+#endif
+
+@Test @MainActor
 func customCoverChangesReplaceTheExistingICloudCover() async throws {
     let fixture = try SyncFixture()
     defer { fixture.cleanUp() }

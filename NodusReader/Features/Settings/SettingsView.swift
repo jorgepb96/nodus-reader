@@ -12,7 +12,7 @@ struct SettingsView: View {
     @Environment(ImmersiveAudioController.self) private var immersive
     @Environment(\.nodusPalette) private var palette
 
-    @State private var target: ThemeTarget = .reader
+    @State private var target: ThemeTarget = .app
     @State private var editorContext: ThemeEditorContext?
     @State private var pendingCustomDelete: CustomReaderTheme?
     @State private var showDeleteTheme = false
@@ -138,6 +138,7 @@ struct SettingsView: View {
         }
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)
+        .onAppear { target = .app }
         .sheet(item: $editorContext) { context in
             CustomThemeEditor(existing: context.theme)
         }

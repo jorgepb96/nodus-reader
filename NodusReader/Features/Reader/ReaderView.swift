@@ -663,7 +663,8 @@ struct ReaderView: View {
         if playback.activeBook?.id == book.id, playback.isPlaying {
             playback.pause()
         } else if playback.activeBook?.id == book.id,
-                  readerShowsPlaybackPosition || book.locator.narrationPosition != nil {
+                  playback.narrationFinished || readerShowsPlaybackPosition || book.locator.narrationPosition != nil {
+            if playback.narrationFinished, book.format == .pdf { pdfMode = .intelligent }
             playback.setMode(.readAndListen)
         } else {
             prepareReaderNarration(openPlayer: false)
@@ -1043,6 +1044,7 @@ struct ReaderNarrationCapsule: View {
     private var isActiveBook: Bool { playback.activeBook?.id == book.id }
     private var hasNarration: Bool { isActiveBook && playback.mode != .read }
     private var isPlaying: Bool { isActiveBook && playback.isPlaying }
+    private var showsReplay: Bool { isActiveBook && playback.narrationFinished }
     private var isLoading: Bool { isPreparing || (isActiveBook && playback.isLoading) }
     private var voiceLabel: String {
         playback.voices.narrationVoice(preferredID: book.preferredVoiceID, language: book.language)?.name
@@ -1110,9 +1112,9 @@ struct ReaderNarrationCapsule: View {
             .accessibilityLabel(hasNarration ? "Previous sentence" : "Previous page")
 
             Button(action: onPlay) {
-                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                Image(systemName: isActiveBook ? playback.playbackActionSymbol : "play.fill")
                     .font(.system(size: 17, weight: .semibold))
-                    .offset(x: isPlaying ? 0 : 1)
+                    .offset(x: isPlaying || showsReplay ? 0 : 1)
                     .foregroundStyle(playForeground)
                     .frame(width: 52, height: 52)
                     .background(theme.accent, in: Circle())
@@ -1124,7 +1126,7 @@ struct ReaderNarrationCapsule: View {
             }
             .buttonStyle(.plain)
             .disabled(isPreparing || (!isReady && !isPlaying) || (isLoading && !isPlaying))
-            .accessibilityLabel(isPlaying ? "Pause narration" : "Play narration")
+            .accessibilityLabel(showsReplay ? "Replay from beginning" : isPlaying ? "Pause narration" : "Play narration")
 
             Button {
                 if hasNarration { playback.nextSentence() } else { onNextPage() }

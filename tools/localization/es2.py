@@ -1,4 +1,5 @@
 ES = {
+"Replay from beginning": "Volver a reproducir desde el principio",
 "Search chapters": "Buscar capítulos",
 "No matching chapters": "No se encontraron capítulos",
 "Try another chapter title or number.": "Prueba con otro título o número de capítulo.",
@@ -168,6 +169,7 @@ ES = {
 "Table": "Tabla",
 "Tap the bookmark button in the reader to save the current page.": "Toca el botón de marcador en el lector para guardar la página actual.",
 "Text": "Texto",
+"Texts": "Textos",
 "Text size": "Tamaño del texto",
 "Text size %lld points": "Tamaño del texto: %lld puntos",
 "That document is already in your library": "Ese documento ya está en tu biblioteca",

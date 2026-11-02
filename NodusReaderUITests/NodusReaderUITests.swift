@@ -1149,6 +1149,29 @@ final class NodusReaderUITests: XCTestCase {
         dismissPopover(in: app)
     }
 
+    func testHomeFormatShelvesAndAppThemeDefault() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        try XCTSkipIf(app.windows.firstMatch.frame.width >= 700, "iPhone home and settings navigation")
+        let epubs = app.buttons["HomeShelfSeeAll-epub"].firstMatch
+        XCTAssertTrue(epubs.waitForExistence(timeout: 10))
+        epubs.tap()
+        XCTAssertTrue(app.navigationBars["EPUB"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@",
+                                                       "Experiments in Plant Hybridization")).firstMatch.exists)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        tapTab("Settings", in: app)
+        let appTheme = app.buttons["App"].firstMatch
+        let readerTheme = app.buttons["Reader"].firstMatch
+        XCTAssertTrue(appTheme.waitForExistence(timeout: 10))
+        XCTAssertTrue(appTheme.isSelected)
+        readerTheme.tap()
+        XCTAssertTrue(readerTheme.isSelected)
+        tapTab("Home", in: app)
+        tapTab("Settings", in: app)
+        XCTAssertTrue(appTheme.isSelected, "Returning to Settings starts on the app theme again")
+    }
+
     func testPDFSearchAndReflowScrollbar() throws {
         let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))

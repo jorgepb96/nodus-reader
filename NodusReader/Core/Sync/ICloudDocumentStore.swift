@@ -91,9 +91,8 @@ final class ICloudDocumentStore: @unchecked Sendable {
         }.value
     }
 
-    /// iCloud may represent a not-yet-downloaded file only as a hidden
-    /// placeholder, so a metadata query is the reliable way to know whether the
-    /// copy exists in the user's iCloud Drive.
+    /// Check materialized files and hidden placeholders first, then ask the
+    /// metadata index for copies not yet visible in the local directory.
     func hasRemoteCopy(for book: RemoteBookFile) async -> Bool {
         await locateRemoteItem(for: book) != nil
     }
@@ -102,7 +101,7 @@ final class ICloudDocumentStore: @unchecked Sendable {
         guard let root = await documentsRoot() else { return nil }
         let remote = Self.remoteFileURL(root: root, book: book)
         let exists = await Task.detached(priority: .utility) {
-            FileManager.default.fileExists(atPath: remote.path)
+            Self.remoteItemExists(remote)
         }.value
         if exists { return remote }
         return await Self.metadataQuery(root: root, remote: remote)
@@ -188,12 +187,15 @@ final class ICloudDocumentStore: @unchecked Sendable {
 
     /// Stage beside the destination and coordinate the replacement with iCloud.
     /// A failed copy must leave the previous remote cover/document intact.
-    static func copyAtomically(from source: URL, to destination: URL) throws {
+    static func copyAtomically(from source: URL, to destination: URL, expectedSize: Int64? = nil) throws {
         let manager = FileManager.default
         try manager.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
         let staged = destination.deletingLastPathComponent().appendingPathComponent(".\(UUID().uuidString).tmp")
         defer { try? manager.removeItem(at: staged) }
         try manager.copyItem(at: source, to: staged)
+        if let expectedSize, expectedSize > 0, FileStore.fileSize(at: staged) != expectedSize {
+            throw SyncFileError.sizeMismatch
+        }
         let coordinator = NSFileCoordinator()
         var coordinationError: NSError?
         var writeError: Error?
@@ -208,6 +210,20 @@ final class ICloudDocumentStore: @unchecked Sendable {
         }
         if let coordinationError { throw coordinationError }
         if let writeError { throw writeError }
+    }
+
+    /// A coordinated read materializes an iCloud file before granting access.
+    /// `fileExists` and its reported size can both be true for a dataless file
+    /// on the Mac; polling a cached URL's download status does not read it.
+    private static func coordinatedRead<T>(at url: URL, _ read: (URL) throws -> T) throws -> T {
+        var coordinationError: NSError?
+        var result: Result<T, Error>?
+        NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &coordinationError) { readableURL in
+            result = Result { try read(readableURL) }
+        }
+        if let coordinationError { throw coordinationError }
+        guard let result else { throw CocoaError(.fileReadUnknown) }
+        return try result.get()
     }
 
     private static func removeIfPresent(_ url: URL) throws {
@@ -225,43 +241,16 @@ final class ICloudDocumentStore: @unchecked Sendable {
         let root = await documentsRoot()
         let fileStore = fileStore
         return try await Task.detached(priority: .userInitiated) {
-            let fileManager = FileManager.default
-            var values = try remote.resourceValues(forKeys: [
-                .isUbiquitousItemKey,
-                .ubiquitousItemDownloadingStatusKey
-            ])
-            if values.isUbiquitousItem == true,
-               values.ubiquitousItemDownloadingStatus != .current {
-                try fileManager.startDownloadingUbiquitousItem(at: remote)
-                var ready = false
-                for _ in 0..<120 {
-                    try Task.checkCancellation()
-                    try await Task.sleep(for: .seconds(1))
-                    values = try remote.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey])
-                    if values.ubiquitousItemDownloadingStatus == .current {
-                        ready = true
-                        break
-                    }
-                }
-                guard ready else { throw SyncFileError.downloadTimedOut }
-            }
-
-            try fileManager.createDirectory(at: local.deletingLastPathComponent(),
-                                            withIntermediateDirectories: true)
-            if fileManager.fileExists(atPath: local.path) {
-                try fileManager.removeItem(at: local)
-            }
-            try fileManager.copyItem(at: remote, to: local)
-            let copiedSize = FileStore.fileSize(at: local)
-            if book.fileSize > 0, copiedSize != book.fileSize {
-                try? fileManager.removeItem(at: local)
-                throw SyncFileError.sizeMismatch
+            try Task.checkCancellation()
+            try Self.coordinatedRead(at: remote) { readableURL in
+                try Task.checkCancellation()
+                try Self.copyAtomically(from: readableURL, to: local, expectedSize: book.fileSize)
             }
 
             guard let root else { return nil }
             let remoteCover = Self.remoteCoverURL(root: root, bookID: book.id)
-            guard fileManager.fileExists(atPath: remoteCover.path),
-                  let data = try? Data(contentsOf: remoteCover) else { return nil }
+            guard Self.remoteItemExists(remoteCover),
+                  let data = try? Self.coordinatedRead(at: remoteCover, { try Data(contentsOf: $0) }) else { return nil }
             return try? fileStore.writeCover(data, bookID: book.id)
         }.value
     }
@@ -273,8 +262,8 @@ final class ICloudDocumentStore: @unchecked Sendable {
         let remote = Self.remoteCoverURL(root: root, bookID: bookID)
         let fileStore = fileStore
         return await Task.detached(priority: .utility) {
-            guard FileManager.default.fileExists(atPath: remote.path),
-                  let data = try? Data(contentsOf: remote) else { return nil }
+            guard Self.remoteItemExists(remote),
+                  let data = try? Self.coordinatedRead(at: remote, { try Data(contentsOf: $0) }) else { return nil }
             return try? fileStore.writeCover(data, bookID: bookID)
         }.value
     }
@@ -301,7 +290,7 @@ final class ICloudDocumentStore: @unchecked Sendable {
     }
 }
 
-enum SyncFileError: LocalizedError {
+enum SyncFileError: LocalizedError, Equatable {
     case notInICloud
     case downloadTimedOut
     case sizeMismatch
