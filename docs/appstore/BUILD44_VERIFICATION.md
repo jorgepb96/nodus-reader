@@ -27,3 +27,10 @@ Build 44 contains build 43 plus:
 | Real on-device model, 84 min each of *Dracula* and *Three Men in a Boat* | Readings follow the scenes; director rules held (details in `docs/IMMERSIVE_AUDIO.md`) |
 
 Not verified: a real iPhone (leaving the app during narration, calls, another app's audio), listening with headphones.
+
+## Distribution
+
+Version 0.1.0 (44), archived from `2c5aa5a` on `main` ([PR #60](https://github.com/jorgepb96/nodus-reader/pull/60)). What to Test: iOS [English](TestFlight-44-ios-en.txt) / [Spanish](TestFlight-44-ios-es.txt); macOS [English](TestFlight-44-macos-en.txt) / [Spanish](TestFlight-44-macos-es.txt), entered in English (U.S.) and Spanish (Spain).
+
+- iOS 0.1.0 (44): uploaded at 12:54 (Europe/Madrid) on 2 November 2026 through `xcodebuild -exportArchive` (`destination` = `upload`). Internal and Nodus Reader — Public Beta (75 testers); submitted to beta review with automatic notification.
+- macOS 0.1.0 (44): uploaded at 13:07. Internal (private beta) only, not submitted for review.
