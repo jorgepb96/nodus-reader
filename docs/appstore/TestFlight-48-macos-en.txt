@@ -1,0 +1,10 @@
+Nodus Reader 0.1.0 (48) — macOS private beta
+
+- Open documents synced from your iPhone or iPad. iCloud originals should download before reading or Read & Listen starts; opening a document already downloading should wait for the same copy.
+- Check the app theme in the top of the library, sidebar and inspector, both in a window and in full screen.
+- Check automatic Read & Listen scrolling in PDF Intelligent Reading: it should follow the spoken line without jumping back to the page top.
+- When narration finishes, use the circular replay arrow or the Play command to restart from the beginning of the document.
+- Home groups documents by format, hiding empty shelves. See all opens the selected format.
+- Settings opens on the App theme when entered or revisited.
+
+This build is distributed to the private Internal group only. Voice models and generated audio stay on this Mac; iCloud sync is optional.

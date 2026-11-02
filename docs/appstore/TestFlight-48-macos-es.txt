@@ -1,0 +1,10 @@
+Nodus Reader 0.1.0 (48) — beta privada de macOS
+
+- Abre documentos sincronizados desde tu iPhone o iPad. Los originales de iCloud deben descargarse antes de leer o empezar Leer y escuchar; si el documento ya se está descargando, la apertura debe esperar a esa misma copia.
+- Comprueba el tema de la app en la parte superior de la biblioteca, el sidebar y el inspector, tanto en una ventana como en pantalla completa.
+- Comprueba el desplazamiento automático en Lectura Inteligente de PDF: debe seguir la línea narrada sin volver al principio de la página.
+- Cuando termine la narración, usa la flecha circular o el comando Reproducir para volver al principio del documento.
+- Inicio agrupa los documentos por formato y oculta las filas vacías. Ver todo abre el formato seleccionado.
+- Ajustes se abre en el tema de la App, también al volver a entrar.
+
+Esta build se distribuye únicamente al grupo privado Internal. Los modelos de voz y el audio generado permanecen en este Mac; la sincronización con iCloud es opcional.

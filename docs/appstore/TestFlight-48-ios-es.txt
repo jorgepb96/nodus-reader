@@ -1,0 +1,10 @@
+Nodus Reader 0.1.0 (48)
+
+- Comprueba el desplazamiento automático al leer y escuchar un PDF en Lectura Inteligente: el texto debe seguir la línea narrada sin saltar arriba y abajo.
+- Cuando termine la narración, pulsa la flecha circular para volver a escuchar desde el principio del documento. Al pausar, debe conservarse el punto donde te detuviste.
+- Inicio agrupa los documentos en EPUB, Textos, PDF y otros formatos. Los formatos vacíos se ocultan y aparecen al añadir documentos. Ver todo abre el formato elegido.
+- Los textos pegados y los TXT importados comparten la fila Textos, incluidos los documentos terminados.
+- Ajustes se abre en el tema de la App en lugar del Lector, también al volver a entrar.
+- Abre un documento que solo esté en iCloud y comprueba que se descarga antes de empezar a leer.
+
+Los modelos de voz y el audio generado permanecen en tu dispositivo. La sincronización con iCloud es opcional.
