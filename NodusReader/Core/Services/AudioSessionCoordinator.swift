@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import AVFoundation
 import Foundation
+import os
 
 /// Owns the iOS audio session for the app's two audio clients: narration and
 /// Immersive Audio (music and ambience under reading). Each client claims the
@@ -46,18 +47,40 @@ final class AudioSessionCoordinator {
         let next = Self.configuration(for: claims, current: configuration)
         #if os(iOS)
         let session = AVAudioSession.sharedInstance()
-        switch next {
-        case .spokenAudio:
-            try? session.setCategory(.playback, mode: .spokenAudio, options: [.allowBluetooth, .allowAirPlay])
-        case .mixedAmbience:
-            try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers, .allowAirPlay])
-        case nil:
-            break
+        if let next {
+            do {
+                try Self.apply(next, to: session)
+            } catch {
+                Self.log.error("Audio session category not set: \(error.localizedDescription, privacy: .public)")
+            }
         }
-        try? session.setActive(true)
+        do {
+            try session.setActive(true)
+        } catch {
+            Self.log.error("Audio session not activated: \(error.localizedDescription, privacy: .public)")
+        }
         #endif
         configuration = next
     }
+
+    #if os(iOS)
+    private static let log = Logger(subsystem: "ai.nodus.reader", category: "AudioSession")
+
+    /// Sets the category for `configuration`. Only options valid for
+    /// `.playback`: AirPlay and Bluetooth (A2DP) are on by default there,
+    /// and `.allowBluetooth`/`.allowAirPlay` belong to `.playAndRecord`.
+    /// Spoken audio must not mix with others: a mixable session is never
+    /// the Now Playing app, so the Lock Screen and the Dynamic Island would
+    /// show no cover and no controls.
+    static func apply(_ configuration: Configuration, to session: AVAudioSession) throws {
+        switch configuration {
+        case .spokenAudio:
+            try session.setCategory(.playback, mode: .spokenAudio, options: [])
+        case .mixedAmbience:
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+        }
+    }
+    #endif
 
     /// The client stopped. The session is given back (other apps resume and
     /// iOS stops showing Nodus as playing) only once no client remains.
