@@ -100,6 +100,7 @@
 		C4785DD0D1E3C312DDDE10CE /* ImmersiveAudioSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DACE001CC6CC610471B8904E /* ImmersiveAudioSettingsView.swift */; };
 		C6AE3EF01BF6C2203D01DE43 /* ReaderContentsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390305E758451EF6E06B5D1A /* ReaderContentsSheet.swift */; };
 		CF5F0A39E4882E6C4AA6E75D /* NodusReaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CFF6B8EDA004F101CAF1458 /* NodusReaderApp.swift */; };
+		CF8B139A9AA514F316837004 /* AudioSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06505155BEDE0D4C5B99E3F1 /* AudioSessionTests.swift */; };
 		CFACFA9BBE2296F8C9FE2506 /* ImmersivePacksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F83040EF5603396D30FD0AA6 /* ImmersivePacksView.swift */; };
 		D02EFDFD40DDFDE3B10B2DFB /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 127F30309ABDCA01F50B7751 /* MLX */; };
 		D0E873D730D51FDB14F1F4A7 /* DocumentParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615B234B48E1D96011BAADA0 /* DocumentParserTests.swift */; };
@@ -191,6 +192,7 @@
 		01715E0E5DA3F1333A3EA37B /* ImmersiveAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveAudioEngine.swift; sourceTree = "<group>"; };
 		01B45E8C0902ECC08A8EC670 /* SceneMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneMap.swift; sourceTree = "<group>"; };
 		0299B9EB01C2108D51F868EC /* SharedImportInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedImportInbox.swift; sourceTree = "<group>"; };
+		06505155BEDE0D4C5B99E3F1 /* AudioSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionTests.swift; sourceTree = "<group>"; };
 		08BCF69C070FDC82D543F37B /* VoiceSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSetupView.swift; sourceTree = "<group>"; };
 		09340C49F00362F5D266FA01 /* PhononOnDeviceConversion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhononOnDeviceConversion.swift; sourceTree = "<group>"; };
 		099184BADB5FD68A4939C524 /* BookCoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCoverView.swift; sourceTree = "<group>"; };
@@ -579,6 +581,7 @@
 		8F5ACEEAA8522CA2F4EF6BDC /* NodusReaderTests */ = {
 			isa = PBXGroup;
 			children = (
+				06505155BEDE0D4C5B99E3F1 /* AudioSessionTests.swift */,
 				615B234B48E1D96011BAADA0 /* DocumentParserTests.swift */,
 				F1751C48BB4E4953E0FDC724 /* ImmersiveAudioTests.swift */,
 				2D2FEAF26A6FAC1835AD1D28 /* NodusReaderTests.swift */,
@@ -1054,6 +1057,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CF8B139A9AA514F316837004 /* AudioSessionTests.swift in Sources */,
 				D0E873D730D51FDB14F1F4A7 /* DocumentParserTests.swift in Sources */,
 				D6F8B8E6339B1D764E96C866 /* ImmersiveAudioTests.swift in Sources */,
 				4412BA092D7B5B51CA1FB90D /* NodusReaderTests.swift in Sources */,
@@ -1156,7 +1160,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1222,7 +1226,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
