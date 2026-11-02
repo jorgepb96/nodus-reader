@@ -41,6 +41,7 @@ struct NodusReaderApp: App {
         let journal = SyncJournal(context: container.mainContext)
         library.syncJournal = journal
         #if os(macOS)
+        Self.useOverlayScrollers()
         if !LibraryStorageScope.isIsolated {
             do { try LegacySampleLibraryCleanup.run(library: library) }
             catch { NSLog("Legacy sample cleanup deferred: %@", error.localizedDescription) }
@@ -86,6 +87,22 @@ struct NodusReaderApp: App {
         _preferences = State(initialValue: preferences)
         _navigation = State(initialValue: NavigationModel())
     }
+
+    #if os(macOS)
+    /// Thin overlay scroll bars that appear while scrolling, drawn light or
+    /// dark to suit the page, instead of the grey legacy track macOS picks
+    /// when a mouse is connected. A reader who chose "Always" in System
+    /// Settings › Appearance keeps scroll bars always shown.
+    private static func useOverlayScrollers() {
+        let key = "AppleShowScrollBars"
+        let system = UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?[key] as? String
+        if system == "Always" {
+            UserDefaults.standard.removeObject(forKey: key)
+        } else {
+            UserDefaults.standard.set("WhenScrolling", forKey: key)
+        }
+    }
+    #endif
 
     var body: some Scene {
         WindowGroup {

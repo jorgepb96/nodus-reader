@@ -114,6 +114,11 @@ struct MacRootView: View {
         return NavigationSplitView(columnVisibility: $navigation.columnVisibility) {
             sidebar
                 .navigationSplitViewColumnWidth(min: 220, ideal: 244, max: 300)
+                // In full screen the toolbar lives in its own window with a
+                // grey material; it takes the app's colours as it does in a
+                // window, where the page shows through it.
+                .toolbarBackground(palette.sidebar, for: .windowToolbar)
+                .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
                 // The reader bar has its own sidebar button where the
                 // toolbar's would cover it.
                 .toolbar(removing: navigation.macReaderBookID != nil ? .sidebarToggle : nil)
@@ -130,6 +135,8 @@ struct MacRootView: View {
                 NavigationStack(path: $detailPath) {
                     detailContent
                         .searchable(text: $searchText, placement: .toolbar, prompt: "Search library")
+                        .toolbarBackground(palette.background, for: .windowToolbar)
+                        .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
                 }
             }
         }
