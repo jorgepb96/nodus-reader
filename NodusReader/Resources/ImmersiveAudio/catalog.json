@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "catalogVersion": "2026.11.01",
+  "catalogVersion": "2026.11.02",
   "hosts": [
     {
       "name": "huggingface",
@@ -104,9 +104,41 @@
         "music.gray-trip",
         "music.village-ruins",
         "music.irelands-coast-game-edition",
-        "music.trading-it-for-the-memories"
+        "music.trading-it-for-the-memories",
+        "music.death-is-just-another-path",
+        "music.leap-into-eternity-live-orchestra",
+        "music.modern-castle-atmosphere",
+        "music.i-want-to-go-home",
+        "music.circus-dilemma",
+        "music.old-mo",
+        "music.berries",
+        "music.royal-mischief-waltz",
+        "music.intervals",
+        "music.undying-love",
+        "music.northern-isles",
+        "music.bleeding-out",
+        "music.spiritwatcher",
+        "music.emotional-orchestra-music",
+        "music.november-snow",
+        "music.minimalistic-flute-strings-tune",
+        "music.calm-relax-1-synthwave-421k",
+        "music.the-field-of-dreams",
+        "music.fall-of-nightmares-epic-orchestral",
+        "music.new-sunrise",
+        "music.bustling-city",
+        "music.southern-pastures-miniature-suite-for-orchestra",
+        "music.merchants-and-sea-salt",
+        "music.creepy-forest-f",
+        "music.creepy",
+        "music.mysterious",
+        "music.forgoten-tomb-ambience",
+        "music.ghost-town",
+        "music.dissonant-waltz",
+        "music.something-behind-me",
+        "music.dark-ambient-loop-13",
+        "music.skin-cells-touch"
       ],
-      "bytes": 237542147
+      "bytes": 358789758
     },
     {
       "id": "ambience",
@@ -6875,6 +6907,2331 @@
         "studySafe": false,
         "subPool": "piano"
       }
+    },
+    {
+      "id": "music.death-is-just-another-path",
+      "layer": "music",
+      "title": "Death Is Just Another Path",
+      "author": "Otto Halmén",
+      "authorURL": "https://opengameart.org/users/otto-halm%C3%A9n",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/death-is-just-another-path",
+        "fileURL": "https://opengameart.org/sites/default/files/Death Is Just Another Path.wav",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "f08a08d571bdf9402869b8a4c16d4d128b8881be55937c2acea9aa95a2dcdb48",
+        "originalBytes": 26108744,
+        "originalFormat": {
+          "codec": "pcm_s24le",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 2116800
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-3.0",
+        "url": "https://creativecommons.org/licenses/by/3.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/death-is-just-another-path",
+          "snapshot": "build/immersive-audio/evidence/music.death-is-just-another-path.html",
+          "snapshotSHA256": "d8e2c4675a44a6b359de58a5b3061bb1214e9994cff4e9f3b435e754dbffb151",
+          "quote": "License(s): CC-BY 3.0, OGA-BY 3.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from pcm_s24le 44100 Hz",
+          "leading/trailing silence trimmed (1.65 s)",
+          "gain -3.70 dB (measured -16.3 LUFS, -0.1 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 96, 183 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.death-is-just-another-path.m4a",
+        "githubAssetName": "music.death-is-just-another-path.m4a",
+        "bytes": 2240272,
+        "sha256": "c9d888335599f6741a57e8cf6cb322e0668edc6213d50d4d7d959857a5357eed",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 183,
+        "frames": 4278495
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -3.8,
+        "lra": 19.4,
+        "isLoop": false,
+        "tailStartSeconds": 89.02
+      },
+      "semantics": {
+        "moods": [
+          "solemn",
+          "melancholic"
+        ],
+        "energy": 2,
+        "studySafe": false,
+        "subPool": "orchestral"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.leap-into-eternity-live-orchestra",
+      "layer": "music",
+      "title": "Leap Into Eternity (Live Orchestra)",
+      "author": "Matthew Pablo",
+      "authorURL": "https://opengameart.org/users/matthew-pablo",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/leap-into-eternity-live-orchestra",
+        "fileURL": "https://opengameart.org/sites/default/files/Leap into Eternity (Live Orchestra).mp3",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "e246ab852191b31f8a46e7fa742bc1d1087f8929a3a1a441c6de16d695447480",
+        "originalBytes": 4442808,
+        "originalFormat": {
+          "codec": "mp3",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 320000
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-3.0",
+        "url": "https://creativecommons.org/licenses/by/3.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/leap-into-eternity-live-orchestra",
+          "snapshot": "build/immersive-audio/evidence/music.leap-into-eternity-live-orchestra.html",
+          "snapshotSHA256": "17ad4c74b0951b1316531082f1924fe2c3e2bfdfe89f1ef000070d4b9c98ee8f",
+          "quote": "License(s): CC-BY 3.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from mp3 44100 Hz",
+          "leading/trailing silence trimmed (1.13 s)",
+          "gain -2.30 dB (measured -17.7 LUFS, -3.3 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 88, 183 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.leap-into-eternity-live-orchestra.m4a",
+        "githubAssetName": "music.leap-into-eternity-live-orchestra.m4a",
+        "bytes": 2530599,
+        "sha256": "1d9e91f8e333020c0aa075ba6c01fc8a247324bf8274beb18fe20cdcb4f7236e",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 183,
+        "frames": 4837042
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -5.5,
+        "lra": 9.1,
+        "isLoop": false,
+        "tailStartSeconds": 101.68
+      },
+      "semantics": {
+        "moods": [
+          "melancholic",
+          "solemn"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "orchestral"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.modern-castle-atmosphere",
+      "layer": "music",
+      "title": "Modern Castle Atmosphere",
+      "author": "Bogart VGM",
+      "authorURL": "https://opengameart.org/users/bogart-vgm",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/modern-castle-atmosphere",
+        "fileURL": "https://opengameart.org/sites/default/files/Modern Castle Atmosphere_0.mp3",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "d873bd7058f5a8581d339d24c907fe906001105aac1d9673bff57f2126185740",
+        "originalBytes": 6717096,
+        "originalFormat": {
+          "codec": "mp3",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 320000
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/modern-castle-atmosphere",
+          "snapshot": "build/immersive-audio/evidence/music.modern-castle-atmosphere.html",
+          "snapshotSHA256": "d0cd36dbd554436358b3c7e726cd23a358341a0ae9d812d3a1cb43b5482dfeef",
+          "quote": "License(s): CC-BY 4.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from mp3 44100 Hz",
+          "leading/trailing silence trimmed (0.78 s)",
+          "gain -8.30 dB (measured -11.7 LUFS, 0.2 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 88, 179 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.modern-castle-atmosphere.m4a",
+        "githubAssetName": "music.modern-castle-atmosphere.m4a",
+        "bytes": 3779589,
+        "sha256": "935ffc34681cad9f04196216768193835b760755b68a56ab65615b5a19850e2c",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 179,
+        "frames": 7377592
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -7.9,
+        "lra": 10.5,
+        "isLoop": false,
+        "tailStartSeconds": 159.29
+      },
+      "semantics": {
+        "moods": [
+          "solemn",
+          "mysterious"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "classical"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.i-want-to-go-home",
+      "layer": "music",
+      "title": "I Want to go Home",
+      "author": "Eldritch Grim",
+      "authorURL": "https://opengameart.org/users/eldritch-grim",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/i-want-to-go-home",
+        "fileURL": "https://opengameart.org/sites/default/files/i_want_to_go_home.wav",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "393d7a18afcd24123c027ec9df56c99b8c0e4e5c8022e510d4588ec5a70725d3",
+        "originalBytes": 37248116,
+        "originalFormat": {
+          "codec": "pcm_s16le",
+          "sampleRate": 48000,
+          "channels": 2,
+          "bitRate": 1536000
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/i-want-to-go-home",
+          "snapshot": "build/immersive-audio/evidence/music.i-want-to-go-home.html",
+          "snapshotSHA256": "dc0e39827c2ec7f266af29670d7a8829a9724194932aaeef60b9ffc6317dc066",
+          "quote": "License(s): CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from pcm_s16le 48000 Hz",
+          "leading/trailing silence trimmed (0.34 s)",
+          "gain +3.90 dB (measured -23.9 LUFS, -9.6 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 96, 188 kb/s), 48000 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.i-want-to-go-home.m4a",
+        "githubAssetName": "music.i-want-to-go-home.m4a",
+        "bytes": 4588796,
+        "sha256": "da854e46eadf94fab9acccbfdf11a0312df0a0054f27503fe4a6575e7a521b4d",
+        "sampleRate": 48000,
+        "channels": 2,
+        "bitRateKbps": 188,
+        "frames": 9295867
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -5.7,
+        "lra": 4.3,
+        "isLoop": false,
+        "tailStartSeconds": 185.66
+      },
+      "semantics": {
+        "moods": [
+          "melancholic",
+          "contemplative"
+        ],
+        "energy": 1,
+        "studySafe": true,
+        "subPool": "piano"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.circus-dilemma",
+      "layer": "music",
+      "title": "Circus Dilemma",
+      "author": "Matthew Pablo",
+      "authorURL": "https://opengameart.org/users/matthew-pablo",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/circus-dilemma",
+        "fileURL": "https://opengameart.org/sites/default/files/Circus Dilemma.mp3",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "bb125bf874467cdb979c61b121c416d14bbd3a9fe33e2963a2e4ca585a41ae13",
+        "originalBytes": 3403134,
+        "originalFormat": {
+          "codec": "mp3",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 320000
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-3.0",
+        "url": "https://creativecommons.org/licenses/by/3.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/circus-dilemma",
+          "snapshot": "build/immersive-audio/evidence/music.circus-dilemma.html",
+          "snapshotSHA256": "eec6d6af5b42e72d0438840b96bd23766df3810cd0f8f21c4afa88b699e92ceb",
+          "quote": "License(s): CC-BY 3.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from mp3 44100 Hz",
+          "gain -7.40 dB (measured -12.6 LUFS, 0.6 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 81, 167 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.circus-dilemma.m4a",
+        "githubAssetName": "music.circus-dilemma.m4a",
+        "bytes": 1787831,
+        "sha256": "3eceeee826b990aaa67791a97f9ce032f2d3c32ae5f28d56a9e6ce0e58f14967",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 167,
+        "frames": 3740546
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -6.6,
+        "lra": 4.7,
+        "isLoop": false,
+        "tailStartSeconds": 76.82
+      },
+      "semantics": {
+        "moods": [
+          "comic"
+        ],
+        "energy": 2,
+        "studySafe": false,
+        "subPool": "orchestral"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.old-mo",
+      "layer": "music",
+      "title": "Old Mo",
+      "author": "Yubatake",
+      "authorURL": "https://opengameart.org/users/yubatake",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/old-mo",
+        "fileURL": "https://opengameart.org/sites/default/files/OldMo_0.flac",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "fb22b6287aaeab4aa85cca6a6bdb69eff7b8b96a686b1f879de4ed562264cb65",
+        "originalBytes": 32684358,
+        "originalFormat": {
+          "codec": "flac",
+          "sampleRate": 48000,
+          "channels": 2,
+          "bitRate": 1565597
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/old-mo",
+          "snapshot": "build/immersive-audio/evidence/music.old-mo.html",
+          "snapshotSHA256": "a0fc41a1a8cf6ad7c3f8ce6e470c52afc72bbbebfd83188746060c267e6b7fc4",
+          "quote": "License(s): CC-BY 4.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from flac 48000 Hz",
+          "leading/trailing silence trimmed (1.29 s)",
+          "gain -3.40 dB (measured -16.6 LUFS, -0.4 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 88, 178 kb/s), 48000 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.old-mo.m4a",
+        "githubAssetName": "music.old-mo.m4a",
+        "bytes": 3732690,
+        "sha256": "5ab13c327e95326eb159a393e58d27674699e7d6773a310458108be7b73e72b4",
+        "sampleRate": 48000,
+        "channels": 2,
+        "bitRateKbps": 178,
+        "frames": 7954927
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -3.9,
+        "lra": 7.4,
+        "isLoop": false,
+        "tailStartSeconds": 157.73
+      },
+      "semantics": {
+        "moods": [
+          "comic",
+          "joyful"
+        ],
+        "energy": 2,
+        "studySafe": false,
+        "subPool": "jazz"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.berries",
+      "layer": "music",
+      "title": "Berries",
+      "author": "Seth Walker",
+      "authorURL": "https://opengameart.org/users/seth-walker",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/berries",
+        "fileURL": "https://opengameart.org/sites/default/files/burries.wav",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "6fafe5c7cdda0ddf2fe506db71162d528540a9874305edb3c9f2b7ead408c844",
+        "originalBytes": 35545336,
+        "originalFormat": {
+          "codec": "pcm_s24le",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 2116800
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/berries",
+          "snapshot": "build/immersive-audio/evidence/music.berries.html",
+          "snapshotSHA256": "1d5ead8eb90d75923436f000aa447a796bca3d76400369ce8770c1e3ba76657e",
+          "quote": "License(s): CC-BY 4.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from pcm_s24le 44100 Hz",
+          "leading/trailing silence trimmed (2.16 s)",
+          "gain +1.70 dB (measured -21.7 LUFS, -5.9 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 88, 188 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.berries.m4a",
+        "githubAssetName": "music.berries.m4a",
+        "bytes": 3133142,
+        "sha256": "a5a3e58acdf149fe80bedb469d1ae0132c88839afed75072bdd469dbf7803967",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 188,
+        "frames": 5828681
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -4.2,
+        "lra": 5.2,
+        "isLoop": false,
+        "tailStartSeconds": 124.17
+      },
+      "semantics": {
+        "moods": [
+          "comic"
+        ],
+        "energy": 2,
+        "studySafe": false,
+        "subPool": "score"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.royal-mischief-waltz",
+      "layer": "music",
+      "title": "Royal Mischief Waltz",
+      "author": "aroldv",
+      "authorURL": "https://opengameart.org/users/aroldv",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/royal-mischief-waltz",
+        "fileURL": "https://opengameart.org/sites/default/files/royal_mischief.flac",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "811490f5d9cf9daa3fa2f81fa80e253c7ca6f6c0feec21da648ee0bcbd034c2a",
+        "originalBytes": 17387579,
+        "originalFormat": {
+          "codec": "flac",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 699049
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/royal-mischief-waltz",
+          "snapshot": "build/immersive-audio/evidence/music.royal-mischief-waltz.html",
+          "snapshotSHA256": "e03662e58433eac07db910c9f786559cd8c23e1dfd4f3f69f56eecf61a8883e7",
+          "quote": "License(s): CC-BY 4.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from flac 44100 Hz",
+          "20 Hz high-pass (DC offset measured)",
+          "leading/trailing silence trimmed (1.90 s)",
+          "gain -3.90 dB (measured -16.1 LUFS, 1.2 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 81, 160 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.royal-mischief-waltz.m4a",
+        "githubAssetName": "music.royal-mischief-waltz.m4a",
+        "bytes": 3984850,
+        "sha256": "d6834c167631a49aabd729ca8f0268ae67ed7ca25cf1c72314c5ef67f3d69d71",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 160,
+        "frames": 8691367
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -3.0,
+        "lra": 9.4,
+        "isLoop": false,
+        "tailStartSeconds": 189.08
+      },
+      "semantics": {
+        "moods": [
+          "comic",
+          "mysterious"
+        ],
+        "energy": 2,
+        "studySafe": false,
+        "subPool": "orchestral"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.intervals",
+      "layer": "music",
+      "title": "Intervals",
+      "author": "Of Far Different Nature",
+      "authorURL": "https://opengameart.org/users/of-far-different-nature",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/intervals",
+        "fileURL": "https://opengameart.org/sites/default/files/Of Far Different Nature - Intervals (CC-BY).wav",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "51b2bce0867ad3e4218a4ce39ff059b947497e1b8690209842fd13a067d68e12",
+        "originalBytes": 12427270,
+        "originalFormat": {
+          "codec": "pcm_s16le",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 1411200
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/intervals",
+          "snapshot": "build/immersive-audio/evidence/music.intervals.html",
+          "snapshotSHA256": "879963550be0b0fe20d059dcaee042e5de108752d182498a5549c6366c9518c2",
+          "quote": "License(s): CC-BY 4.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from pcm_s16le 44100 Hz",
+          "leading/trailing silence trimmed (1.27 s)",
+          "gain -6.80 dB (measured -13.2 LUFS, -0.2 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 81, 163 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.intervals.m4a",
+        "githubAssetName": "music.intervals.m4a",
+        "bytes": 1423871,
+        "sha256": "28d9f83b18b0072a554b2a73c047191c482b32d42542f619b9cd0f53ff0a86b2",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 163,
+        "frames": 3050749
+      },
+      "audio": {
+        "integratedLUFS": -20.1,
+        "truePeakDBTP": -6.9,
+        "lra": 2.7,
+        "isLoop": false,
+        "tailStartSeconds": 61.18
+      },
+      "semantics": {
+        "moods": [
+          "comic",
+          "adventure"
+        ],
+        "energy": 2,
+        "studySafe": false,
+        "subPool": "orchestral"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.undying-love",
+      "layer": "music",
+      "title": "Undying Love",
+      "author": "Stefan_Composer",
+      "authorURL": "https://opengameart.org/users/stefancomposer",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/undying-love",
+        "fileURL": "https://opengameart.org/sites/default/files/Stefan Großmann - Undying Love - Cinematic Music.flac",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "ee0af0ecc57a320e38376dcc10828e62229ed18d1c6f8228e516cac188ee2b61",
+        "originalBytes": 17396627,
+        "originalFormat": {
+          "codec": "flac",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 578201
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/undying-love",
+          "snapshot": "build/immersive-audio/evidence/music.undying-love.html",
+          "snapshotSHA256": "60e200796babeaff340f5089a015e19f516a5ac30f26a6fe1cad9c79809c39e7",
+          "quote": "License(s): CC-BY 4.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from flac 44100 Hz",
+          "leading/trailing silence trimmed (0.54 s)",
+          "gain -4.00 dB (measured -16.0 LUFS, -3.3 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 96, 190 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.undying-love.m4a",
+        "githubAssetName": "music.undying-love.m4a",
+        "bytes": 5764413,
+        "sha256": "9fa977d7c2a61f7de2e3497005220c7698d8d82605e7db3fda5f9d0f3f3debe4",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 190,
+        "frames": 10591027
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -7.3,
+        "lra": 3.4,
+        "isLoop": false,
+        "tailStartSeconds": 232.16
+      },
+      "semantics": {
+        "moods": [
+          "romantic"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "strings"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.northern-isles",
+      "layer": "music",
+      "title": "Northern Isles",
+      "author": "Yubatake",
+      "authorURL": "https://opengameart.org/users/yubatake",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/northern-isles",
+        "fileURL": "https://opengameart.org/sites/default/files/NorthernIsles.ogg",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "be9a0e87a691cba4b8f86d3f60aece67586c47de402184e4598ceb088eb6f4d3",
+        "originalBytes": 3837812,
+        "originalFormat": {
+          "codec": "vorbis",
+          "sampleRate": 48000,
+          "channels": 2,
+          "bitRate": 192000
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/northern-isles",
+          "snapshot": "build/immersive-audio/evidence/music.northern-isles.html",
+          "snapshotSHA256": "8bcad63529a01e78f10d02308bb1c3ea46ef22531c1708bab7b6151020e2a695",
+          "quote": "License(s): CC-BY 4.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from vorbis 48000 Hz",
+          "leading/trailing silence trimmed (0.59 s)",
+          "gain -6.00 dB (measured -14.0 LUFS, -0.1 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 112, 165 kb/s), 48000 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.northern-isles.m4a",
+        "githubAssetName": "music.northern-isles.m4a",
+        "bytes": 4361983,
+        "sha256": "ade1574b76436ec0196ee6a6342124b1eb109c7434e475df2e80a07719055e22",
+        "sampleRate": 48000,
+        "channels": 2,
+        "bitRateKbps": 165,
+        "frames": 10017715
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -6.0,
+        "lra": 3.3,
+        "isLoop": false,
+        "tailStartSeconds": 200.7
+      },
+      "semantics": {
+        "moods": [
+          "romantic",
+          "calm"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "celtic"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.bleeding-out",
+      "layer": "music",
+      "title": "Bleeding out",
+      "author": "HaelDB",
+      "authorURL": "https://opengameart.org/users/haeldb",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/bleeding-out",
+        "fileURL": "https://opengameart.org/sites/default/files/bleeding_out2.flac",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "0f76d09dfff29f0cf615456d7a74cba6f5034428bf24a0bdda99ad52f7698fcd",
+        "originalBytes": 11322490,
+        "originalFormat": {
+          "codec": "flac",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 568503
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/bleeding-out",
+          "snapshot": "build/immersive-audio/evidence/music.bleeding-out.html",
+          "snapshotSHA256": "df0aa12ebfa49869c9d6f00f09ae315aed5d893af53b98a5ca2a38a54a4313f2",
+          "quote": "License(s): OGA-BY 3.0, CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from flac 44100 Hz",
+          "leading/trailing silence trimmed (4.22 s)",
+          "gain -3.70 dB (measured -16.3 LUFS, -3.2 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 88, 178 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.bleeding-out.m4a",
+        "githubAssetName": "music.bleeding-out.m4a",
+        "bytes": 3479820,
+        "sha256": "05a5b9adc85d6f564af127532a259776f65f0f886908026492665a2b680277ba",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 178,
+        "frames": 6840341
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -6.9,
+        "lra": 6.0,
+        "isLoop": false,
+        "tailStartSeconds": 147.11
+      },
+      "semantics": {
+        "moods": [
+          "dramatic",
+          "melancholic"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "strings"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.spiritwatcher",
+      "layer": "music",
+      "title": "Spiritwatcher",
+      "author": "Matthew Pablo",
+      "authorURL": "https://opengameart.org/users/matthew-pablo",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/spiritwatcher",
+        "fileURL": "https://opengameart.org/sites/default/files/Spiritwatcher.mp3",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "5e7ec8b7ac9243456b4721cd3e7232255a3d2c83e308426e50e3b40defd4227c",
+        "originalBytes": 5656153,
+        "originalFormat": {
+          "codec": "mp3",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 320000
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-3.0",
+        "url": "https://creativecommons.org/licenses/by/3.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/spiritwatcher",
+          "snapshot": "build/immersive-audio/evidence/music.spiritwatcher.html",
+          "snapshotSHA256": "ae7bb54deac5dc4559b353b225729f6f8cf7d4b53921215defaa0ac8706e0907",
+          "quote": "License(s): CC-BY 3.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from mp3 44100 Hz",
+          "leading/trailing silence trimmed (2.59 s)",
+          "gain -2.10 dB (measured -17.9 LUFS, 0.0 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 81, 168 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.spiritwatcher.m4a",
+        "githubAssetName": "music.spiritwatcher.m4a",
+        "bytes": 2811584,
+        "sha256": "8e3007d40ae67b834990a9ee5afff1d884ea6c94be7c03180dbea6a08fe36937",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 168,
+        "frames": 5846159
+      },
+      "audio": {
+        "integratedLUFS": -20.1,
+        "truePeakDBTP": -2.0,
+        "lra": 9.6,
+        "isLoop": false,
+        "tailStartSeconds": 124.57
+      },
+      "semantics": {
+        "moods": [
+          "melancholic",
+          "dramatic"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "orchestral"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.emotional-orchestra-music",
+      "layer": "music",
+      "title": "Emotional Orchestra Music",
+      "author": "migfus20",
+      "authorURL": "https://opengameart.org/users/migfus20",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/emotional-orchestra-music",
+        "fileURL": "https://opengameart.org/sites/default/files/sdf_02.mp3",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "7a391fbed5bf2268aa96fb9f9ce3ce9f0981269f23de53744107dd8e141c4b21",
+        "originalBytes": 4237596,
+        "originalFormat": {
+          "codec": "mp3",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 320000
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/emotional-orchestra-music",
+          "snapshot": "build/immersive-audio/evidence/music.emotional-orchestra-music.html",
+          "snapshotSHA256": "0de070e2863eba6b5d88cf198d744dc2769c03223959bffac2d62d28b3953708",
+          "quote": "License(s): CC-BY 4.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from mp3 44100 Hz",
+          "leading/trailing silence trimmed (0.06 s)",
+          "gain +5.70 dB (measured -25.7 LUFS, -8.4 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 88, 179 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.emotional-orchestra-music.m4a",
+        "githubAssetName": "music.emotional-orchestra-music.m4a",
+        "bytes": 2401220,
+        "sha256": "2a746534b77e0aa2898ba0efdb734eee7f440062acb303adc4922c5934a54a95",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 179,
+        "frames": 4673408
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -2.6,
+        "lra": 9.2,
+        "isLoop": false,
+        "tailStartSeconds": 97.97
+      },
+      "semantics": {
+        "moods": [
+          "dramatic"
+        ],
+        "energy": 2,
+        "studySafe": false,
+        "subPool": "orchestral"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.november-snow",
+      "layer": "music",
+      "title": "November Snow",
+      "author": "cynicmusic",
+      "authorURL": "https://opengameart.org/users/cynicmusic",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/november-snow",
+        "fileURL": "https://opengameart.org/sites/default/files/155 November_snow-33_tape_leveled.mp3",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "7e4675f6fbc86b97603d620dc54b0753eb5fe773ccc2fab99bc863cb7afde32c",
+        "originalBytes": 13982823,
+        "originalFormat": {
+          "codec": "mp3",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 320000
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/november-snow",
+          "snapshot": "build/immersive-audio/evidence/music.november-snow.html",
+          "snapshotSHA256": "dae4aa57bbf99053583bf067e2bec020bb79432916d5e79a28622dfb0cad54cb",
+          "quote": "License(s): CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from mp3 44100 Hz",
+          "leading/trailing silence trimmed (0.20 s)",
+          "gain -3.40 dB (measured -16.6 LUFS, 0.4 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 81, 168 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.november-snow.m4a",
+        "githubAssetName": "music.november-snow.m4a",
+        "bytes": 7387658,
+        "sha256": "5edb01c09531920167245865fb6c5844bff2218b376082c37a5b4f01ae220879",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 168,
+        "frames": 15404373
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -3.0,
+        "lra": 7.1,
+        "isLoop": false,
+        "tailStartSeconds": 341.31
+      },
+      "semantics": {
+        "moods": [
+          "focus",
+          "calm"
+        ],
+        "energy": 1,
+        "studySafe": true,
+        "subPool": "electronic"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.minimalistic-flute-strings-tune",
+      "layer": "music",
+      "title": "Minimalistic Flute & Strings Tune",
+      "author": "Spring Spring",
+      "authorURL": "https://opengameart.org/users/spring-spring",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/minimalistic-flute-strings-tune",
+        "fileURL": "https://opengameart.org/sites/default/files/ff_2.ogg",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "42bc911a56867092a1d89c326ed755a0155cb468d1d8a2c22bf0139f2dd890dc",
+        "originalBytes": 3715398,
+        "originalFormat": {
+          "codec": "vorbis",
+          "sampleRate": 48000,
+          "channels": 2,
+          "bitRate": 160000
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/minimalistic-flute-strings-tune",
+          "snapshot": "build/immersive-audio/evidence/music.minimalistic-flute-strings-tune.html",
+          "snapshotSHA256": "feea2447996026e501c4e783a6dbd8f3da75df6c558c0879ac02713c82996138",
+          "quote": "License(s): CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from vorbis 48000 Hz",
+          "gain -0.90 dB (measured -20.0 LUFS, -0.6 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 88, 185 kb/s), 48000 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.minimalistic-flute-strings-tune.m4a",
+        "githubAssetName": "music.minimalistic-flute-strings-tune.m4a",
+        "bytes": 4534663,
+        "sha256": "d3772d8c672ec344dbd61f8c654a5ef25183d88f905b4cea1b022f62da9bedc9",
+        "sampleRate": 48000,
+        "channels": 2,
+        "bitRateKbps": 185,
+        "frames": 9338882
+      },
+      "audio": {
+        "integratedLUFS": -20.9,
+        "truePeakDBTP": -1.7,
+        "lra": 8.0,
+        "isLoop": false,
+        "tailStartSeconds": 186.56
+      },
+      "semantics": {
+        "moods": [
+          "focus",
+          "calm"
+        ],
+        "energy": 1,
+        "studySafe": true,
+        "subPool": "acoustic"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.calm-relax-1-synthwave-421k",
+      "layer": "music",
+      "title": "Calm Relax 1 (Synthwave 421k)",
+      "author": "cynicmusic",
+      "authorURL": "https://opengameart.org/users/cynicmusic",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/calm-relax-1-synthwave-421k",
+        "fileURL": "https://opengameart.org/sites/default/files/007_Synthwave_421k.mp3",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "5d5cb73be5a1e3e42c12171d7e51ef1ed168ff931ff008b8bc37d1a548b1fbd2",
+        "originalBytes": 18976382,
+        "originalFormat": {
+          "codec": "mp3",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 320000
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/calm-relax-1-synthwave-421k",
+          "snapshot": "build/immersive-audio/evidence/music.calm-relax-1-synthwave-421k.html",
+          "snapshotSHA256": "20b488712e055a1165627c401451da84ea0d71b838c50699be74fa3b367fca64",
+          "quote": "License(s): CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from mp3 44100 Hz",
+          "leading/trailing silence trimmed (0.10 s)",
+          "gain -5.70 dB (measured -14.3 LUFS, 0.0 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 96, 192 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.calm-relax-1-synthwave-421k.m4a",
+        "githubAssetName": "music.calm-relax-1-synthwave-421k.m4a",
+        "bytes": 11482917,
+        "sha256": "83634686dea776f6a9abbeec23d9dd2e9400eeba8cf106f17d4edc1e4274a6fe",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 192,
+        "frames": 20909678
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -5.6,
+        "lra": 13.2,
+        "isLoop": false,
+        "tailStartSeconds": 466.14
+      },
+      "semantics": {
+        "moods": [
+          "focus",
+          "calm"
+        ],
+        "energy": 1,
+        "studySafe": true,
+        "subPool": "piano"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.the-field-of-dreams",
+      "layer": "music",
+      "title": "The Field Of Dreams",
+      "author": "pauliuw",
+      "authorURL": "https://opengameart.org/users/pauliuw",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/the-field-of-dreams",
+        "fileURL": "https://opengameart.org/sites/default/files/the_field_of_dreams.mp3",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "103a7032a49be7e8399c5cb771f7759eac9ac1a0d2bf227f41fff42ad8d78194",
+        "originalBytes": 3385581,
+        "originalFormat": {
+          "codec": "mp3",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 320000
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/the-field-of-dreams",
+          "snapshot": "build/immersive-audio/evidence/music.the-field-of-dreams.html",
+          "snapshotSHA256": "f44f38f6d040e9e917fbcea77d70b593a78b534affa6fad9c0e6d30322c91bf0",
+          "quote": "License(s): CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from mp3 44100 Hz",
+          "leading/trailing silence trimmed (1.14 s)",
+          "gain +3.40 dB (measured -23.4 LUFS, -7.7 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 81, 175 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.the-field-of-dreams.m4a",
+        "githubAssetName": "music.the-field-of-dreams.m4a",
+        "bytes": 1843659,
+        "sha256": "435145b853acdbd31a2fec6b7db48f1a9238e91009155cce7e6996f5d8f540f5",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 175,
+        "frames": 3682195
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -4.3,
+        "lra": 7.1,
+        "isLoop": false,
+        "tailStartSeconds": 75.5
+      },
+      "semantics": {
+        "moods": [
+          "adventure",
+          "contemplative"
+        ],
+        "energy": 2,
+        "studySafe": false,
+        "subPool": "orchestral"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.fall-of-nightmares-epic-orchestral",
+      "layer": "music",
+      "title": "Fall of Nightmares [Epic, Orchestral]",
+      "author": "nene",
+      "authorURL": "https://opengameart.org/users/nene",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/fall-of-nightmares-epic-orchestral",
+        "fileURL": "https://opengameart.org/sites/default/files/Fall of Nightmares [orchestral]_mastered.wav",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "08495161ba55bb5ae0bed21ee5205b671373d09ffce3bc19417b8c023856f962",
+        "originalBytes": 15547474,
+        "originalFormat": {
+          "codec": "pcm_s16le",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 1411200
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/fall-of-nightmares-epic-orchestral",
+          "snapshot": "build/immersive-audio/evidence/music.fall-of-nightmares-epic-orchestral.html",
+          "snapshotSHA256": "71da34d2d677cd552e2d1c74809359be6cb98ac0f1cf35eba15c16f61401da1d",
+          "quote": "License(s): CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from pcm_s16le 44100 Hz",
+          "leading/trailing silence trimmed (3.82 s)",
+          "gain -5.40 dB (measured -14.6 LUFS, -0.0 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 81, 176 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.fall-of-nightmares-epic-orchestral.m4a",
+        "githubAssetName": "music.fall-of-nightmares-epic-orchestral.m4a",
+        "bytes": 1880041,
+        "sha256": "f36acac4c1ecb9a64dc9383c15da652547ca96059e7e187eadb03c50b48657d7",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 176,
+        "frames": 3716970
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -5.5,
+        "lra": 11.0,
+        "isLoop": false,
+        "tailStartSeconds": 76.29
+      },
+      "semantics": {
+        "moods": [
+          "epic",
+          "tense"
+        ],
+        "energy": 3,
+        "studySafe": false,
+        "subPool": "orchestral"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.new-sunrise",
+      "layer": "music",
+      "title": "New Sunrise",
+      "author": "nene",
+      "authorURL": "https://opengameart.org/users/nene",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/new-sunrise",
+        "fileURL": "https://opengameart.org/sites/default/files/New Sunrise.wav",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "2cdeaf5b65784117e09d10cde1c5a8fb26716751413a35e3b609b928701226d4",
+        "originalBytes": 39382102,
+        "originalFormat": {
+          "codec": "pcm_s24le",
+          "sampleRate": 48000,
+          "channels": 2,
+          "bitRate": 2304000
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/new-sunrise",
+          "snapshot": "build/immersive-audio/evidence/music.new-sunrise.html",
+          "snapshotSHA256": "7936aea874a6605f1461c91593ccbcc59d4b6b51817e1d4c5a552cdff9507df2",
+          "quote": "License(s): CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from pcm_s24le 48000 Hz",
+          "leading/trailing silence trimmed (12.47 s)",
+          "gain -1.00 dB (measured -19.0 LUFS, -2.6 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 81, 178 kb/s), 48000 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.new-sunrise.m4a",
+        "githubAssetName": "music.new-sunrise.m4a",
+        "bytes": 2791212,
+        "sha256": "ad00fad5c770719b17a1689c1c229c2f26ce9cad61c96964aa3083c071fe9277",
+        "sampleRate": 48000,
+        "channels": 2,
+        "bitRateKbps": 178,
+        "frames": 5964935
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -3.6,
+        "lra": 21.7,
+        "isLoop": false,
+        "tailStartSeconds": 116.27
+      },
+      "semantics": {
+        "moods": [
+          "epic",
+          "joyful"
+        ],
+        "energy": 3,
+        "studySafe": false,
+        "subPool": "orchestral"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.bustling-city",
+      "layer": "music",
+      "title": "Bustling City",
+      "author": "Bryan Wysopal",
+      "authorURL": "https://opengameart.org/users/bryan-wysopal",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/bustling-city",
+        "fileURL": "https://opengameart.org/sites/default/files/Bustling City 2.wav",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "f11598cef84be1ad44453d8268c7b9fc2a24afdba4c6868d7c775e43f4828271",
+        "originalBytes": 20321582,
+        "originalFormat": {
+          "codec": "pcm_s16le",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 1411200
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/bustling-city",
+          "snapshot": "build/immersive-audio/evidence/music.bustling-city.html",
+          "snapshotSHA256": "38073f7a0f47242c72725c5a874d60486a58ef641c11376f2ba34aff9d07624b",
+          "quote": "License(s): CC-BY 4.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from pcm_s16le 44100 Hz",
+          "leading/trailing silence trimmed (3.11 s)",
+          "gain -2.30 dB (measured -17.7 LUFS, -1.1 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 96, 192 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.bustling-city.m4a",
+        "githubAssetName": "music.bustling-city.m4a",
+        "bytes": 2713792,
+        "sha256": "d7fbe82f9b491349f9b683d33f408f606cde65cd18d876db37c6b572ea3f5d8c",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 192,
+        "frames": 4943224
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -3.4,
+        "lra": 10.6,
+        "isLoop": false,
+        "tailStartSeconds": 104.09
+      },
+      "semantics": {
+        "moods": [
+          "joyful",
+          "comic"
+        ],
+        "energy": 2,
+        "studySafe": false,
+        "subPool": "medieval"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.southern-pastures-miniature-suite-for-orchestra",
+      "layer": "music",
+      "title": "Southern Pastures (Miniature Suite for Orchestra)",
+      "author": "Matthew Pablo",
+      "authorURL": "https://opengameart.org/users/matthew-pablo",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/southern-pastures-miniature-suite-for-orchestra",
+        "fileURL": "https://opengameart.org/sites/default/files/Southern Pastures (Miniature Suite f_0.mp3",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "3cc378b224e3bffd1af74c7d10642e7655821afa5f17c973f99882a09d665e78",
+        "originalBytes": 11098827,
+        "originalFormat": {
+          "codec": "mp3",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 320000
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-3.0",
+        "url": "https://creativecommons.org/licenses/by/3.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/southern-pastures-miniature-suite-for-orchestra",
+          "snapshot": "build/immersive-audio/evidence/music.southern-pastures-miniature-suite-for-orchestra.html",
+          "snapshotSHA256": "bd113c86979d589c19efc63b264cdc82191d99b44d803697f140de77442698e1",
+          "quote": "License(s): CC-BY 3.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from mp3 44100 Hz",
+          "leading/trailing silence trimmed (3.78 s)",
+          "gain -3.30 dB (measured -16.7 LUFS, 0.4 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 88, 190 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.southern-pastures-miniature-suite-for-orchestra.m4a",
+        "githubAssetName": "music.southern-pastures-miniature-suite-for-orchestra.m4a",
+        "bytes": 6533697,
+        "sha256": "843847daac552814bd96da678fb829f28968002eee46979be8ecdaf79e3a8348",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 190,
+        "frames": 12058362
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -2.7,
+        "lra": 13.9,
+        "isLoop": false,
+        "tailStartSeconds": 265.43
+      },
+      "semantics": {
+        "moods": [
+          "calm",
+          "adventure"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "orchestral"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.merchants-and-sea-salt",
+      "layer": "music",
+      "title": "Merchants and Sea Salt",
+      "author": "NBJDLukasAbsolute",
+      "authorURL": "https://opengameart.org/users/nbjdlukasabsolute",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/merchants-and-sea-salt",
+        "fileURL": "https://opengameart.org/sites/default/files/merchants_and_sea_salt.wav",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "71357c7a3296c942372ee21fd449212abe82e3e89022a386f6e9d442bc616ac1",
+        "originalBytes": 19748612,
+        "originalFormat": {
+          "codec": "pcm_s16le",
+          "sampleRate": 48000,
+          "channels": 2,
+          "bitRate": 1536000
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/merchants-and-sea-salt",
+          "snapshot": "build/immersive-audio/evidence/music.merchants-and-sea-salt.html",
+          "snapshotSHA256": "c591d035cee1a7ef97ecb302bd451965bcd598281aa35c935baee05db7cd99bb",
+          "quote": "License(s): CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from pcm_s16le 48000 Hz",
+          "gain -1.20 dB (measured -18.8 LUFS, -3.6 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 96, 161 kb/s), 48000 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.merchants-and-sea-salt.m4a",
+        "githubAssetName": "music.merchants-and-sea-salt.m4a",
+        "bytes": 2092325,
+        "sha256": "50351614825dc978567aa2fb6de0959729d898415657681081b651731f95d339",
+        "sampleRate": 48000,
+        "channels": 2,
+        "bitRateKbps": 161,
+        "frames": 4937144
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -4.8,
+        "lra": 3.6,
+        "isLoop": false,
+        "tailStartSeconds": 94.86
+      },
+      "semantics": {
+        "moods": [
+          "adventure",
+          "joyful"
+        ],
+        "energy": 2,
+        "studySafe": false,
+        "subPool": "medieval"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.creepy-forest-f",
+      "layer": "music",
+      "title": "Creepy Forest (F)",
+      "author": "HaelDB",
+      "authorURL": "https://opengameart.org/users/haeldb",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/creepy-forest-f",
+        "fileURL": "https://opengameart.org/sites/default/files/forest.ogg",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "84e01136955db71b33f144a80384e23dfeb6b31bec02a0abb5d17fc34ea2c3d6",
+        "originalBytes": 10806965,
+        "originalFormat": {
+          "codec": "vorbis",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 499821
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/creepy-forest-f",
+          "snapshot": "build/immersive-audio/evidence/music.creepy-forest-f.html",
+          "snapshotSHA256": "91928a68293c47add150ef0251c21bd4a31672bab0a4d733e9ee42d718cb3735",
+          "quote": "License(s): OGA-BY 3.0, CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from vorbis 44100 Hz",
+          "leading/trailing silence trimmed (7.50 s)",
+          "gain +3.60 dB (measured -23.6 LUFS, -7.7 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 81, 162 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.creepy-forest-f.m4a",
+        "githubAssetName": "music.creepy-forest-f.m4a",
+        "bytes": 4269134,
+        "sha256": "36d4f9478c47c7bdabb8dfab817c95af7c4268290002247196299abb3da8b91c",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 162,
+        "frames": 9194689
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -4.1,
+        "lra": 12.4,
+        "isLoop": false,
+        "tailStartSeconds": 200.5
+      },
+      "semantics": {
+        "moods": [
+          "eerie",
+          "mysterious"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "guitar"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.creepy",
+      "layer": "music",
+      "title": "Creepy",
+      "author": "TokyoGeisha",
+      "authorURL": "https://opengameart.org/users/tokyogeisha",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/creepy",
+        "fileURL": "https://opengameart.org/sites/default/files/CrEEP.wav",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "693b2e4ede9b35c5c430a55c5aa152bb2ba11fa53a7c9ea36b8595970eb00585",
+        "originalBytes": 15755674,
+        "originalFormat": {
+          "codec": "pcm_s16le",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 1411200
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/creepy",
+          "snapshot": "build/immersive-audio/evidence/music.creepy.html",
+          "snapshotSHA256": "1a782a9d7e4d04757c5f6dc09aa979a640157ffbec812696a37ceb64fb4507ea",
+          "quote": "License(s): CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from pcm_s16le 44100 Hz",
+          "gain +0.90 dB (measured -20.9 LUFS, -11.5 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 88, 185 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.creepy.m4a",
+        "githubAssetName": "music.creepy.m4a",
+        "bytes": 2088061,
+        "sha256": "888d00c44ab09baa245526cf8dd900bdb59c419894a7c4e81718ec3b7668d15c",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 185,
+        "frames": 3938876
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -10.5,
+        "lra": 0.8,
+        "isLoop": false,
+        "tailStartSeconds": 81.32
+      },
+      "semantics": {
+        "moods": [
+          "eerie"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "pads"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.mysterious",
+      "layer": "music",
+      "title": "Mysterious",
+      "author": "nene",
+      "authorURL": "https://opengameart.org/users/nene",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/mysterious",
+        "fileURL": "https://opengameart.org/sites/default/files/Mysterious.wav",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "8c2a346f60fbdfe4b22cf03487988a3a41568db07c2f3aa62773527d97ce78aa",
+        "originalBytes": 23020378,
+        "originalFormat": {
+          "codec": "pcm_s24le",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 2116800
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/mysterious",
+          "snapshot": "build/immersive-audio/evidence/music.mysterious.html",
+          "snapshotSHA256": "dbf4775f6f27f534b5bbfe474987f5a87d1ac6c892300a8dddc0f705cbd64d4f",
+          "quote": "License(s): CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from pcm_s24le 44100 Hz",
+          "leading/trailing silence trimmed (2.74 s)",
+          "gain +5.30 dB (measured -25.3 LUFS, -12.3 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 88, 177 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.mysterious.m4a",
+        "githubAssetName": "music.mysterious.m4a",
+        "bytes": 1885697,
+        "sha256": "066086634027baec0b98c59a464f84c8d87cb618bc2f0c2e2b23dc8109047cef",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 177,
+        "frames": 3715800
+      },
+      "audio": {
+        "integratedLUFS": -20.1,
+        "truePeakDBTP": -7.1,
+        "lra": 3.6,
+        "isLoop": false,
+        "tailStartSeconds": 76.26
+      },
+      "semantics": {
+        "moods": [
+          "mysterious",
+          "eerie"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "strings"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.forgoten-tomb-ambience",
+      "layer": "music",
+      "title": "Forgoten tomb ambience",
+      "author": "kindland",
+      "authorURL": "https://opengameart.org/users/kindland",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/forgoten-tomb-ambience",
+        "fileURL": "https://opengameart.org/sites/default/files/Forgoten_tombs_1.mp3",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "989b26d4c6ec9fb90da2c9c892a396920e1b2e14a426052574310e275ebd01d0",
+        "originalBytes": 5140968,
+        "originalFormat": {
+          "codec": "mp3",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 192000
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/forgoten-tomb-ambience",
+          "snapshot": "build/immersive-audio/evidence/music.forgoten-tomb-ambience.html",
+          "snapshotSHA256": "16cdb4651a73203e709575cf6c79683c7b29d67ed80adbcf7eb5e418dc9250f4",
+          "quote": "License(s): CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from mp3 44100 Hz",
+          "gain -1.10 dB (measured -21.3 LUFS, -0.4 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 81, 160 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.forgoten-tomb-ambience.m4a",
+        "githubAssetName": "music.forgoten-tomb-ambience.m4a",
+        "bytes": 4314304,
+        "sha256": "9ed23cb99a2a80481dedf734d9aa6fbc6473b83c2bae43f3e20a9f8057b56e83",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 160,
+        "frames": 9446299
+      },
+      "audio": {
+        "integratedLUFS": -22.4,
+        "truePeakDBTP": -1.5,
+        "lra": 16.9,
+        "isLoop": false,
+        "tailStartSeconds": 206.2
+      },
+      "semantics": {
+        "moods": [
+          "eerie"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "pads"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.ghost-town",
+      "layer": "music",
+      "title": "Ghost Town",
+      "author": "Tausdei",
+      "authorURL": "https://opengameart.org/users/tausdei",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/ghost-town",
+        "fileURL": "https://opengameart.org/sites/default/files/ghost_town.wav",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "b6fab1912542a6a102f3564e541d5dc220b72b3bba7f6e72d9ee87046cb87de4",
+        "originalBytes": 39285894,
+        "originalFormat": {
+          "codec": "pcm_s16le",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 1411200
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/ghost-town",
+          "snapshot": "build/immersive-audio/evidence/music.ghost-town.html",
+          "snapshotSHA256": "652bf0e5d688efc1299f7737b0861852071a29182f523795e871444a739e2c04",
+          "quote": "License(s): CC-BY 4.0, CC-BY 3.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from pcm_s16le 44100 Hz",
+          "leading/trailing silence trimmed (1.00 s)",
+          "gain -4.90 dB (measured -15.1 LUFS, -0.2 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 88, 178 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.ghost-town.m4a",
+        "githubAssetName": "music.ghost-town.m4a",
+        "bytes": 4987138,
+        "sha256": "373168ae54456fd7ad34612cb5333cc1087473e8f77f186c66dfab0eadc660b1",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 178,
+        "frames": 9777376
+      },
+      "audio": {
+        "integratedLUFS": -20.1,
+        "truePeakDBTP": -5.0,
+        "lra": 5.6,
+        "isLoop": false,
+        "tailStartSeconds": 213.71
+      },
+      "semantics": {
+        "moods": [
+          "eerie",
+          "mysterious"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "pads"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.dissonant-waltz",
+      "layer": "music",
+      "title": "Dissonant Waltz",
+      "author": "Yubatake",
+      "authorURL": "https://opengameart.org/users/yubatake",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/dissonant-waltz",
+        "fileURL": "https://opengameart.org/sites/default/files/dissonantwaltz.flac",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "eaccc48a70b9c111eba1a0f5de2b2b99b0a0068a55d50966a77a4f77cc47a034",
+        "originalBytes": 56262464,
+        "originalFormat": {
+          "codec": "flac",
+          "sampleRate": 48000,
+          "channels": 2,
+          "bitRate": 1454807
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/dissonant-waltz",
+          "snapshot": "build/immersive-audio/evidence/music.dissonant-waltz.html",
+          "snapshotSHA256": "cfb749ec1015f63b6e59e4b4d70fb92b79fbeaf1b9d8598f1098e35fa1475e94",
+          "quote": "License(s): CC-BY 4.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from flac 48000 Hz",
+          "leading/trailing silence trimmed (2.37 s)",
+          "gain -5.80 dB (measured -14.2 LUFS, -0.1 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 96, 179 kb/s), 48000 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.dissonant-waltz.m4a",
+        "githubAssetName": "music.dissonant-waltz.m4a",
+        "bytes": 6951183,
+        "sha256": "247d598712b5d6c9b9b8601c65f85ef3b2993979d7018b53d244d124a6545b12",
+        "sampleRate": 48000,
+        "channels": 2,
+        "bitRateKbps": 179,
+        "frames": 14736836
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -5.8,
+        "lra": 5.2,
+        "isLoop": false,
+        "tailStartSeconds": 299.02
+      },
+      "semantics": {
+        "moods": [
+          "eerie",
+          "tense"
+        ],
+        "energy": 2,
+        "studySafe": false,
+        "subPool": "orchestral"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.something-behind-me",
+      "layer": "music",
+      "title": "Something Behind Me",
+      "author": "KLY",
+      "authorURL": "https://opengameart.org/users/kly",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/something-behind-me",
+        "fileURL": "https://opengameart.org/sites/default/files/Kim Lightyear - Something Behind Me.mp3",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "128e59aa972af6143e8551acd972e744923ef2068789bcec05081e80afcd8fb1",
+        "originalBytes": 6905949,
+        "originalFormat": {
+          "codec": "mp3",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 320000
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-3.0",
+        "url": "https://creativecommons.org/licenses/by/3.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/something-behind-me",
+          "snapshot": "build/immersive-audio/evidence/music.something-behind-me.html",
+          "snapshotSHA256": "abe92b95d1d4a0405ea25d7634e3d31c1ca425ed374ee30736a713fd842d0c67",
+          "quote": "License(s): CC-BY 3.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from mp3 44100 Hz",
+          "leading/trailing silence trimmed (0.59 s)",
+          "gain -8.20 dB (measured -11.8 LUFS, -0.4 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 81, 160 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.something-behind-me.m4a",
+        "githubAssetName": "music.something-behind-me.m4a",
+        "bytes": 3468380,
+        "sha256": "2ed812ab5d3248dbb911e07e03c6ca03eed5d2eff9bd23d46f31f5b9736cada6",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 160,
+        "frames": 7583004
+      },
+      "audio": {
+        "integratedLUFS": -20.1,
+        "truePeakDBTP": -8.6,
+        "lra": 7.5,
+        "isLoop": false,
+        "tailStartSeconds": 163.95
+      },
+      "semantics": {
+        "moods": [
+          "eerie",
+          "mysterious"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "piano"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.dark-ambient-loop-13",
+      "layer": "music",
+      "title": "Dark Ambient Loop 13",
+      "author": "MundoSound",
+      "authorURL": "https://opengameart.org/users/mundosound",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/dark-ambient-loop-13",
+        "fileURL": "https://opengameart.org/sites/default/files/Dark _Atmosphere13_Looped_24bit.wav",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "58d1ca1e31b47b62853f9c8f5536858784fc02006cb348ac2ee8f3a9059fb62b",
+        "originalBytes": 33164204,
+        "originalFormat": {
+          "codec": "pcm_s24le",
+          "sampleRate": 48000,
+          "channels": 2,
+          "bitRate": 2304000
+        }
+      },
+      "license": {
+        "spdx": "CC-BY-3.0",
+        "url": "https://creativecommons.org/licenses/by/3.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/dark-ambient-loop-13",
+          "snapshot": "build/immersive-audio/evidence/music.dark-ambient-loop-13.html",
+          "snapshotSHA256": "0f9602b5821d94aeda3090931092e33013cfdb0e9783f4793d55ff3b600ec65a",
+          "quote": "License(s): CC-BY 3.0, OGA-BY 3.0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from pcm_s24le 48000 Hz",
+          "gain +1.60 dB (measured -21.6 LUFS, -9.0 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 127, 115 kb/s), 48000 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.dark-ambient-loop-13.m4a",
+        "githubAssetName": "music.dark-ambient-loop-13.m4a",
+        "bytes": 1684591,
+        "sha256": "51fd66b1d9fb61b3bbaee2696916adf0a55c1475c32580b7d8e567de22c615d1",
+        "sampleRate": 48000,
+        "channels": 2,
+        "bitRateKbps": 115,
+        "frames": 5527350
+      },
+      "audio": {
+        "integratedLUFS": -20.0,
+        "truePeakDBTP": -7.4,
+        "lra": 1.4,
+        "isLoop": false,
+        "tailStartSeconds": 107.15
+      },
+      "semantics": {
+        "moods": [
+          "eerie",
+          "tense"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "pads"
+      },
+      "addedIn": "2026.11.02"
+    },
+    {
+      "id": "music.skin-cells-touch",
+      "layer": "music",
+      "title": "Skin cells touch",
+      "author": "HaelDB",
+      "authorURL": "https://opengameart.org/users/haeldb",
+      "source": {
+        "provider": "OpenGameArt",
+        "pageURL": "https://opengameart.org/content/skin-cells-touch",
+        "fileURL": "https://opengameart.org/sites/default/files/skin_cells_touch.flac",
+        "retrievedOn": "2026-11-02",
+        "originalSHA256": "1ec6d7b3e1ab7a32fc9476351174bd329e15b3ce796c269ab34679be3752f7ea",
+        "originalBytes": 11087209,
+        "originalFormat": {
+          "codec": "flac",
+          "sampleRate": 44100,
+          "channels": 2,
+          "bitRate": 410637
+        }
+      },
+      "license": {
+        "spdx": "CC0-1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        "evidence": {
+          "url": "https://opengameart.org/content/skin-cells-touch",
+          "snapshot": "build/immersive-audio/evidence/music.skin-cells-touch.html",
+          "snapshotSHA256": "d6652341ac893bcdfb4258dd7884387b2c1ca9af5f972aff587ad3bf0305db39",
+          "quote": "License(s): OGA-BY 3.0, CC0"
+        },
+        "verifiedOn": "2026-11-02",
+        "verifiedBy": "automated check (tools/immersive-audio) — maintainer review pending"
+      },
+      "processing": {
+        "transformations": [
+          "decoded from flac 44100 Hz",
+          "leading/trailing silence trimmed (15.12 s)",
+          "gain -1.40 dB (measured -18.7 LUFS, -0.1 dBTP; no compression)",
+          "AAC-LC VBR (Apple encoder, quality 96, 170 kb/s), 44100 Hz stereo"
+        ],
+        "tools": {
+          "ffmpeg": "8.0.1",
+          "afconvert": "macOS 27.0.1",
+          "audiotool": "tools/immersive-audio/audiotool.swift"
+        }
+      },
+      "file": {
+        "path": "music/music.skin-cells-touch.m4a",
+        "githubAssetName": "music.skin-cells-touch.m4a",
+        "bytes": 4318499,
+        "sha256": "b1caa62daeaacb9122604348778887b8ee67dfb4e4d35dd2d0985e2723d2c30c",
+        "sampleRate": 44100,
+        "channels": 2,
+        "bitRateKbps": 170,
+        "frames": 8858764
+      },
+      "audio": {
+        "integratedLUFS": -20.1,
+        "truePeakDBTP": -1.5,
+        "lra": 10.7,
+        "isLoop": false,
+        "tailStartSeconds": 192.88
+      },
+      "semantics": {
+        "moods": [
+          "eerie",
+          "tense"
+        ],
+        "energy": 1,
+        "studySafe": false,
+        "subPool": "pads"
+      },
+      "addedIn": "2026.11.02"
     }
   ]
 }

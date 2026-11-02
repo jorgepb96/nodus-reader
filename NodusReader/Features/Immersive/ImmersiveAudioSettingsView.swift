@@ -63,8 +63,9 @@ struct ImmersiveAudioSettingsView: View {
                     NavigationLink {
                         ImmersivePacksView()
                     } label: {
-                        SettingsRow(title: "Sound packs", value: ByteCountFormatter.string(
-                            fromByteCount: immersive.library.bytesOnDisk, countStyle: .file))
+                        SettingsRow(title: "Sound packs", value: immersive.library.newSoundsCount > 0
+                            ? String(localized: "\(immersive.library.newSoundsCount) new sounds")
+                            : ByteCountFormatter.string(fromByteCount: immersive.library.bytesOnDisk, countStyle: .file))
                     }
                     Divider().overlay(palette.line).padding(.leading, 14)
                     NavigationLink {

@@ -82,6 +82,9 @@ struct RootView: View {
                     imports.alert = LibraryAlert(title: String(localized: "Import failed"), message: error.localizedDescription)
                 }
             }
+            .sheet(isPresented: $imports.isPasteTextPresented) {
+                PasteTextImportView()
+            }
             .alert(item: $imports.alert) { alert in
                 Alert(title: Text(alert.title), message: Text(alert.message), dismissButton: .default(Text("OK")))
             }

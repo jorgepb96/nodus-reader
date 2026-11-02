@@ -139,6 +139,9 @@ struct NodusCommands: Commands {
                 imports.beginImport()
             }
             .keyboardShortcut("i", modifiers: [.command, .shift])
+            Button("Paste Text…") {
+                imports.beginPasteText()
+            }
         }
         CommandMenu("Library") {
             Group {

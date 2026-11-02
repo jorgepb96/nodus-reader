@@ -922,6 +922,82 @@ private func request(_ id: String, _ url: URL, _ layer: ImmersiveAudioEngine.Lay
                      "https://github.com/x/y/releases/download/t/music.calm.a.m4a"])
 }
 
+// MARK: New sounds
+
+private func publishable(_ id: String, bytes: Int64 = 4, addedIn: String? = nil) -> CatalogTrack {
+    var item = track(id)
+    item.file.path = "music/\(id).m4a"
+    item.file.githubAssetName = "\(id).m4a"
+    item.file.bytes = bytes
+    item.file.sha256 = String(repeating: "a", count: 64)
+    item.addedIn = addedIn
+    return item
+}
+
+private func publishedCatalog(_ version: String, _ tracks: [CatalogTrack],
+                              host: String = "https://github.com/jorgepb96/nodus-reader/releases/download/immersive-audio-v1/") -> ImmersiveCatalog {
+    ImmersiveCatalog(schemaVersion: 1, catalogVersion: version, hosts: [.init(name: "github", baseURL: host)],
+                     packs: [.init(id: "narrative", trackIDs: tracks.map(\.id), bytes: tracks.reduce(0) { $0 + $1.file.bytes })],
+                     tracks: tracks)
+}
+
+@Test func aPublishedCatalogMustStayOnTheProjectsHostsAndFolder() {
+    let good = publishedCatalog("2026.11.02", [publishable("a"), publishable("b", addedIn: "2026.11.02")])
+    #expect(good.isSafeToAdopt)
+    #expect(!publishedCatalog("2026.11.02", [publishable("a")], host: "https://example.com/files/").isSafeToAdopt)
+    var escaping = publishable("a")
+    escaping.file.path = "../../Library/a.m4a"
+    #expect(!publishedCatalog("2026.11.02", [escaping]).isSafeToAdopt)
+    var absolute = publishable("a")
+    absolute.file.path = "/tmp/a.m4a"
+    #expect(!publishedCatalog("2026.11.02", [absolute]).isSafeToAdopt)
+    var unhashed = publishable("a")
+    unhashed.file.sha256 = "not-a-hash"
+    #expect(!publishedCatalog("2026.11.02", [unhashed]).isSafeToAdopt)
+    var nested = publishable("a")
+    nested.file.githubAssetName = "x/a.m4a"
+    #expect(!publishedCatalog("2026.11.02", [nested]).isSafeToAdopt)
+    #expect(!publishedCatalog("2026.11.02", [publishable("a"), publishable("a")]).isSafeToAdopt)
+    // Versions are dates compared field by field.
+    #expect(publishedCatalog("2026.11.10", []).isNewer(than: publishedCatalog("2026.11.9", [])))
+    #expect(!publishedCatalog("2026.11.01", []).isNewer(than: publishedCatalog("2026.11.01", [])))
+}
+
+@MainActor
+@Test func aDownloadedPackOffersTracksAddedLaterAsNewSounds() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent("immersive-new-sounds-\(UUID())")
+    defer { try? FileManager.default.removeItem(at: root) }
+    let store = FileStore(root: root)
+    let original = [publishable("a"), publishable("b")]
+    let library = ImmersiveAudioLibrary(catalog: publishedCatalog("2026.11.01", original), fileStore: store)
+    let folder = library.root.appendingPathComponent("music", isDirectory: true)
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    try Data(count: 4).write(to: folder.appendingPathComponent("a.m4a"))
+    library.refresh()
+    let pack = try #require(library.packs.first)
+    // Half of the original pack: a download that was paused.
+    #expect(library.state(pack) == .paused(0.5))
+    try Data(count: 4).write(to: folder.appendingPathComponent("b.m4a"))
+    library.refresh()
+    #expect(library.state(pack) == .installed)
+
+    // A newer published catalog adds one track: offered as a new sound,
+    // remembered for the next launch, and an older or unsafe one is ignored.
+    let newer = publishedCatalog("2026.11.02", original + [publishable("c", bytes: 6, addedIn: "2026.11.02")])
+    let current = try #require(library.catalog)
+    #expect(library.adopt(publishedCatalog: try JSONEncoder().encode(newer), over: current))
+    let grown = try #require(library.packs.first)
+    #expect(library.state(grown) == .updateAvailable(tracks: 1, bytes: 6))
+    #expect(library.newSoundsCount == 1)
+    #expect(FileManager.default.fileExists(atPath: library.catalogURL.path))
+    let reopened = ImmersiveAudioLibrary(catalog: publishedCatalog("2026.11.01", original), fileStore: store)
+    #expect(reopened.catalog?.catalogVersion == "2026.11.02")
+    let adopted = try #require(library.catalog)
+    #expect(!library.adopt(publishedCatalog: try JSONEncoder().encode(publishedCatalog("2026.10.30", original)), over: adopted))
+    let unsafe = publishedCatalog("2026.12.01", original, host: "https://example.com/")
+    #expect(!library.adopt(publishedCatalog: try JSONEncoder().encode(unsafe), over: adopted))
+}
+
 @Test func bundledCatalogIsCompleteAndLicensed() throws {
     guard let catalog = ImmersiveCatalog.bundled() else {
         Issue.record("The app bundle has no Immersive Audio catalog")

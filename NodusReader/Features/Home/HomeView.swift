@@ -71,9 +71,7 @@ struct HomeView: View {
             .nodusPlainBackground()
             #else
             ToolbarItem(placement: .nodusTrailing) {
-                Button {
-                    imports.beginImport()
-                } label: {
+                ImportMenu {
                     Image(systemName: "plus")
                         .font(.system(size: 17, weight: .medium))
                         .foregroundStyle(palette.text)
@@ -192,6 +190,10 @@ struct HomeView: View {
                 .foregroundStyle(palette.muted)
             PrimaryPillButton("Import documents", systemImage: "plus") {
                 imports.beginImport()
+            }
+            .frame(maxWidth: 280)
+            OutlinePillButton("Paste text", systemImage: "doc.on.clipboard") {
+                imports.beginPasteText()
             }
             .frame(maxWidth: 280)
         }

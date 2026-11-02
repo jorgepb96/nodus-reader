@@ -32,6 +32,8 @@ public final class ImportCoordinator {
     public let library: LibraryService
 
     public var isPickerPresented = false
+    /// The sheet where the reader pastes text to import it.
+    public var isPasteTextPresented = false
     public var destinationCollectionID: UUID?
     public var isImporting = false
     public var progress: ImportProgress?
@@ -51,6 +53,65 @@ public final class ImportCoordinator {
     public func beginImport(collectionID: UUID? = nil) {
         destinationCollectionID = collectionID
         isPickerPresented = true
+    }
+
+    public func beginPasteText(collectionID: UUID? = nil) {
+        destinationCollectionID = collectionID
+        isPasteTextPresented = true
+    }
+
+    /// The title pasted text gets when the reader leaves it empty: its first
+    /// line, cut at a word.
+    public nonisolated static func suggestedTitle(for text: String) -> String {
+        let firstLine = text.split(whereSeparator: \.isNewline).lazy
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .first { !$0.isEmpty } ?? ""
+        guard !firstLine.isEmpty else { return String(localized: "Pasted text") }
+        guard firstLine.count > 60 else { return firstLine }
+        let cut = firstLine.prefix(60)
+        let atWord = cut.lastIndex(of: " ").map { cut[..<$0] } ?? cut
+        return atWord.trimmingCharacters(in: .whitespaces) + "…"
+    }
+
+    /// A file name for `title`: no path separators, and short enough for
+    /// every file system.
+    nonisolated static func pastedFileName(for title: String) -> String {
+        let cleaned = title.components(separatedBy: CharacterSet(charactersIn: "/\\:\0").union(.newlines))
+            .joined(separator: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ".")))
+        return cleaned.isEmpty ? "Pasted text" : String(cleaned.prefix(120))
+    }
+
+    /// Imports text the reader pasted as a plain-text document titled
+    /// `title` (its first line when empty). It goes through the same import
+    /// as a .txt file, so language, chapters, cover, duplicates and sync
+    /// work alike. Returns the imported book, if any.
+    @discardableResult
+    public func importPastedText(_ text: String, title: String) async -> Book? {
+        let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !body.isEmpty, !isImporting else { return nil }
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalTitle = trimmed.isEmpty ? Self.suggestedTitle(for: body) : trimmed
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PastedText-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let url = folder.appendingPathComponent(Self.pastedFileName(for: finalTitle)).appendingPathExtension("txt")
+        do {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try Data(body.utf8).write(to: url)
+        } catch {
+            alert = LibraryAlert(title: String(localized: "Import failed"), message: error.localizedDescription)
+            return nil
+        }
+        await importFiles([url])
+        guard let book = lastResult?.imported.first else { return nil }
+        // A file name cannot carry every title ("/", hyphens read as spaces):
+        // the title the reader typed is set exactly.
+        if book.title != finalTitle {
+            library.updateMetadata(book, title: finalTitle, author: book.author, language: book.language,
+                                   published: book.published, summary: book.bookDescription)
+        }
+        return book
     }
 
     public func importFiles(_ urls: [URL]) async {

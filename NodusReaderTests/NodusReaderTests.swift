@@ -1162,6 +1162,43 @@ func concurrentImportRequestsAreQueuedInsteadOfDropped() async throws {
 }
 
 @Test @MainActor
+func pastedTextIsImportedWithTheTitleTheReaderChose() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let coordinator = ImportCoordinator(library: fixture.service)
+    let text = """
+    The Lighthouse Keeper
+
+    Every night the keeper climbed the ninety steps. The wind pulled at the door, and the sea below kept its own counsel.
+
+    In the morning he wrote the log by the stove.
+    """
+    // A title with characters a file name cannot carry is kept exactly.
+    let book = try #require(await coordinator.importPastedText(text, title: "  Notes: 1/2 — draft-one "))
+    #expect(book.title == "Notes: 1/2 — draft-one")
+    #expect(book.format == .txt)
+    #expect(fixture.service.allBooks().count == 1)
+    #expect(coordinator.bookToOpen != nil)
+    // Without a title, the first line names it; the same text again is a duplicate.
+    let second = try #require(await coordinator.importPastedText(text + "\nMore.", title: ""))
+    #expect(second.title == "The Lighthouse Keeper")
+    #expect(await coordinator.importPastedText(text, title: "Another title") == nil)
+    #expect(coordinator.lastResult?.duplicates.count == 1)
+    // Nothing to import, nothing imported.
+    #expect(await coordinator.importPastedText("  \n ", title: "Empty") == nil)
+    #expect(fixture.service.allBooks().count == 2)
+}
+
+@Test func pastedTextTitlesAndFileNames() {
+    #expect(ImportCoordinator.suggestedTitle(for: "\n\n  First line here \nSecond") == "First line here")
+    let long = String(repeating: "word ", count: 30)
+    let suggested = ImportCoordinator.suggestedTitle(for: long)
+    #expect(suggested.hasSuffix("…") && suggested.count <= 61)
+    #expect(ImportCoordinator.pastedFileName(for: "a/b:c\\d") == "a b c d")
+    #expect(ImportCoordinator.pastedFileName(for: " ... ") == "Pasted text")
+}
+
+@Test @MainActor
 func importingAFolderImportsSupportedFilesRecursively() async throws {
     let fixture = try Fixture()
     defer { fixture.cleanUp() }

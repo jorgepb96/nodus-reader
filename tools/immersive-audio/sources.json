@@ -3666,6 +3666,1328 @@
    "packPath": "music",
    "tailSeconds": 8.0,
    "notes": "From the author's description: Lots of piano, strings, a nice bass line. Another oldie that's been collecting dust. Lots of weird artifacts on the piano track again but barely perceptable un"
+  },
+  {
+   "id": "music.death-is-just-another-path",
+   "status": "include",
+   "layer": "music",
+   "title": "Death Is Just Another Path",
+   "author": "Otto Halmén",
+   "authorURL": "https://opengameart.org/users/otto-halm%C3%A9n",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/death-is-just-another-path",
+   "fileURL": "https://opengameart.org/sites/default/files/Death Is Just Another Path.wav",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "solemn",
+     "melancholic"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  A slower, sadder orchestral track. It starts small and grows into something massive. Performed using samples. Rendered in 44100hz/24bit. ",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.laments-of-the-war",
+   "status": "reject",
+   "layer": "music",
+   "title": "Laments of the War",
+   "author": "Cethiel",
+   "authorURL": "https://opengameart.org/users/cethiel",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/laments-of-the-war",
+   "fileURL": "https://opengameart.org/sites/default/files/Lament of the War - Lossless FLAC.flac",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "solemn",
+     "dramatic"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Hello, here's a music i composed years ago but never had to use it. I hope you will like it, don't hesitate to tell me if you use it for a project, it would be",
+   "addedIn": "2026.11.02",
+   "rejectReason": "1306 clipped runs in the source"
+  },
+  {
+   "id": "music.heroic-demise-updated-version",
+   "status": "reject",
+   "layer": "music",
+   "title": "Heroic Demise [Updated Version]",
+   "author": "Matthew Pablo",
+   "authorURL": "https://opengameart.org/users/matthew-pablo",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/heroic-demise-updated-version",
+   "fileURL": "https://opengameart.org/sites/default/files/Heroic Demise (New)_0.mp3",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "solemn",
+     "epic"
+    ],
+    "energy": 3,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  *Note: This is an updated version. I've implemented new instruments including choirs and new string patches. This is your standard hero theme in your standard ",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02",
+   "rejectReason": "81 clipped runs in the source"
+  },
+  {
+   "id": "music.leap-into-eternity-live-orchestra",
+   "status": "include",
+   "layer": "music",
+   "title": "Leap Into Eternity (Live Orchestra)",
+   "author": "Matthew Pablo",
+   "authorURL": "https://opengameart.org/users/matthew-pablo",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/leap-into-eternity-live-orchestra",
+   "fileURL": "https://opengameart.org/sites/default/files/Leap into Eternity (Live Orchestra).mp3",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "melancholic",
+     "solemn"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  This is a track with a very somber and tranquil mood. It was originally music for a film. This version is actually a live orchestra, recorded in a professional",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.modern-castle-atmosphere",
+   "status": "include",
+   "layer": "music",
+   "title": "Modern Castle Atmosphere",
+   "author": "Bogart VGM",
+   "authorURL": "https://opengameart.org/users/bogart-vgm",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/modern-castle-atmosphere",
+   "fileURL": "https://opengameart.org/sites/default/files/Modern Castle Atmosphere_0.mp3",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "solemn",
+     "mysterious"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "classical"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  With this Track i tried to emulate the feel of the PSX days. I hope this Track is equal Parts chilling and exiting. If you are intrested i could also craft a l",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.rpg-the-graveyard",
+   "status": "reject",
+   "layer": "music",
+   "title": "RPG - The Graveyard",
+   "author": "Hitctrl",
+   "authorURL": "https://opengameart.org/users/hitctrl",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/rpg-the-graveyard",
+   "fileURL": "https://opengameart.org/sites/default/files/RPG_-_The_Graveyard.ogg",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "solemn",
+     "eerie"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Hey All, Here is a a loop-able track that set the mood I think for a graveyard or a dungeon. Got some strings, cellos, a little choir, and a bit of a creepy fe",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02",
+   "rejectReason": "lossy music source at 112 kbps (< 150)"
+  },
+  {
+   "id": "music.i-want-to-go-home",
+   "status": "include",
+   "layer": "music",
+   "title": "I Want to go Home",
+   "author": "Eldritch Grim",
+   "authorURL": "https://opengameart.org/users/eldritch-grim",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/i-want-to-go-home",
+   "fileURL": "https://opengameart.org/sites/default/files/i_want_to_go_home.wav",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "melancholic",
+     "contemplative"
+    ],
+    "energy": 1,
+    "studySafe": true,
+    "subPool": "piano"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  A more sentimental version of Nostalgic Piano by Rafael Krux, which is available for commercial and non-commercial purposes free of attribution (Creative Commo",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.school-of-quirks",
+   "status": "reject",
+   "layer": "music",
+   "title": "School of Quirks",
+   "author": "Zander Noriega",
+   "authorURL": "https://opengameart.org/users/zander-noriega",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/school-of-quirks",
+   "fileURL": "https://opengameart.org/sites/default/files/Zander Noriega - School of Quirks_0.mp3",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "comic",
+     "joyful"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "score"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Funny sounding acoustic + electronic experimental piece. It starts mid-paced and eventually transforms into an fast-paced thing. Some of the people who have li",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02",
+   "rejectReason": "81 clipped runs in the source"
+  },
+  {
+   "id": "music.circus-dilemma",
+   "status": "include",
+   "layer": "music",
+   "title": "Circus Dilemma",
+   "author": "Matthew Pablo",
+   "authorURL": "https://opengameart.org/users/matthew-pablo",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/circus-dilemma",
+   "fileURL": "https://opengameart.org/sites/default/files/Circus Dilemma.mp3",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "comic"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  This is a track I did for a cartoon scene that takes place in a circus. This is my attempt at utilizing a film scoring/compositional technique called “Mickey M",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.old-mo",
+   "status": "include",
+   "layer": "music",
+   "title": "Old Mo",
+   "author": "Yubatake",
+   "authorURL": "https://opengameart.org/users/yubatake",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/old-mo",
+   "fileURL": "https://opengameart.org/sites/default/files/OldMo_0.flac",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "comic",
+     "joyful"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "jazz"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Victorian era/early 20th century British music hall. 4/4, 115BPM, 2:47 ",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.berries",
+   "status": "include",
+   "layer": "music",
+   "title": "Berries",
+   "author": "Seth Walker",
+   "authorURL": "https://opengameart.org/users/seth-walker",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/berries",
+   "fileURL": "https://opengameart.org/sites/default/files/burries.wav",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "comic"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "score"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Something I made that I thought was cool and now I'm sharing it. Wow! ",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.tiptoe-army",
+   "status": "reject",
+   "layer": "music",
+   "title": "Tiptoe Army",
+   "author": "Alexandr Zhelanov",
+   "authorURL": "https://opengameart.org/users/alexandr-zhelanov",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/tiptoe-army",
+   "fileURL": "https://opengameart.org/sites/default/files/Tiptoe Army_0.ogg",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "comic",
+     "tense"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Weird dramatic orchestral track. ",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02",
+   "rejectReason": "452 clipped runs in the source"
+  },
+  {
+   "id": "music.royal-mischief-waltz",
+   "status": "include",
+   "layer": "music",
+   "title": "Royal Mischief Waltz",
+   "author": "aroldv",
+   "authorURL": "https://opengameart.org/users/aroldv",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/royal-mischief-waltz",
+   "fileURL": "https://opengameart.org/sites/default/files/royal_mischief.flac",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "comic",
+     "mysterious"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Original Title: King Kitten Secret. A shifting waltz. Remastered and reworked with new license terms (CC BY). Content ID disabled. Part of the Bitrate Royalty ",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.intervals",
+   "status": "include",
+   "layer": "music",
+   "title": "Intervals",
+   "author": "Of Far Different Nature",
+   "authorURL": "https://opengameart.org/users/of-far-different-nature",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/intervals",
+   "fileURL": "https://opengameart.org/sites/default/files/Of Far Different Nature - Intervals (CC-BY).wav",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "comic",
+     "adventure"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  UPDATE: This track has been re-released as a seamless loop in Loop Box #4! (CC-BY 4.0) LOOP BOX #1 | #2 | #3 | #4 | ESCAPE _______________________________ Orig",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.countdown-to-myocardial-infarction",
+   "status": "reject",
+   "layer": "music",
+   "title": "Countdown to Myocardial Infarction",
+   "author": "josepharaoh99",
+   "authorURL": "https://opengameart.org/users/josepharaoh99",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/countdown-to-myocardial-infarction",
+   "fileURL": "https://opengameart.org/sites/default/files/Countdown to Myocardial Infarction_0.ogg",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "comic"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "jazz"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  What a delightful name!! This is a high quality song with a comical, almost dark mood. It also has jazz elements. Enjoy!! THIS IS NOT MY SONG!! This was compos",
+   "addedIn": "2026.11.02",
+   "rejectReason": "brickwall cut at 15429 Hz (42 dB): a lossy or upsampled master"
+  },
+  {
+   "id": "music.he-will-never-see-her-again",
+   "status": "reject",
+   "layer": "music",
+   "title": "He will never see her again",
+   "author": "Alexandr Zhelanov",
+   "authorURL": "https://opengameart.org/users/alexandr-zhelanov",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/he-will-never-see-her-again",
+   "fileURL": "https://opengameart.org/sites/default/files/He will never see her again.ogg",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "romantic",
+     "melancholic"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Inspiring, cinematic track. ",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02",
+   "rejectReason": "142 clipped runs in the source"
+  },
+  {
+   "id": "music.undying-love",
+   "status": "include",
+   "layer": "music",
+   "title": "Undying Love",
+   "author": "Stefan_Composer",
+   "authorURL": "https://opengameart.org/users/stefancomposer",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/undying-love",
+   "fileURL": "https://opengameart.org/sites/default/files/Stefan Großmann - Undying Love - Cinematic Music.flac",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "romantic"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "strings"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Undying Love - Stefan Grossmann ",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.dancing-in-an-empty-house",
+   "status": "reject",
+   "layer": "music",
+   "title": "Dancing in an Empty House",
+   "author": "jeffmatthews410",
+   "authorURL": "https://opengameart.org/users/jeffmatthews410",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/dancing-in-an-empty-house",
+   "fileURL": "https://opengameart.org/sites/default/files/Dancing in an Empty House.mp3",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "romantic",
+     "contemplative"
+    ],
+    "energy": 1,
+    "studySafe": true,
+    "subPool": "piano"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  This piece was originally written for a game that was never made. It makes me think of my wife. We danced to this in the living room after I wrote it. If we ev",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02",
+   "rejectReason": "lossy music source at 160 kbps (< 192)"
+  },
+  {
+   "id": "music.love-theme",
+   "status": "reject",
+   "layer": "music",
+   "title": "Love Theme",
+   "author": "peastman",
+   "authorURL": "https://opengameart.org/users/peastman",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/love-theme",
+   "fileURL": "https://opengameart.org/sites/default/files/Theme.ogg",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "romantic"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  A romantic orchestral piece. I wrote this to be a love theme, but I think it could serve equally well for the end victory sequence when the heroes have defeate",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02",
+   "rejectReason": "lossy music source at 128 kbps (< 150)"
+  },
+  {
+   "id": "music.northern-isles",
+   "status": "include",
+   "layer": "music",
+   "title": "Northern Isles",
+   "author": "Yubatake",
+   "authorURL": "https://opengameart.org/users/yubatake",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/northern-isles",
+   "fileURL": "https://opengameart.org/sites/default/files/NorthernIsles.ogg",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "romantic",
+     "calm"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "celtic"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Folk piece for woodwind and strings. Slightly Celtic-sounding. Could possibly be used in a mediaeval setting. Zip contains both FLAC and MIDI files. 3/4, 135BP",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.bleeding-out",
+   "status": "include",
+   "layer": "music",
+   "title": "Bleeding out",
+   "author": "HaelDB",
+   "authorURL": "https://opengameart.org/users/haeldb",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/bleeding-out",
+   "fileURL": "https://opengameart.org/sites/default/files/bleeding_out2.flac",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "dramatic",
+     "melancholic"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "strings"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  I named it this title because it reminded me of the times they would have in movies when the guy is holding on to last minutes of life after being shot or stab",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.spiritwatcher",
+   "status": "include",
+   "layer": "music",
+   "title": "Spiritwatcher",
+   "author": "Matthew Pablo",
+   "authorURL": "https://opengameart.org/users/matthew-pablo",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/spiritwatcher",
+   "fileURL": "https://opengameart.org/sites/default/files/Spiritwatcher.mp3",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "melancholic",
+     "dramatic"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  This track has a very slow paced solumn, dark and depressing mood. It is open and free with not too much going on but creates a very rich and lush mood perfect",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.emotional-orchestra-music",
+   "status": "include",
+   "layer": "music",
+   "title": "Emotional Orchestra Music",
+   "author": "migfus20",
+   "authorURL": "https://opengameart.org/users/migfus20",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/emotional-orchestra-music",
+   "fileURL": "https://opengameart.org/sites/default/files/sdf_02.mp3",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "dramatic"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Genre: Drama, Emotional, Romance. Feel free to use my music, it would be great if you credit me. ",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.november-snow",
+   "status": "include",
+   "layer": "music",
+   "title": "November Snow",
+   "author": "cynicmusic",
+   "authorURL": "https://opengameart.org/users/cynicmusic",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/november-snow",
+   "fileURL": "https://opengameart.org/sites/default/files/155 November_snow-33_tape_leveled.mp3",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "focus",
+     "calm"
+    ],
+    "energy": 1,
+    "studySafe": true,
+    "subPool": "electronic"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  November Snow - Ambient/downtempo music for your game, ethereal, calm and relaxing. I ran this to tape recorder for a lo-fi effect, see my site if you want the",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.minimalistic-flute-strings-tune",
+   "status": "include",
+   "layer": "music",
+   "title": "Minimalistic Flute & Strings Tune",
+   "author": "Spring Spring",
+   "authorURL": "https://opengameart.org/users/spring-spring",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/minimalistic-flute-strings-tune",
+   "fileURL": "https://opengameart.org/sites/default/files/ff_2.ogg",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "focus",
+     "calm"
+    ],
+    "energy": 1,
+    "studySafe": true,
+    "subPool": "acoustic"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Dedicated to Happy Heart... ",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.calm-relax-1-synthwave-421k",
+   "status": "include",
+   "layer": "music",
+   "title": "Calm Relax 1 (Synthwave 421k)",
+   "author": "cynicmusic",
+   "authorURL": "https://opengameart.org/users/cynicmusic",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/calm-relax-1-synthwave-421k",
+   "fileURL": "https://opengameart.org/sites/default/files/007_Synthwave_421k.mp3",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "focus",
+     "calm"
+    ],
+    "energy": 1,
+    "studySafe": true,
+    "subPool": "piano"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  This is the favorite of my uploads this month here. This is the song \"Synthwave 421k\"- written by The Cynic Project for the game Pixelsphere. Please use it you",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.the-field-of-dreams",
+   "status": "include",
+   "layer": "music",
+   "title": "The Field Of Dreams",
+   "author": "pauliuw",
+   "authorURL": "https://opengameart.org/users/pauliuw",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/the-field-of-dreams",
+   "fileURL": "https://opengameart.org/sites/default/files/the_field_of_dreams.mp3",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "adventure",
+     "contemplative"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  This is kinda short(1,24 min) remake of my earlier instrumental music submissions 'Night' melody. It can be used in some kind of cinematic background or someth",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.rpg-the-enchanted-forest-of-min",
+   "status": "reject",
+   "layer": "music",
+   "title": "RPG - The Enchanted Forest of Min",
+   "author": "Hitctrl",
+   "authorURL": "https://opengameart.org/users/hitctrl",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/rpg-the-enchanted-forest-of-min",
+   "fileURL": "https://opengameart.org/sites/default/files/RPG_-_The_Enchanted_Forest_of_Min.ogg",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "adventure",
+     "mysterious"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "medieval"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Hey Devs! Here is a track that I made for a game (one of many..) a little while back that ended up falling through. So I will be releasing the music steadly on",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02",
+   "rejectReason": "lossy music source at 112 kbps (< 150)"
+  },
+  {
+   "id": "music.rpg-the-cavern-of-wonders",
+   "status": "reject",
+   "layer": "music",
+   "title": "RPG - The Cavern of Wonders",
+   "author": "Hitctrl",
+   "authorURL": "https://opengameart.org/users/hitctrl",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/rpg-the-cavern-of-wonders",
+   "fileURL": "https://opengameart.org/sites/default/files/RPG - The Cavern of Wonders.ogg",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "mysterious",
+     "adventure"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Hey Devs, Here is a loopable orchestral piece that you might be able to find a place somewhere. Feels a little dark and makes me feel like I am wandering aroun",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02",
+   "rejectReason": "lossy music source at 112 kbps (< 150)"
+  },
+  {
+   "id": "music.fall-of-nightmares-epic-orchestral",
+   "status": "include",
+   "layer": "music",
+   "title": "Fall of Nightmares [Epic, Orchestral]",
+   "author": "nene",
+   "authorURL": "https://opengameart.org/users/nene",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/fall-of-nightmares-epic-orchestral",
+   "fileURL": "https://opengameart.org/sites/default/files/Fall of Nightmares [orchestral]_mastered.wav",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "epic",
+     "tense"
+    ],
+    "energy": 3,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Alright so something old but in new form with voices! Of course this is short and I will work on the voices better, but here is version one Voices by Helena Ke",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.new-sunrise",
+   "status": "include",
+   "layer": "music",
+   "title": "New Sunrise",
+   "author": "nene",
+   "authorURL": "https://opengameart.org/users/nene",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/new-sunrise",
+   "fileURL": "https://opengameart.org/sites/default/files/New Sunrise.wav",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "epic",
+     "joyful"
+    ],
+    "energy": 3,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Not that best and so great, quite empty in the middle, but this was composed for a film so it suits the scene quite well but while listening to itself, it migh",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.bustling-city",
+   "status": "include",
+   "layer": "music",
+   "title": "Bustling City",
+   "author": "Bryan Wysopal",
+   "authorURL": "https://opengameart.org/users/bryan-wysopal",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/bustling-city",
+   "fileURL": "https://opengameart.org/sites/default/files/Bustling City 2.wav",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "joyful",
+     "comic"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "medieval"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Conceived as a bright morning in a large town or small city, busy with activity. Good for whimsical locations and lighthearted moments. ",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.southern-pastures-miniature-suite-for-orchestra",
+   "status": "include",
+   "layer": "music",
+   "title": "Southern Pastures (Miniature Suite for Orchestra)",
+   "author": "Matthew Pablo",
+   "authorURL": "https://opengameart.org/users/matthew-pablo",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/southern-pastures-miniature-suite-for-orchestra",
+   "fileURL": "https://opengameart.org/sites/default/files/Southern Pastures (Miniature Suite f_0.mp3",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "calm",
+     "adventure"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  This is a conceptual miniature orchestral suite. The setting of this piece is during the final moments of the United States Civil War of 1861 from the perspect",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.merchants-and-sea-salt",
+   "status": "include",
+   "layer": "music",
+   "title": "Merchants and Sea Salt",
+   "author": "NBJDLukasAbsolute",
+   "authorURL": "https://opengameart.org/users/nbjdlukasabsolute",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/merchants-and-sea-salt",
+   "fileURL": "https://opengameart.org/sites/default/files/merchants_and_sea_salt.wav",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "adventure",
+     "joyful"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "medieval"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  A theme that sounds similar to a port-town. Feel free to use in your own projects! ",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.creepy-forest-f",
+   "status": "include",
+   "layer": "music",
+   "title": "Creepy Forest (F)",
+   "author": "HaelDB",
+   "authorURL": "https://opengameart.org/users/haeldb",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/creepy-forest-f",
+   "fileURL": "https://opengameart.org/sites/default/files/forest.ogg",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "eerie",
+     "mysterious"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "guitar"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  I have decided to try something new here. This song is not 100 % done to me. but I decided to post it during a \"good enough\" phrase representing the (0). As ti",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.creepy",
+   "status": "include",
+   "layer": "music",
+   "title": "Creepy",
+   "author": "TokyoGeisha",
+   "authorURL": "https://opengameart.org/users/tokyogeisha",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/creepy",
+   "fileURL": "https://opengameart.org/sites/default/files/CrEEP.wav",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "eerie"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "pads"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  A creepy loop I made while messing around with some new samples. ",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.mysterious",
+   "status": "include",
+   "layer": "music",
+   "title": "Mysterious",
+   "author": "nene",
+   "authorURL": "https://opengameart.org/users/nene",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/mysterious",
+   "fileURL": "https://opengameart.org/sites/default/files/Mysterious.wav",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "mysterious",
+     "eerie"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "strings"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Something different this time. Very simple actually... Mystery and maybe slightly creepy... reminds me of some sort of carneval! ",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.forgoten-tomb-ambience",
+   "status": "include",
+   "layer": "music",
+   "title": "Forgoten tomb ambience",
+   "author": "kindland",
+   "authorURL": "https://opengameart.org/users/kindland",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/forgoten-tomb-ambience",
+   "fileURL": "https://opengameart.org/sites/default/files/Forgoten_tombs_1.mp3",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "eerie"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "pads"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Hi, i made this some while ago and i though it might be usefull for others, i only have mp3. Works good for tombs, labirynths, etc, with this ambience playing ",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.ghost-town",
+   "status": "include",
+   "layer": "music",
+   "title": "Ghost Town",
+   "author": "Tausdei",
+   "authorURL": "https://opengameart.org/users/tausdei",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/ghost-town",
+   "fileURL": "https://opengameart.org/sites/default/files/ghost_town.wav",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "eerie",
+     "mysterious"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "pads"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Music for OGA October Art Challenge \"Urban Legends\" https://opengameart.org/forumtopic/october-2020-art-challenge-urban-legends ",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.dissonant-waltz",
+   "status": "include",
+   "layer": "music",
+   "title": "Dissonant Waltz",
+   "author": "Yubatake",
+   "authorURL": "https://opengameart.org/users/yubatake",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/dissonant-waltz",
+   "fileURL": "https://opengameart.org/sites/default/files/dissonantwaltz.flac",
+   "licenseQuote": "CC-BY 4.0",
+   "semantics": {
+    "moods": [
+     "eerie",
+     "tense"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Brisk orchestral waltz, with large amount of dissonance (or wrong notes, if you prefer :-)). Could perhaps be used in a horror-themed, or haunted house, game/l",
+   "license": "CC-BY-4.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.something-behind-me",
+   "status": "include",
+   "layer": "music",
+   "title": "Something Behind Me",
+   "author": "KLY",
+   "authorURL": "https://opengameart.org/users/kly",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/something-behind-me",
+   "fileURL": "https://opengameart.org/sites/default/files/Kim Lightyear - Something Behind Me.mp3",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "eerie",
+     "mysterious"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "piano"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Soundtrack Credits: Kim Lightyear ",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.dark-ambient-loop-13",
+   "status": "include",
+   "layer": "music",
+   "title": "Dark Ambient Loop 13",
+   "author": "MundoSound",
+   "authorURL": "https://opengameart.org/users/mundosound",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/dark-ambient-loop-13",
+   "fileURL": "https://opengameart.org/sites/default/files/Dark _Atmosphere13_Looped_24bit.wav",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "eerie",
+     "tense"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "pads"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Seamless looping dark ambient/drone track. This suble track is good for aesthetically darker levels and games. The file is avaiable in 48 kHz 24 bit WAV and ha",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.skin-cells-touch",
+   "status": "include",
+   "layer": "music",
+   "title": "Skin cells touch",
+   "author": "HaelDB",
+   "authorURL": "https://opengameart.org/users/haeldb",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/skin-cells-touch",
+   "fileURL": "https://opengameart.org/sites/default/files/skin_cells_touch.flac",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "eerie",
+     "tense"
+    ],
+    "energy": 1,
+    "studySafe": false,
+    "subPool": "pads"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  This is a song I made a looong time ago. But I decided since it was game influenced, I did a re-mixdown and made it sound better as much as I can so I can put ",
+   "addedIn": "2026.11.02"
+  },
+  {
+   "id": "music.the-y-files",
+   "status": "reject",
+   "layer": "music",
+   "title": "The Y Files",
+   "author": "TAD",
+   "authorURL": "https://opengameart.org/users/tad",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/the-y-files",
+   "fileURL": "https://opengameart.org/sites/default/files/the_y_files.wav",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "mysterious",
+     "tense"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "electronic"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  Totally Original, Definitely new. Music for OGA October Art Challenge \"Urban Legends\" https://opengameart.org/forumtopic/october-2020-art-challenge-urban-legen",
+   "addedIn": "2026.11.02",
+   "rejectReason": "only 58 s long: would repeat audibly during reading"
+  },
+  {
+   "id": "music.dark-descent-extended-cut",
+   "status": "reject",
+   "layer": "music",
+   "title": "Dark Descent - Extended Cut",
+   "author": "Matthew Pablo",
+   "authorURL": "https://opengameart.org/users/matthew-pablo",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/dark-descent-extended-cut",
+   "fileURL": "https://opengameart.org/sites/default/files/Dark Descent (Extended Cut)_0.mp3",
+   "licenseQuote": "CC-BY 3.0",
+   "semantics": {
+    "moods": [
+     "tense",
+     "epic"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  This is an extended cut and variation of my track \"Dark Descent\" I've extended some of the musical phrases and re-arranged the form a bit in this version. Chec",
+   "license": "CC-BY-3.0",
+   "addedIn": "2026.11.02",
+   "rejectReason": "2657 clipped runs in the source"
+  },
+  {
+   "id": "music.night-of-the-streets-horrorsuspense",
+   "status": "reject",
+   "layer": "music",
+   "title": "Night of the Streets [Horror/Suspense]",
+   "author": "nene",
+   "authorURL": "https://opengameart.org/users/nene",
+   "provider": "OpenGameArt",
+   "pageURL": "https://opengameart.org/content/night-of-the-streets-horrorsuspense",
+   "fileURL": "https://opengameart.org/sites/default/files/Night of the Streets_0.mp3",
+   "licenseQuote": "CC0",
+   "semantics": {
+    "moods": [
+     "tense",
+     "eerie"
+    ],
+    "energy": 2,
+    "studySafe": false,
+    "subPool": "orchestral"
+   },
+   "packs": [
+    "narrative"
+   ],
+   "packPath": "music",
+   "tailSeconds": 8.0,
+   "notes": "From the author's description:  First of all, I'm sorry for the poor quality. Both preview and file itself are MP3. Also I include midi version. I made this years ago for the game \"No more ro",
+   "addedIn": "2026.11.02",
+   "rejectReason": "lossy music source at 160 kbps (< 192)"
   }
  ]
 }

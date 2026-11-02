@@ -20,6 +20,7 @@
 		1688B1BEB6AB60CD6799CB5C /* GainCurve.swift in Sources */ = {isa = PBXBuildFile; fileRef = C43F47C42A013DE4A8049B92 /* GainCurve.swift */; };
 		16B10D1B0A6FFDB50CA17964 /* LibraryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDD2DD8236ECF3854999A01D /* LibraryComponents.swift */; };
 		17EBDBD0B3A6038A921C7424 /* AtmosphereMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0BF9CDEED3AA8637E2C6DB3 /* AtmosphereMapper.swift */; };
+		184BDCEA2326221E8EA771AF /* PasteTextImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F6A090E1EB629FC7CA451C4 /* PasteTextImportView.swift */; };
 		1B08F42EED4D914256217EF2 /* MiniPlayerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0012A1A328E18FC1540EBC /* MiniPlayerBar.swift */; };
 		1DB208E774AF5B61CA6F7C19 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411AF1A170335684302EFFE6 /* LibraryView.swift */; };
 		1F753960E78BEEBD39D6F076 /* catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = 6EDBA2F8CD410489D3FD9508 /* catalog.json */; };
@@ -221,6 +222,7 @@
 		39CD7E552A64B8AC97AC6E2A /* NodusReaderUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NodusReaderUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B1DBD289B69A2FBE2AFE55C /* ReadingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingSettingsView.swift; sourceTree = "<group>"; };
 		3B6D690834C5BF2B92AEAD2E /* ImportError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportError.swift; sourceTree = "<group>"; };
+		3F6A090E1EB629FC7CA451C4 /* PasteTextImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteTextImportView.swift; sourceTree = "<group>"; };
 		40A191E547B3FA244E030216 /* PDFReflowEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReflowEngine.swift; sourceTree = "<group>"; };
 		411AF1A170335684302EFFE6 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		44842233DC53215E5317E6AF /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
@@ -739,6 +741,7 @@
 				EDD2DD8236ECF3854999A01D /* LibraryComponents.swift */,
 				411AF1A170335684302EFFE6 /* LibraryView.swift */,
 				C0718A04E3BF758DD77A430C /* PadLibraryContentView.swift */,
+				3F6A090E1EB629FC7CA451C4 /* PasteTextImportView.swift */,
 			);
 			path = Library;
 			sourceTree = "<group>";
@@ -995,6 +998,7 @@
 				EDD19D020AF4FA6DC7E180F7 /* PadLibraryContentView.swift in Sources */,
 				1579B8A92B48F7F8A93F0CBD /* PadRootView.swift in Sources */,
 				B2D9C79E2BF4240F1B16B2B5 /* PaginatedReaderContent.swift in Sources */,
+				184BDCEA2326221E8EA771AF /* PasteTextImportView.swift in Sources */,
 				3CBED80F01AA6A6D46B6A7D5 /* Persistence.swift in Sources */,
 				E22356B661EA1D727DDE25F8 /* PhoneRootView.swift in Sources */,
 				764F7473F965A4952F883894 /* PhononOnDeviceConversion.swift in Sources */,
@@ -1152,7 +1156,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1218,7 +1222,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;

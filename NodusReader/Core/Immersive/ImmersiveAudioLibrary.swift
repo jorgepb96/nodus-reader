@@ -17,6 +17,8 @@ final class ImmersiveAudioLibrary {
         case downloading(Double)
         case paused(Double)
         case installed
+        /// Downloaded, and a newer catalog added these tracks since.
+        case updateAvailable(tracks: Int, bytes: Int64)
         case failed(String)
     }
 
@@ -37,8 +39,11 @@ final class ImmersiveAudioLibrary {
         }
     }
 
-    let catalog: ImmersiveCatalog?
+    private(set) var catalog: ImmersiveCatalog?
     let root: URL
+    /// The newest catalog adopted from the network, kept outside `root` so
+    /// "Delete all sounds" does not forget it.
+    let catalogURL: URL
     private(set) var states: [String: PackState] = [:]
     private(set) var installedTrackIDs: Set<String> = [] {
         didSet { if oldValue != installedTrackIDs { onInstalledChanged?() } }
@@ -53,6 +58,7 @@ final class ImmersiveAudioLibrary {
     init(catalog: ImmersiveCatalog? = ImmersiveCatalog.bundled(), fileStore: FileStore = .shared) {
         var catalog = catalog
         var root = fileStore.root.appendingPathComponent("ImmersiveAudio", isDirectory: true)
+        let catalogURL = fileStore.root.appendingPathComponent("ImmersiveAudioCatalog.json")
         var development = false
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
@@ -66,8 +72,13 @@ final class ImmersiveAudioLibrary {
             development = true
         }
         #endif
+        if !development, let bundled = catalog, let data = try? Data(contentsOf: catalogURL),
+           let stored = try? ImmersiveCatalog.decode(data), stored.isSafeToAdopt, stored.isNewer(than: bundled) {
+            catalog = stored
+        }
         self.catalog = catalog
         self.root = root
+        self.catalogURL = catalogURL
         self.isDevelopmentPack = development
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         Self.excludeFromBackup(root)
@@ -128,11 +139,17 @@ final class ImmersiveAudioLibrary {
         }
         installedTrackIDs = installed
         for pack in catalog.packs where tasks[pack.id] == nil {
-            let all = pack.trackIDs.allSatisfy(installed.contains)
+            let missing = catalog.tracks(in: pack).filter { !installed.contains($0.id) }
             let some = pack.trackIDs.contains(where: installed.contains)
-            if all { states[pack.id] = .installed }
+            if missing.isEmpty { states[pack.id] = .installed }
             else if case .failed = states[pack.id] { continue }
-            else { states[pack.id] = some ? .paused(fraction(of: pack, installed: installed)) : .notInstalled }
+            else if some, missing.allSatisfy({ $0.addedIn != nil }) {
+                // Everything the pack had when it was downloaded is here:
+                // what is missing came with a newer catalog.
+                states[pack.id] = .updateAvailable(tracks: missing.count, bytes: missing.reduce(0) { $0 + $1.file.bytes })
+            } else {
+                states[pack.id] = some ? .paused(fraction(of: pack, installed: installed)) : .notInstalled
+            }
         }
         bytesOnDisk = FileStore.directorySize(root, fileManager: .default)
     }
@@ -141,6 +158,53 @@ final class ImmersiveAudioLibrary {
         let total = max(Double(pack.bytes), 1)
         let done = Double((catalog?.tracks(in: pack) ?? []).filter { installed.contains($0.id) }.reduce(0) { $0 + $1.file.bytes })
         return min(done / total, 1)
+    }
+
+    // MARK: Published catalog
+
+    /// Whether a check for a newer catalog is running.
+    private(set) var isCheckingCatalog = false
+    @ObservationIgnored private static let catalogSession = URLSession(configuration: .ephemeral)
+    private static let catalogCheckKey = "immersive.catalogCheckedAt"
+
+    /// Reads the published catalog (at most once a day unless `force`) and
+    /// adopts it when it is newer and safe: packs then offer the tracks added
+    /// since as new sounds. Only the manifest is read; no audio is
+    /// downloaded until the reader asks. Returns whether a newer catalog was
+    /// adopted.
+    @discardableResult
+    func checkForNewSounds(force: Bool = false) async -> Bool {
+        guard !isDevelopmentPack, let current = catalog, !isCheckingCatalog else { return false }
+        let defaults = UserDefaults.standard
+        if !force, let last = defaults.object(forKey: Self.catalogCheckKey) as? Date,
+           Date().timeIntervalSince(last) < 86_400 { return false }
+        isCheckingCatalog = true
+        defer { isCheckingCatalog = false }
+        let request = URLRequest(url: ImmersiveCatalog.publishedURL, cachePolicy: .reloadIgnoringLocalCacheData,
+                                 timeoutInterval: 20)
+        guard let (data, response) = try? await Self.catalogSession.data(for: request),
+              (response as? HTTPURLResponse)?.statusCode == 200 else { return false }
+        defaults.set(Date(), forKey: Self.catalogCheckKey)
+        return adopt(publishedCatalog: data, over: current)
+    }
+
+    /// Adopts `data` when it decodes to a safe catalog newer than `current`.
+    @discardableResult
+    func adopt(publishedCatalog data: Data, over current: ImmersiveCatalog) -> Bool {
+        guard data.count < 4_000_000, let published = try? ImmersiveCatalog.decode(data),
+              published.isSafeToAdopt, published.isNewer(than: current) else { return false }
+        try? data.write(to: catalogURL, options: .atomic)
+        catalog = published
+        refresh()
+        return true
+    }
+
+    /// Packs with sounds added since they were downloaded.
+    var newSoundsCount: Int {
+        packs.reduce(0) { total, pack in
+            if case .updateAvailable(let tracks, _) = state(pack) { return total + tracks }
+            return total
+        }
     }
 
     // MARK: Install, pause, delete

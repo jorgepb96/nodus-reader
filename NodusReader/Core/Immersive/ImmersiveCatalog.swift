@@ -53,6 +53,43 @@ struct ImmersiveCatalog: Codable, Sendable, Equatable {
         return try? decode(data)
     }
 
+    /// The catalog published beside the audio files. Newer tracks reach the
+    /// app through it without an app update; only this manifest is read,
+    /// and nothing is downloaded until the reader asks.
+    static let publishedURL = URL(string: "https://github.com/jorgepb96/nodus-reader/releases/download/immersive-audio-v1/catalog.json")!
+
+    /// The only places a downloaded catalog may send the app to: the
+    /// project's own mirrors.
+    static let allowedHostPrefixes = [
+        "https://github.com/jorgepb96/nodus-reader/releases/download/",
+        "https://huggingface.co/datasets/jorgepb96/nodus-reader-immersive-audio/",
+    ]
+
+    /// Whether a catalog read from the network may drive downloads: the
+    /// project's hosts only, files inside the sound folder, unique tracks,
+    /// packs that list known tracks, and well-formed sizes and hashes.
+    var isSafeToAdopt: Bool {
+        guard schemaVersion <= Self.supportedSchema, !tracks.isEmpty, !hosts.isEmpty,
+              hosts.allSatisfy({ host in Self.allowedHostPrefixes.contains { host.baseURL.hasPrefix($0) } })
+        else { return false }
+        let ids = Set(tracks.map(\.id))
+        guard ids.count == tracks.count, packs.allSatisfy({ $0.trackIDs.allSatisfy(ids.contains) }) else { return false }
+        return tracks.allSatisfy { track in
+            let file = track.file
+            let parts = file.path.split(separator: "/", omittingEmptySubsequences: false)
+            let pathIsInside = !file.path.hasPrefix("/") && !file.path.contains("\\")
+                && parts.allSatisfy { !$0.isEmpty && $0 != "." && $0 != ".." }
+            let assetIsFlat = file.githubAssetName.map { !$0.isEmpty && !$0.contains("/") && $0 != ".." } ?? true
+            return pathIsInside && assetIsFlat && file.bytes > 0
+                && file.sha256.count == 64 && file.sha256.allSatisfy(\.isHexDigit)
+        }
+    }
+
+    /// Catalog versions are dates ("2026.11.02"), compared field by field.
+    func isNewer(than other: ImmersiveCatalog) -> Bool {
+        catalogVersion.compare(other.catalogVersion, options: .numeric) == .orderedDescending
+    }
+
     static func decode(_ data: Data) throws -> ImmersiveCatalog {
         let catalog = try JSONDecoder().decode(ImmersiveCatalog.self, from: data)
         guard catalog.schemaVersion <= supportedSchema else {
@@ -138,6 +175,9 @@ struct CatalogTrack: Codable, Sendable, Equatable, Identifiable {
     var title: String
     var author: String
     var authorURL: String?
+    /// The catalog version that first listed this track; nil for the first
+    /// catalog. A pack missing only such tracks has new sounds to offer.
+    var addedIn: String?
     var source: Source
     var license: License
     var processing: Processing

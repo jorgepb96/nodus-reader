@@ -112,6 +112,11 @@ final class ImmersiveAudioController {
         lastActivity = Date()
         apply(policy.handle(.readerOpened))
         updateStatus()
+        // New sounds are looked for only while the feature is in use (at
+        // most once a day): the reader sees them in Settings › Sound packs.
+        if preferences.isEnabled, library.hasAnything {
+            Task { [library] in await library.checkForNewSounds() }
+        }
     }
 
     /// The page on screen moved (silent reading position).

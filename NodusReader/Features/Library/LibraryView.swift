@@ -83,9 +83,7 @@ struct LibraryView: View {
             // One trailing item so the NODUS / READER wordmark fits on
             // iPhone; the grid/list switch sits next to Sort.
             ToolbarItem(placement: .nodusTrailing) {
-                Button {
-                    imports.beginImport()
-                } label: {
+                ImportMenu {
                     Image(systemName: "plus")
                         .frame(minWidth: 44, minHeight: 44)
                 }
@@ -225,6 +223,10 @@ struct LibraryView: View {
             if libraryEmpty {
                 PrimaryPillButton("Import documents", systemImage: "plus") {
                     imports.beginImport()
+                }
+                .frame(maxWidth: 260)
+                OutlinePillButton("Paste text", systemImage: "doc.on.clipboard") {
+                    imports.beginPasteText()
                 }
                 .frame(maxWidth: 260)
             } else if filterEmpty {

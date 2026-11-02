@@ -777,3 +777,30 @@ ES.update({
 })
 
 ES.update({"Stops playback and closes the player": "Detiene la reproducción y cierra el reproductor"})
+
+ES.update({
+    "%lld new sounds · %@": "%lld sonidos nuevos · %@",
+    "%lld new sounds": "%lld sonidos nuevos",
+    "Download new sounds": "Descargar sonidos nuevos",
+    "New sounds": "Sonidos nuevos",
+    "Checked automatically once a day while Immersive Audio is used. Only the list of sounds is read.": "Se comprueba automáticamente una vez al día mientras usas el audio inmersivo. Solo se lee la lista de sonidos.",
+    "Checking for new sounds": "Buscando sonidos nuevos",
+    "Check now": "Comprobar ahora",
+    "New sounds are available in the packs above.": "Hay sonidos nuevos en los paquetes de arriba.",
+    "No new sounds right now.": "Ahora mismo no hay sonidos nuevos.",
+    "More moods for stories: melancholy, romance, comedy, adventure, fantasy, tension, horror, epic and solemn moments.": "Más estados de ánimo para historias: melancolía, romance, comedia, aventura, fantasía, tensión, terror, momentos épicos y solemnes.",
+})
+
+ES.update({
+    "Import Files…": "Importar archivos…",
+    "Paste Text…": "Pegar texto…",
+    "Paste text": "Pegar texto",
+    "Paste Text": "Pegar texto",
+    "Pasted text": "Texto pegado",
+    "Optional": "Opcional",
+    "Leave it empty to use the first line. You can change it later in Edit Info.": "Déjalo vacío para usar la primera línea. Puedes cambiarlo después en Editar información.",
+    "Text to import": "Texto para importar",
+    "Paste or type the text here": "Pega o escribe aquí el texto",
+    "%lld words · Stays on this device, like any imported document.": "%lld palabras · Se queda en este dispositivo, como cualquier documento importado.",
+    "Import documents (⇧⌘I) or paste text": "Importar documentos (⇧⌘I) o pegar texto",
+})
