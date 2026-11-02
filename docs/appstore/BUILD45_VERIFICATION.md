@@ -28,3 +28,10 @@ Build 45 contains build 44 plus:
 | GitHub Release `immersive-audio-v1` | 128 assets (127 tracks + `catalog.json`); `catalog.json` and 5 sampled tracks downloaded match their SHA-256 |
 
 Not verified: listening to the 32 new pieces with headphones (the pipeline measures, it does not judge musical fit); the paste sheet and new-sounds flow on a real device.
+
+## Distribution
+
+Version 0.1.0 (45), archived from `30fad36` on `main` ([PR #62](https://github.com/jorgepb96/nodus-reader/pull/62)). What to Test: iOS [English](TestFlight-45-ios-en.txt) / [Spanish](TestFlight-45-ios-es.txt); macOS [English](TestFlight-45-macos-en.txt) / [Spanish](TestFlight-45-macos-es.txt), entered in English (U.S.) and Spanish (Spain).
+
+- iOS 0.1.0 (45): uploaded at 14:22 (Europe/Madrid) on 2 November 2026 through `xcodebuild -exportArchive` (`destination` = `upload`). Internal and Nodus Reader — Public Beta (75 testers); submitted to beta review with automatic notification. Build 44 had passed beta review by then.
+- macOS 0.1.0 (45): uploaded at 14:33. Internal (private beta) only, not submitted for review.
