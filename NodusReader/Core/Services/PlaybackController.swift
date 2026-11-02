@@ -110,7 +110,6 @@ public final class PlaybackController {
     /// Absolute time in the full sentence, without the highlight's visual lead.
     @ObservationIgnored private var neuralPositionTime: TimeInterval?
     @ObservationIgnored private var neuralPositionVoiceID: String?
-    @ObservationIgnored private var narrationFinished = false
     @ObservationIgnored private var neuralStartOffset: Int = 0
     @ObservationIgnored private var neuralPlaybackToken = UUID()
     @ObservationIgnored private var neuralPaused = false
@@ -138,6 +137,7 @@ public final class PlaybackController {
         }
     }
     public private(set) var isLoading = false
+    public private(set) var narrationFinished = false
     /// The loudest sample of the sentence playing (0…1). Immersive Audio keeps
     /// its own mix below what is left, so narration plus music never clips.
     public private(set) var narrationPeak: Float = 0
@@ -337,6 +337,10 @@ public final class PlaybackController {
     // MARK: Computed state
 
     public var hasActiveBook: Bool { activeBook != nil }
+    public var playbackActionSymbol: String {
+        if narrationFinished { return "arrow.counterclockwise" }
+        return isPlaying ? "pause.fill" : "play.fill"
+    }
     public var currentSentence: String {
         guard sentences.indices.contains(currentIndex) else { return "" }
         return sentences[currentIndex].text
@@ -613,6 +617,24 @@ public final class PlaybackController {
 
     public func resume() {
         guard let book = activeBook else { return }
+        if narrationFinished {
+            guard let first = sentences.first else { return }
+            // A completed narration replays the document, rather than the last
+            // sentence. Pauses and explicit seeks keep their existing position.
+            stopAudio()
+            resetPrefetch()
+            resetWordState()
+            currentIndex = 0
+            chapterIndex = first.chapterIndex
+            narrationFinished = false
+            restartOnResume = false
+            restartVoiceOnResume = false
+            pendingChapterSeek = nil
+            readerResumePosition = nil
+            errorMessage = nil
+            library.setStatus(book, status: .inProgress)
+            saveProgress()
+        }
         if mode == .read {
             mode = .readAndListen
             library.setReadingMode(book, mode: mode)
@@ -677,6 +699,7 @@ public final class PlaybackController {
         isPlaying = false
         resetWordState()
         activeBook = nil
+        narrationFinished = false
         chapters = []
         sentences = []
         resetPrefetch()
@@ -714,6 +737,7 @@ public final class PlaybackController {
             pendingChapterSeek = nil
             cancelAudioCacheGeneration()
             activeBook = nil
+            narrationFinished = false
             chapters = []
             sentences = []
             resetPrefetch()

@@ -6812,6 +6812,16 @@
         }
       }
     },
+    "Replay from beginning": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver a reproducir desde el principio"
+          }
+        }
+      }
+    },
     "Reset": {
       "localizations": {
         "es": {
@@ -8218,6 +8228,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Texto para importar"
+          }
+        }
+      }
+    },
+    "Texts": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Textos"
           }
         }
       }

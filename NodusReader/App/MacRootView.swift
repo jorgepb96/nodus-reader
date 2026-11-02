@@ -135,11 +135,15 @@ struct MacRootView: View {
                 NavigationStack(path: $detailPath) {
                     detailContent
                         .searchable(text: $searchText, placement: .toolbar, prompt: "Search library")
-                        .toolbarBackground(palette.background, for: .windowToolbar)
-                        .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
                 }
+                .toolbarBackground(palette.background, for: .windowToolbar)
+                .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
             }
         }
+        // Colour the window itself as well as its content. The title bar and
+        // the inspector's toolbar area otherwise fall back to the system white
+        // or grey when the window is resized or moves into full screen.
+        .containerBackground(palette.background, for: .window)
         .tint(palette.accent)
         .onChange(of: navigation.macReaderBookID != nil, initial: true) { _, reading in
             if reading {

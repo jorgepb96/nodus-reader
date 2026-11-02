@@ -178,7 +178,7 @@ struct NodusCommands: Commands {
             .disabled(focusedNavigation == nil)
         }
         CommandMenu("Player") {
-            Button(playback.isPlaying ? "Pause" : "Play") {
+            Button(playback.narrationFinished ? "Replay from beginning" : playback.isPlaying ? "Pause" : "Play") {
                 // A bare Space is a menu key equivalent, so it would otherwise
                 // steal spaces from search fields and text editors.
                 if !Self.insertSpaceIntoFocusedTextEditor() {

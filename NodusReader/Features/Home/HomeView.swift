@@ -4,7 +4,6 @@ import SwiftData
 import SwiftUI
 
 struct HomeView: View {
-    @Environment(NavigationModel.self) private var navigation
     @Environment(ImportCoordinator.self) private var imports
     @Environment(PlaybackController.self) private var playback
     @Environment(\.nodusPalette) private var palette
@@ -25,17 +24,8 @@ struct HomeView: View {
         return opened.first { $0.status != .finished && $0.progress < 0.999 } ?? opened.first
     }
 
-    private var upNext: [Book] {
-        let currentID = continueBook?.id
-        return books
-            .filter { $0.id != currentID && $0.status != .finished }
-            .sorted {
-                let lhs = $0.lastOpenedAt ?? $0.addedAt
-                let rhs = $1.lastOpenedAt ?? $1.addedAt
-                return lhs > rhs
-            }
-            .prefix(8)
-            .map { $0 }
+    private var shelves: [HomeFormatShelf] {
+        HomeFormatShelf.make(from: books)
     }
 
     var body: some View {
@@ -44,11 +34,11 @@ struct HomeView: View {
                 header
                 if let continueBook {
                     continueCard(continueBook)
-                } else {
+                } else if books.isEmpty {
                     emptyCard
                 }
-                if !upNext.isEmpty {
-                    upNextSection
+                ForEach(shelves) { shelf in
+                    shelfSection(shelf)
                 }
             }
             .frame(maxWidth: usesPadLayout ? 900 : .infinity, alignment: .leading)
@@ -202,7 +192,7 @@ struct HomeView: View {
         .panelCard(radius: 22)
     }
 
-    // MARK: Up next
+    // MARK: Format shelves
 
     private var shelfCoverWidth: CGFloat {
         if usesPadLayout { return 132 }
@@ -217,22 +207,24 @@ struct HomeView: View {
         usesPadLayout ? 16 : 14
     }
 
-    private var upNextSection: some View {
+    private func shelfSection(_ shelf: HomeFormatShelf) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                SectionHeading("Up next")
+                SectionHeading(shelf.format.homeShelfTitle)
                 Spacer()
-                Button("See all") {
-                    seeAll()
+                NavigationLink {
+                    HomeFormatBooksView(format: shelf.format)
+                } label: {
+                    Text("See all")
                 }
                 .font(.subheadline)
                 .foregroundStyle(palette.accent)
-                .accessibilityHint("Shows the whole library")
                 .nodusTextButtonStyle()
+                .accessibilityIdentifier("HomeShelfSeeAll-\(shelf.format.rawValue)")
             }
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: shelfSpacing) {
-                    ForEach(upNext) { book in
+                LazyHStack(alignment: .top, spacing: shelfSpacing) {
+                    ForEach(shelf.books.prefix(8)) { book in
                         Button {
                             open(book)
                         } label: {
@@ -272,18 +264,6 @@ struct HomeView: View {
         Task { await playback.start(book: book, mode: .listen) }
     }
 
-    private func seeAll() {
-        #if os(macOS)
-        navigation.sidebarSelection = .allBooks
-        #else
-        if usesPadLayout {
-            navigation.sidebarSelection = .allBooks
-        } else {
-            navigation.phoneTab = .library
-        }
-        #endif
-    }
-
     private func continueEyebrow(for book: Book) -> String? {
         let source = book.lastPositionDevice
         guard !source.isEmpty, source != DeviceInfo.name else { return String(localized: "Continue") }
@@ -315,6 +295,71 @@ struct HomeView: View {
         case .toRead: String(localized: "\(book.format.badge) · To read")
         case .inProgress: String(localized: "\(book.format.badge) · \(Int((book.progress * 100).rounded()))%")
         }
+    }
+}
+
+struct HomeFormatShelf: Identifiable {
+    let format: BookFormat
+    let books: [Book]
+    var id: BookFormat { format }
+
+    static func make(from books: [Book]) -> [HomeFormatShelf] {
+        let firstFormats: [BookFormat] = [.epub, .txt, .pdf]
+        let order = firstFormats + BookFormat.allCases.filter { !firstFormats.contains($0) }
+        let grouped = Dictionary(grouping: books, by: \.format)
+        return order.compactMap { format in
+            guard let documents = grouped[format], !documents.isEmpty else { return nil }
+            // Include finished documents and the Continue book: a format gets
+            // a shelf whenever the library contains any document of that kind.
+            return HomeFormatShelf(format: format, books: documents.sorted {
+                ($0.lastOpenedAt ?? $0.addedAt) > ($1.lastOpenedAt ?? $1.addedAt)
+            })
+        }
+    }
+}
+
+private extension BookFormat {
+    var homeShelfTitle: String {
+        // Pasted text and imported plain-text files share the TXT format.
+        self == .txt ? String(localized: "Texts") : label
+    }
+}
+
+/// "See all" belongs to its format, including documents beyond the preview.
+private struct HomeFormatBooksView: View {
+    @Environment(\.nodusPalette) private var palette
+    @Query private var books: [Book]
+    @State private var readingBook: Book?
+    let format: BookFormat
+
+    init(format: BookFormat) {
+        self.format = format
+        let rawFormat = format.rawValue
+        _books = Query(filter: #Predicate<Book> { $0.formatRaw == rawFormat },
+                       sort: \Book.addedAt, order: .reverse)
+    }
+
+    private var orderedBooks: [Book] {
+        books.sorted { ($0.lastOpenedAt ?? $0.addedAt) > ($1.lastOpenedAt ?? $1.addedAt) }
+    }
+
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: LibraryView.gridColumns, alignment: .leading, spacing: 20) {
+                ForEach(orderedBooks) { book in
+                    BookGridCell(book: book, selectionMode: false, isSelected: false) {
+                        readingBook = book
+                    }
+                }
+            }
+            .padding(20)
+            .padding(.bottom, 110)
+        }
+        .background(palette.background)
+        .navigationTitle(format.homeShelfTitle)
+        .inlineNavigationTitle()
+        .navigationBarBackground(palette.background)
+        .readerCover(item: $readingBook)
     }
 }
 

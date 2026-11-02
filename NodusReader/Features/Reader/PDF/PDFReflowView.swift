@@ -218,9 +218,7 @@ struct PDFReflowView: View {
     @State private var job = PDFReflowJob()
     @State private var showImages = true
     @State private var skipHeaders = true
-    /// Page at the top of the reflow, used by the reader bar, the original
-    /// page panel and the scrollbar.
-    @State private var scrollPosition: Int?
+    @State private var atEnd = false
 
     /// The book's own typography when it has one, the global one otherwise.
     private var typography: ReaderTypography {
@@ -366,7 +364,19 @@ struct PDFReflowView: View {
                              ? max(60, viewportHeight * 0.6) : 60)
                     .scrollTargetLayout()
                 }
-                .scrollPosition(id: $scrollPosition, anchor: .top)
+                // Observe the visible page without binding the scroll position.
+                // A bound top anchor reasserts itself as lazy block heights
+                // change and fights the text view's line-by-line narration follow.
+                .onScrollTargetVisibilityChange(idType: Int.self, threshold: 0.01) { ids in
+                    guard let first = ids.min() else { return }
+                    pdfPageIndex = atEnd ? document.pages.last?.pageIndex ?? first : first
+                }
+                .onScrollGeometryChange(for: Bool.self) { geometry in
+                    geometry.visibleRect.maxY >= geometry.contentSize.height - 2
+                } action: { _, isAtEnd in
+                    atEnd = isAtEnd
+                    if isAtEnd, let last = document.pages.last { pdfPageIndex = last.pageIndex }
+                }
                 // `.never`: with `.hidden` the Mac adds its scroller beside
                 // the reflow scrollbar when scroll bars always show.
                 .scrollIndicators(.never)
@@ -385,18 +395,13 @@ struct PDFReflowView: View {
                         .padding(.trailing, 4)
                     }
                 }
-                .onChange(of: scrollPosition) { _, page in
-                    guard let page, page != pdfPageIndex else { return }
-                    pdfPageIndex = page
-                }
                 .onAppear {
                     // Switching from Original keeps the reading position.
-                    scrollPosition = reflowPage(for: pdfPageIndex, forward: false, in: document)
                     scroll(proxy, to: pdfPageIndex, in: document)
                 }
                 .onChange(of: jumpToPage, initial: true) { _, target in
-                    // One scroll per jump: also writing `scrollPosition` made
-                    // two programmatic scrolls race over the lazy page heights.
+                    // Explicit navigation is a one-shot jump; narration owns
+                    // the offset between jumps, just as in the continuous reader.
                     guard let target else { return }
                     let forward = target > pdfPageIndex
                     scroll(proxy, to: target, forward: forward, in: document)

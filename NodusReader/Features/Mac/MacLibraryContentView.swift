@@ -16,6 +16,7 @@ struct MacLibraryContentView: View {
     @Environment(LibraryService.self) private var library
     @Environment(ImportCoordinator.self) private var imports
     @Environment(PlaybackController.self) private var playback
+    @Environment(CloudSyncService.self) private var sync
     @Environment(\.nodusPalette) private var palette
 
     let selection: SidebarDestination
@@ -100,15 +101,8 @@ struct MacLibraryContentView: View {
             if let inspectorBook {
                 BookInspector(
                     book: inspectorBook,
-                    onOpen: {
-                        library.open(inspectorBook)
-                        readingBook = inspectorBook
-                    },
-                    onReadAndListen: {
-                        library.open(inspectorBook)
-                        readingBook = inspectorBook
-                        Task { await playback.start(book: inspectorBook, mode: .readAndListen) }
-                    },
+                    onOpen: { open(inspectorBook) },
+                    onReadAndListen: { open(inspectorBook, narrate: true) },
                     onDelete: {
                         pendingDeletion = [inspectorBook]
                         showDeleteConfirmation = true
@@ -223,11 +217,7 @@ struct MacLibraryContentView: View {
                 BookContextActions(
                     book: book,
                     onOpen: { open(book) },
-                    onReadAndListen: {
-                        library.open(book)
-                        readingBook = book
-                        Task { await playback.start(book: book, mode: .readAndListen) }
-                    },
+                    onReadAndListen: { open(book, narrate: true) },
                     onAddToCollection: {
                         collectionBooks = [book]
                         showCollectionSheet = true
@@ -271,11 +261,7 @@ struct MacLibraryContentView: View {
                             BookContextActions(
                                 book: book,
                                 onOpen: { open(book) },
-                                onReadAndListen: {
-                                    library.open(book)
-                                    readingBook = book
-                                    Task { await playback.start(book: book, mode: .readAndListen) }
-                                },
+                                onReadAndListen: { open(book, narrate: true) },
                                 onAddToCollection: {
                                     collectionBooks = [book]
                                     showCollectionSheet = true
@@ -332,9 +318,18 @@ struct MacLibraryContentView: View {
         .padding(20)
     }
 
-    private func open(_ book: Book) {
-        library.open(book)
+    private func open(_ book: Book, narrate: Bool = false) {
+        // ReaderView marks the book opened after its file becomes readable.
         readingBook = book
+        guard narrate else { return }
+        Task {
+            let url = library.fileStore.documentURL(for: book)
+            if !FileManager.default.fileExists(atPath: url.path) { await sync.download(book) }
+            // The reader reports any download failure. Narration must wait for
+            // that same download instead of trying to extract a missing file.
+            guard FileManager.default.fileExists(atPath: url.path) else { return }
+            await playback.start(book: book, mode: .readAndListen)
+        }
     }
 
     private func selected(from ids: Set<Book.ID>) -> Book? {

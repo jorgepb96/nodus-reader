@@ -172,6 +172,100 @@ func legacyCleanupLeavesLibraryUntouchedWhenBackupFails() async throws {
 // MARK: - Reader feedback regressions
 
 #if canImport(UIKit)
+@MainActor @Observable
+private final class PDFReflowScrollTestState {
+    var page = 0
+    var jump: Int?
+    var target: ReaderNavigationTarget?
+}
+
+@Test @MainActor
+func pdfReflowKeepsTheFollowedLineAcrossLayoutUpdates() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let suite = "nodus.tests.pdf-scroll.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let preferences = ReaderPreferences(defaults: defaults)
+    let voices = VoiceCatalog(defaults: defaults)
+    let playback = PlaybackController(library: fixture.service, voices: voices,
+                                      models: ModelManager(voices: voices, defaults: defaults), defaults: defaults)
+    let book = Book(title: "Reflow scrolling", author: "Test", format: .pdf,
+                    fileName: "test.pdf", relativePath: "test.pdf", fileSize: 0, contentHash: "scroll-test")
+    fixture.container.mainContext.insert(book)
+    // Long pages with several independently sized text blocks reproduce the
+    // lazy reflow layout. Page IDs are deliberately sparse, as in scanned PDFs.
+    let pages = [0, 2, 5].map { page in
+        PDFReflowPage(pageIndex: page, width: 600, height: 800,
+                      blocks: (0..<4).map { block in
+            PDFReflowBlock(id: UUID(), kind: .body,
+                           text: (0..<20).map { "Page \(page), block \(block), line \($0)." }.joined(separator: "\n"),
+                           rect: CGRect(x: 0, y: 0, width: 1, height: 1), pageIndex: page,
+                           isHeaderFooter: false, usedOCR: false)
+        }, regions: [])
+    }
+    try PDFReflowStore(fileStore: fixture.fileStore).save(
+        PDFReflowDocument(contentHash: book.contentHash, pageCount: 6, totalPageCount: 6,
+                          pages: pages, usedOCR: false, generatedAt: Date()), bookID: book.id)
+    let state = PDFReflowScrollTestState()
+    let reader = PDFReflowView(
+        book: book, url: fixture.fileStore.documentURL(for: book), theme: .resolve(.light, colorScheme: .light),
+        pdfPageIndex: Binding(get: { state.page }, set: { state.page = $0 }),
+        jumpToPage: Binding(get: { state.jump }, set: { state.jump = $0 }),
+        narrationReturnTarget: Binding(get: { state.target }, set: { state.target = $0 }),
+        showSourceSheet: .constant(false), sourceAvailable: .constant(false))
+        .frame(width: 360, height: 640)
+        .environment(fixture.service).environment(preferences).environment(playback)
+    let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+    let previous = scene.windows.first { $0.isKeyWindow }
+    let window = UIWindow(windowScene: scene)
+    let host = UIHostingController(rootView: reader)
+    window.rootViewController = host
+    window.makeKeyAndVisible()
+    defer { window.isHidden = true; previous?.makeKey() }
+
+    func descendants<T: UIView>(_ view: UIView, of type: T.Type) -> [T] {
+        (view as? T).map { [$0] } ?? view.subviews.flatMap { descendants($0, of: type) }
+    }
+    // Wait for the cached reflow and SwiftUI's first lazy layout.
+    for _ in 0..<100 {
+        host.view.layoutIfNeeded()
+        if !descendants(host.view, of: ReaderSelectableTextView.self).isEmpty { break }
+        try await Task.sleep(for: .milliseconds(20))
+    }
+    let scroll = try #require(descendants(host.view, of: UIScrollView.self).first)
+    let text = pages[0].canonicalLayout.text as NSString
+    for line in [15, 17, 19] {
+        let range = text.range(of: "Page 0, block 0, line \(line).")
+        state.target = ReaderNavigationTarget(chapterIndex: 0, characterOffset: range.location)
+        for _ in 0..<100 {
+            try await Task.sleep(for: .milliseconds(20))
+            if state.target == nil { break }
+        }
+        #expect(state.target == nil)
+        let followedOffset = scroll.contentOffset.y
+        #expect(followedOffset > 100, "Following must move inside the page")
+        // Resizing lazy text blocks used to reassert the page's top anchor,
+        // competing with the same native follow used by narration.
+        preferences.lineHeight += 0.01
+        for _ in 0..<15 {
+            try await Task.sleep(for: .milliseconds(20))
+            #expect(scroll.contentOffset.y >= followedOffset - 40,
+                    "Updating the reflow must not snap the followed line back to the page top")
+        }
+        #expect(state.page == 0)
+    }
+    // Explicit jumps still use original page IDs and skip blank pages.
+    state.jump = 1
+    try await Task.sleep(for: .milliseconds(400))
+    #expect(state.jump == nil)
+    #expect(state.page == 2)
+    #expect(scroll.contentOffset.y > 1_000)
+    scroll.setContentOffset(CGPoint(x: 0, y: scroll.contentSize.height - scroll.bounds.height), animated: false)
+    try await Task.sleep(for: .milliseconds(200))
+    #expect(state.page == 5, "The end of the reflow must report the final original page")
+}
+
 @Test @MainActor
 func narrationScrollFollowsTheActualLineAndRespectsSelection() throws {
     let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -431,6 +525,63 @@ func pausedReaderChapterSeekMovesNarrationAndTransfersItsPosition() async throws
     #expect(!playback.isPlaying)
     #expect(!playback.seek(toChapter: 999))
     playback.stopAndClose()
+}
+
+@Test(arguments: ["toggle", "resume", "start"]) @MainActor
+func completedNarrationReplaysTheWholeDocument(action: String) async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let suite = "nodus.tests.replay.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let voices = VoiceCatalog(defaults: defaults)
+    let models = ModelManager(voices: voices, defaults: defaults)
+    // Exercise transport and saved positions without loading a speech model.
+    voices.setNeuralVoices([])
+    let playback = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
+    let url = try SampleLibrary.makeEPUB(sampleSpec())
+    defer { try? FileManager.default.removeItem(at: url) }
+    let book = try #require(await fixture.service.importFiles([url]) { _ in }.imported.first)
+    await playback.start(book: book, mode: .read)
+    playback.seek(to: playback.sentenceCount - 1)
+    #expect(!playback.narrationFinished)
+    #expect(playback.playbackActionSymbol == "play.fill", "Pausing on the final sentence is not completion")
+    playback.nextSentence()
+    #expect(playback.narrationFinished)
+    #expect(playback.playbackActionSymbol == "arrow.counterclockwise")
+    #expect(book.status == .finished && book.progress == 1)
+    playback.setSpeed(1.5)
+    switch action {
+    case "toggle": playback.toggle()
+    case "resume": playback.resume()
+    default: await playback.start(book: book, mode: .readAndListen)
+    }
+    #expect(!playback.narrationFinished)
+    #expect(playback.currentIndex == 0 && playback.chapterIndex == 0)
+    #expect(playback.currentChapterOffset == playback.sentences[0].chapterOffset)
+    #expect(book.progress == 0 && book.status == .inProgress)
+    #expect(book.locator.narrationPosition?.characterOffset == playback.sentences[0].chapterOffset)
+    #expect(playback.speedMultiplier == 1.5)
+    playback.stopAndClose()
+    #expect(!playback.narrationFinished)
+}
+
+@Test @MainActor
+func homeShelvesAdaptToFormatsAndKeepFinishedTexts() {
+    func book(_ format: BookFormat) -> Book {
+        Book(title: format.label, author: "Test", format: format, fileName: "book.\(format.rawValue)",
+             relativePath: "", fileSize: 1, contentHash: UUID().uuidString)
+    }
+    let epub = book(.epub), text = book(.txt), pdf = book(.pdf), markdown = book(.markdown)
+    text.status = .finished
+    text.progress = 1
+    #expect(HomeFormatShelf.make(from: []).isEmpty)
+    #expect(HomeFormatShelf.make(from: [pdf, markdown]).map(\.format) == [.pdf, .markdown])
+    let shelves = HomeFormatShelf.make(from: [markdown, pdf, text, epub])
+    #expect(shelves.map(\.format) == [.epub, .txt, .pdf, .markdown])
+    #expect(shelves[1].books.map(\.id) == [text.id])
+    #expect(HomeFormatShelf.make(from: [pdf, epub]).map(\.format) == [.epub, .pdf])
+    #expect(HomeFormatShelf.make(from: (0..<12).map { _ in book(.txt) }).first?.books.count == 12)
 }
 
 @Test
