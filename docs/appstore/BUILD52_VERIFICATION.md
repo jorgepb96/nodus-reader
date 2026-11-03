@@ -15,3 +15,15 @@ The official privacy page is https://nodusresearch.com/reader/privacy/. It is pu
 - Copy verification hashes and locales: [BUILD52_COPY_VERIFICATION.json](BUILD52_COPY_VERIFICATION.json).
 
 Distribution: iOS Internal and Public Beta; native macOS Internal only. Build 51 remains an intermediate Internal validation build.
+
+## TestFlight delivery — 3 November 2026
+
+Source commit: `1b70ffabf8cfe3ee75d004b23f04d0688c459ae3` on GitHub main. Both exports have verified signatures, Production iCloud, the expected team and arm64 binaries. The iOS extension is also build 52; the Mac app is sandboxed and its installer signature is valid.
+
+- iOS build ID: `e1e5521d-eef9-4358-bcd7-80fad8880874`. Processed as VALID; Internal and Public Beta groups. External state: **IN_BETA_TESTING**. Beta review: **APPROVED**.
+- macOS build ID: `328c7711-c60c-4457-a8f8-14ae8b41527e`. Processed as VALID; Internal only, internally IN_BETA_TESTING. No public-group assignment or beta-review submission.
+- English (US) and Spanish (Spain) What to Test text was read back and matched all four local files.
+- The public iOS link remains enabled; iOS builds on Apple silicon Macs remain disabled for both groups.
+- No App Store production release was submitted.
+
+Final API snapshot and artifact hashes: [BUILD52_DELIVERY.json](BUILD52_DELIVERY.json).
