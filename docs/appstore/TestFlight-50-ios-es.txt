@@ -1,0 +1,7 @@
+La compilación 50 corrige la desaparición de las cubiertas al sincronizar con iCloud.
+
+- Las cubiertas originales y personalizadas siguen visibles mientras llegan los cambios de otro dispositivo.
+- Las cubiertas que faltan se recuperan de tu iCloud personal sin reimportar los libros.
+- La descarga se reintenta si iCloud tarda en entregar la imagen. Las cubiertas generadas se usan cuando no hay otra disponible.
+
+Comprueba la biblioteca al sincronizar entre iPhone, iPad y Mac, incluidos los libros que ya están descargados.

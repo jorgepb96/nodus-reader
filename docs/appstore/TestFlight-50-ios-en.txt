@@ -1,0 +1,7 @@
+Build 50 fixes book covers disappearing after iCloud synchronization.
+
+- Original and custom covers stay visible while changes arrive from another device.
+- Missing covers are recovered from your personal iCloud without reimporting books.
+- Cover downloads retry when iCloud files are delayed. Generated artwork remains the fallback when no cover is available.
+
+Please check your library after syncing between iPhone, iPad and Mac, including books whose originals are already downloaded.

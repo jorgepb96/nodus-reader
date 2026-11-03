@@ -136,6 +136,13 @@ page, instead of being dropped while the change token moves on. Clearing a custo
 cover also removes the iCloud cover, and other devices fall back to the
 typographic cover.
 
+A cover filename in CloudKit belongs to the sending device. Receiving metadata
+keeps the current local artwork until its iCloud replacement has been copied;
+the original document's download state does not determine cover availability.
+Missing cover references from older releases are repaired on the next successful
+sync, even without new metadata. Failed cover copies remain queued for the next
+sync rather than permanently leaving the generated fallback visible.
+
 All iCloud Drive file work (container lookup, copies, cover reads) runs off the
 main thread; only the `NSMetadataQuery` is started on the main run loop.
 

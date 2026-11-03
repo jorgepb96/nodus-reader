@@ -133,7 +133,9 @@ private struct SyncFixture {
         suite = "nodus.tests.sync.\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suite)!
         service = CloudSyncService(context: container.mainContext, library: library,
-                                   journal: journal, fileStore: library.fileStore, defaults: defaults)
+                                   journal: journal, fileStore: library.fileStore, defaults: defaults,
+                                   documentStore: ICloudDocumentStore(fileStore: library.fileStore,
+                                       containerURL: root.appendingPathComponent("cloud")))
     }
 
     func book() throws -> Book {
@@ -157,6 +159,80 @@ private struct SyncFixture {
         record["deletedAt"] = date
         return record
     }
+}
+
+@Test @MainActor
+func remoteBookMetadataPreservesTheLocalCoverUntilItsReplacementArrives() throws {
+    let fixture = try SyncFixture()
+    defer { fixture.cleanUp() }
+    let book = try fixture.book()
+    let local = fixture.library.fileStore.documentURL(for: book)
+    try FileManager.default.createDirectory(at: local.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try Data("book".utf8).write(to: local)
+    let name = try fixture.library.fileStore.writeCover(Data("original artwork".utf8), bookID: book.id)
+    book.coverFileName = name
+    let record = CKRecord(recordType: "Book", recordID: CKRecord.ID(recordName: "book-\(book.id.uuidString)"))
+    record["updatedAt"] = book.updatedAt.addingTimeInterval(1)
+    record["coverFileName"] = "cover-on-another-device.jpg"
+
+    fixture.service.applyRemote(record)
+
+    #expect(book.downloadState == .downloaded)
+    #expect(book.coverFileName == name)
+    #expect(try Data(contentsOf: try #require(fixture.library.fileStore.coverForBook(book))) == Data("original artwork".utf8))
+}
+
+@Test @MainActor
+func remoteCoverReplacementRetriesWithoutDiscardingTheOriginalArtwork() async throws {
+    let fixture = try SyncFixture()
+    defer { fixture.cleanUp() }
+    let book = try fixture.book()
+    let name = try fixture.library.fileStore.writeCover(Data("original artwork".utf8), bookID: book.id)
+    book.coverFileName = name
+    let record = CKRecord(recordType: "Book", recordID: CKRecord.ID(recordName: "book-\(book.id.uuidString)"))
+    record["updatedAt"] = book.updatedAt.addingTimeInterval(1)
+    record["coverFileName"] = "remote-custom-cover.jpg"
+    fixture.service.applyRemote(record)
+    try fixture.container.mainContext.save()
+    let pending = fixture.journal.pendingCount()
+
+    // Metadata can arrive before the image. Keep displaying the original.
+    await fixture.service.downloadPendingCovers()
+    #expect(book.coverFileName == name)
+    let remote = fixture.root.appendingPathComponent("cloud/Documents/NodusReader/Covers/\(book.id.uuidString).jpg")
+    try FileManager.default.createDirectory(at: remote.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try Data("replacement artwork".utf8).write(to: remote)
+    await fixture.service.downloadPendingCovers()
+    #expect(book.coverFileName != name)
+    #expect(try Data(contentsOf: try #require(fixture.library.fileStore.coverForBook(book))) == Data("replacement artwork".utf8))
+    #expect(fixture.journal.pendingCount() == pending, "Cover downloads do not echo metadata back to iCloud")
+
+    // An explicit generated-cover choice still propagates to this device.
+    record["updatedAt"] = book.updatedAt.addingTimeInterval(1)
+    record["coverFileName"] = ""
+    fixture.service.applyRemote(record)
+    await fixture.service.downloadPendingCovers()
+    #expect(book.coverFileName == nil)
+}
+
+@Test @MainActor
+func missingCoverIsRecoveredForDownloadedBooksWithoutANewRemoteRecord() async throws {
+    let fixture = try SyncFixture()
+    defer { fixture.cleanUp() }
+    let book = try fixture.book()
+    let local = fixture.library.fileStore.documentURL(for: book)
+    try FileManager.default.createDirectory(at: local.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try Data("book".utf8).write(to: local)
+    book.downloadState = .downloaded
+    book.coverFileName = "missing-on-this-device.jpg"
+    let remote = fixture.root.appendingPathComponent("cloud/Documents/NodusReader/Covers/\(book.id.uuidString).jpg")
+    try FileManager.default.createDirectory(at: remote.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try Data("embedded artwork".utf8).write(to: remote)
+
+    await fixture.service.downloadPendingCovers()
+
+    #expect(book.downloadState == .downloaded)
+    #expect(try Data(contentsOf: try #require(fixture.library.fileStore.coverForBook(book))) == Data("embedded artwork".utf8))
 }
 
 @Test @MainActor

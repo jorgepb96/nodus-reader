@@ -104,16 +104,17 @@ final class CloudSyncService {
     private var zoneReady = false
     private var started = false
     private var activeSyncGeneration = UUID()
-    @ObservationIgnored private var pendingCoverDownloads: Set<UUID> = []
+    @ObservationIgnored private var pendingCoverDownloads: [UUID: Date] = [:]
     @ObservationIgnored private var preferenceSources: (theme: ThemeManager, reading: ReaderPreferences)?
     nonisolated(unsafe) private var preferencesObserver: NSObjectProtocol?
 
     init(context: ModelContext, library: LibraryService, journal: SyncJournal,
-         fileStore: FileStore = .shared, defaults: UserDefaults = .standard) {
+         fileStore: FileStore = .shared, defaults: UserDefaults = .standard,
+         documentStore: ICloudDocumentStore? = nil) {
         self.context = context
         self.library = library
         self.journal = journal
-        self.documents = ICloudDocumentStore(fileStore: fileStore)
+        self.documents = documentStore ?? ICloudDocumentStore(fileStore: fileStore)
         self.defaults = defaults
         self.isEnabled = !LibraryStorageScope.isIsolated && defaults.bool(forKey: Key.enabled)
         self.lastSync = defaults.object(forKey: Key.lastSync) as? Date
@@ -435,7 +436,7 @@ final class CloudSyncService {
         } else {
             consecutiveFailures = 0
             // Backing-off entries are not a completed synchronization.
-            if pendingCount == 0 {
+            if pendingCount == 0 && pendingCoverDownloads.isEmpty {
                 lastSync = Date()
                 defaults.set(lastSync, forKey: Key.lastSync)
                 status = .upToDate
@@ -668,7 +669,6 @@ final class CloudSyncService {
                 persistDeferredChildren()
                 saveChangeToken(changes.changeToken)
                 moreComing = changes.moreComing
-                await downloadPendingCovers()
             } catch let error as CKError where error.code == .changeTokenExpired {
                 token = nil
                 clearChangeToken()
@@ -685,6 +685,7 @@ final class CloudSyncService {
                 moreComing = true
             }
         }
+        await downloadPendingCovers()
     }
 
     // MARK: Record construction
@@ -834,11 +835,17 @@ final class CloudSyncService {
                 try? FileManager.default.removeItem(at: url)
             }
             book.coverFileName = nil
+            pendingCoverDownloads.removeValue(forKey: book.id)
         } else if let coverName = record["coverFileName"] as? String, !coverName.isEmpty {
             let safeCover = FileStore.sanitizedFileName(coverName)
-            let localCover = library.fileStore.coverURL(for: safeCover)
+            let localCover = library.fileStore.coverForBook(book)
             let hasLocalCover = localCover.map { FileManager.default.fileExists(atPath: $0.path) } ?? false
-            if book.coverFileName == nil || !hasLocalCover {
+            if !hasLocalCover || book.coverFileName != safeCover {
+                // CloudKit's filename belongs to the sending device. Keep our
+                // usable image until the shared iCloud artwork is copied here.
+                pendingCoverDownloads[book.id] = remoteDate
+            }
+            if !hasLocalCover {
                 book.coverFileName = safeCover
             }
         }
@@ -855,24 +862,40 @@ final class CloudSyncService {
         if !downloadingBookIDs.contains(book.id) {
             book.downloadState = localExists ? .downloaded : .cloudOnly
         }
-        let remoteHasCover = !((record["coverFileName"] as? String) ?? "").isEmpty
-        if remoteHasCover, !localExists || book.coverFileName == nil {
-            pendingCoverDownloads.insert(book.id)
-        }
     }
 
-    /// Covers are copied from iCloud Drive after a pull page is applied, off
+    /// Covers are copied from iCloud Drive after metadata is applied, off
     /// the main thread, then attached without re-enqueueing the book.
-    private func downloadPendingCovers() async {
-        let ids = pendingCoverDownloads
-        pendingCoverDownloads.removeAll()
-        for id in ids {
-            guard let name = await documents.downloadCover(bookID: id),
-                  let book = fetchBook(id: id) else { continue }
+    func downloadPendingCovers() async {
+        // Repair references left by older versions, including after a restart
+        // or a pull with no new metadata. A downloaded original says nothing
+        // about whether its separately synced cover is present.
+        for book in (try? context.fetch(FetchDescriptor<Book>())) ?? [] {
+            if let url = library.fileStore.coverForBook(book),
+               !FileManager.default.fileExists(atPath: url.path) {
+                pendingCoverDownloads[book.id] = book.updatedAt
+            }
+        }
+        for (id, date) in pendingCoverDownloads {
+            guard let book = fetchBook(id: id), book.updatedAt == date,
+                  book.coverFileName != nil else {
+                pendingCoverDownloads.removeValue(forKey: id)
+                continue
+            }
+            let previous = book.coverFileName
+            // Leave failed copies queued: iCloud metadata may arrive before
+            // the file is materialized. The next sync retries without a new edit.
+            guard let name = await documents.downloadCover(bookID: id) else { continue }
+            guard pendingCoverDownloads[id] == date, book.modelContext != nil,
+                  book.updatedAt == date, book.coverFileName == previous else {
+                if let url = library.fileStore.coverURL(for: name) { try? FileManager.default.removeItem(at: url) }
+                continue
+            }
             journal.withSuspendedRecording {
                 book.coverFileName = name
                 try? context.save()
             }
+            pendingCoverDownloads.removeValue(forKey: id)
         }
     }
 
