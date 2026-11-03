@@ -6,6 +6,57 @@ final class NodusReaderUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    func testPronunciationDictionaryCRUD() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        if app.windows.firstMatch.frame.width >= 700 {
+            app.staticTexts["All Books"].firstMatch.tap()
+        } else {
+            tapTab("Library", in: app)
+        }
+        app.staticTexts["Moby-Dick"].firstMatch.press(forDuration: 1.2)
+        app.buttons["Pronunciations…"].tap()
+        let written = app.textFields["PronunciationWritten"]
+        XCTAssertTrue(written.waitForExistence(timeout: 10))
+        written.tap()
+        written.typeText("Ishmael")
+        let spoken = app.textFields["PronunciationSpoken"]
+        spoken.tap()
+        spoken.typeText("Ish mail")
+        app.buttons["SavePronunciation"].tap()
+        XCTAssertTrue(app.staticTexts["Ish mail"].waitForExistence(timeout: 5))
+        app.buttons["Done"].tap()
+        app.staticTexts["Moby-Dick"].firstMatch.press(forDuration: 1.2)
+        app.buttons["Pronunciations…"].tap()
+        XCTAssertTrue(app.staticTexts["Ish mail"].waitForExistence(timeout: 10))
+        app.buttons["Delete pronunciation"].firstMatch.tap()
+        XCTAssertFalse(app.staticTexts["Ish mail"].exists)
+    }
+
+    func testPronunciationSelectionInPDF() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let pdf = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Experiments in Plant Hybridization")).firstMatch
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+        pdf.tap()
+        let intelligent = app.segmentedControls.buttons["Intelligent Reading"].firstMatch
+        XCTAssertTrue(intelligent.waitForExistence(timeout: 15))
+        intelligent.tap()
+        let paragraphs = app.textViews
+        XCTAssertTrue(paragraphs.firstMatch.waitForExistence(timeout: 60))
+        let target = paragraphs.count > 1 ? paragraphs.element(boundBy: 1) : paragraphs.firstMatch
+        target.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.3)).press(forDuration: 1.2)
+        snap("Pronunciation-Selection-Menu")
+        let action = app.menuItems["Pronunciation…"].firstMatch.waitForExistence(timeout: 2)
+            ? app.menuItems["Pronunciation…"].firstMatch : app.buttons["Pronunciation…"].firstMatch
+        XCTAssertTrue(action.waitForExistence(timeout: 8))
+        action.tap()
+        let written = app.textFields["PronunciationWritten"]
+        XCTAssertTrue(written.waitForExistence(timeout: 8))
+        XCTAssertFalse((written.value as? String ?? "").isEmpty)
+        snap("Pronunciation-Selection-Editor")
+    }
+
     func testPhoneScreens() throws {
         let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60),

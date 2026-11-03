@@ -891,7 +891,7 @@ func scannedPDFJoinsParagraphsAndDoesNotPromoteBodyLinesToHeadings() async throw
     #expect(document.usedOCR)
     let markdown = document.markdown()
     #expect(markdown.contains("CHAPTER I"))
-    #expect(markdown.contains("This is the first paragraph, hard-wrapped over two lines so the reading engine must join them."))
+    #expect(markdown.contains("This is the first paragraph, hard-wrapped over two lines so the reading engine must join them."), "OCR output: \(markdown)")
     #expect(markdown.contains("This is the second paragraph after a blank gap."))
     #expect(!markdown.contains("# This is the first paragraph"))
     #expect(!markdown.contains("A GENERIC RUNNING HEADER"))

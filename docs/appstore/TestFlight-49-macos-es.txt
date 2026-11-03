@@ -1,0 +1,11 @@
+Nodus Reader 0.1.0 (49) — beta privada de macOS
+
+- Selecciona un nombre en un libro o PDF con Lectura Inteligente y elige Pronunciación. Escribe cómo debe sonar, compara Original y Con corrección y guarda la regla para todo el libro.
+- Abre Pronunciaciones desde el menú del libro o del reproductor para añadir, editar y eliminar reglas. Comprueba nombres compuestos, acentos y mayúsculas; las coincidencias parciales dentro de palabras más largas deben quedar intactas.
+- Escucha con Kokoro o Phonon, también frases cuyo audio se había generado antes de corregirlas. En Mac, prueba además Ming. Solo las frases afectadas deben necesitar audio nuevo.
+- Comprueba que se mantiene visible y resaltado el nombre original aunque la pronunciación use varias palabras. Empezar desde una palabra y retomar tras una pausa debe conservar la posición correcta en el texto.
+- Con iCloud activado en ambos dispositivos, comprueba que las altas, modificaciones y eliminaciones del diccionario del libro llegan al otro dispositivo. Los modelos de voz y el audio generado permanecen locales.
+
+La escritura alternativa se interpreta según la voz y su idioma; vuelve a probarla si cambias de voz.
+
+Esta compilación se distribuye únicamente al grupo privado Internal.

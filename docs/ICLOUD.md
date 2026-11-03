@@ -1,6 +1,6 @@
 # iCloud Sync
 
-Status: **implemented behind an opt-in switch. Production schema deployed on 30 October 2026; signed two-device validation still required.**
+Status: **implemented behind an opt-in switch. Production schema deployed on 30 October 2026 and extended for pronunciation on 3 November. Signed Mac–iPhone pronunciation metadata round trip passed in Development; the broader library/file checklist remains open.**
 
 Synchronization uses the user's personal iCloud account and is off by default.
 The library works fully without it.
@@ -27,7 +27,7 @@ constructing `CKContainer`, which would terminate the process. This is deliberat
 
 | Data | Mechanism |
 |---|---|
-| Book metadata, reading position, status, favourite, per-book voice/mode, per-book appearance (`appearanceJSON`) | CloudKit private database, `Book` record |
+| Book metadata, reading position, status, favourite, per-book voice/mode, per-book appearance (`appearanceJSON`), pronunciation dictionary (`pronunciationsJSON`) | CloudKit private database, `Book` record |
 | Collections and explicit memberships | `Collection`, `Membership` records |
 | Bookmarks and annotations (highlights/notes) | `Bookmark`, `Annotation` records |
 | Deletions | `Tombstone` records, never inferred from absence |
@@ -217,7 +217,7 @@ and [serverRecordChanged](https://developer.apple.com/documentation/cloudkit/cke
 
 ## Versioned schema and release gate
 
-The canonical production schema is [Config/CloudKitSchema.ckdb](../Config/CloudKitSchema.ckdb). It contains the seven application types and 54 payload fields. The app uses the private database; these types have no PUBLIC database grants. The built-in Users definition is preserved.
+The canonical production schema is [Config/CloudKitSchema.ckdb](../Config/CloudKitSchema.ckdb). It contains the seven application types and 55 payload fields. The app uses the private database; these types have no PUBLIC database grants. The built-in Users definition is preserved.
 
 Before release, run:
 
@@ -228,3 +228,11 @@ python3 tools/cloudkit/check-schema.py
 This checks field coverage against CloudSyncService and rejects public grants on application types. It does **not** prove deployment. Export a fresh **Production** schema from CloudKit Console (or authenticated `cktool export-schema`) and run the same check with its path as an argument. Import any required additive changes into Development, review Deploy Schema Changes, deploy, and verify a fresh Production export before declaring server sync ready. TestFlight VALID/APPROVED and local unit tests do not validate the CloudKit schema.
 
 On 30 October, the user reported `Cannot create new type Book in production schema`. Both environments contained only Users. The full schema was imported and validated by Apple, then deployed to Production: seven new record types, seven record-name indexes, zero security-role changes. A fresh Production export was checked against all payload fields and their expected types; Users remained unchanged. This server correction applies to existing builds without another binary upload. See [deployment record](appstore/CLOUDKIT_SCHEMA_DEPLOYMENT_2026-10-30.md).
+
+## Pronunciation validation — 3 November 2026
+
+The additive `Book.pronunciationsJSON STRING` change was reviewed in CloudKit Console (one modified record type, no index or security-role changes), deployed to Production and verified with a fresh Production export. `Config/CloudKitSchema.ckdb` is that export and passes the payload contract checker.
+
+A signed Mac peer and the signed unit-test host on Jorge’s physical iPhone used the same personal iCloud account in Development. The iPhone received a synthetic rule, applied it through `CloudSyncService.applyRemote` to an isolated SwiftData fixture, changed it through `LibraryService`, and serialized the return payload through the app’s `buildRecord`. The Mac received the edit, cleared the dictionary, and received the iPhone’s acknowledgment of that deletion. The temporary custom zone was removed. No personal library records or original files were used. This proves the pronunciation metadata path across two devices; it does not close the broader iCloud Drive/file checklist or constitute a Production data round trip.
+
+The opt-in test is `livePronunciationCloudKitRoundTrip()` in SyncTests, enabled only with `TEST_RUNNER_NODUS_LIVE_PRONUNCIATION_SESSION=<UUID>` and `TEST_RUNNER_NODUS_LIVE_PRONUNCIATION_ROLE=reader` (or writer for another test host). `tools/cloudkit/pronunciation-probe.swift` is the lightweight signed Mac writer used for this run; it must be packaged and signed for the existing Reader container with a valid profile. It never reads the personal library.

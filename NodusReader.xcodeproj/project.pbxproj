@@ -24,6 +24,7 @@
 		1B08F42EED4D914256217EF2 /* MiniPlayerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0012A1A328E18FC1540EBC /* MiniPlayerBar.swift */; };
 		1DB208E774AF5B61CA6F7C19 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411AF1A170335684302EFFE6 /* LibraryView.swift */; };
 		1F753960E78BEEBD39D6F076 /* catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = 6EDBA2F8CD410489D3FD9508 /* catalog.json */; };
+		1FE4C6B5F17B53C0F4646D7D /* PronunciationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2998C32601DE46C40D886FA /* PronunciationView.swift */; };
 		22136E4536823900286B418B /* SidebarComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C806DB43DAD23FFE67FBBA3F /* SidebarComponents.swift */; };
 		22A992AC72F37405267250AE /* JustifiedText.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82CE5961581728B2A01BA11 /* JustifiedText.swift */; };
 		27F9823D7762B1767AC481D6 /* KokoroTTS in Frameworks */ = {isa = PBXBuildFile; productRef = 42019C581B56EBFC1C0EA303 /* KokoroTTS */; };
@@ -105,6 +106,7 @@
 		D02EFDFD40DDFDE3B10B2DFB /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 127F30309ABDCA01F50B7751 /* MLX */; };
 		D0E873D730D51FDB14F1F4A7 /* DocumentParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615B234B48E1D96011BAADA0 /* DocumentParserTests.swift */; };
 		D29D48D11AE77ACE6EF3453D /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FF7CBF9CFCF8E117C3191309 /* Localizable.xcstrings */; };
+		D3F578CEC2B135D7AD9D00B1 /* Pronunciation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC340F77AE4EF567395A7AAF /* Pronunciation.swift */; };
 		D45E6022A985F00EEA2F542E /* SearchResultsContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E62F2F972274F54CF57BEE33 /* SearchResultsContent.swift */; };
 		D467864DDA6965146C938871 /* es-dave.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5D26F7F5AF33D29E6BAD0C9A /* es-dave.txt */; };
 		D4BB0B652DA9BA54E98A519B /* StorageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEA231B6036008AC4763DC43 /* StorageSettingsView.swift */; };
@@ -289,6 +291,7 @@
 		BE2978B146AAED77C4B24049 /* MacPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPageView.swift; sourceTree = "<group>"; };
 		C0718A04E3BF758DD77A430C /* PadLibraryContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PadLibraryContentView.swift; sourceTree = "<group>"; };
 		C1079D52B6E17772F269D44B /* SpeechWordAligner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechWordAligner.swift; sourceTree = "<group>"; };
+		C2998C32601DE46C40D886FA /* PronunciationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PronunciationView.swift; sourceTree = "<group>"; };
 		C43F47C42A013DE4A8049B92 /* GainCurve.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GainCurve.swift; sourceTree = "<group>"; };
 		C7E1602D5595F5D3887F7D92 /* SpanishPhonemizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpanishPhonemizer.swift; sourceTree = "<group>"; };
 		C806DB43DAD23FFE67FBBA3F /* SidebarComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarComponents.swift; sourceTree = "<group>"; };
@@ -300,6 +303,7 @@
 		D3A948B31F01AEE2881D6EFA /* KokoroSpanish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KokoroSpanish.swift; sourceTree = "<group>"; };
 		D593BBC908B5D057F4618106 /* PaginatedReaderContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginatedReaderContent.swift; sourceTree = "<group>"; };
 		DACE001CC6CC610471B8904E /* ImmersiveAudioSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveAudioSettingsView.swift; sourceTree = "<group>"; };
+		DC340F77AE4EF567395A7AAF /* Pronunciation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pronunciation.swift; sourceTree = "<group>"; };
 		DE36EC19E2D87BCF092916A9 /* DocumentExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExtractor.swift; sourceTree = "<group>"; };
 		DF27C98D03CA7B77D5353E99 /* DocumentExtraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExtraction.swift; sourceTree = "<group>"; };
 		DF973736607426E8F65FD4D8 /* HuggingFaceGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HuggingFaceGuideView.swift; sourceTree = "<group>"; };
@@ -404,6 +408,7 @@
 				1F34E40B40E5839EAB80EFBC /* Pagination */,
 				24F9A067C4A9E3DCB597D58E /* PDF */,
 				55CE9F477E2E0E633DF9AFD5 /* PDFKitReader.swift */,
+				C2998C32601DE46C40D886FA /* PronunciationView.swift */,
 				E689078A482D385E80EABEB6 /* ReaderAppearance.swift */,
 				ACBFFB317D2132D98EFDA315 /* ReaderAppearanceControls.swift */,
 				B59B6977FE1E3E11D55CD470 /* ReaderAppearanceSheet.swift */,
@@ -486,6 +491,7 @@
 				8F18D1B82C968F1449459E2A /* PDFPageText.swift */,
 				09340C49F00362F5D266FA01 /* PhononOnDeviceConversion.swift */,
 				F9D8968A724911866F8AC36D /* PlaybackController.swift */,
+				DC340F77AE4EF567395A7AAF /* Pronunciation.swift */,
 				C7E1602D5595F5D3887F7D92 /* SpanishPhonemizer.swift */,
 				C1079D52B6E17772F269D44B /* SpeechWordAligner.swift */,
 				103016A574B8EB8D2FB618A3 /* StorageJanitor.swift */,
@@ -1008,6 +1014,8 @@
 				D500B03C89B854345292E938 /* PlaybackController.swift in Sources */,
 				E739A3298B8DE66AA6F6BF31 /* PlayerView.swift in Sources */,
 				3D2977626996C552389A1065 /* PositionTracker.swift in Sources */,
+				D3F578CEC2B135D7AD9D00B1 /* Pronunciation.swift in Sources */,
+				1FE4C6B5F17B53C0F4646D7D /* PronunciationView.swift in Sources */,
 				B441BB46C3BA8F5060EDAB1B /* ReaderAppearance.swift in Sources */,
 				02D9DFDE059401714F063D22 /* ReaderAppearanceControls.swift in Sources */,
 				F52E201525C84D6F12A758EA /* ReaderAppearanceSheet.swift in Sources */,
@@ -1160,7 +1168,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1226,7 +1234,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;

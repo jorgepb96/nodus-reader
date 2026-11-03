@@ -16,6 +16,7 @@ struct ReaderTextScrollRequest {
 /// word taps, highlight overlays). It sizes itself to its text, so it can sit
 /// in lazy stacks: continuous-scroll slices and PDF Intelligent Reading blocks.
 struct SelectableReaderText {
+    @Environment(\.pronunciationSelection) private var pronounce
     var text: NSAttributedString
     var mapping: ReaderTextMapping
     var highlights: ReaderPageHighlights = ReaderPageHighlights()
@@ -67,6 +68,7 @@ extension SelectableReaderText: UIViewRepresentable {
         view.onWordTap = onWordTap
         view.onHighlight = onHighlight
         view.onNote = onNote
+        view.onPronounce = pronounce
         view.setText(text)
         view.textView.accessibilityLabel = accessibilityLabel
         view.setHighlights(highlights)
@@ -197,6 +199,7 @@ extension SelectableReaderText: NSViewRepresentable {
         view.textView.onWordTap = onWordTap
         view.textView.onHighlight = onHighlight
         view.textView.onNote = onNote
+        view.textView.onPronounce = pronounce
         view.textView.setAccessibilityLabel(accessibilityLabel)
         if !(view.textView.textStorage?.isEqual(to: text) ?? false) {
             view.textView.textStorage?.setAttributedString(text)

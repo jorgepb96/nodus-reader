@@ -146,6 +146,7 @@ struct LibrarySortMenu: View {
 // MARK: - Context actions
 
 struct BookContextActions: View {
+    @Environment(\.openPronunciations) private var openPronunciations
     @Environment(LibraryService.self) private var library
     @Environment(CloudSyncService.self) private var sync
     @Environment(ImportCoordinator.self) private var imports
@@ -172,6 +173,7 @@ struct BookContextActions: View {
         } label: {
             Label("Add to Collection…", systemImage: "folder.badge.plus")
         }
+        Button("Pronunciations…") { openPronunciations(book, "") }
         if let onEditInfo {
             Button {
                 onEditInfo()

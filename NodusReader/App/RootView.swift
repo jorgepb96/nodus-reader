@@ -47,6 +47,7 @@ struct RootView: View {
             .onChange(of: prefersPadLayout, initial: true) { _, _ in updateLayout() }
             .onChange(of: navigation.readerIsOpen) { _, _ in updateLayout() }
             #endif
+            .pronunciationHost()
             .environment(navigation)
             .focusedSceneValue(\.nodusNavigation, navigation)
             .nodusPalette(palette)

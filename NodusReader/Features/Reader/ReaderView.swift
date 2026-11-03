@@ -252,6 +252,7 @@ struct ReaderView: View {
                 .presentationDragIndicator(.hidden)
                 .readerPresentation(readerTheme)
         }
+        .pronunciationHost(book: book)
         .sheet(item: $annotationDraft) { draft in
             AnnotationEditorSheet(book: book, draft: draft)
                 .readerPresentation(readerTheme)

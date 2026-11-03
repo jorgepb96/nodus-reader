@@ -10,6 +10,7 @@ struct PlayerView: View {
     var onOpenReader: (Book) -> Void
 
     @State private var showVoicePicker = false
+    @State private var showPronunciations = false
 
     /// The app theme's palette, or the reader theme's when the player is
     /// opened from the reader: the player matches the screen it covers.
@@ -47,6 +48,9 @@ struct PlayerView: View {
         .nodusPalette(palette)
         .environment(\.colorScheme, palette.isDark ? .dark : .light)
         .preferredColorScheme(palette.isDark ? .dark : .light)
+        .sheet(isPresented: $showPronunciations) {
+            if let book = playback.activeBook { PronunciationView(book: book) }
+        }
         .sheet(isPresented: $showVoicePicker) {
             VoicePickerSheet()
                 .nodusPalette(palette)
@@ -192,6 +196,9 @@ struct PlayerView: View {
             Spacer()
 
             Menu {
+                if playback.activeBook != nil {
+                    Button("Pronunciations…") { showPronunciations = true }
+                }
                 Button {
                     playback.stopAndClose()
                     dismiss()

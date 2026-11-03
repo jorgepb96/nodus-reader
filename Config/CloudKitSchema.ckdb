@@ -42,6 +42,7 @@ DEFINE SCHEMA
         locatorJSON        STRING,
         preferredVoiceID   STRING,
         progress           DOUBLE,
+        pronunciationsJSON STRING,
         published          STRING,
         readingMode        STRING,
         relativePath       STRING,

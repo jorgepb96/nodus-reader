@@ -806,3 +806,7 @@ ES.update({
     "%lld words · Stays on this device, like any imported document.": "%lld palabras · Se queda en este dispositivo, como cualquier documento importado.",
     "Import documents (⇧⌘I) or paste text": "Importar documentos (⇧⌘I) o pegar texto",
 })
+
+ES.update({'Name in the text': 'Nombre en el texto', 'Pronounce as': 'Se pronuncia', 'Applies to this entire book. Spelling, accents and capitalisation must match.': 'Se aplica a todo este libro. La escritura, los acentos y las mayúsculas deben coincidir.', 'Original': 'Original', 'With correction': 'Con corrección', 'Save pronunciation': 'Guardar pronunciación', 'Pronunciation': 'Pronunciación', 'Saved pronunciations': 'Pronunciaciones guardadas', 'Delete pronunciation': 'Eliminar pronunciación', 'Pronunciations': 'Pronunciaciones', 'Pronunciations…': 'Pronunciaciones…', 'Pronunciation…': 'Pronunciación…', 'Install a voice model to preview pronunciation.': 'Instala un modelo de voz para probar la pronunciación.'})
+
+ES.update({"Add": "Añadir"})

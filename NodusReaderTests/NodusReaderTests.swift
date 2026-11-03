@@ -2756,3 +2756,95 @@ func storyCharacterFinderFindsNames() {
     let early = StoryCharacterFinder.characters(in: story, upTo: (english as NSString).length).map(\.name)
     #expect(!early.contains { $0.contains("Sancho") })
 }
+
+// MARK: - Per-book pronunciation
+
+@Test func pronunciationMatchesWholeNamesAndLongestPhrase() {
+    let rules = [PronunciationRule(written: "Paul", spoken: "Pol"),
+                 PronunciationRule(written: "Paul Smith", spoken: "Pol Smit"),
+                 PronunciationRule(written: "Pol", spoken: "WRONG")]
+    let result = PronunciationTransformer.prepare("Paul Smith met Paula, Paul and paul.", rules: rules)
+    #expect(result.spoken == "Pol Smit met Paula, Pol and paul.")
+    #expect(result.original == "Paul Smith met Paula, Paul and paul.")
+}
+
+@Test func pronunciationPreservesUnicodeAndAccents() {
+    let result = PronunciationTransformer.prepare("😀 José y Jose y Jose\u{301}.", rules: [.init(written: "José", spoken: "Jo sé")])
+    #expect(result.spoken == "😀 Jo sé y Jose y Jo sé.")
+    #expect(result.spans.filter(\.replaced).map(\.original) == [NSRange(location: 3, length: 4), NSRange(location: 17, length: 5)])
+}
+
+@Test func pronunciationMapsSeveralSpokenWordsToOriginalName() throws {
+    let prepared = PronunciationTransformer.prepare("Hi Hermione now", rules: [.init(written: "Hermione", spoken: "Her my oh nee")])
+    let words = AudioWordAligner.words(in: prepared.spoken).enumerated().map { index, word in
+        NarrationWordTiming(location: word.range.location, length: word.range.length, start: Double(index), end: Double(index + 1))
+    }
+    let projected = prepared.project(words)
+    #expect(projected.count == 3)
+    let name = try #require(projected.dropFirst().first)
+    #expect(name.location == 3 && name.length == 8 && name.start == 1 && name.end == 5)
+    #expect(projected.last?.location == 12)
+    #expect(projected.last?.start == 5)
+}
+
+@Test func pronunciationCacheChangesOnlyForAffectedSentences() {
+    let rules = [PronunciationRule(written: "Paul", spoken: "Pol")]
+    #expect(PronunciationTransformer.prepare("Nothing changes.", rules: rules).signature.isEmpty)
+    let a = PronunciationTransformer.prepare("Paul arrived.", rules: rules)
+    let b = PronunciationTransformer.prepare("Paul arrived.", rules: [.init(written: "Paul", spoken: "Pohl")])
+    #expect(!a.signature.isEmpty && a.signature != b.signature)
+    // Equal spoken text with different source groupings must not share timing metadata.
+    let combined = PronunciationTransformer.prepare("Paul Smith", rules: [.init(written: "Paul Smith", spoken: "Pol Smit")])
+    let separate = PronunciationTransformer.prepare("Paul Smith", rules: rules + [.init(written: "Smith", spoken: "Smit")])
+    #expect(combined.spoken == separate.spoken && combined.signature != separate.signature)
+}
+
+@Test @MainActor func pronunciationPersistsPerBookAndRemovesCleanly() throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let book = Book(title: "One", author: "", format: .txt, fileName: "one.txt", relativePath: "one.txt", fileSize: 1, contentHash: "one")
+    let other = Book(title: "Two", author: "", format: .txt, fileName: "two.txt", relativePath: "two.txt", fileSize: 1, contentHash: "two")
+    fixture.service.context.insert(book)
+    fixture.service.context.insert(other)
+    let rule = PronunciationRule(written: "Paul", spoken: "Pol")
+    fixture.service.setPronunciations([rule], for: book)
+    #expect(book.pronunciations == [rule])
+    #expect(other.pronunciations.isEmpty)
+    let decoded = try JSONDecoder().decode([PronunciationRule].self, from: Data(book.pronunciationsJSON.utf8))
+    #expect(decoded == [rule])
+    fixture.service.setPronunciations([], for: book)
+    #expect(book.pronunciations.isEmpty)
+    #expect(fixture.service.saveError == nil)
+}
+
+@Test func pronunciationLegacyLocatorStillDecodes() throws {
+    let data = Data(#"{"chapterIndex":0,"sentenceOffset":0,"characterOffset":3,"sentenceText":"Paul arrived.","audioTime":1.5,"voiceID":"kokoro:af_heart"}"#.utf8)
+    let position = try JSONDecoder().decode(NarrationPosition.self, from: data)
+    #expect(position.audioKey == nil)
+    #expect(position.characterOffset == 3)
+}
+
+@Test(.enabled(if: ProcessInfo.processInfo.environment["NODUS_PRONUNCIATION_AUDIO_TESTS"] == "1"), .timeLimit(.minutes(5)))
+@MainActor
+func pronunciationSynthesizesWithInstalledEngines() async throws {
+    let suite = "nodus.tests.pronunciation.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let catalog = VoiceCatalog(defaults: defaults)
+    let manager = ModelManager(voices: catalog, defaults: defaults)
+    let installed = manager.models.filter { manager.isInstalled($0) }
+    #expect(!installed.isEmpty, "This opt-in test needs preinstalled models; it never downloads them.")
+    for model in installed {
+        let voice = try #require(model.voices.first(where: { $0.language.hasPrefix("es") }) ?? model.voices.first)
+        let source = voice.language.hasPrefix("es") ? "Hermione llegó a la biblioteca." : "Hermione arrived at the library."
+        let prepared = PronunciationTransformer.prepare(source, rules: [.init(written: "Hermione", spoken: "Her my oh nee")])
+        let audio = try await manager.synthesize(prepared.spoken, voiceID: voice.id, engine: model.engine)
+        #expect(audio.samples.count > Int(audio.sampleRate))
+        #expect(audio.samples.contains { abs($0) > 0.01 })
+        let words = prepared.project(AudioWordAligner.align(text: prepared.spoken, samples: audio.samples, sampleRate: audio.sampleRate))
+        #expect(words.first?.location == 0 && words.first?.length == 8)
+        #expect(words.last.map { $0.location + $0.length <= (source as NSString).length } == true)
+        print("PRONUNCIATION AUDIO: \(model.id), \(voice.id), \(Double(audio.samples.count) / audio.sampleRate) seconds")
+        _ = manager.releaseEnginesIfIdle()
+    }
+}

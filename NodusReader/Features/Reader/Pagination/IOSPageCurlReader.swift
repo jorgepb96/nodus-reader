@@ -11,6 +11,7 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
     private var highlightsProvider: (ReaderPage) -> ReaderPageHighlights
     private var onWordTap: ((Int, Int) -> Void)?
     private var onHighlight: ((Int, NSRange, AnnotationColor) -> Void)?
+    var onPronounce: ((String) -> Void)?
     private var onNote: ((Int, NSRange) -> Void)?
     private var onPageChanged: ((Int) -> Void)?
     private var hosts: [Int: ReaderPageHostController] = [:]
@@ -157,6 +158,7 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
         let chapter = page.chapterIndex
         host.onWordTap = { [weak self] offset in self?.onWordTap?(chapter, offset) }
         host.onHighlight = { [weak self] range, color in self?.onHighlight?(chapter, range, color) }
+        host.onPronounce = { [weak self] text in self?.onPronounce?(text) }
         host.onNote = { [weak self] range in self?.onNote?(chapter, range) }
         hosts[index] = host
         return host
@@ -263,6 +265,7 @@ struct PageCurlReader: UIViewControllerRepresentable {
     var onWordTap: (Int, Int) -> Void
     var onHighlight: (Int, NSRange, AnnotationColor) -> Void
     var onNote: (Int, NSRange) -> Void
+    @Environment(\.pronunciationSelection) private var pronounce
     var turn: PageTurnStyle = .curl
 
     func makeUIViewController(context: Context) -> ReaderPageCurlController {
@@ -271,6 +274,7 @@ struct PageCurlReader: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ controller: ReaderPageCurlController, context: Context) {
+        controller.onPronounce = pronounce
         controller.configure(
             pages: pages,
             style: style,

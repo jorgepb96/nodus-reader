@@ -17,6 +17,7 @@ final class ReaderSelectableTextView: UIView, UITextViewDelegate {
         didSet { setNeedsLayout() }
     }
     var onWordTap: ((Int) -> Void)?
+    var onPronounce: ((String) -> Void)?
     var onHighlight: ((NSRange, AnnotationColor) -> Void)?
     var onNote: ((NSRange) -> Void)?
 
@@ -116,7 +117,11 @@ final class ReaderSelectableTextView: UIView, UITextViewDelegate {
         let note = UIAction(title: "Add Note…", image: UIImage(systemName: "note.text")) { [weak self] _ in
             self?.onNote?(anchorRange)
         }
-        return UIMenu(children: [highlight, note] + suggestedActions)
+        let pronunciation = UIAction(title: String(localized: "Pronunciation…"), image: UIImage(systemName: "waveform")) { [weak self] _ in
+            guard let self else { return }
+            self.onPronounce?((textView.text as NSString).substring(with: range))
+        }
+        return UIMenu(children: [pronunciation, highlight, note] + suggestedActions)
     }
 
     // MARK: Word tap
@@ -142,6 +147,10 @@ final class ReaderPageHostController: UIViewController {
     var onWordTap: ((Int) -> Void)? {
         get { content.onWordTap }
         set { content.onWordTap = newValue }
+    }
+    var onPronounce: ((String) -> Void)? {
+        get { content.onPronounce }
+        set { content.onPronounce = newValue }
     }
     var onHighlight: ((NSRange, AnnotationColor) -> Void)? {
         get { content.onHighlight }

@@ -53,6 +53,7 @@ final class ReaderMacTextView: NSTextView {
     var onWordTap: ((Int) -> Void)?
     var onHighlight: ((NSRange, AnnotationColor) -> Void)?
     var onNote: ((NSRange) -> Void)?
+    var onPronounce: ((String) -> Void)?
 
     private var clickRecognizer: NSClickGestureRecognizer?
 
@@ -87,7 +88,16 @@ final class ReaderMacTextView: NSTextView {
         let noteItem = NSMenuItem(title: String(localized: "Add Note…"), action: #selector(addNote), keyEquivalent: "")
         noteItem.target = self
         menu.insertItem(noteItem, at: 1)
+        let pronunciation = NSMenuItem(title: String(localized: "Pronunciation…"), action: #selector(editPronunciation), keyEquivalent: "")
+        pronunciation.target = self
+        menu.insertItem(pronunciation, at: 2)
         return menu
+    }
+
+    @objc private func editPronunciation() {
+        let range = selectedRange()
+        guard range.length > 0, NSMaxRange(range) <= (string as NSString).length else { return }
+        onPronounce?((string as NSString).substring(with: range))
     }
 
     @objc private func applyHighlight(_ sender: NSMenuItem) {
@@ -190,6 +200,7 @@ final class MacHighlightOverlayView: NSView {
 }
 
 struct MacPageView: NSViewRepresentable {
+    @Environment(\.pronunciationSelection) private var pronounce
     var page: ReaderPage
     var style: ReaderPageStyle
     var highlights: ReaderPageHighlights
@@ -209,6 +220,7 @@ struct MacPageView: NSViewRepresentable {
         container.textView.onWordTap = onWordTap
         container.textView.onHighlight = onHighlight
         container.textView.onNote = onNote
+        container.textView.onPronounce = pronounce
         // A theme change keeps the same characters but changes their colours,
         // so comparing only the plain string would leave stale text colours.
         if styleChanged || container.textView.string != page.attributed.string {

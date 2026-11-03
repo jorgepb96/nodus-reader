@@ -21,6 +21,7 @@ It opens EPUB, PDF, TXT, Markdown, HTML and RTF files on iPhone, iPad and Mac.
 - **Reader:** use paged, continuous or two-page reading. Change the theme, typeface, size, line spacing, margins and alignment. Add bookmarks, highlights and notes. Search inside a book and export annotations.
 - **PDF:** read the original page layout or switch to Intelligent Reading. Intelligent Reading rebuilds reading order, handles multi-column pages, runs on-device OCR when the text layer is unreadable, keeps tables as page images and provides a page scrollbar.
 - **Narration:** read aloud with Kokoro or Phonon. The current sentence and word are highlighted. Tap a word to start Read & Listen from that word. Audio is generated locally and can be cached sentence by sentence. The player includes speed, voice, sleep timer and background playback.
+- **Pronunciation:** select a name and choose Pronunciation, or open Pronunciations from the book or player menu. Write how it should sound, compare the original and corrected sentence, and save it for that book. Rules sync through optional iCloud; narration audio remains local.
 - **Sync:** enable optional iCloud sync through the user's own iCloud account. Library data, reading positions, bookmarks, highlights and notes are synced. Files can also be downloaded on demand.
 - **Sharing:** send documents to Nodus Reader from the iOS Share Extension. Choose a collection before the import starts.
 - **Privacy:** no remote book or audio processing. Narration models and caches are stored on the device and excluded from backup and sync.

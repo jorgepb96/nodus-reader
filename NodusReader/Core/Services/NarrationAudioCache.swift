@@ -38,9 +38,10 @@ actor NarrationAudioCache {
         try? mutable.setResourceValues(values)
     }
 
-    nonisolated func key(text: String, engine: String, voice: String) -> String {
+    nonisolated func key(text: String, engine: String, voice: String, pronunciation: String = "") -> String {
         // Regenerate audio made before chunk-padding removal and edge fades.
-        let digest = SHA256.hash(data: Data("v3|\(engine)|\(voice)|\(text)".utf8))
+        let input = pronunciation.isEmpty ? "v3|\(engine)|\(voice)|\(text)" : "pronunciation1|\(engine)|\(voice)|\(text)|\(pronunciation)"
+        let digest = SHA256.hash(data: Data(input.utf8))
         return digest.map { String(format: "%02x", $0) }.joined()
     }
 

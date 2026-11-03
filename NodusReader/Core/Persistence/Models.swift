@@ -124,6 +124,7 @@ public struct NarrationPosition: Codable, Equatable, Sendable {
     public var characterOffset: Int
     public var sentenceText: String
     public var audioTime: Double?
+    public var audioKey: String? = nil
     public var voiceID: String?
 }
 
@@ -179,6 +180,7 @@ public final class Book {
     public var readingModeRaw: String = ReadingMode.read.rawValue
     /// JSON `BookAppearance`; empty when the book uses the global appearance.
     public var appearanceJSON: String = ""
+    var pronunciationsJSON: String = ""
     public var createdAt: Date = Date()
     public var updatedAt: Date = Date()
 

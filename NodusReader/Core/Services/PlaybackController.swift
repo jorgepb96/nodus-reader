@@ -96,7 +96,7 @@ public final class PlaybackController {
     @ObservationIgnored private var neuralTask: Task<Void, Never>?
     /// Sentences made ahead of the one playing (by index, with the voice that
     /// made them), so the next sentence starts without waiting for synthesis.
-    @ObservationIgnored private var prefetched: [Int: (voiceID: String, narration: CachedNarration)] = [:]
+    @ObservationIgnored private var prefetched: [Int: (voiceID: String, key: String, narration: CachedNarration)] = [:]
     @ObservationIgnored private var prefetchTask: Task<Void, Never>?
     private static let prefetchDepth = 2
     @ObservationIgnored private var neuralProgressTask: Task<Void, Never>?
@@ -110,6 +110,7 @@ public final class PlaybackController {
     /// Absolute time in the full sentence, without the highlight's visual lead.
     @ObservationIgnored private var neuralPositionTime: TimeInterval?
     @ObservationIgnored private var neuralPositionVoiceID: String?
+    @ObservationIgnored private var neuralPositionAudioKey: String?
     @ObservationIgnored private var neuralStartOffset: Int = 0
     @ObservationIgnored private var neuralPlaybackToken = UUID()
     @ObservationIgnored private var neuralPaused = false
@@ -232,6 +233,7 @@ public final class PlaybackController {
                 }
             }
         }
+        observePronunciations()
         configureRemoteCommands()
         #if os(iOS)
         observeAudioSession()
@@ -242,6 +244,41 @@ public final class PlaybackController {
     /// The output changed under a running engine (headphones, AirPlay, a new
     /// Mac output device): the system stops it. Restart the sentence where
     /// it was instead of skipping or going silent.
+    private func observePronunciations() {
+        let observedID = activeBook?.id
+        let previousRules = activeBook?.pronunciations ?? []
+        withObservationTracking {
+            _ = activeBook?.pronunciationsJSON
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                guard self.activeBook?.id == observedID else { self.observePronunciations(); return }
+                self.cancelAudioCacheGeneration()
+                self.resetPrefetch()
+                guard let book = self.activeBook, self.sentences.indices.contains(self.currentIndex),
+                      PronunciationTransformer.prepare(self.sentences[self.currentIndex].text, rules: previousRules).signature !=
+                      PronunciationTransformer.prepare(self.sentences[self.currentIndex].text, rules: book.pronunciations).signature else {
+                    self.observePronunciations()
+                    return
+                }
+                let offset = self.currentWordRange?.location ?? self.neuralStartOffset
+                let playing = self.isPlaying
+                self.stopAudio()
+                self.isPlaying = false
+                self.neuralPositionTime = nil
+                self.neuralStartOffset = offset
+                self.restartVoiceOnResume = !playing
+                if playing { self.speakCurrent(fromOffset: offset) }
+                self.observePronunciations()
+            }
+        }
+    }
+
+    private func pronunciationKey(_ text: String, voice: VoiceCatalog.Voice, book: Book) -> String {
+        models.narrationCache.key(text: text, engine: voice.engineRaw, voice: voice.id,
+            pronunciation: PronunciationTransformer.prepare(text, rules: book.pronunciations).signature)
+    }
+
     private func observeEngineConfiguration() {
         engineConfigurationObserver = NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange,
@@ -541,7 +578,9 @@ public final class PlaybackController {
                 startOffset = destination.offset
                 let sentence = sentences[currentIndex]
                 if sentence.chapterOffset == saved.sentenceOffset, sentence.text == saved.sentenceText,
-                   saved.voiceID == activeVoice?.id,
+                   let voice = activeVoice, saved.voiceID == voice.id,
+                   (saved.audioKey == pronunciationKey(sentence.text, voice: voice, book: book) ||
+                    (saved.audioKey == nil && PronunciationTransformer.prepare(sentence.text, rules: book.pronunciations).signature.isEmpty)),
                    let time = saved.audioTime, time.isFinite, time >= 0 {
                     startTime = time
                 }
@@ -922,16 +961,16 @@ public final class PlaybackController {
 
     // MARK: Samples
 
-    public func playSample(voice: VoiceCatalog.Voice) {
+    public func playSample(voice: VoiceCatalog.Voice, text: String? = nil) {
         if isPlaying { pause() }
         configureAudioSession()
         samplePlayer?.stop()
         sampleTask?.cancel()
         let token = UUID()
         sampleToken = token
-        let sample = voice.language.hasPrefix("es")
+        let sample = text ?? (voice.language.hasPrefix("es")
             ? "Así suena esta voz al narrar tu biblioteca en Nodus Reader."
-            : "This is how this voice sounds reading your library in Nodus Reader."
+            : "This is how this voice sounds reading your library in Nodus Reader.")
         isPlayingSample = true
         isPreparingSample = true
         sampleVoiceID = voice.id
@@ -971,12 +1010,19 @@ public final class PlaybackController {
                 if token == self.sampleToken {
                     self.isPreparingSample = false
                     self.isPlayingSample = false
+                    if !Task.isCancelled { self.errorMessage = error.localizedDescription }
                 }
             }
         }
     }
 
     /// Stops the sample being prepared or played.
+    func previewPronunciation(_ text: String, book: Book) {
+        let voice = activeBook?.id == book.id ? activeVoice : voices.narrationVoice(preferredID: book.preferredVoiceID, language: book.language)
+        if let voice = voice ?? activeVoice { playSample(voice: voice, text: text) }
+        else { errorMessage = String(localized: "Install a voice model to preview pronunciation.") }
+    }
+
     public func stopSample() {
         stopSamplePlayback()
     }
@@ -1015,7 +1061,6 @@ public final class PlaybackController {
         cacheErrorMessage = nil
         let token = UUID()
         cacheToken = token
-        let cache = models.narrationCache
         let bookID = book.id
         cacheTask = Task { [weak self] in
             guard let self else { return }
@@ -1023,34 +1068,11 @@ public final class PlaybackController {
             for sentence in allSentences {
                 guard !Task.isCancelled, token == self.cacheToken,
                       self.activeBook?.id == bookID else { break }
-                let key = cache.key(text: sentence.text, engine: voice.engineRaw, voice: voice.id)
-                let existing = await cache.load(bookID: bookID, key: key)
-                if existing == nil {
-                    do {
-                        let audio = try await self.synthesize(text: sentence.text, voice: voice)
-                        try Task.checkCancellation()
-                        guard token == self.cacheToken else { break }
-                        let words = await Self.alignWords(text: sentence.text,
-                                                          samples: audio.samples,
-                                                          sampleRate: audio.sampleRate,
-                                                          language: voice.language)
-                        try Task.checkCancellation()
-                        guard token == self.cacheToken else { break }
-                        if let buffer = self.makeBuffer(samples: audio.samples,
-                                                        sampleRate: audio.sampleRate) {
-                            let saved = await cache.save(bookID: bookID, key: key,
-                                                         buffer: buffer, words: words)
-                            if self.activeBook?.id == bookID {
-                                self.audioCacheBytes += saved
-                            }
-                        }
-                    } catch {
-                        if !Task.isCancelled, token == self.cacheToken {
-                            self.cacheErrorMessage = (error as? LocalizedError)?.errorDescription
-                                ?? error.localizedDescription
-                        }
-                        break
-                    }
+                do {
+                    _ = try await self.narration(for: sentence.text, voice: voice, book: book)
+                } catch {
+                    if !Task.isCancelled, token == self.cacheToken { self.cacheErrorMessage = error.localizedDescription }
+                    break
                 }
                 completed += 1
                 if token == self.cacheToken {
@@ -1187,15 +1209,16 @@ public final class PlaybackController {
     private func prepareNeuralSentence(index: Int, text: String, voice: VoiceCatalog.Voice,
                                        chapterIndex: Int, offset: Int, audioTime: TimeInterval?, token: UUID) async {
         guard let book = activeBook else { return }
+        let expectedKey = pronunciationKey(text, voice: voice, book: book)
         var cached: CachedNarration?
-        if let ready = prefetched[index], ready.voiceID == voice.id {
+        if let ready = prefetched[index], ready.voiceID == voice.id, ready.key == pronunciationKey(text, voice: voice, book: book) {
             cached = ready.narration
         }
         prefetched = prefetched.filter { $0.key > index && $0.value.voiceID == voice.id }
         var restoredTime = audioTime
         if cached == nil, audioTime != nil {
             let cache = models.narrationCache
-            let key = cache.key(text: text, engine: voice.engineRaw, voice: voice.id)
+            let key = pronunciationKey(text, voice: voice, book: book)
             cached = await cache.load(bookID: book.id, key: key)
             // Newly generated speech can have different timings (especially
             // on another device). Keep the word cursor if the original audio
@@ -1214,13 +1237,15 @@ public final class PlaybackController {
                 return
             }
         }
-        guard !Task.isCancelled, token == neuralPlaybackToken, let cached else { return }
+        guard !Task.isCancelled, token == neuralPlaybackToken,
+              pronunciationKey(text, voice: voice, book: book) == expectedKey, let cached else { return }
         guard cached.buffer.frameLength > 0 else {
             errorMessage = String(localized: "The neural engine returned no audio.")
             isPlaying = false
             isLoading = false
             return
         }
+        neuralPositionAudioKey = expectedKey
         neuralWords = cached.words
         neuralBufferDuration = cached.duration
         narrationPeak = Self.peak(of: cached.buffer)
@@ -1267,18 +1292,22 @@ public final class PlaybackController {
     private func narration(for text: String, voice: VoiceCatalog.Voice,
                            book: Book) async throws -> CachedNarration {
         let cache = models.narrationCache
-        let key = cache.key(text: text, engine: voice.engineRaw, voice: voice.id)
+        let revision = book.pronunciationsJSON
+        let prepared = PronunciationTransformer.prepare(text, rules: book.pronunciations)
+        let key = pronunciationKey(text, voice: voice, book: book)
         if let cached = await cache.load(bookID: book.id, key: key) { return cached }
         return try await synthesisGate.run {
             if let cached = await cache.load(bookID: book.id, key: key) { return cached }
             let audio = try await self.withBackgroundTime {
-                try await self.synthesizeUnlocked(text: text, voice: voice)
+                try await self.synthesizeUnlocked(text: prepared.spoken, voice: voice)
             }
             // Phonon returns the partial audio it managed to produce when a
             // task is cancelled. Never cache that as a complete sentence.
             try Task.checkCancellation()
-            let words = await Self.alignWords(text: text, samples: audio.samples,
+            let aligned = await Self.alignWords(text: prepared.spoken, samples: audio.samples,
                                               sampleRate: audio.sampleRate, language: voice.language)
+            guard book.pronunciationsJSON == revision else { throw CancellationError() }
+            let words = prepared.project(aligned)
             try Task.checkCancellation()
             guard let buffer = self.makeBuffer(samples: audio.samples, sampleRate: audio.sampleRate) else {
                 throw NeuralNarrationError.invalidAudio
@@ -1302,9 +1331,11 @@ public final class PlaybackController {
                       self.activeBook?.id == book.id, self.sentences.indices.contains(target) else { return }
                 if let ready = self.prefetched[target], ready.voiceID == voice.id { continue }
                 let text = self.sentences[target].text
+                let key = self.pronunciationKey(text, voice: voice, book: book)
                 guard let made = try? await self.narration(for: text, voice: voice, book: book),
-                      !Task.isCancelled, self.activeBook?.id == book.id else { return }
-                self.prefetched[target] = (voice.id, made)
+                      !Task.isCancelled, self.activeBook?.id == book.id,
+                      self.pronunciationKey(text, voice: voice, book: book) == key else { return }
+                self.prefetched[target] = (voice.id, key, made)
             }
         }
     }
@@ -1535,6 +1566,7 @@ public final class PlaybackController {
         neuralStartTime = 0
         neuralPositionTime = nil
         neuralPositionVoiceID = nil
+        neuralPositionAudioKey = nil
         neuralStartOffset = 0
         neuralPlaybackToken = UUID()
         isLoading = false
@@ -1601,6 +1633,7 @@ public final class PlaybackController {
             characterOffset: sentence.chapterOffset + (currentWordRange?.location ?? neuralStartOffset),
             sentenceText: sentence.text,
             audioTime: neuralPositionTime,
+            audioKey: neuralPositionAudioKey,
             voiceID: neuralPositionTime == nil ? activeVoice?.id : neuralPositionVoiceID
         )
         if book.format == .pdf {

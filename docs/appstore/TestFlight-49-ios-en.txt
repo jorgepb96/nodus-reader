@@ -1,0 +1,9 @@
+Nodus Reader 0.1.0 (49)
+
+- Select a name in a book or PDF Intelligent Reading and choose Pronunciation. Enter how it should sound, compare Original and With correction, and save it for the entire book.
+- Open Pronunciations from the book or player menu to add, edit and delete rules. Check compound names, accents and capitalisation; partial matches inside longer words should remain unchanged.
+- Listen with Kokoro or Phonon, including sentences already generated before the correction. On Mac, also try Ming. Only affected sentences should need new audio.
+- Check that the original name stays visible and highlighted even when its pronunciation uses several words. Starting from a word and resuming after a pause should preserve the correct text position.
+- With optional iCloud sync enabled on both devices, check that additions, edits and deletions to the book’s dictionary arrive on the other device. Voice models and generated audio remain local.
+
+Pronunciation spelling is interpreted by the chosen voice and language; preview it again after changing voices.

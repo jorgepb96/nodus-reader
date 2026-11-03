@@ -9821,6 +9821,146 @@
           }
         }
       }
+    },
+    "Name in the text": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre en el texto"
+          }
+        }
+      }
+    },
+    "Pronounce as": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se pronuncia"
+          }
+        }
+      }
+    },
+    "Applies to this entire book. Spelling, accents and capitalisation must match.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se aplica a todo este libro. La escritura, los acentos y las mayúsculas deben coincidir."
+          }
+        }
+      }
+    },
+    "Original": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original"
+          }
+        }
+      }
+    },
+    "With correction": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con corrección"
+          }
+        }
+      }
+    },
+    "Save pronunciation": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar pronunciación"
+          }
+        }
+      }
+    },
+    "Pronunciation": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronunciación"
+          }
+        }
+      }
+    },
+    "Saved pronunciations": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronunciaciones guardadas"
+          }
+        }
+      }
+    },
+    "Delete pronunciation": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar pronunciación"
+          }
+        }
+      }
+    },
+    "Pronunciations": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronunciaciones"
+          }
+        }
+      }
+    },
+    "Pronunciations…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronunciaciones…"
+          }
+        }
+      }
+    },
+    "Pronunciation…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronunciación…"
+          }
+        }
+      }
+    },
+    "Install a voice model to preview pronunciation.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instala un modelo de voz para probar la pronunciación."
+          }
+        }
+      }
+    },
+    "Add": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

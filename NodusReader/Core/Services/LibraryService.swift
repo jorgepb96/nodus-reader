@@ -565,6 +565,22 @@ public final class LibraryService {
         save()
     }
 
+    func setPronunciations(_ rules: [PronunciationRule], for book: Book) {
+        var normalized: [PronunciationRule] = []
+        for var rule in rules {
+            rule.written = rule.written.trimmingCharacters(in: .whitespacesAndNewlines).precomposedStringWithCanonicalMapping
+            rule.spoken = rule.spoken.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !rule.written.isEmpty, !rule.spoken.isEmpty,
+                  !rule.written.contains(where: \.isNewline), !rule.spoken.contains(where: \.isNewline) else { continue }
+            normalized.removeAll { $0.written == rule.written }
+            normalized.append(rule)
+        }
+        guard book.pronunciations != normalized else { return }
+        book.pronunciations = normalized
+        book.touch()
+        save()
+    }
+
     public func setPreferredVoice(_ book: Book, voiceID: String?) {
         guard book.preferredVoiceID != voiceID else { return }
         book.preferredVoiceID = voiceID

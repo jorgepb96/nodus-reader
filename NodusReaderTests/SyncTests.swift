@@ -449,3 +449,107 @@ func pendingDeletionAndRetrySurviveReopeningTheLocalStore() throws {
     #expect(try journal.nextAttemptAt() == entry.nextAttemptAt)
     #expect(try reopened.mainContext.fetchCount(FetchDescriptor<SyncTombstone>()) == 1)
 }
+
+@Test @MainActor
+func pronunciationsSyncAndLegacyRecordsPreserveLocalDictionary() throws {
+    let fixture = try SyncFixture()
+    defer { fixture.cleanUp() }
+    let book = try fixture.book()
+    let rule = PronunciationRule(written: "Paul", spoken: "Pol")
+    fixture.library.setPronunciations([rule], for: book)
+    let record = CKRecord(recordType: "Book", recordID: CKRecord.ID(recordName: "book-\(book.id.uuidString)"))
+    record["updatedAt"] = book.updatedAt.addingTimeInterval(10)
+    fixture.service.applyRemote(record)
+    #expect(book.pronunciations == [rule], "An older client's payload must preserve this field")
+    record["updatedAt"] = book.updatedAt.addingTimeInterval(10)
+    record["pronunciationsJSON"] = "[]"
+    fixture.service.applyRemote(record)
+    #expect(book.pronunciations.isEmpty, "Remote deletions must also sync")
+    record["updatedAt"] = book.updatedAt.addingTimeInterval(10)
+    record["pronunciationsJSON"] = String(data: try JSONEncoder().encode([rule]), encoding: .utf8)!
+    fixture.service.applyRemote(record)
+    #expect(book.pronunciations == [rule])
+}
+
+/// Two signed devices, one iCloud account and the same UUID session. Uses only a
+/// temporary custom zone and synthetic Book records, never the personal library.
+@Test(.enabled(if: ProcessInfo.processInfo.environment["NODUS_LIVE_PRONUNCIATION_SESSION"] != nil), .timeLimit(.minutes(5)))
+@MainActor
+func livePronunciationCloudKitRoundTrip() async throws {
+    let environment = ProcessInfo.processInfo.environment
+    let session = try #require(environment["NODUS_LIVE_PRONUNCIATION_SESSION"])
+    let id = try #require(UUID(uuidString: session))
+    let role = try #require(environment["NODUS_LIVE_PRONUNCIATION_ROLE"])
+    #expect(role == "writer" || role == "reader")
+    let cloud = CKContainer(identifier: "iCloud.ai.nodus.reader")
+    let status = try await cloud.accountStatus()
+    try #require(status == .available, "Signed host needs an available iCloud account")
+    let database = cloud.privateCloudDatabase
+    let zone = CKRecordZone.ID(zoneName: "NodusPronunciationTest-\(session)", ownerName: CKCurrentUserDefaultName)
+    let recordID = CKRecord.ID(recordName: "book-\(id.uuidString)", zoneID: zone)
+    let fixture = try SyncFixture()
+    defer { fixture.cleanUp() }
+    let original = PronunciationRule(written: "Rocinante", spoken: "Ro si nan te")
+    let modified = PronunciationRule(id: original.id, written: "Rocinante", spoken: "Ro thi nan te")
+    func payload() throws -> CKRecord {
+        try #require(fixture.service.buildRecord(for: SyncOutboxEntry(entityType: .book, entityID: id, operation: .upsert)))
+    }
+    func copyPayload(_ source: CKRecord, to target: CKRecord) {
+        for key in source.allKeys() { target[key] = source[key] }
+    }
+    func localBook() throws -> Book {
+        try #require(fixture.library.context.fetch(FetchDescriptor<Book>()).first { $0.id == id })
+    }
+    func waitFor(_ predicate: (CKRecord) -> Bool) async throws -> CKRecord {
+        let deadline = Date().addingTimeInterval(180)
+        while Date() < deadline {
+            do {
+                let record = try await database.record(for: recordID)
+                if predicate(record) { return record }
+            } catch let error as CKError where error.code == .unknownItem || error.code == .zoneNotFound { }
+            try await Task.sleep(for: .seconds(2))
+        }
+        throw NSError(domain: "NodusLivePronunciationTest", code: 1,
+                      userInfo: [NSLocalizedDescriptionKey: "Timed out waiting for the other signed device in the same iCloud account/session"])
+    }
+    if role == "writer" {
+        _ = try await database.save(CKRecordZone(zoneID: zone))
+        do {
+            let book = Book(id: id, title: "Nodus pronunciation verification", author: "Test", format: .txt,
+                            fileName: "probe.txt", relativePath: "probe.txt", fileSize: 1, contentHash: session)
+            fixture.library.context.insert(book)
+            fixture.library.setPronunciations([original], for: book)
+            let record = CKRecord(recordType: "Book", recordID: recordID)
+            copyPayload(try payload(), to: record)
+            _ = try await database.save(record)
+            print("LIVE PRONUNCIATION: writer published", session)
+            let changed = try await waitFor { ($0["pronunciationsJSON"] as? String)?.contains("Ro thi nan te") == true }
+            fixture.service.applyRemote(changed)
+            #expect(try localBook().pronunciations.first?.spoken == modified.spoken)
+            fixture.library.setPronunciations([], for: try localBook())
+            try localBook().updatedAt = (changed["updatedAt"] as? Date ?? Date()).addingTimeInterval(1)
+            copyPayload(try payload(), to: changed)
+            _ = try await database.save(changed)
+            _ = try await waitFor { $0["title"] as? String == "Nodus verification complete" }
+            _ = try await database.deleteRecordZone(withID: zone)
+            print("LIVE PRONUNCIATION: writer verified return edit and deletion; temporary zone removed", session)
+        } catch {
+            _ = try? await database.deleteRecordZone(withID: zone)
+            throw error
+        }
+    } else {
+        let record = try await waitFor { ($0["pronunciationsJSON"] as? String)?.contains("Ro si nan te") == true }
+        fixture.service.applyRemote(record)
+        #expect(try localBook().pronunciations.first?.spoken == original.spoken)
+        fixture.library.setPronunciations([modified], for: try localBook())
+        try localBook().updatedAt = (record["updatedAt"] as? Date ?? Date()).addingTimeInterval(1)
+        copyPayload(try payload(), to: record)
+        _ = try await database.save(record)
+        let cleared = try await waitFor { $0["pronunciationsJSON"] as? String == "[]" }
+        fixture.service.applyRemote(cleared)
+        #expect(try localBook().pronunciations.isEmpty)
+        cleared["title"] = "Nodus verification complete"
+        _ = try await database.save(cleared)
+        print("LIVE PRONUNCIATION: reader received initial rule, sent edit and received deletion", session)
+    }
+}
