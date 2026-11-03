@@ -55,7 +55,7 @@ Deleting a book removes its local document copy, library data and generated narr
 
 Remove Download deletes the local document copy while keeping the book in iCloud. Generated audio, downloaded models, sound packs, custom Mac voices and local scene analyses can be removed separately in their settings. Deleting a collection does not delete its books.
 
-Removing the app deletes its local container. Copies in iCloud and Apple device backups are managed separately. Keychain credentials may remain after the app is removed; you can remove the token in the app before uninstalling or revoke its access through Hugging Face.
+On iPhone and iPad, deleting the app removes its local container. On Mac, removing the application may leave library files and preferences behind; use the app’s library and storage controls to manage those data before uninstalling. Copies in iCloud and device backups are managed separately. Keychain credentials may remain after the app is removed; you can remove the token in the app before uninstalling or revoke its access through Hugging Face.
 
 ## Apple distribution, diagnostics and support
 

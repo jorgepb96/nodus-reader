@@ -1,0 +1,96 @@
+{
+  "build": "0.1.0 (51)",
+  "purpose": "Intermediate validation; Internal only. Final delivery uses build 52.",
+  "builds": [
+    {
+      "id": "d3662cb2-a872-4dd8-a76f-1a859b14fdac",
+      "version": "51",
+      "uploadedDate": "2026-11-03T02:44:25-08:00",
+      "expirationDate": "2027-02-01T02:44:25-08:00",
+      "expired": false,
+      "minOsVersion": "15.0",
+      "lsMinimumSystemVersion": "15.0",
+      "computedMinMacOsVersion": null,
+      "computedMinVisionOsVersion": null,
+      "iconAssetToken": {
+        "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/6c/78/30/6c783039-8274-81b4-48b5-3e374a469fe8/AppIcon.icns/{w}x{h}bb.{f}",
+        "width": 256,
+        "height": 256
+      },
+      "processingState": "VALID",
+      "buildAudienceType": "APP_STORE_ELIGIBLE",
+      "usesNonExemptEncryption": false,
+      "preReleaseVersion": {
+        "version": "0.1.0",
+        "platform": "MAC_OS"
+      },
+      "buildBetaDetail": {
+        "autoNotifyEnabled": true,
+        "internalBuildState": "IN_BETA_TESTING",
+        "externalBuildState": "READY_FOR_BETA_SUBMISSION"
+      },
+      "betaAppReviewSubmission": null,
+      "groups": [
+        "6fca3f0a-fada-4405-a6a0-9357bab03698"
+      ]
+    },
+    {
+      "id": "3726acfd-180b-462e-9e81-a61343450b94",
+      "version": "51",
+      "uploadedDate": "2026-11-03T02:39:33-08:00",
+      "expirationDate": "2027-02-01T02:39:33-08:00",
+      "expired": false,
+      "minOsVersion": "18.0",
+      "lsMinimumSystemVersion": "15.0",
+      "computedMinMacOsVersion": "15.0",
+      "computedMinVisionOsVersion": "2.0",
+      "iconAssetToken": {
+        "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/66/d5/7b/66d57ba9-77cc-1e54-4046-c3c21ba73426/AppIcon76x76@2x_U007eipad.png/{w}x{h}bb.{f}",
+        "width": 152,
+        "height": 152
+      },
+      "processingState": "VALID",
+      "buildAudienceType": "APP_STORE_ELIGIBLE",
+      "usesNonExemptEncryption": false,
+      "preReleaseVersion": {
+        "version": "0.1.0",
+        "platform": "IOS"
+      },
+      "buildBetaDetail": {
+        "autoNotifyEnabled": true,
+        "internalBuildState": "IN_BETA_TESTING",
+        "externalBuildState": "READY_FOR_BETA_SUBMISSION"
+      },
+      "betaAppReviewSubmission": null,
+      "groups": [
+        "6fca3f0a-fada-4405-a6a0-9357bab03698"
+      ]
+    }
+  ],
+  "exports": [
+    {
+      "platform": "ios",
+      "version": "0.1.0",
+      "build": "51",
+      "sourceCommit": "e7e5f19c4aa5c3204bfdb5f019fd011f348a906a",
+      "package": "build/export-ios-51/Nodus Reader.ipa",
+      "bytes": 52972680,
+      "sha256": "c641d42c8d4e2171e1f835389bf97134ad8c2c4806293039e3953fe17d026542",
+      "signatureVerified": true,
+      "productionICloud": true,
+      "architecture": "arm64"
+    },
+    {
+      "platform": "mac",
+      "version": "0.1.0",
+      "build": "51",
+      "sourceCommit": "e7e5f19c4aa5c3204bfdb5f019fd011f348a906a",
+      "package": "build/export-macOS-51/Nodus Reader.pkg",
+      "bytes": 48175848,
+      "sha256": "7d88377f92d5210944386e652811bba65a81c12fdcad5c3280c4b867e9436574",
+      "signatureVerified": true,
+      "productionICloud": true,
+      "architecture": "arm64"
+    }
+  ]
+}

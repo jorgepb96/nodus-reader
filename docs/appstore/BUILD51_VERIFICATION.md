@@ -14,7 +14,11 @@ English and Spanish copy has been revised in About, Privacy and Hugging Face mod
 ## App validation
 
 - iOS Simulator and macOS builds passed.
+- All 210 iOS Simulator test definitions passed from isolated test products.
 - All 209 macOS test definitions passed. The signed test products were copied to an isolated temporary directory to avoid a local launch stall in the workspace build directory; the test configuration and production entitlements were unchanged.
+- About was inspected in Spanish on the running build 51 Mac app: the four links resolve to the expected destinations, with no acknowledgements or app-licence promotion.
 - The current Debug extraction contains 982 localization keys, with zero missing Spanish translations and zero placeholder mismatches. Old extraction output from previous archives is excluded when rebuilding the catalog.
 
-Distribution follows the existing request: iOS Internal and Public Beta; native macOS Internal only.
+Build 51 is an intermediate validation build, processed as VALID on both platforms and retained in Internal only. Final public/private delivery is recorded with build 52.
+
+The Mac data-retention clarification was published in [Nodus PR #1332](https://github.com/jorgepb96/nodus/pull/1332), merge `f2ebab385b27f69a333c0ee235dc919ec580e468`. Website deployment [41620823996](https://github.com/jorgepb96/nodus/actions/runs/41620823996) succeeded; the final live policy was read back.

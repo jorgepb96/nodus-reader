@@ -98,27 +98,13 @@ carries no advertising. The converted files are not shared or synced. See
 
 The app links Apple SDK frameworks including SwiftUI, Foundation, SwiftData, CloudKit, PDFKit, AVFoundation, MediaPlayer, PhotosUI, CoreGraphics, CoreText, ImageIO, Vision, Core ML, Accelerate, CryptoKit, Security, AuthenticationServices and UniformTypeIdentifiers. These frameworks are provided with the Apple SDK and are not redistributed as part of this repository. Their use is governed by the Apple Developer Program License Agreement and the Xcode licence.
 
-System voices used by `AVSpeechSynthesizer` are part of the operating system and are not distributed by Nodus Reader.
-
-## Nodus narration sync design reference
-
-The pause-detection and pause-to-word alignment design documented in
-`docs/NARRATION_SYNC.md` was reviewed from the Nodus repository
-(`shared/narrationSync.ts`, `electron/tts/fragmentSync.ts`,
-`electron/tts/wavConcat.ts`), which is AGPL-3.0-only. The Swift implementation is an
-independent reimplementation of the published algorithm; no Nodus source file was
-copied. If code is ported later, it must retain the AGPL-3.0-only SPDX header and an
-attribution here.
-
 ## Design assets
 
-- `design/` contains the approved Nodus Reader visual system, screen references, brand marks and app icon masters. They are part of this repository and are distributed under the project's AGPL-3.0-only licence unless a file states otherwise.
-- The ReaderMark direction C and the AppIcon Dark/Light/Tinted masters in `design/icon/` are derived from the Nodus visual language and the MIT-licensed NodusMark.
-- Sample book text in the debug sample library is public-domain prose (Melville, Cervantes, Marcus Aurelius, Thoreau, Homer, Eliot, Mendel, Darwin) or original placeholder prose written for interface testing. Book titles and author names are facts.
+Nodus Reader uses its own ReaderMark and app icons. The shared Nodus mark is covered by the MIT notice above. The sample library contains public-domain works and original text created for interface testing.
 
 ## Fonts
 
-No font files are bundled. Display and reading text use the Apple system serif (New York) and SF Pro; the HTML design references Newsreader/Inter only as web stand-ins.
+Nodus Reader uses Apple system fonts. No additional font files are bundled.
 
 ## Immersive Audio sounds (downloaded on request, never bundled)
 
@@ -132,7 +118,7 @@ the catalog manifest (`NodusReader/Resources/ImmersiveAudio/catalog.json`) ships
 
 ## Services the app can contact
 
-Only at the user's request: Hugging Face (model and voice downloads, optional sign-in
+External services include Hugging Face (model and voice downloads, optional sign-in
 through Hugging Face's own OAuth page), jsDelivr (serves this repository's OAuth client
 metadata, `oauth/huggingface-client.json`, which Hugging Face reads), Apple iCloud
 (optional sync), the Immersive Audio catalog (Hugging Face dataset

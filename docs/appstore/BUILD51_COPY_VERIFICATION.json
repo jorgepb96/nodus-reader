@@ -1,0 +1,43 @@
+{
+  "verifiedAt": "2026-11-03T10:25:29.187088+00:00",
+  "privacyPolicyUrl": "https://nodusresearch.com/reader/privacy/",
+  "appStoreProductionSubmission": false,
+  "copies": [
+    {
+      "platform": "MAC_OS",
+      "locale": "en-US",
+      "characters": 2348,
+      "sha256": "53c6a370da3365e2062f9961123329fd9827bead2e26d569988fecb09ac548cf"
+    },
+    {
+      "platform": "MAC_OS",
+      "locale": "es-ES",
+      "characters": 2674,
+      "sha256": "2908e8694bdf096b3c7aa2d5054e81c6d2e45e1dfef31d2196db5235e309d9ba"
+    },
+    {
+      "platform": "IOS",
+      "locale": "en-US",
+      "characters": 2348,
+      "sha256": "53c6a370da3365e2062f9961123329fd9827bead2e26d569988fecb09ac548cf"
+    },
+    {
+      "platform": "IOS",
+      "locale": "es-ES",
+      "characters": 2674,
+      "sha256": "2908e8694bdf096b3c7aa2d5054e81c6d2e45e1dfef31d2196db5235e309d9ba"
+    },
+    {
+      "platform": "TESTFLIGHT",
+      "locale": "en-US",
+      "characters": 549,
+      "sha256": "0231b42232cfc0dcd5f3eed2e20c9bce31afffcb2a150b31183941d2f27ef843"
+    },
+    {
+      "platform": "TESTFLIGHT",
+      "locale": "es-ES",
+      "characters": 587,
+      "sha256": "830f468a7c66bce63e77a7b991e39766a760c5948c467f53aaeff677394b4662"
+    }
+  ]
+}
