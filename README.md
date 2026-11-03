@@ -37,7 +37,7 @@ Nodus Reader does not use Apple's system voices. Narration requires one of these
 | Phonon 31M | English | 9 | About 300 MB | Apache-2.0 |
 | Phonon 40M Spanish | Spanish | 25 | About 130 MB | CC BY-NC 4.0 |
 | Phonon 40M Multilingual | English, Spanish, French, German, Portuguese | 102 | About 150 MB | CC BY-NC 4.0 |
-| Ming 3.0 0.5B (Mac) | Seven languages, including English, Spanish and Mandarin | Built-in and custom voices | Download size shown in the app | MIT |
+| Ming 3.0 0.5B (Mac) | English, Spanish, French, German, Mandarin, Japanese, Korean | 106 built-in and custom voices | About 1.6 GB | MIT |
 
 Kokoro provides 28 English voices and 3 Spanish voices. Phonon 31M provides 9 English voices. Phonon 40M Spanish provides 25 voices from Spain and Mexico. Phonon 40M Multilingual provides 102 voices across its five languages.
 

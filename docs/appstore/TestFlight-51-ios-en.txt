@@ -1,7 +1,7 @@
 Build 51 updates privacy information and documentation.
 
 - Privacy links now open Nodus Reader’s dedicated policy on the Nodus website.
-- About has a simpler layout, without the acknowledgements section or promotional licence references.
+- About provides direct links to the Nodus website, privacy, support and source code.
 - English and Spanish documentation and model setup instructions have been revised to match the current app.
 
 Please check About, Privacy and Hugging Face setup. This build also includes the cover synchronization fix and per-book pronunciation settings.

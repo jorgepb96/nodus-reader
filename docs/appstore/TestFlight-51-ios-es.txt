@@ -1,7 +1,7 @@
 La compilación 51 actualiza la información de privacidad y la documentación.
 
 - Los enlaces de privacidad abren la política propia de Nodus Reader en la web de Nodus.
-- Acerca de presenta una información más clara, sin la sección de agradecimientos ni menciones promocionales de licencia.
+- Acerca de reúne los enlaces a la web de Nodus, privacidad, soporte y código fuente.
 - Los textos en español e inglés y la ayuda de instalación de modelos se han revisado para reflejar las funciones actuales.
 
 Comprueba Acerca de, Privacidad y la ayuda de Hugging Face. Esta versión incluye también la corrección de cubiertas y los ajustes de pronunciación por libro.
