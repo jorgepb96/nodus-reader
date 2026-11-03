@@ -2,6 +2,17 @@
 
 ## Current release — 3 November 2026
 
+Build **0.1.0 (50)** fixes original covers disappearing during iCloud sync and is processed as **VALID** on both platforms.
+
+- iOS/iPadOS: **Internal** and **Nodus Reader — Public Beta**; external state **IN_BETA_TESTING**, beta review **APPROVED**.
+- macOS: **Internal only**, internally **IN_BETA_TESTING**, without public-group assignment or beta-review submission.
+- The [public iOS link](https://testflight.apple.com/join/SjCk8AZ1) remains enabled. iOS builds on Apple silicon Macs remain disabled.
+- English (US) and Spanish (Spain) notes are saved and verified. No App Store production version was submitted.
+
+See [build 50 verification and delivery](BUILD50_VERIFICATION.md).
+
+## Previous release — 3 November 2026
+
 Build **0.1.0 (49)** adds per-book pronunciation and is processed as **VALID** on iOS/iPadOS and native macOS.
 
 - iOS/iPadOS: available to **Internal** and **Nodus Reader — Public Beta**; Beta App Review **APPROVED**, external state **IN_BETA_TESTING**.

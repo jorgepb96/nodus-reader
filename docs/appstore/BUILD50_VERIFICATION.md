@@ -13,3 +13,15 @@ Receiving metadata now keeps the usable local cover until its replacement arrive
 - The physical iPhone was unavailable during this follow-up; no physical-device recovery is claimed.
 
 Distribution follows the requested channels: iOS Internal and Public Beta; macOS Internal only. No App Store production release.
+
+## TestFlight delivery — 3 November 2026
+
+Source commit: `386a3206ae39ef477d3f48cc6531ed97600473c5` on GitHub main. Both exports have verified signatures, Production iCloud, the expected team and arm64 binaries. The iOS extension is also build 50; the Mac app is sandboxed and its installer signature is valid.
+
+- iOS build ID: `fb331f08-c603-4b1c-bec2-30c44040c3dc`. Processed as VALID; Internal and Public Beta groups. External state: **IN_BETA_TESTING**. Beta review: **APPROVED**.
+- macOS build ID: `cac78783-8759-46e6-863a-e128dbf8c126`. Processed as VALID; Internal only, internally IN_BETA_TESTING. No public-group assignment or beta-review submission.
+- English (US) and Spanish (Spain) What to Test text was read back and matched all four local files.
+- The public iOS link remains enabled; iOS builds on Apple silicon Macs remain disabled for both groups.
+- No App Store production release was submitted.
+
+Final API snapshot and artifact hashes: [BUILD50_DELIVERY.json](BUILD50_DELIVERY.json).
