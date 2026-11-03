@@ -1,15 +1,10 @@
 # Third-Party Notices
 
-Nodus Reader's own code is licensed under **AGPL-3.0-only** (see `LICENSE`). The following third-party components and assets are used under their own licences, which the AGPL-3.0 does not replace. Narration models in particular keep their own terms, including non-commercial ones (see *Narration models and voices*). This file must be kept accurate before distribution.
+This document records the licences and copyright notices for components included in Nodus Reader. Each component retains its own terms. Model and voice licences are documented in [MODEL_LICENSES.md](MODEL_LICENSES.md).
 
-## NodusMark
+## Nodus brand assets
 
-- **Component:** `NodusMark` geometry and the Nodus ecosystem wordmark.
-- **Source:** `nodus-drift-mobile/ios/NodusDrift/NodusMark.swift`.
-- **Licence:** MIT.
-- **Copyright:** © 2026 Jorge Pérez Burgueño.
-- **Use in this project:** reused verbatim (with its SPDX header) in `Modules/DesignSystem/Sources/DesignSystem/NodusMark.swift`, and as the basis of `ReaderMark` (direction C · Pages) from `design/DESIGN.md`.
-- **MIT text:** the full MIT permission notice is reproduced below.
+The shared Nodus mark and wordmark are © 2026 Jorge Pérez Burgueño and provided under the MIT licence. The shared geometry is in `Modules/DesignSystem/Sources/DesignSystem/NodusMark.swift`; Nodus Reader uses its own `ReaderMark` and app icon.
 
 ```
 MIT License
@@ -34,8 +29,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
-
-No changes were made to the original Nodus Drift repository.
 
 ## Swift packages compiled into the app
 
@@ -78,14 +71,7 @@ can be converted to Core ML on the device. The change is
 
 ## Narration models and voices (downloaded on the device, never bundled)
 
-> **Models keep their own licences.** Nodus Reader's code is AGPL-3.0-only, but that
-> licence does **not** apply to the narration models or voices. Each one is governed
-> only by its own licence, listed below, whatever licence the app has. In particular,
-> **Phonon 40M Spanish and Phonon 40M Multilingual are licensed by Gradium under
-> CC BY-NC 4.0: non-commercial use only.** Using Nodus Reader does not grant any right
-> to use those models commercially, and the AGPL-3.0 does not extend to them or to
-> the Core ML files converted from them. Anyone who downloads them accepts Gradium's
-> conditions on Hugging Face themselves.
+Each downloaded model and voice is governed by its publisher’s licence. Phonon 40M Spanish and Phonon 40M Multilingual are provided by Gradium under CC BY-NC 4.0 for non-commercial use. Those terms also apply to the Core ML files prepared on the user’s device.
 
 No model weights or voices are stored in this repository or in the app. Each is
 downloaded on request, checked against pinned sizes and SHA-256 hashes, and run only on

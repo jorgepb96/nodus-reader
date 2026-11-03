@@ -538,14 +538,14 @@ struct PrivacyView: View {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 6) {
                     DisplayTitle("Privacy")
-                    Text("Nodus Reader is local-first by design.")
+                    Text("Your library stays under your control.")
                         .font(.subheadline)
                         .foregroundStyle(palette.muted)
                 }
 
                 section(
                     title: "Your documents",
-                    body: "Books, PDFs and notes are read and stored on this device."
+                    body: "Books, covers, notes and reading progress are stored on this device. Your original files are not changed."
                 )
                 section(
                     title: "No telemetry",
@@ -563,13 +563,8 @@ struct PrivacyView: View {
                     title: "Device-local data",
                     body: "Voice models, audio caches, OCR caches and credentials stay on the device that created them. They are excluded from iCloud sync."
                 )
-                section(
-                    title: "Open source",
-                    body: "The source is published under AGPL-3.0-only so the privacy claims above can be audited."
-                )
-
                 Link("Read the full privacy policy",
-                     destination: URL(string: "https://github.com/jorgepb96/nodus-reader/blob/main/PRIVACY.md")!)
+                     destination: URL(string: "https://nodusresearch.com/reader/privacy/")!)
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(palette.accent)
                     .padding(.top, 4)
@@ -637,7 +632,7 @@ struct AboutView: View {
                         .foregroundStyle(palette.muted)
                 }
 
-                Text("Local-first reading and offline narration for iPhone, iPad and Mac. One library through your own iCloud.")
+                Text("Read and listen to your books on iPhone, iPad and Mac. Narration runs on your device, with optional library sync through your iCloud account.")
                     .font(.subheadline)
                     .foregroundStyle(palette.muted)
                     .multilineTextAlignment(.center)
@@ -645,39 +640,17 @@ struct AboutView: View {
                     .lineSpacing(2)
 
                 VStack(spacing: 0) {
+                    linkRow("Nodus Research", url: "https://nodusresearch.com/")
+                    divider
+                    linkRow("Privacy", url: "https://nodusresearch.com/reader/privacy/")
+                    divider
+                    linkRow("Support", url: "https://github.com/jorgepb96/nodus-reader/issues")
+                    divider
                     linkRow("Source code", url: "https://github.com/jorgepb96/nodus-reader")
-                    divider
-                    linkRow("AGPL-3.0-only licence", url: "https://github.com/jorgepb96/nodus-reader/blob/main/LICENSE")
-                    divider
-                    linkRow("Third-party notices", url: "https://github.com/jorgepb96/nodus-reader/blob/main/THIRD_PARTY_NOTICES.md")
-                    divider
-                    linkRow("Model licences", url: "https://github.com/jorgepb96/nodus-reader/blob/main/MODEL_LICENSES.md")
-                    divider
-                    linkRow("Privacy", url: "https://github.com/jorgepb96/nodus-reader/blob/main/PRIVACY.md")
-                    divider
-                    NavigationLink {
-                        ImmersiveCreditsView()
-                    } label: {
-                        SettingsRow(title: "Audio credits", value: nil)
-                    }
-                    .buttonStyle(.plain)
                 }
                 .panelCard(radius: 18)
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Acknowledgements")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(palette.muted)
-                    Text("The Nodus mark is reused under the MIT licence from Nodus Drift. ZIPFoundation is used under the MIT licence. Nodus Reader is not affiliated with Apple.")
-                        .font(.caption)
-                        .foregroundStyle(palette.muted)
-                        .lineSpacing(2)
-                }
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .panelCard(radius: 16)
-
-                Text("© 2026 Nodus Research · AGPL-3.0-only")
+                Text("© 2026 Nodus Research")
                     .font(.caption2)
                     .foregroundStyle(palette.muted)
             }

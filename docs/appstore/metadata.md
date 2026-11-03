@@ -30,99 +30,84 @@ App Store Connect in step.
 **Subtitle** (30): Read and listen to your books
 
 **Promotional text** (170):
-Import EPUB and PDF files and listen with neural voices that run on your device. Offline, free and open source, with no accounts, ads or tracking.
+Import EPUB and PDF files and listen with neural voices that run on your device. Offline, free and open source, with no Nodus account, ads or tracking.
 
 **Keywords** (100): `epub,pdf,ebook,reader,read aloud,text to speech,tts,audiobook,narration,offline,ocr,notes,books`
 
 **Description**:
 
-Nodus Reader is a free, open-source reading and listening app for iPhone, iPad and Mac. It opens EPUB and PDF books and documents, keeps them in a local library and reads them aloud with neural voices that run on your device. Your library is stored on your device, with optional sync through your personal iCloud account. There are no ads, subscriptions or accounts.
+Read and listen to your library on iPhone, iPad and Mac. Nodus Reader is free and open source, with narration and document processing that run on your device. Keep your library local or synchronize it through your personal iCloud account. No advertising, subscriptions or Nodus account.
 
-IMPORT
-• Import EPUB, PDF, TXT, Markdown, HTML and RTF files from Files, from other apps with the Share button, or a whole folder at once.
-• The app keeps its own copy of each file. The original file is not changed.
-• Title, author, language and cover are read from the file. Duplicate files are detected.
+IMPORT AND ORGANIZE
+• Open EPUB, PDF, TXT, Markdown, HTML and RTF documents from Files or Finder, drag and drop, or the Share button in another app.
+• Keep your original files unchanged. Nodus Reader stores its own copy, reads the title, author and cover, and detects duplicate imports.
+• Organize books in nested collections, mark favorites and track reading progress. Search by title, author or document text.
 
-READ
-• Read page by page with a page-turn animation, or scroll continuously, vertically or horizontally.
-• Themes: light, sepia, dark, black (OLED), high contrast, or your own colors. Font, size, line spacing, margins and justification can be set for all books or for one book.
-• Add bookmarks, highlights in five colors and notes. Search the book and step through the results.
-• PDFs open as the original page or in Intelligent Reading, which puts the text in reading order so it reads like a book. Scanned pages, and pages whose text cannot be read, are read with text recognition on the device.
+READ YOUR WAY
+• Turn pages or scroll continuously. Adjust the theme, font, text size, spacing, margins and alignment for your library or an individual book.
+• Add bookmarks, highlights and notes. Search inside a book and move between results.
+• View a PDF’s original pages or use Intelligent Reading for a text layout designed for reading and narration. Text recognition for scanned pages runs on your device.
 
-LISTEN
-• Narration with Kokoro and Phonon neural voices that run on the device. Kokoro supports English and Spanish. Phonon supports English now; additional Spanish and multilingual models can be downloaded with your own Hugging Face access.
-• Download a voice model once, then listen without an internet connection.
-• Read & Listen highlights the sentence and the word being read and turns the pages. Tap a word to start reading from there.
-• Speed, sleep timer, lock-screen controls and playback in the background.
-• Generated audio is kept on the device so the same sentence is not generated twice. Audio of books you have not opened for a while is deleted automatically.
+LISTEN OFFLINE
+• Download a Kokoro or Phonon voice model, then listen without an internet connection. Kokoro supports English and Spanish; Phonon offers English, Spanish and multilingual models.
+• On Mac, Ming also supports narration and voices created from recordings or audio files you choose.
+• Follow the current sentence and word, or tap a word to start listening there. Set playback speed, a sleep timer and background playback with lock-screen controls.
+• Adjust how a name is pronounced for an individual book without changing its text.
+• Add optional music and ambient sound with Immersive Audio. Downloaded sound packs play offline.
 
-ORGANIZE
-• Collections inside collections, favorites, reading status and sorting.
-• Search the library by title, author and text.
+YOUR LIBRARY, YOUR ICLOUD
+• Synchronization is optional and off by default. Use your personal iCloud account for books, covers, collections, reading positions, notes and pronunciation rules.
+• Voice models, generated audio and custom voice recordings stay on each device. Nodus Reader has no advertising, tracking or analytics SDK.
+• Privacy policy: nodusresearch.com/reader/privacy/
 
-SYNC (OPTIONAL)
-• Turn on iCloud sync to keep your library, collections, reading position, bookmarks and notes the same on all your devices. It uses your own iCloud account. Voice models and generated audio stay on each device.
-
-PRIVACY
-• No data is collected: no analytics, no tracking, no ads.
-• The source code is public under the AGPL-3.0 license: github.com/jorgepb96/nodus-reader
-
-Neural voice models are published by their authors under their own licenses, and some allow non-commercial use only. Books protected with DRM cannot be opened.
+Some voice models require a Hugging Face account and acceptance of the publisher’s terms. Model and voice licences apply separately; some allow non-commercial use only. DRM-protected books are not supported.
 
 ## Spanish (Spain)
 
 **Subtitle** (30): Lee y escucha tus libros
 
 **Promotional text** (170):
-Importa EPUB y PDF y escúchalos con voces neuronales que funcionan en tu dispositivo. Sin conexión, gratis y de código abierto, sin cuentas, anuncios ni seguimiento.
+Lee EPUB y PDF y escúchalos con voces que funcionan en tu dispositivo. Gratis, de código abierto, sin anuncios ni cuenta de Nodus.
 
 **Keywords** (100): `epub,pdf,ebook,lector,leer en voz alta,texto a voz,tts,audiolibro,narración,sin conexión,ocr,notas`
 
 **Description**:
 
-Nodus Reader es una app gratuita y de código abierto para leer y escuchar en iPhone, iPad y Mac. Abre libros y documentos EPUB y PDF, los guarda en una biblioteca local y los lee en voz alta con voces neuronales que funcionan en tu dispositivo. Tu biblioteca se guarda en tu dispositivo, con sincronización opcional a través de tu cuenta personal de iCloud. Sin anuncios, suscripciones ni cuentas.
+Lee y escucha tu biblioteca en iPhone, iPad y Mac. Nodus Reader es gratuita y de código abierto. La narración y el procesamiento de documentos funcionan en tu dispositivo. Puedes guardar la biblioteca solo en él o sincronizarla con tu cuenta personal de iCloud. Sin anuncios, suscripciones ni cuenta de Nodus.
 
-IMPORTAR
-• Importa archivos EPUB, PDF, TXT, Markdown, HTML y RTF desde Archivos, desde otras apps con el botón Compartir o una carpeta entera de una vez.
-• La app guarda su propia copia de cada archivo. El archivo original no se modifica.
-• El título, el autor, el idioma y la portada se leen del archivo. Los archivos duplicados se detectan.
+IMPORTA Y ORGANIZA
+• Abre documentos EPUB, PDF, TXT, Markdown, HTML y RTF desde Archivos o Finder, arrastrándolos a la app o con el botón Compartir de otra aplicación.
+• Conserva los archivos originales. Nodus Reader guarda su propia copia, lee el título, el autor y la cubierta, y detecta las importaciones duplicadas.
+• Organiza los libros en colecciones y subcolecciones, marca favoritos y guarda tu progreso de lectura. Busca por título, autor o contenido.
 
-LEER
-• Lee página a página con animación de paso de página o desplázate de forma continua, en vertical o en horizontal.
-• Temas: claro, sepia, oscuro, negro (OLED), alto contraste o tus propios colores. La fuente, el tamaño, el interlineado, los márgenes y la justificación se ajustan para todos los libros o para uno.
-• Añade marcadores, subrayados en cinco colores y notas. Busca en el libro y recorre los resultados.
-• Los PDF se abren como la página original o en Lectura inteligente, que ordena el texto en orden de lectura para leerlo como un libro. Las páginas escaneadas, y las que tienen un texto que no se puede leer, se leen con reconocimiento de texto en el dispositivo.
+LEE A TU MANERA
+• Pasa páginas o desplázate de forma continua. Ajusta el tema, la fuente, el tamaño, el espaciado, los márgenes y la alineación para toda la biblioteca o para un libro.
+• Añade marcadores, subrayados y notas. Busca dentro de un libro y recorre los resultados.
+• Consulta las páginas originales de un PDF o usa Lectura inteligente, con un formato de texto adaptado a la lectura y la narración. El reconocimiento de texto de las páginas escaneadas se realiza en tu dispositivo.
 
-ESCUCHAR
-• Narración con voces neuronales Kokoro y Phonon que funcionan en el dispositivo. Kokoro admite inglés y español. Phonon admite inglés ahora; los modelos adicionales de español y multilingüe se pueden descargar con tu propio acceso a Hugging Face.
-• Descarga un modelo de voz una vez y escucha sin conexión a internet.
-• Leer y escuchar resalta la frase y la palabra que se leen y pasa las páginas. Toca una palabra para empezar a leer desde ahí.
-• Velocidad, temporizador, controles en la pantalla de bloqueo y reproducción en segundo plano.
-• El audio generado se guarda en el dispositivo para no generar dos veces la misma frase. El audio de los libros que no abres durante un tiempo se borra automáticamente.
+ESCUCHA SIN CONEXIÓN
+• Descarga un modelo de voz Kokoro o Phonon y escucha sin conexión a internet. Kokoro admite inglés y español; Phonon ofrece modelos de inglés, español y multilingüe.
+• En Mac también puedes usar Ming y crear voces a partir de grabaciones o archivos de audio que elijas.
+• Sigue la frase y la palabra que se leen, o toca una palabra para empezar a escuchar desde ahí. Ajusta la velocidad, el temporizador y la reproducción en segundo plano, con controles en la pantalla de bloqueo.
+• Corrige cómo se pronuncia un nombre en un libro sin cambiar su texto.
+• Añade música y sonidos ambientales con Audio inmersivo. Los paquetes descargados funcionan sin conexión.
 
-ORGANIZAR
-• Colecciones dentro de colecciones, favoritos, estado de lectura y ordenación.
-• Busca en la biblioteca por título, autor y texto.
+TU BIBLIOTECA Y TU ICLOUD
+• La sincronización es opcional y está desactivada inicialmente. Usa tu cuenta personal de iCloud para los libros, las cubiertas, las colecciones, el progreso, las notas y las reglas de pronunciación.
+• Los modelos de voz, el audio generado y las grabaciones de voces personalizadas se quedan en cada dispositivo. Nodus Reader no incluye anuncios, seguimiento ni herramientas de analítica.
+• Política de privacidad: nodusresearch.com/reader/privacy/
 
-SINCRONIZACIÓN (OPCIONAL)
-• Activa la sincronización con iCloud para tener la misma biblioteca, colecciones, posición de lectura, marcadores y notas en todos tus dispositivos. Usa tu propia cuenta de iCloud. Los modelos de voz y el audio generado se quedan en cada dispositivo.
-
-PRIVACIDAD
-• No se recopila ningún dato: sin analíticas, sin seguimiento, sin anuncios.
-• El código fuente es público con licencia AGPL-3.0: github.com/jorgepb96/nodus-reader
-
-Los modelos de voz neuronales los publican sus autores con sus propias licencias, y algunas solo permiten el uso no comercial. Los libros protegidos con DRM no se pueden abrir.
+Algunos modelos de voz requieren una cuenta de Hugging Face y aceptar las condiciones de su autor. Las licencias de los modelos y las voces se aplican por separado; algunas solo permiten el uso no comercial. No se admiten libros protegidos con DRM.
 
 ## TestFlight
 
-The public-beta fields, the Drift/Presenter strategy and the remaining App Store Connect steps are in [TESTFLIGHT_PUBLIC_BETA.md](TESTFLIGHT_PUBLIC_BETA.md).
+The public-beta configuration and delivery records are in [TESTFLIGHT_PUBLIC_BETA.md](TESTFLIGHT_PUBLIC_BETA.md).
 
 - Feedback email: `contact@nodusresearch.com`
 - Privacy policy URL: `https://nodusresearch.com/reader/privacy/`
-- Current build: `0.1.0 (27)`
-- External group: `Nodus Reader — Public Beta` (build 27 assigned)
-- Public link: https://testflight.apple.com/join/SjCk8AZ1 (enabled; build 27 approved)
-- Beta App Review: submitted; build 27 is **En pruebas** with internal and external groups assigned
+- External iOS group: `Nodus Reader — Public Beta`
+- Public iOS link: https://testflight.apple.com/join/SjCk8AZ1
+- Distribution: iOS Internal and Public Beta; native macOS Internal only. Current delivery and review status are recorded in [TESTFLIGHT_PUBLIC_BETA.md](TESTFLIGHT_PUBLIC_BETA.md).
 
 ## Screenshots
 

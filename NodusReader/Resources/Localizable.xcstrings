@@ -782,16 +782,6 @@
         }
       }
     },
-    "AGPL-3.0-only licence": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Licencia AGPL-3.0-only"
-          }
-        }
-      }
-    },
     "Aa": {
       "localizations": {
         "es": {
@@ -882,12 +872,12 @@
         }
       }
     },
-    "Acknowledgements": {
+    "Add": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Agradecimientos"
+            "value": "Añadir"
           }
         }
       }
@@ -958,16 +948,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Añadir archivo de audio…"
-          }
-        }
-      }
-    },
-    "Add to": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Añadir a"
           }
         }
       }
@@ -1272,6 +1252,16 @@
         }
       }
     },
+    "Applies to this entire book. Spelling, accents and capitalisation must match.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se aplica a todo este libro. La escritura, los acentos y las mayúsculas deben coincidir."
+          }
+        }
+      }
+    },
     "Atmosphere": {
       "localizations": {
         "es": {
@@ -1288,16 +1278,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Caché de audio %@"
-          }
-        }
-      }
-    },
-    "Audio credits": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Créditos de audio"
           }
         }
       }
@@ -1502,12 +1482,12 @@
         }
       }
     },
-    "Books, PDFs and notes are read and stored on this device.": {
+    "Books, covers, notes and reading progress are stored on this device. Your original files are not changed.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los libros, los PDF y las notas se leen y se guardan en este dispositivo."
+            "value": "Los libros, las cubiertas, las notas y el progreso de lectura se guardan en este dispositivo. Los archivos originales no se modifican."
           }
         }
       }
@@ -2588,6 +2568,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eliminar la descarga parcial"
+          }
+        }
+      }
+    },
+    "Delete pronunciation": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar pronunciación"
           }
         }
       }
@@ -3722,16 +3712,6 @@
         }
       }
     },
-    "Import cancelled": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Importación cancelada"
-          }
-        }
-      }
-    },
     "Import documents": {
       "localizations": {
         "es": {
@@ -3758,16 +3738,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Error al importar"
-          }
-        }
-      }
-    },
-    "Import to Nodus Reader": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Importar a Nodus Reader"
           }
         }
       }
@@ -3858,6 +3828,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Instala un modelo Kokoro o Phonon en la pestaña Modelos para empezar a escuchar."
+          }
+        }
+      }
+    },
+    "Install a voice model to preview pronunciation.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instala un modelo de voz para probar la pronunciación."
           }
         }
       }
@@ -4008,6 +3988,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kokoro 82M y Phonon 31M son públicos y no necesitan cuenta. Phonon 40M Multilingüe y Español necesitan una cuenta que haya aceptado las condiciones de Gradium. Los datos de inicio de sesión y los tokens se guardan solo en el llavero de este dispositivo y nunca se escriben en iCloud, en la biblioteca ni en registros."
+          }
+        }
+      }
+    },
+    "Kokoro 82M, Phonon 31M and Ming on Mac can be downloaded without an account. The Phonon 40M models require a Hugging Face account that has accepted Gradium’s terms.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kokoro 82M, Phonon 31M y Ming en Mac se pueden descargar sin cuenta. Los modelos Phonon 40M requieren una cuenta de Hugging Face que haya aceptado las condiciones de Gradium."
           }
         }
       }
@@ -4208,16 +4198,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Biblioteca local"
-          }
-        }
-      }
-    },
-    "Local-first reading and offline narration for iPhone, iPad and Mac. One library through your own iCloud.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lectura local y narración sin conexión para iPhone, iPad y Mac. Una sola biblioteca a través de tu propio iCloud."
           }
         }
       }
@@ -4472,16 +4452,6 @@
         }
       }
     },
-    "Model licences": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Licencias de los modelos"
-          }
-        }
-      }
-    },
     "Models": {
       "localizations": {
         "es": {
@@ -4672,6 +4642,16 @@
         }
       }
     },
+    "Name in the text": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre en el texto"
+          }
+        }
+      }
+    },
     "Narration audio is limited to %@: beyond that, the books you opened longest ago go first. The book you are reading or listening to is always kept. Documents, notes, highlights and voice models are never deleted automatically; audio is generated again when you listen.": {
       "localizations": {
         "es": {
@@ -4738,26 +4718,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Naturaleza"
-          }
-        }
-      }
-    },
-    "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in below). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más abajo). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 130 MB de descarga y 200 MB instalado. Gradium distribuye este modelo con licencia CC BY-NC 4.0, solo para uso no comercial; esa licencia se aplica por separado, con independencia de la AGPL-3.0 de Nodus Reader."
-          }
-        }
-      }
-    },
-    "Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in below). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más abajo). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 150 MB de descarga y 230 MB instalado. Cada voz lee en su propio idioma. Gradium distribuye este modelo con licencia CC BY-NC 4.0, solo para uso no comercial; esa licencia se aplica por separado, con independencia de la AGPL-3.0 de Nodus Reader."
           }
         }
       }
@@ -5152,32 +5112,12 @@
         }
       }
     },
-    "No supported document was found in the shared items.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se ha encontrado ningún documento compatible en lo que has compartido."
-          }
-        }
-      }
-    },
     "No supported documents were found": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "No se han encontrado documentos compatibles"
-          }
-        }
-      }
-    },
-    "No supported documents were shared.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se han compartido documentos compatibles."
           }
         }
       }
@@ -5242,16 +5182,6 @@
         }
       }
     },
-    "No, not for the voices you can download in this version. Kokoro 82M and Phonon 31M are public: anyone can download them without an account or a token.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No para las voces que puedes descargar en esta versión. Kokoro 82M y Phonon 31M son públicas: cualquiera puede descargarlas sin cuenta ni token."
-          }
-        }
-      }
-    },
     "Nodus Reader": {
       "localizations": {
         "es": {
@@ -5292,16 +5222,6 @@
         }
       }
     },
-    "Nodus Reader is local-first by design.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nodus Reader está diseñado para funcionar en local."
-          }
-        }
-      }
-    },
     "Nodus Reader never sees your password. To remove its access, open Connected Apps in your Hugging Face settings.": {
       "localizations": {
         "es": {
@@ -5332,22 +5252,22 @@
         }
       }
     },
+    "Nodus Research": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodus Research"
+          }
+        }
+      }
+    },
     "Nodus narrates with neural voices that run entirely on this device. Download a voice model to start listening offline.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Nodus narra con voces neuronales que funcionan íntegramente en este dispositivo. Descarga un modelo de voz para empezar a escuchar sin conexión."
-          }
-        }
-      }
-    },
-    "Not available in this version of Nodus Reader: there is no Core ML version of this model that runs on Apple devices yet. Accepting the licence now only gives your account access for later.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No disponible en esta versión de Nodus Reader: todavía no existe una versión Core ML de este modelo que funcione en dispositivos Apple. Aceptar la licencia ahora solo da acceso a tu cuenta para más adelante."
           }
         }
       }
@@ -5612,16 +5532,6 @@
         }
       }
     },
-    "Open source": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Código abierto"
-          }
-        }
-      }
-    },
     "Open the Access Tokens page in your account settings.": {
       "localizations": {
         "es": {
@@ -5678,6 +5588,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "O bien: consigue tú un token"
+          }
+        }
+      }
+    },
+    "Original": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original"
           }
         }
       }
@@ -6242,6 +6162,56 @@
         }
       }
     },
+    "Pronounce as": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se pronuncia"
+          }
+        }
+      }
+    },
+    "Pronunciation": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronunciación"
+          }
+        }
+      }
+    },
+    "Pronunciations": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronunciaciones"
+          }
+        }
+      }
+    },
+    "Pronunciations…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronunciaciones…"
+          }
+        }
+      }
+    },
+    "Pronunciation…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronunciación…"
+          }
+        }
+      }
+    },
     "Published": {
       "localizations": {
         "es": {
@@ -6402,6 +6372,16 @@
         }
       }
     },
+    "Read and listen to your books on iPhone, iPad and Mac. Narration runs on your device, with optional library sync through your iCloud account.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lee y escucha tus libros en iPhone, iPad y Mac. La narración funciona en tu dispositivo y puedes sincronizar la biblioteca con tu cuenta de iCloud."
+          }
+        }
+      }
+    },
     "Read the full privacy policy": {
       "localizations": {
         "es": {
@@ -6508,16 +6488,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Leyendo las últimas páginas…"
-          }
-        }
-      }
-    },
-    "Ready to import in Nodus Reader.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listo para importar en Nodus Reader."
           }
         }
       }
@@ -6822,6 +6792,26 @@
         }
       }
     },
+    "Requires a Hugging Face account with access to this model. Sign in below after accepting Gradium's terms. The model is downloaded and prepared on this device: about 130 MB to download and 200 MB installed. For non-commercial use under CC BY-NC 4.0.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requiere una cuenta de Hugging Face con acceso a este modelo. Acepta las condiciones de Gradium e inicia sesión más abajo. El modelo se descarga y prepara en este dispositivo: unos 130 MB de descarga y 200 MB instalado. Solo para uso no comercial, con licencia CC BY-NC 4.0."
+          }
+        }
+      }
+    },
+    "Requires a Hugging Face account with access to this model. Sign in below after accepting Gradium's terms. The model is downloaded and prepared on this device: about 150 MB to download and 230 MB installed. Each voice reads in its own language. For non-commercial use under CC BY-NC 4.0.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requiere una cuenta de Hugging Face con acceso a este modelo. Acepta las condiciones de Gradium e inicia sesión más abajo. El modelo se descarga y prepara en este dispositivo: unos 150 MB de descarga y 230 MB instalado. Cada voz lee en su propio idioma. Solo para uso no comercial, con licencia CC BY-NC 4.0."
+          }
+        }
+      }
+    },
     "Reset": {
       "localizations": {
         "es": {
@@ -6952,12 +6942,32 @@
         }
       }
     },
+    "Save pronunciation": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar pronunciación"
+          }
+        }
+      }
+    },
     "Save token": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Guardar token"
+          }
+        }
+      }
+    },
+    "Saved pronunciations": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronunciaciones guardadas"
           }
         }
       }
@@ -7468,16 +7478,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Muestra el reproductor ampliado"
-          }
-        }
-      }
-    },
-    "Shows the whole library": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Muestra toda la biblioteca"
           }
         }
       }
@@ -8062,6 +8062,16 @@
         }
       }
     },
+    "Support": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soporte"
+          }
+        }
+      }
+    },
     "Sync Now": {
       "localizations": {
         "es": {
@@ -8262,16 +8272,6 @@
         }
       }
     },
-    "The Nodus mark is reused under the MIT licence from Nodus Drift. ZIPFoundation is used under the MIT licence. Nodus Reader is not affiliated with Apple.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El logotipo de Nodus se reutiliza de Nodus Drift con licencia MIT. ZIPFoundation se usa con licencia MIT. Nodus Reader no está afiliado a Apple."
-          }
-        }
-      }
-    },
     "The atmosphere sounds could not be downloaded. Check the connection and try again.": {
       "localizations": {
         "es": {
@@ -8358,16 +8358,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "El documento aún no está disponible en iCloud."
-          }
-        }
-      }
-    },
-    "The document stays on this device. Nothing is uploaded.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El documento se queda en este dispositivo. No se sube nada."
           }
         }
       }
@@ -8492,16 +8482,6 @@
         }
       }
     },
-    "The source is published under AGPL-3.0-only so the privacy claims above can be audited.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El código fuente se publica con licencia AGPL-3.0-only para que cualquiera pueda comprobar estas garantías de privacidad."
-          }
-        }
-      }
-    },
     "The story so far": {
       "localizations": {
         "es": {
@@ -8598,16 +8578,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Se vuelven a escribir la próxima vez que pidas un resumen."
-          }
-        }
-      }
-    },
-    "Third-party notices": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avisos de terceros"
           }
         }
       }
@@ -8758,6 +8728,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Es mi voz, o tengo permiso de su dueño para clonarla."
+          }
+        }
+      }
+    },
+    "This model is not available on this device. Accepting its terms does not change device compatibility.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este modelo no está disponible en este dispositivo. Aceptar sus condiciones no cambia la compatibilidad."
           }
         }
       }
@@ -9058,16 +9038,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Libros sin usar"
-          }
-        }
-      }
-    },
-    "Up next": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A continuación"
           }
         }
       }
@@ -9402,6 +9372,16 @@
         }
       }
     },
+    "With correction": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con corrección"
+          }
+        }
+      }
+    },
     "Word only": {
       "localizations": {
         "es": {
@@ -9602,6 +9582,16 @@
         }
       }
     },
+    "Your library stays under your control.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu biblioteca está bajo tu control."
+          }
+        }
+      }
+    },
     "downloading": {
       "localizations": {
         "es": {
@@ -9722,12 +9712,12 @@
         }
       }
     },
-    "© 2026 Nodus Research · AGPL-3.0-only": {
+    "© 2026 Nodus Research": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "© 2026 Nodus Research · AGPL-3.0-only"
+            "value": "© 2026 Nodus Research"
           }
         }
       }
@@ -9818,146 +9808,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "•"
-          }
-        }
-      }
-    },
-    "Name in the text": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nombre en el texto"
-          }
-        }
-      }
-    },
-    "Pronounce as": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Se pronuncia"
-          }
-        }
-      }
-    },
-    "Applies to this entire book. Spelling, accents and capitalisation must match.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Se aplica a todo este libro. La escritura, los acentos y las mayúsculas deben coincidir."
-          }
-        }
-      }
-    },
-    "Original": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Original"
-          }
-        }
-      }
-    },
-    "With correction": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Con corrección"
-          }
-        }
-      }
-    },
-    "Save pronunciation": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guardar pronunciación"
-          }
-        }
-      }
-    },
-    "Pronunciation": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pronunciación"
-          }
-        }
-      }
-    },
-    "Saved pronunciations": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pronunciaciones guardadas"
-          }
-        }
-      }
-    },
-    "Delete pronunciation": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eliminar pronunciación"
-          }
-        }
-      }
-    },
-    "Pronunciations": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pronunciaciones"
-          }
-        }
-      }
-    },
-    "Pronunciations…": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pronunciaciones…"
-          }
-        }
-      }
-    },
-    "Pronunciation…": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pronunciación…"
-          }
-        }
-      }
-    },
-    "Install a voice model to preview pronunciation.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Instala un modelo de voz para probar la pronunciación."
-          }
-        }
-      }
-    },
-    "Add": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Añadir"
           }
         }
       }

@@ -1,20 +1,13 @@
 # Model and Voice Licences
 
-> **Models are not covered by the AGPL-3.0.** Nodus Reader's code is AGPL-3.0-only;
-> each model and voice keeps only its own licence. Phonon 40M Spanish and Multilingual
-> are CC BY-NC 4.0 (Gradium): non-commercial use only, whatever the app's licence, and
-> the same applies to the Core ML files converted from them on a user's device.
+Each model and voice retains its publisher’s licence. Phonon 40M Spanish and Multilingual are provided by Gradium under CC BY-NC 4.0 for non-commercial use; those terms also apply to locally converted Core ML files.
 
-Nodus Reader does not bundle or redistribute neural model weights or voice
-embeddings. Models are downloaded on the user's device, after an explicit action, and
-remain local. This file records the verified licences for the engines that ship in
-the app.
+Neural model weights and voice embeddings are downloaded on request and remain on the device. The bundled `es-dave` reference clip is identified separately below.
 
 ## Engines in this build
 
 | Engine | Source | Licence | Distribution |
 |---|---|---|---|
-| Apple system voices (`AVSpeechSynthesizer`) | Operating system | Apple OS licence | No weights distributed by Nodus Reader |
 | Kokoro 82M Core ML | [mattmireles/kokoro-coreml](https://github.com/mattmireles/kokoro-coreml), pinned at `43ef0237306c3c1ea0138098c9f92930ae4cf3f7`; weights [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M), hosted bundle [mattmireles/kokoro-coreml](https://huggingface.co/mattmireles/kokoro-coreml) | Apache-2.0 | Downloaded from a pinned Hugging Face revision; starter bundle plus the 27 other English voice files of the same pinned revision (each verified against its published SHA-256), 28 voices, English |
 | Kokoro Spanish voices | `ef_dora`, `em_alex`, `em_santa` of [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M), downloaded as raw float32 tables from [onnx-community/Kokoro-82M-v1.0-ONNX](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX) at `1939ad2a8e416c0acfeecc08a694d14ef25f2231` | Apache-2.0 | Three files of 510 KB, each verified against its pinned SHA-256 and added to the installed bundle's manifest; Spanish (Spain) |
 | Kokoro Spanish G2P | `SpanishG2P` in this repository (rule-based, AGPL-3.0-only) | AGPL-3.0-only | Reproduces the espeak-ng phonemes the Spanish voices were trained with; espeak-ng itself (GPL-3.0) is not used or distributed |
@@ -68,7 +61,8 @@ Exact source, licence and attribution notices are in
 - Re-check every upstream licence and model card before an App Store release. This
   file is not legal advice.
 
-## Attribution in the app
+## Licence information
 
-The Models screen links each model card, shows the licence and source, and links to
-this file from About. The About screen also links to the third-party notices.
+The Models screen links to each model card and shows the publisher’s licence.
+Component copyright and permission notices are retained in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

@@ -175,7 +175,6 @@ ES = {
 "That document is already in your library": "Ese documento ya está en tu biblioteca",
 "The %@ engine is not loaded. Open Settings › Voices & Models and install it again.": "El motor %@ no está cargado. Abre Ajustes › Voces y modelos e instálalo de nuevo.",
 "The Kokoro and Phonon bundles used here are public, so no account is required. A token is kept in this device's Keychain only and is never written to iCloud, the library or logs.": "Los paquetes de Kokoro y Phonon que se usan aquí son públicos, así que no hace falta cuenta. El token se guarda solo en el llavero de este dispositivo y nunca se escribe en iCloud, en la biblioteca ni en registros.",
-"The Nodus mark is reused under the MIT licence from Nodus Drift. ZIPFoundation is used under the MIT licence. Nodus Reader is not affiliated with Apple.": "El logotipo de Nodus se reutiliza de Nodus Drift con licencia MIT. ZIPFoundation se usa con licencia MIT. Nodus Reader no está afiliado a Apple.",
 "The built-in themes remain available.": "Los temas incluidos siguen disponibles.",
 "The collection and its subcollections are removed. Documents stay in your library.": "Se eliminan la colección y sus subcolecciones. Los documentos se quedan en tu biblioteca.",
 "The collection and its subcollections are removed. The documents stay in your library.": "Se eliminan la colección y sus subcolecciones. Los documentos se quedan en tu biblioteca.",
@@ -190,7 +189,6 @@ ES = {
 "The neural engine returned no audio.": "El motor neuronal no ha devuelto audio.",
 "The reader follows the App appearance.": "El lector sigue la apariencia de la app.",
 "The selected engine has no installed voice for %@. Search all languages or choose another model in Settings.": "El motor seleccionado no tiene voces instaladas para %@. Busca en todos los idiomas o elige otro modelo en Ajustes.",
-"The source is published under AGPL-3.0-only so the privacy claims above can be audited.": "El código fuente se publica con licencia AGPL-3.0-only para que cualquiera pueda comprobar estas garantías de privacidad.",
 "The token could not be saved in the Keychain (status %d).": "No se ha podido guardar el token en el llavero (estado %d).",
 "The token is stored in this device's Keychain only. It is not synced with iCloud and Nodus Reader does not send it anywhere except Hugging Face. You can remove it here, or delete it on the Access Tokens page, at any time.": "El token se guarda solo en el llavero de este dispositivo. No se sincroniza con iCloud y Nodus Reader solo lo envía a Hugging Face. Puedes quitarlo aquí, o borrarlo en la página Access Tokens, cuando quieras.",
 "The voice chosen for this book is not installed on this device": "La voz elegida para este libro no está instalada en este dispositivo",
@@ -280,7 +278,6 @@ ES = {
 "your Mac": "tu Mac",
 "your iPad": "tu iPad",
 "your iPhone": "tu iPhone",
-"© 2026 Nodus Research · AGPL-3.0-only": "© 2026 Nodus Research · AGPL-3.0-only",
 "· %lld waiting": "· %lld en espera",
 "“%@”": "«%@»",
 "“%@” could not be opened. The file may be damaged or protected.": "No se ha podido abrir «%@». Puede que el archivo esté dañado o protegido.",
@@ -393,8 +390,6 @@ ES.update({
 "Select": "Seleccionar",
 })
 ES.update({
-"Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in below). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 130 MB to download, 200 MB installed. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más abajo). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 130 MB de descarga y 200 MB instalado. Gradium distribuye este modelo con licencia CC BY-NC 4.0, solo para uso no comercial; esa licencia se aplica por separado, con independencia de la AGPL-3.0 de Nodus Reader.",
-"Needs a Hugging Face account that has accepted Gradium's conditions for this model (sign in below). Nodus Reader downloads it with your sign-in and converts it to Core ML on this device: about 150 MB to download, 230 MB installed. Each voice reads its own language. Gradium licenses this model under CC BY-NC 4.0, non-commercial use only; that licence applies on its own, separate from Nodus Reader's AGPL-3.0.": "Necesita una cuenta de Hugging Face que haya aceptado las condiciones de Gradium para este modelo (inicia sesión más abajo). Nodus Reader lo descarga con tu sesión y lo convierte a Core ML en este dispositivo: unos 150 MB de descarga y 230 MB instalado. Cada voz lee en su propio idioma. Gradium distribuye este modelo con licencia CC BY-NC 4.0, solo para uso no comercial; esa licencia se aplica por separado, con independencia de la AGPL-3.0 de Nodus Reader.",
 })
 ES.update({
 "Voices of every model on this %@. Play any of them to try it; choosing one from another model makes that model the voice engine. Nothing is synced to iCloud.": "Voces de todos los modelos de este %@. Reproduce cualquiera para probarla; si eliges una de otro modelo, ese modelo pasa a ser el motor de voz. No se sincroniza nada con iCloud.",
@@ -810,3 +805,16 @@ ES.update({
 ES.update({'Name in the text': 'Nombre en el texto', 'Pronounce as': 'Se pronuncia', 'Applies to this entire book. Spelling, accents and capitalisation must match.': 'Se aplica a todo este libro. La escritura, los acentos y las mayúsculas deben coincidir.', 'Original': 'Original', 'With correction': 'Con corrección', 'Save pronunciation': 'Guardar pronunciación', 'Pronunciation': 'Pronunciación', 'Saved pronunciations': 'Pronunciaciones guardadas', 'Delete pronunciation': 'Eliminar pronunciación', 'Pronunciations': 'Pronunciaciones', 'Pronunciations…': 'Pronunciaciones…', 'Pronunciation…': 'Pronunciación…', 'Install a voice model to preview pronunciation.': 'Instala un modelo de voz para probar la pronunciación.'})
 
 ES.update({"Add": "Añadir"})
+
+ES.update({
+  "Books, covers, notes and reading progress are stored on this device. Your original files are not changed.": "Los libros, las cubiertas, las notas y el progreso de lectura se guardan en este dispositivo. Los archivos originales no se modifican.",
+  "Kokoro 82M, Phonon 31M and Ming on Mac can be downloaded without an account. The Phonon 40M models require a Hugging Face account that has accepted Gradium’s terms.": "Kokoro 82M, Phonon 31M y Ming en Mac se pueden descargar sin cuenta. Los modelos Phonon 40M requieren una cuenta de Hugging Face que haya aceptado las condiciones de Gradium.",
+  "Nodus Research": "Nodus Research",
+  "Read and listen to your books on iPhone, iPad and Mac. Narration runs on your device, with optional library sync through your iCloud account.": "Lee y escucha tus libros en iPhone, iPad y Mac. La narración funciona en tu dispositivo y puedes sincronizar la biblioteca con tu cuenta de iCloud.",
+  "Requires a Hugging Face account with access to this model. Sign in below after accepting Gradium's terms. The model is downloaded and prepared on this device: about 130 MB to download and 200 MB installed. For non-commercial use under CC BY-NC 4.0.": "Requiere una cuenta de Hugging Face con acceso a este modelo. Acepta las condiciones de Gradium e inicia sesión más abajo. El modelo se descarga y prepara en este dispositivo: unos 130 MB de descarga y 200 MB instalado. Solo para uso no comercial, con licencia CC BY-NC 4.0.",
+  "Requires a Hugging Face account with access to this model. Sign in below after accepting Gradium's terms. The model is downloaded and prepared on this device: about 150 MB to download and 230 MB installed. Each voice reads in its own language. For non-commercial use under CC BY-NC 4.0.": "Requiere una cuenta de Hugging Face con acceso a este modelo. Acepta las condiciones de Gradium e inicia sesión más abajo. El modelo se descarga y prepara en este dispositivo: unos 150 MB de descarga y 230 MB instalado. Cada voz lee en su propio idioma. Solo para uso no comercial, con licencia CC BY-NC 4.0.",
+  "Support": "Soporte",
+  "This model is not available on this device. Accepting its terms does not change device compatibility.": "Este modelo no está disponible en este dispositivo. Aceptar sus condiciones no cambia la compatibilidad.",
+  "Your library stays under your control.": "Tu biblioteca está bajo tu control.",
+  "© 2026 Nodus Research": "© 2026 Nodus Research"
+})

@@ -22,7 +22,7 @@ struct HuggingFaceGuideView: View {
                     }
 
                     section("Do I need an account?", systemImage: "person.crop.circle.badge.questionmark") {
-                        paragraph("No, not for the voices you can download in this version. Kokoro 82M and Phonon 31M are public: anyone can download them without an account or a token.")
+                        paragraph("Kokoro 82M, Phonon 31M and Ming on Mac can be downloaded without an account. The Phonon 40M models require a Hugging Face account that has accepted Gradium’s terms.")
                         paragraph("Some models are \"gated\": the publisher asks you to sign in and accept their licence before you can download them. A token is how an app proves to Hugging Face that it is acting for your account.")
                     }
 
@@ -60,7 +60,7 @@ struct HuggingFaceGuideView: View {
                                         .font(.caption)
                                         .foregroundStyle(palette.muted)
                                     if !model.isAvailable {
-                                        Text("Not available in this version of Nodus Reader: there is no Core ML version of this model that runs on Apple devices yet. Accepting the licence now only gives your account access for later.")
+                                        Text("This model is not available on this device. Accepting its terms does not change device compatibility.")
                                             .font(.caption)
                                             .foregroundStyle(palette.muted)
                                             .fixedSize(horizontal: false, vertical: true)

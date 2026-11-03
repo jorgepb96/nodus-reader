@@ -10,9 +10,9 @@
 
 # Nodus Reader
 
-Nodus Reader is a free, open-source app for listening to your library with voice models that run on your own device. Kokoro and Phonon are available today; more models are coming soon.
+Nodus Reader is a free, open-source app for reading and listening to your library on iPhone, iPad and Mac. Narration and document processing run on your device. You can keep your library local or synchronize it through your personal iCloud account.
 
-It opens EPUB, PDF, TXT, Markdown, HTML and RTF files on iPhone, iPad and Mac.
+It opens EPUB, PDF, TXT, Markdown, HTML and RTF files.
 
 ## Features
 
@@ -20,7 +20,7 @@ It opens EPUB, PDF, TXT, Markdown, HTML and RTF files on iPhone, iPad and Mac.
 - **Library:** browse books in a grid on iPhone and iPad or a table on Mac. Search titles, authors and document text. Filter by reading status, favorite, collection and format. Create nested collections and assign a book to more than one collection.
 - **Reader:** use paged, continuous or two-page reading. Change the theme, typeface, size, line spacing, margins and alignment. Add bookmarks, highlights and notes. Search inside a book and export annotations.
 - **PDF:** read the original page layout or switch to Intelligent Reading. Intelligent Reading rebuilds reading order, handles multi-column pages, runs on-device OCR when the text layer is unreadable, keeps tables as page images and provides a page scrollbar.
-- **Narration:** read aloud with Kokoro or Phonon. The current sentence and word are highlighted. Tap a word to start Read & Listen from that word. Audio is generated locally and can be cached sentence by sentence. The player includes speed, voice, sleep timer and background playback.
+- **Narration:** read aloud with Kokoro or Phonon, or Ming on Mac. The current sentence and word are highlighted. Tap a word to start Read & Listen from that word. Audio is generated locally and can be cached sentence by sentence. The player includes speed, voice, sleep timer and background playback.
 - **Pronunciation:** select a name and choose Pronunciation, or open Pronunciations from the book or player menu. Write how it should sound, compare the original and corrected sentence, and save it for that book. Rules sync through optional iCloud; narration audio remains local.
 - **Sync:** enable optional iCloud sync through the user's own iCloud account. Library data, reading positions, bookmarks, highlights and notes are synced. Files can also be downloaded on demand.
 - **Sharing:** send documents to Nodus Reader from the iOS Share Extension. Choose a collection before the import starts.
@@ -37,16 +37,17 @@ Nodus Reader does not use Apple's system voices. Narration requires one of these
 | Phonon 31M | English | 9 | About 300 MB | Apache-2.0 |
 | Phonon 40M Spanish | Spanish | 25 | About 130 MB | CC BY-NC 4.0 |
 | Phonon 40M Multilingual | English, Spanish, French, German, Portuguese | 102 | About 150 MB | CC BY-NC 4.0 |
+| Ming 3.0 0.5B (Mac) | Seven languages, including English, Spanish and Mandarin | Built-in and custom voices | Download size shown in the app | MIT |
 
 Kokoro provides 28 English voices and 3 Spanish voices. Phonon 31M provides 9 English voices. Phonon 40M Spanish provides 25 voices from Spain and Mexico. Phonon 40M Multilingual provides 102 voices across its five languages.
 
-The two Phonon 40M models require a Hugging Face account that has accepted Gradium's licence. Nodus Reader downloads them with the user's sign-in and converts them to Core ML on the device. They are licensed for non-commercial use under CC BY-NC 4.0; that licence is separate from the app's AGPL-3.0 licence.
+The two Phonon 40M models require a Hugging Face account that has accepted Gradium's licence. Nodus Reader downloads them with the user's sign-in and converts them to Core ML on the device. They are licensed for non-commercial use under CC BY-NC 4.0, including the locally converted model files.
 
 Kokoro is not available in the iOS Simulator because its English phonemizer uses MLX and needs a Metal GPU. Use a real device to test Kokoro.
 
 ## Voices and languages
 
-- The first launch requires a model download. The setup screen has no skip action and cannot be dismissed until a model is installed.
+- Choose a narration model and download it before listening for the first time. Once installed, it works offline.
 - Kokoro offers 28 English voices (American and British English) and 3 Spanish voices.
 - Phonon 31M offers 9 English voices.
 - Phonon 40M Spanish offers 25 Spanish voices.
@@ -77,4 +78,4 @@ All screenshots use the same 600 × 800 frame and the sample library.
 | :---: | :---: | :---: |
 | ![Mac library table with sidebar, book list and details panel](docs/screenshots/readme/macos-library.png) | ![Mac reader with a two-page spread](docs/screenshots/readme/macos-reader.png) | ![Mac Settings screen with app and reader theme controls](docs/screenshots/readme/macos-settings.png) |
 
-Nodus Reader is licensed under [AGPL-3.0-only](LICENSE). Read [PRIVACY.md](PRIVACY.md) for data-flow details and [MODEL_LICENSES.md](MODEL_LICENSES.md) for model licences.
+Read the [privacy policy](https://nodusresearch.com/reader/privacy/) for details about local storage, optional iCloud sync and external services. Model terms are listed in [MODEL_LICENSES.md](MODEL_LICENSES.md).
