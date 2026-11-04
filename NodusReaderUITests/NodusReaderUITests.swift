@@ -57,6 +57,59 @@ final class NodusReaderUITests: XCTestCase {
         snap("Pronunciation-Selection-Editor")
     }
 
+    func testStudioVoiceCreationOnPhone() throws {
+        let app = launch(extra: ["-NodusShowMingClone", "record"])
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        tapTab("Settings", in: app)
+        app.staticTexts["Voices & Models"].firstMatch.tap()
+        let studio = app.segmentedControls.buttons["Studio"].firstMatch
+        XCTAssertTrue(studio.waitForExistence(timeout: 10))
+        studio.tap()
+        XCTAssertTrue(app.buttons["Save Voice"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["Save Voice"].isEnabled)
+        XCTAssertTrue(app.textFields["StudioVoiceName"].exists)
+        XCTAssertTrue(app.buttons["Record"].exists)
+        snap("iPhone-Qwen-Record-Voice")
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.staticTexts["Install a model to create voices"].waitForExistence(timeout: 10))
+        snap("iPhone-Qwen-Studio")
+    }
+
+    func testProgressiveAudioQueueControlsOnPhone() throws {
+        let app = launch()
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        tapTab("Settings", in: app)
+        app.staticTexts["iCloud & Storage"].firstMatch.tap()
+        let open = app.buttons["Audio generation…"].firstMatch
+        for _ in 0..<4 where !open.isHittable { app.swipeUp() }
+        XCTAssertTrue(open.waitForExistence(timeout: 8)); open.tap()
+        let progressive = app.switches["ProgressiveOfflineAudio"]
+        XCTAssertTrue(progressive.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.steppers.containing(NSPredicate(format: "label CONTAINS %@", "Chapters or parts ready: 2")).firstMatch.exists)
+        snap("iPhone-Progressive-Audio-Queue")
+        // SwiftUI exposes the labelled row and the actual thumb as nested
+        // switches; tapping the row centre lands on non-interactive padding.
+        progressive.switches.firstMatch.tap()
+        let window = app.steppers.containing(NSPredicate(format: "label CONTAINS %@", "Chapters or parts ready:")).firstMatch
+        XCTAssertTrue(window.waitForNonExistence(timeout: 5))
+        app.buttons["Done"].tap()
+    }
+
+    func testStudioImportedClipSelectionOnPhone() throws {
+        let app = launch(extra: ["-NodusShowMingClone", "file", "-NodusStudioTrimSample", "-NodusSkipStudioTranscription"])
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        tapTab("Settings", in: app)
+        app.staticTexts["Voices & Models"].firstMatch.tap()
+        app.segmentedControls.buttons["Studio"].firstMatch.tap()
+        let start = app.sliders["Sample start"]
+        XCTAssertTrue(start.waitForExistence(timeout: 12))
+        start.adjust(toNormalizedSliderPosition: 0.2)
+        XCTAssertTrue(app.buttons["Listen / stop"].firstMatch.waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["Save Voice"].isEnabled)
+        snap("iPhone-Studio-Trim-Selection")
+        app.buttons["Cancel"].tap()
+    }
+
     func testPhoneScreens() throws {
         let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60),

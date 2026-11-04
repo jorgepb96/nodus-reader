@@ -1,0 +1,33 @@
+{
+  "repository": "itsmechico/qwen3-tts-0.6b-base-coreml-ane",
+  "revision": "71bae50834848f8a60aa88d112f62094ce844358",
+  "license": "Apache-2.0",
+  "purpose": "Experimental code predictor only; not the app model manifest. Zero noise retains greedy residual-code selection.",
+  "files": [
+    {
+      "path": "MultiCodeDecoder.mlmodelc/analytics/coremldata.bin",
+      "bytes": 243,
+      "sha256": "e8258ac1528f93582a4528eb40cecf85d07f7de7c68cbc553598b3c395d3f503"
+    },
+    {
+      "path": "MultiCodeDecoder.mlmodelc/coremldata.bin",
+      "bytes": 461,
+      "sha256": "ba9dc95cefc79e589a9b237ff880ecede5336150b8303fed2c1efd40f7610efa"
+    },
+    {
+      "path": "MultiCodeDecoder.mlmodelc/metadata.json",
+      "bytes": 3130,
+      "sha256": "7277d0a7b55e1ba228fc5a592a7f3c2e3d6482b690db36d5b5235e4cb8dccea4"
+    },
+    {
+      "path": "MultiCodeDecoder.mlmodelc/model.mil",
+      "bytes": 1486984,
+      "sha256": "685392d6e1ab955b011083833a92d4ef81ee032516d3400f97a4f93e030b97f4"
+    },
+    {
+      "path": "MultiCodeDecoder.mlmodelc/weights/weight.bin",
+      "bytes": 141804928,
+      "sha256": "b171c526dc46587b13bee9665e27d6c30cfdb2bf0248f14b67f820a854c24932"
+    }
+  ]
+}

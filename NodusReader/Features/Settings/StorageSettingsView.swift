@@ -16,6 +16,7 @@ struct StorageSettingsView: View {
     @State private var coversBytes: Int64 = 0
     @State private var ocrBytes: Int64 = 0
     @State private var isFreeingSpace = false
+    @State private var showAudioJobs = false
     /// The result of Free Space Now, shown only after the user asked for it.
     @State private var freedReport: StorageJanitor.Report?
 
@@ -24,7 +25,7 @@ struct StorageSettingsView: View {
     }
 
     private var modelBytes: Int64 {
-        models.storage.kokoroBytes + models.storage.phononBytes + models.storage.mingBytes
+        models.storage.kokoroBytes + models.storage.phononBytes + models.storage.mingBytes + models.storage.qwenBytes
     }
 
     private var audioBytes: Int64 {
@@ -97,6 +98,8 @@ struct StorageSettingsView: View {
                         }
                         legend(color: palette.accent.opacity(0.4),
                                text: "OCR cache \(ByteCountFormatter.string(fromByteCount: ocrBytes, countStyle: .file))")
+                        Button("Audio generation…") { showAudioJobs = true }
+                            .font(.caption.weight(.semibold)).foregroundStyle(palette.accent)
                         if audioBytes > 0 {
                             Button("Delete generated audio") {
                                 Task {
@@ -171,6 +174,7 @@ struct StorageSettingsView: View {
         }
         .background(palette.background)
         .navigationTitle("iCloud & Storage")
+        .sheet(isPresented: $showAudioJobs) { OfflineNarrationView().nodusPalette(palette) }
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)
         .toolbar {

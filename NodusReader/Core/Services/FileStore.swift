@@ -318,9 +318,14 @@ public enum ContentHash {
 
         var hasher = SHA256()
         while true {
-            let data = try handle.read(upToCount: 1024 * 1024) ?? Data()
-            if data.isEmpty { break }
-            hasher.update(data: data)
+            // FileHandle's NSData can outlive the Swift Data in an async
+            // worker's autorelease pool. Bound memory while hashing weights.
+            let count = try autoreleasepool { () throws -> Int in
+                let data = try handle.read(upToCount: 1024 * 1024) ?? Data()
+                hasher.update(data: data)
+                return data.count
+            }
+            if count == 0 { break }
         }
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }

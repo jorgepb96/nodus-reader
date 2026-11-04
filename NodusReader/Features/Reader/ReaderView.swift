@@ -796,7 +796,8 @@ struct ReaderView: View {
                 locator: ReadingLocator(chapterIndex: pageInfo.chapterIndex,
                                         scrollFraction: chapterFraction,
                                         pageIndex: pageInfo.pageIndex),
-                progress: overall
+                progress: overall,
+                characterOffset: readerPages.indices.contains(pageIndex) ? readerPages[pageIndex].chapterStartOffset : nil
             )
         case .pdf:
             guard hasTurnedPage, pdfPageCount > 0 else { return }

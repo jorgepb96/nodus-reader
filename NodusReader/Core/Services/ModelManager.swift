@@ -26,12 +26,14 @@ final class ModelManager {
         case phonon
         /// Ming 3.0 0.5B on MLX; offered only on the Mac.
         case ming
+        case qwen
 
         var label: String {
             switch self {
             case .kokoro: String(localized: "Kokoro")
             case .phonon: String(localized: "Phonon")
             case .ming: String(localized: "Ming")
+            case .qwen: String(localized: "Qwen")
             }
         }
     }
@@ -106,8 +108,9 @@ final class ModelManager {
         var kokoroBytes: Int64 = 0
         var phononBytes: Int64 = 0
         var mingBytes: Int64 = 0
+        var qwenBytes: Int64 = 0
         var narrationCacheBytes: Int64 = 0
-        var totalBytes: Int64 { kokoroBytes + phononBytes + mingBytes + narrationCacheBytes }
+        var totalBytes: Int64 { kokoroBytes + phononBytes + mingBytes + qwenBytes + narrationCacheBytes }
     }
 
     private(set) var states: [String: State] = [:]
@@ -134,11 +137,14 @@ final class ModelManager {
     }
     /// Which Phonon checkpoint `phonon` holds (English 31M or Spanish 40M).
     @ObservationIgnored private var phononModelID: String?
+    @ObservationIgnored private var qwen: QwenSpeech?
+    @ObservationIgnored private var qwenLoadTask: Task<QwenSpeech, Error>?
+    @ObservationIgnored private var qwenLoadToken = UUID()
     #if os(macOS)
     @ObservationIgnored private var ming: MingSpeech?
     #endif
-    /// Voices cloned for Ming on this Mac, and the bundled one.
-    private(set) var mingClones: [MingVoiceStore.ClonedVoice] = []
+    /// Device-local reference recordings shared by Qwen and, on Mac, Ming.
+    private(set) var studioVoices: [StudioVoiceStore.ClonedVoice] = []
 
     // Memory: loaded engines hold hundreds of MB of Core ML models (and Kokoro
     // MLX buffers). They are released when narration has not needed them for
@@ -212,6 +218,7 @@ final class ModelManager {
             default: phononDirectory
             }
         case .ming: mingDirectory
+        case .qwen: QwenModels.directory
         }
     }
 
@@ -287,7 +294,7 @@ final class ModelManager {
             phononLanguage: .spanish,
             installNote: String(localized: "Requires a Hugging Face account with access to this model. Sign in below after accepting Gradium's terms. The model is downloaded and prepared on this device: about 130 MB to download and 200 MB installed. For non-commercial use under CC BY-NC 4.0.")
         )
-    ] + ModelManager.macOnlyModels
+    ] + [ModelManager.qwenModel] + ModelManager.macOnlyModels
 
     init(voices: VoiceCatalog,
          audioCache: NarrationAudioCache = NarrationAudioCache(),
@@ -311,7 +318,9 @@ final class ModelManager {
         Self.excludeFromBackup(Self.phonon40SpanishDirectory)
         Self.excludeFromBackup(Self.phonon40MultilingualDirectory)
         Self.excludeFromBackup(Self.mingDirectory)
-        mingClones = MingVoiceStore.voices()
+        Self.excludeFromBackup(QwenModels.directory)
+        Self.excludeFromBackup(QwenModels.voiceCache)
+        studioVoices = StudioVoiceStore.voices()
         // Nothing is installing yet: any conversion folder was left by an
         // interrupted one.
         Self.removeInterruptedConversions(in: Self.modelsDirectory)
@@ -385,6 +394,8 @@ final class ModelManager {
             return PhononModels.isInstalled(at: directory(for: model))
         case .ming:
             return Self.mingCheckpointIsComplete(at: Self.mingDirectory)
+        case .qwen:
+            return QwenModels.isInstalled()
         }
     }
 
@@ -441,11 +452,14 @@ final class ModelManager {
             (Self.directorySize(Self.kokoroCacheDirectory),
              Self.directorySize(Self.phononDirectory) + Self.directorySize(Self.phonon40SpanishDirectory)
                 + Self.directorySize(Self.phonon40MultilingualDirectory),
-             Self.directorySize(Self.mingDirectory) + Self.directorySize(MingVoiceStore.directory))
+             Self.directorySize(Self.mingDirectory) + Self.directorySize(StudioVoiceStore.directory),
+             Self.directorySize(QwenModels.directory) + Self.directorySize(QwenModels.voiceCache)
+                + Self.directorySize(QwenModels.stagingDirectory))
         }.value
         summary.kokoroBytes = sizes.0
         summary.phononBytes = sizes.1
         summary.mingBytes = sizes.2
+        summary.qwenBytes = sizes.3
         summary.narrationCacheBytes = await audioCache.totalBytes()
         storage = summary
     }
@@ -501,10 +515,18 @@ final class ModelManager {
                 guard let self, self.installTasks[model.id] == nil,
                       self.states[model.id] == .notInstalled else { return }
                 try? FileManager.default.removeItem(at: directory)
+                if model.engine == .qwen { try? FileManager.default.removeItem(at: QwenModels.stagingDirectory) }
                 await self.refreshStorage()
             }
         }
         switch model.engine {
+        case .qwen:
+            qwen = nil
+            qwenLoadTask?.cancel()
+            qwenLoadTask = nil
+            qwenLoadToken = UUID()
+            try? FileManager.default.removeItem(at: QwenModels.directory)
+            try? FileManager.default.removeItem(at: QwenModels.stagingDirectory)
         case .kokoro:
             kokoro = nil
             try? FileManager.default.removeItem(at: Self.kokoroCacheDirectory)
@@ -532,6 +554,16 @@ final class ModelManager {
         states[model.id] = .downloading(0)
         do {
             switch model.engine {
+            case .qwen:
+                try await QwenModels.download { [weak self] fraction in
+                    Task { @MainActor [weak self] in
+                        guard let self, self.installTokens[model.id] == token else { return }
+                        self.states[model.id] = .downloading(fraction)
+                    }
+                }
+                try Task.checkCancellation()
+                // Load on the first utterance, so installing does not compete
+                // with an active narration engine for memory.
             case .kokoro:
                 let resources = try await KokoroResourceProvider.huggingFace(
                     cacheDirectory: Self.kokoroCacheDirectory
@@ -680,7 +712,7 @@ final class ModelManager {
         case .phonon:
             modelID = detected.languages == ["es"] ? Self.phonon40SpanishID
                 : detected.languages.count > 1 ? Self.phonon40MultilingualID : "phonon-31m-en"
-        case .ming: return
+        case .ming, .qwen: return
         }
         guard let model = models.first(where: { $0.id == modelID }) else { return }
         guard model.isAvailable else {
@@ -694,7 +726,7 @@ final class ModelManager {
         switch engine {
         case .kokoro: kokoro = nil
         case .phonon: phonon = nil
-        case .ming: return
+        case .ming, .qwen: return
         }
         states[model.id] = .loading
         do {
@@ -716,7 +748,7 @@ final class ModelManager {
             case .phonon:
                 phonon = try await Phonon.load(models: destination, language: model.phononLanguage)
                 phononModelID = model.id
-            case .ming:
+            case .ming, .qwen:
                 break
             }
             states[model.id] = .installed
@@ -778,6 +810,17 @@ final class ModelManager {
         }
         try await ensureLoaded(model)
         switch engine {
+        case .qwen:
+            guard let qwen else { throw NeuralNarrationError.engineNotLoaded("Qwen") }
+            let referenceID = name.hasPrefix(QwenSpeech.clonePrefix)
+                ? String(name.dropFirst(QwenSpeech.clonePrefix.count)) : "es-dave"
+            let language = name.hasPrefix(QwenSpeech.clonePrefix)
+                ? studioVoices.first { $0.id == referenceID }?.language ?? "es-ES"
+                : name
+            var samples = try await qwen.synthesize(text, referenceID: referenceID, language: language)
+            try Task.checkCancellation()
+            NarrationPCM.fadeEdges(&samples, sampleRate: QwenSpeech.sampleRate)
+            return (samples, QwenSpeech.sampleRate)
         case .kokoro:
             guard let kokoro else { throw NeuralNarrationError.engineNotLoaded("Kokoro") }
             if KokoroSpanish.isSpanishVoice(name) {
@@ -804,9 +847,9 @@ final class ModelManager {
             if name.hasPrefix(Self.mingClonePrefix) {
                 let id = String(name.dropFirst(Self.mingClonePrefix.count))
                 reference = try await Task.detached(priority: .userInitiated) {
-                    try MingVoiceStore.reference(id: id)
+                    try StudioVoiceStore.reference(id: id)
                 }.value
-                language = mingClones.first { $0.id == id }?.language ?? "en-US"
+                language = studioVoices.first { $0.id == id }?.language ?? "en-US"
             } else {
                 reference = nil
                 language = model.voices.first { $0.id == "ming:\(name)" }?.language ?? "en-US"
@@ -853,6 +896,20 @@ final class ModelManager {
         }
         defer { loadingEngine = nil }
         switch model.engine {
+        case .qwen:
+            guard qwen == nil else { return }
+            if !narrationInUse { releaseEngines(keeping: .qwen) }
+            loadingEngine = .qwen
+            // Preview and prefetch can arrive together: never load two copies
+            // of this checkpoint into a phone's memory.
+            let token = qwenLoadToken
+            let task = qwenLoadTask ?? Task { try await QwenSpeech.load(directory: QwenModels.directory) }
+            qwenLoadTask = task
+            defer { if qwenLoadToken == token { qwenLoadTask = nil } }
+            let loaded = try await task.value
+            try Task.checkCancellation()
+            guard qwenLoadToken == token else { throw CancellationError() }
+            qwen = loaded
         case .kokoro:
             // In the background the Metal placement is refused: reload on the
             // CPU (prefetched sentences cover the reload).
@@ -910,6 +967,7 @@ final class ModelManager {
     /// The engines whose models are in memory now.
     var loadedEngines: [Engine] {
         var engines = [kokoro != nil ? Engine.kokoro : nil, phonon != nil ? Engine.phonon : nil].compactMap { $0 }
+        if qwen != nil { engines.append(.qwen) }
         #if os(macOS)
         if ming != nil { engines.append(.ming) }
         #endif
@@ -963,6 +1021,12 @@ final class ModelManager {
     /// A sentence already being generated keeps its own reference until it
     /// finishes; the next one loads the engine again.
     private func releaseEngines(keeping engine: Engine?) {
+        if engine != .qwen {
+            qwen = nil
+            qwenLoadTask?.cancel()
+            qwenLoadTask = nil
+            qwenLoadToken = UUID()
+        }
         if engine != .phonon { phonon = nil }
         #if os(macOS)
         // Ming holds about 1.6 GB of weights on the GPU.
@@ -1071,7 +1135,7 @@ final class ModelManager {
                     (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 )
             }
-        case .ming:
+        case .ming, .qwen:
             // Loaded on the first sentence: 1.6 GB is not worth holding for a
             // library window that may never narrate.
             break
@@ -1083,7 +1147,15 @@ final class ModelManager {
 
     func voices(for model: Model) -> [Voice] {
         guard isInstalled(model) else { return [] }
-        return model.engine == .ming ? model.voices + mingClones.map(Self.voice(fromClone:)) : model.voices
+        switch model.engine {
+        case .ming: return model.voices + studioReferences(for: .ming).map(Self.voice(fromClone:))
+        case .qwen: return model.voices + studioVoices.filter { !$0.isBundled }.map(Self.qwenVoice(from:))
+        default: return model.voices
+        }
+    }
+
+    func studioReferences(for engine: Engine) -> [StudioVoiceStore.ClonedVoice] {
+        studioVoices.filter { engine == .qwen || StudioVoiceStore.languages.contains($0.language) }
     }
 
     private func publishVoices() {
@@ -1092,7 +1164,8 @@ final class ModelManager {
             let available = switch model.engine {
             case .kokoro: model.voices.filter { installedKokoro.contains(String($0.id.dropFirst("kokoro:".count))) }
             case .phonon: model.voices
-            case .ming: model.voices + mingClones.map(Self.voice(fromClone:))
+            case .ming: model.voices + studioReferences(for: .ming).map(Self.voice(fromClone:))
+            case .qwen: model.voices + studioVoices.filter { !$0.isBundled }.map(Self.qwenVoice(from:))
             }
             return available.map { voice in
                 VoiceCatalog.Voice(
@@ -1120,12 +1193,16 @@ final class ModelManager {
     /// it. "phonon:" is the 31M English checkpoint; books whose voice was
     /// chosen with an earlier build of 40M Spanish ("phonon:Alba") resolve to it.
     func model(forVoiceID voiceID: String) -> (model: Model, name: String)? {
+        if let qwen = models.first(where: { $0.engine == .qwen }) {
+            if voiceID.hasPrefix(QwenSpeech.clonePrefix) { return (qwen, voiceID) }
+            if voiceID.hasPrefix("qwen:") { return (qwen, String(voiceID.dropFirst("qwen:".count))) }
+        }
         if voiceID.hasPrefix("kokoro:"), let kokoro = models.first(where: { $0.engine == .kokoro }) {
             return (kokoro, String(voiceID.dropFirst("kokoro:".count)))
         }
         if let ming = models.first(where: { $0.engine == .ming }) {
             // A cloned voice keeps its prefix as its name: synthesis reads its clip.
-            if voiceID.hasPrefix(MingVoiceStore.voiceIDPrefix) { return (ming, voiceID) }
+            if voiceID.hasPrefix(StudioVoiceStore.voiceIDPrefix) { return (ming, voiceID) }
             if voiceID.hasPrefix("ming:") { return (ming, String(voiceID.dropFirst("ming:".count))) }
         }
         for model in models where model.engine == .phonon && model.id != "phonon-31m-en" {
@@ -1336,7 +1413,7 @@ final class ModelManager {
 
 extension ModelManager {
     static let mingID = "ming-3.0-0.5b-8bit"
-    static let mingClonePrefix = MingVoiceStore.voiceIDPrefix
+    static let mingClonePrefix = StudioVoiceStore.voiceIDPrefix
 
     /// Pinned revision of mlx-community/Ming-3.0-tts-0.5B-8bit, the checkpoint
     /// Nodus uses on the Mac; sizes and SHA-256 come from its model card files.
@@ -1502,7 +1579,7 @@ extension ModelManager {
         #endif
     }
 
-    static func voice(fromClone clone: MingVoiceStore.ClonedVoice) -> Voice {
+    static func voice(fromClone clone: StudioVoiceStore.ClonedVoice) -> Voice {
         Voice(id: clone.voiceID, name: clone.name, language: clone.language, engine: .ming)
     }
 
@@ -1538,31 +1615,34 @@ extension ModelManager {
 
     /// Saves a voice cloned from `clip` and lists it with Ming's voices.
     @discardableResult
-    func addMingVoice(_ clip: MingVoiceStore.PreparedClip, name: String, language: String, transcript: String,
-                      origin: MingVoiceStore.ClonedVoice.Origin, consent: Bool) throws -> MingVoiceStore.ClonedVoice {
-        let voice = try MingVoiceStore.save(clip, name: name, language: language, transcript: transcript,
+    func addStudioVoice(_ clip: StudioVoiceStore.PreparedClip, name: String, language: String, transcript: String,
+                      origin: StudioVoiceStore.ClonedVoice.Origin, consent: Bool) throws -> StudioVoiceStore.ClonedVoice {
+        let voice = try StudioVoiceStore.save(clip, name: name, language: language, transcript: transcript,
                                             origin: origin, consent: consent)
-        reloadMingVoices()
+        reloadStudioVoices()
         return voice
     }
 
-    func renameMingVoice(_ voice: MingVoiceStore.ClonedVoice, to name: String) throws {
+    func renameStudioVoice(_ voice: StudioVoiceStore.ClonedVoice, to name: String) throws {
         guard !voice.isBundled else { return }
-        try MingVoiceStore.rename(id: voice.id, to: name)
-        reloadMingVoices()
+        try StudioVoiceStore.rename(id: voice.id, to: name)
+        reloadStudioVoices()
     }
 
-    func deleteMingVoice(_ voice: MingVoiceStore.ClonedVoice) {
+    func deleteStudioVoice(_ voice: StudioVoiceStore.ClonedVoice) {
         guard !voice.isBundled else { return }
-        MingVoiceStore.delete(id: voice.id)
-        reloadMingVoices()
-        if voices.defaultVoiceID == voice.voiceID, let first = voices.neuralVoices.first {
+        StudioVoiceStore.delete(id: voice.id)
+        qwen = nil
+        try? FileManager.default.removeItem(at: QwenModels.voiceCache.appendingPathComponent(QwenModels.revision)
+            .appendingPathComponent(voice.id))
+        reloadStudioVoices()
+        if [voice.voiceID, QwenSpeech.clonePrefix + voice.id].contains(voices.defaultVoiceID), let first = voices.neuralVoices.first {
             voices.setDefault(first)
         }
     }
 
-    func reloadMingVoices() {
-        mingClones = MingVoiceStore.voices()
+    func reloadStudioVoices() {
+        studioVoices = StudioVoiceStore.voices()
         publishVoices()
         Task { await refreshStorage() }
     }

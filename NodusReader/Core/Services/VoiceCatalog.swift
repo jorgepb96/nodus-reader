@@ -44,14 +44,15 @@ public final class VoiceCatalog {
 
         public var displayName: String { name }
 
-        /// A voice the user cloned (or the bundled clip) in Studio for Ming.
-        public var isStudio: Bool { id.contains(MingVoiceStore.voiceIDPrefix) }
+        /// A voice the user cloned (or the bundled clip) in Studio.
+        public var isStudio: Bool { id.hasPrefix(StudioVoiceStore.voiceIDPrefix) || id.hasPrefix(QwenSpeech.clonePrefix) }
 
         public var engineLabel: String {
             if let modelName { return modelName }
             switch engineRaw {
             case "kokoro": return "Kokoro"
             case "phonon": return "Phonon"
+            case "qwen": return "Qwen"
             default: return String(localized: "Neural voice")
             }
         }

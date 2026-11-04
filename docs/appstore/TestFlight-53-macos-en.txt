@@ -1,0 +1,17 @@
+Nodus Reader 0.1.0 (53) — What to Test
+
+QWEN AND CUSTOM VOICES
+• New experimental Qwen3-TTS 0.6B: local narration and voice cloning on compatible Apple silicon Mac devices. Download is about 2.1 GB; first loading can take over a minute. Test download interruption/resume, switching models and deleting the model.
+• In Voices & Models → Studio, import audio or record your own voice. Select the start and duration, preview the clip and save multiple voices. Qwen accepts 3–20 second samples and Ming up to 30 seconds (6–15 recommended). Check that the transcript exactly matches the recording. Test renaming, selecting and deleting voices. Use your own voice or voices you have permission to use.
+• Try Spanish and other supported languages; report missing/repeated words, pronunciation, stability or crashes. Generation runs on your device. Live Qwen playback may pause: preparing audio in advance is recommended.
+
+AUDIO FOR LONG BOOKS
+• Player → Offline audio → Audio generation; also available in Settings → iCloud & Storage.
+• Generate the whole book or select “Follow my reading” with X chapters/parts: 2 includes the current and next part. Advancing should prepare the following parts without generating the entire book. Books without chapters use adjustable paragraph groups with complete sentence boundaries.
+• Test different installed models, EPUB/PDF/text, jumping forward/back and switching books. Check progress, completed chapters, playback of saved audio and text tracking/highlighting.
+• Pause, close and reopen the app; resume without losing completed audio. Delete one part, delete all generated audio, or remove only the job while keeping its audio. Check that live narration and voice previews take priority over background jobs.
+• On macOS, keep the app open to continue long generation jobs. Custom voices and generated audio are stored locally and do not sync through iCloud.
+
+PLAYBACK AND REGRESSIONS
+• Improved sentence prefetching to reduce gaps. Test longer sessions, speed changes, pause/resume, a locked screen, headphones and system controls with your usual models.
+• Send TestFlight feedback with your device, model/voice, language, steps and whether the app was foregrounded or the screen was locked. Do not attach private recordings or text without permission.

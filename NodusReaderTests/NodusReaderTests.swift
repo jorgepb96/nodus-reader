@@ -1799,6 +1799,15 @@ func voicesOfEveryInstalledModelAreListedAndRoutedToTheirModel() throws {
     #expect(manager.model(forVoiceID: "phonon-40m-multilingual:Alba")?.model.id == "phonon-40m-multilingual")
     #expect(manager.model(forVoiceID: "phonon-40m-multilingual:Alba")?.name == "Alba")
     #expect(manager.model(forVoiceID: "kokoro:bm_george")?.name == "bm_george")
+    #expect(manager.model(forVoiceID: "qwen:es-ES")?.model.id == QwenModels.id)
+    #expect(manager.model(forVoiceID: "qwen-clone:local-reference")?.model.engine == .qwen)
+    // A recording can be reused by both engines without colliding in the
+    // narration cache or changing an older book's saved Ming voice ID.
+    let recording = StudioVoiceStore.ClonedVoice(id: "local-reference", name: "My voice", language: "es-ES",
+        transcript: "Una grabación de referencia.", durationS: 8, createdAt: Date(), origin: .recorded)
+    #expect(recording.voiceID == "ming-clone:local-reference")
+    #expect(ModelManager.qwenVoice(from: recording).id == "qwen-clone:local-reference")
+    #expect(Set(ModelManager.qwenModel.voices.map(\.language)).count == 10)
     // Saved by builds where 40M Spanish voices were "phonon:<name>".
     #expect(manager.model(forVoiceID: "phonon:Lucía-Sol")?.model.id == "phonon-40m-es")
     // The same voice in two checkpoints stays two voices.
@@ -2550,12 +2559,12 @@ func reflowKeepsFootnotesAndContentsApart() throws {
     #expect(PDFReflowExtractor.contentsEntry("It happened in 1936", onContentsPage: false) == nil)
 }
 
-@Test("A cloned Ming voice needs a clip of 3 to 30 seconds, its words and consent")
+@Test("A Studio voice needs a clip of 3 to 30 seconds, its words and consent")
 @MainActor
 func mingVoiceStoreValidatesAndRoundTripsClips() throws {
     // About three characters a second, never fewer than twelve.
-    #expect(MingVoiceStore.minimumTranscriptCharacters(forDuration: 2) == 12)
-    #expect(MingVoiceStore.minimumTranscriptCharacters(forDuration: 10) == 30)
+    #expect(StudioVoiceStore.minimumTranscriptCharacters(forDuration: 2) == 12)
+    #expect(StudioVoiceStore.minimumTranscriptCharacters(forDuration: 10) == 30)
 
     // A 5 s tone at 22.05 kHz with half a second of silence on each side,
     // written as a file, comes back mono at 44.1 kHz with the silence trimmed.
@@ -2571,41 +2580,50 @@ func mingVoiceStoreValidatesAndRoundTripsClips() throws {
     samples.withUnsafeBufferPointer { buffer.floatChannelData![0].update(from: $0.baseAddress!, count: samples.count) }
     try AVAudioFile(forWriting: url, settings: format.settings).write(from: buffer)
 
-    let clip = try MingVoiceStore.prepare(url: url)
+    let clip = try StudioVoiceStore.prepare(url: url)
     #expect(abs(clip.durationS - 5.3) < 0.1)
     #expect(abs(clip.samples.map(abs).max()! - 0.89) < 0.01)
 
     // Saving checks consent, then length, then the transcript.
-    #expect(throws: MingVoiceStore.StoreError.missingConsent) {
-        try MingVoiceStore.save(clip, name: "Test", language: "es-ES", transcript: String(repeating: "a", count: 40),
+    #expect(throws: StudioVoiceStore.StoreError.missingConsent) {
+        try StudioVoiceStore.save(clip, name: "Test", language: "es-ES", transcript: String(repeating: "a", count: 40),
                                 origin: .imported, consent: false)
     }
-    #expect(throws: MingVoiceStore.StoreError.tooShort) {
-        try MingVoiceStore.save(MingVoiceStore.PreparedClip(samples: Array(clip.samples.prefix(44_100))), name: "Test",
+    #expect(throws: StudioVoiceStore.StoreError.tooShort) {
+        try StudioVoiceStore.save(StudioVoiceStore.PreparedClip(samples: Array(clip.samples.prefix(44_100))), name: "Test",
                                 language: "es-ES", transcript: String(repeating: "a", count: 40),
                                 origin: .imported, consent: true)
     }
-    #expect(throws: MingVoiceStore.StoreError.transcriptTooShort(16)) {
-        try MingVoiceStore.save(clip, name: "Test", language: "es-ES", transcript: "test.wav",
+    #expect(throws: StudioVoiceStore.StoreError.transcriptTooShort(16)) {
+        try StudioVoiceStore.save(clip, name: "Test", language: "es-ES", transcript: "test.wav",
                                 origin: .imported, consent: true)
     }
 
-    let saved = try MingVoiceStore.save(clip, name: " Test voice ", language: "es-ES",
+    let saved = try StudioVoiceStore.save(clip, name: " Test voice ", language: "es-ES",
                                         transcript: "Una frase leída despacio, palabra por palabra.",
                                         origin: .recorded, consent: true)
-    defer { MingVoiceStore.delete(id: saved.id) }
+    defer { StudioVoiceStore.delete(id: saved.id) }
     #expect(saved.name == "Test voice")
     #expect(saved.voiceID == "ming-clone:\(saved.id)")
-    #expect(MingVoiceStore.voices().contains { $0.id == saved.id && $0.origin == .recorded })
-    let reference = try MingVoiceStore.reference(id: saved.id)
+    #expect(StudioVoiceStore.voices().contains { $0.id == saved.id && $0.origin == .recorded })
+    let italian = try StudioVoiceStore.save(clip, name: "Italian test", language: "it-IT",
+        transcript: String(repeating: "a", count: 40), origin: .imported, consent: true)
+    defer { StudioVoiceStore.delete(id: italian.id) }
+    let suite = "nodus.tests.studio-languages.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    #expect(manager.studioReferences(for: .qwen).contains { $0.id == italian.id })
+    #expect(!manager.studioReferences(for: .ming).contains { $0.id == italian.id })
+    let reference = try StudioVoiceStore.reference(id: saved.id)
     #expect(reference.transcript == saved.transcript)
     #expect(abs(Double(reference.samples.count) / 44_100 - clip.durationS) < 0.05)
 
-    MingVoiceStore.delete(id: saved.id)
-    #expect(!MingVoiceStore.voices().contains { $0.id == saved.id })
+    StudioVoiceStore.delete(id: saved.id)
+    #expect(!StudioVoiceStore.voices().contains { $0.id == saved.id })
     // The bundled CC0 voice cannot be deleted.
-    MingVoiceStore.delete(id: "es-dave")
-    #expect(MingVoiceStore.voices().contains { $0.id == "es-dave" && $0.isBundled })
+    StudioVoiceStore.delete(id: "es-dave")
+    #expect(StudioVoiceStore.voices().contains { $0.id == "es-dave" && $0.isBundled })
 }
 
 @Test("Ming's built-in voices: 5 English and 101 Mandarin, each invocable and with a gender")

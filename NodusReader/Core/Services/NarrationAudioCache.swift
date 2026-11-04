@@ -140,6 +140,22 @@ actor NarrationAudioCache {
         try? fileManager.removeItem(at: bookDirectory(bookID: bookID))
     }
 
+    /// Check durable audio without loading the whole PCM sentence into RAM.
+    func contains(bookID: UUID, key: String) -> Bool {
+        let folder = bookDirectory(bookID: bookID)
+        guard let data = try? Data(contentsOf: folder.appendingPathComponent("\(key).json")),
+              let meta = try? JSONDecoder().decode(Meta.self, from: data), meta.duration.isFinite, meta.duration > 0,
+              let file = try? AVAudioFile(forReading: folder.appendingPathComponent("\(key).caf")) else { return false }
+        return file.length > 0
+    }
+
+    func delete(bookID: UUID, keys: [String]) {
+        let folder = bookDirectory(bookID: bookID)
+        for key in keys where !key.contains("/") && !key.contains("..") {
+            for ext in ["caf", "json"] { try? fileManager.removeItem(at: folder.appendingPathComponent("\(key).\(ext)")) }
+        }
+    }
+
     func deleteAll() {
         try? fileManager.removeItem(at: root)
         try? fileManager.createDirectory(at: root, withIntermediateDirectories: true)

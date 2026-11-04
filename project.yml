@@ -14,7 +14,7 @@ settings:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: minimal
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "52"
+    CURRENT_PROJECT_VERSION: "53"
     # English is the base language and Spanish the one translation: a device
     # in Spanish shows Spanish, any other language shows English.
     SWIFT_EMIT_LOC_STRINGS: YES
@@ -31,6 +31,8 @@ packages:
     path: Modules/DesignSystem
   PhononTTS:
     path: Modules/PhononTTS
+  QwenANE:
+    path: Modules/QwenANE
   ZIPFoundation:
     url: https://github.com/weichsel/ZIPFoundation
     from: 0.9.19
@@ -80,6 +82,8 @@ targets:
         product: ZIPFoundation
       - package: PhononTTS
         product: ptts
+      - package: QwenANE
+        product: QwenANE
       - package: KokoroCoreML
         product: KokoroTTS
       - package: MLXSwift

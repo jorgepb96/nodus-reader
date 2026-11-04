@@ -1,0 +1,816 @@
+{
+  "repository": "tinytrashlabs/Qwen3-TTS-0.6B-Base-ANE",
+  "revision": "551e82a5618b4804a51559bc508fece40d63b6a7",
+  "files": [
+    {
+      "path": "LICENSE",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "coreml/QwenSpeakerEncoder.mlmodelc/analytics/coremldata.bin",
+      "bytes": 243,
+      "sha256": "c18d23425aae8d879a2de9d95a2a7186261ca47db0fa35608fed26e27d6c1d84"
+    },
+    {
+      "path": "coreml/QwenSpeakerEncoder.mlmodelc/coremldata.bin",
+      "bytes": 397,
+      "sha256": "c8537702d99ef6b73f7f065dc42985eaea576cbe643e2d29a11dd33e6280cd96"
+    },
+    {
+      "path": "coreml/QwenSpeakerEncoder.mlmodelc/metadata.json",
+      "bytes": 2566,
+      "sha256": "985cbd62ca804d053168c1cf3110cdfcbe866128d6e68bd297a5883606dca72f"
+    },
+    {
+      "path": "coreml/QwenSpeakerEncoder.mlmodelc/model.mil",
+      "bytes": 148641,
+      "sha256": "9afbccf3934edef5bd5bf4e224b436a99c9606faef18d418b4eff7296cf26f60"
+    },
+    {
+      "path": "coreml/QwenSpeakerEncoder.mlmodelc/weights/weight.bin",
+      "bytes": 35488208,
+      "sha256": "4e4c1c052f69968470ec84dbb1b506014c3239b87283b18a41afb15368118624"
+    },
+    {
+      "path": "coreml/QwenSpeechEncoder.mlmodelc/analytics/coremldata.bin",
+      "bytes": 243,
+      "sha256": "f155bfe9d3af8895c34eb784591e07584cdb242dfd8096f9ccc8badc569186ca"
+    },
+    {
+      "path": "coreml/QwenSpeechEncoder.mlmodelc/coremldata.bin",
+      "bytes": 395,
+      "sha256": "fefb6e652cc2020b78a241d3f94aace779cc206bece00fb5ad124e6b2488a544"
+    },
+    {
+      "path": "coreml/QwenSpeechEncoder.mlmodelc/metadata.json",
+      "bytes": 2519,
+      "sha256": "05268899a25d42befad87cfc290eaac7ec75e0f078991944f132fc89484cffa0"
+    },
+    {
+      "path": "coreml/QwenSpeechEncoder.mlmodelc/model.mil",
+      "bytes": 201774,
+      "sha256": "dad3e4662383f286b747af36207380ddb841cc0e18c0c53374e699556a77a8ab"
+    },
+    {
+      "path": "coreml/QwenSpeechEncoder.mlmodelc/weights/weight.bin",
+      "bytes": 225029120,
+      "sha256": "e309e758adb2dd498527007449ec3020d8a4f98357b52839bcc0369df51ced5a"
+    },
+    {
+      "path": "coreml/cp_ane.mlmodelc/analytics/coremldata.bin",
+      "bytes": 243,
+      "sha256": "699ec328e73d9a8b93ca0c30520c12aa3256edf03a11b1460fe0101a69000f36"
+    },
+    {
+      "path": "coreml/cp_ane.mlmodelc/coremldata.bin",
+      "bytes": 325,
+      "sha256": "bb1911b87d803c1328ba5661beee27bed7d79303358504d67b8488b4369203f7"
+    },
+    {
+      "path": "coreml/cp_ane.mlmodelc/metadata.json",
+      "bytes": 2234,
+      "sha256": "5d59b866db3a3a93fc8bc399cab58cd75d1c884089ba1a867e8c8bdfeb5fe3aa"
+    },
+    {
+      "path": "coreml/cp_ane.mlmodelc/model.mil",
+      "bytes": 1353214,
+      "sha256": "86f24109eae0995c48232e9044518f74039ddbdf0998516e716100d79aaf9921"
+    },
+    {
+      "path": "coreml/cp_ane.mlmodelc/weights/weight.bin",
+      "bytes": 278996160,
+      "sha256": "c2fd2d5dc49c5bb0d5df46cf1dd61b22056765638158aa3fd17e1ae82ac178bd"
+    },
+    {
+      "path": "coreml/talker0.mlmodelc/analytics/coremldata.bin",
+      "bytes": 243,
+      "sha256": "39e57acd9221e4652f374f5f4afdb24f96b0cff9b1874d9428d0183181e67e4d"
+    },
+    {
+      "path": "coreml/talker0.mlmodelc/coremldata.bin",
+      "bytes": 1790,
+      "sha256": "ac534e979074145ca25c5bf0f154b3c77c1a70060cdb16ce7927304ccf65c196"
+    },
+    {
+      "path": "coreml/talker0.mlmodelc/metadata.json",
+      "bytes": 34310,
+      "sha256": "7b2dc7385838bfb8b219c3f8dbaf561acb0e03abf1ab5492bf4c2145b4f2f2c3"
+    },
+    {
+      "path": "coreml/talker0.mlmodelc/model.mil",
+      "bytes": 678030,
+      "sha256": "bef5eca1aaef1598cb3c742c05d5fb69e15ac58aedd22bcf3675622ecc4f4976"
+    },
+    {
+      "path": "coreml/talker0.mlmodelc/weights/weight.bin",
+      "bytes": 440496384,
+      "sha256": "eca6f7c3b395e669fdbad8249157badb87e37f710c0cc4a7575c1d23e20a5507"
+    },
+    {
+      "path": "coreml/talker1.mlmodelc/analytics/coremldata.bin",
+      "bytes": 243,
+      "sha256": "0ad16bd6f43189cbbd81ecd649fd4e81316322e46dc734ccb7d57f191f610c14"
+    },
+    {
+      "path": "coreml/talker1.mlmodelc/coremldata.bin",
+      "bytes": 1847,
+      "sha256": "c3035371443e54e9503ad0ccc65069ad685579f08bd96f91122fd79759dadbfc"
+    },
+    {
+      "path": "coreml/talker1.mlmodelc/metadata.json",
+      "bytes": 34991,
+      "sha256": "ea7d2da6b73a10c5c665cb9368aceb1723ba15c44af7a9942f085d43d14223fa"
+    },
+    {
+      "path": "coreml/talker1.mlmodelc/model.mil",
+      "bytes": 684937,
+      "sha256": "e1db0b159211ee0f0d9a6f1fe93cb204d28d9c992fa01d84c4ef6edc836561a3"
+    },
+    {
+      "path": "coreml/talker1.mlmodelc/weights/weight.bin",
+      "bytes": 446796224,
+      "sha256": "1b92edd79203f41af1874fa954c06f6f14a5e8a2140bf9cf40d92a9f56dfdf3e"
+    },
+    {
+      "path": "coreml/upF.mlmodelc/analytics/coremldata.bin",
+      "bytes": 243,
+      "sha256": "c41ae20762d88ac9e4530a5dffc5965b56828bcc8c0c7e84e04748a4c9a905fa"
+    },
+    {
+      "path": "coreml/upF.mlmodelc/coremldata.bin",
+      "bytes": 226,
+      "sha256": "204011d94ced808a3f22bde62cedad2f3cb9c09b4f540e6abf7dff29b689e4de"
+    },
+    {
+      "path": "coreml/upF.mlmodelc/metadata.json",
+      "bytes": 4082,
+      "sha256": "8d3a8fbdd76891304bdd0d63cf6ec8251e49f1f6ca5dccec7d04942f69cc00f2"
+    },
+    {
+      "path": "coreml/upF.mlmodelc/model.mil",
+      "bytes": 30363,
+      "sha256": "63b6c053f8c29bb5cdc95b4a09f4f48770d78c6023d26fe0de076cc10694ba9e"
+    },
+    {
+      "path": "coreml/upF.mlmodelc/weights/weight.bin",
+      "bytes": 128081472,
+      "sha256": "8505c6301e1c2e1bbc062272855561c861219ef20f93103d2aff00586f9fda2a"
+    },
+    {
+      "path": "coreml/upMall.mlmodelc/analytics/coremldata.bin",
+      "bytes": 243,
+      "sha256": "6bb84632e90a2c9b4d2404def9742a27cf1239f964948a65b377f98c7168f96f"
+    },
+    {
+      "path": "coreml/upMall.mlmodelc/coremldata.bin",
+      "bytes": 379,
+      "sha256": "cf31414fbea75023300ccac4ab0d783f1f1b607f232ad83eb1f704778cfeb0c1"
+    },
+    {
+      "path": "coreml/upMall.mlmodelc/metadata.json",
+      "bytes": 1928,
+      "sha256": "24adcc4bdb341b1955b5f7d5e89c19c0a19ab875bdfa81beeacc9cf4d974a05f"
+    },
+    {
+      "path": "coreml/upMall.mlmodelc/model.mil",
+      "bytes": 103056,
+      "sha256": "42a4e5e5c400901c3e2eaf47e654683144988411553ceec99c90592e68a0e8db"
+    },
+    {
+      "path": "coreml/upMall.mlmodelc/weights/weight.bin",
+      "bytes": 82739840,
+      "sha256": "0ea7dd92086062f515d2083a995c8715154e5b7aaa0318ffabbb353de397a296"
+    },
+    {
+      "path": "host/config.json",
+      "bytes": 478,
+      "sha256": "6f7df76654802a43def152ea37eb3329cfeea9f30db40c0294d9e254738fc59e"
+    },
+    {
+      "path": "host/cp_codec_embedding.npy",
+      "bytes": 125829248,
+      "sha256": "79c15c37c4907427c48129bc08c1746f5496430f15d7745aa3899aaba5158012"
+    },
+    {
+      "path": "host/talker_codec_embedding.npy",
+      "bytes": 12583040,
+      "sha256": "47fa9e30f98b1528fc9b332d314f22a32fa33e187509a4d3537f8b2c31199e39"
+    },
+    {
+      "path": "host/text_embedding_biases.npy",
+      "bytes": 9724032,
+      "sha256": "68af676ba2c7d546a535cec461b13d947a7f70608cf21ff1f0d2d1511ad45ad4"
+    },
+    {
+      "path": "host/text_embedding_q.npy",
+      "bytes": 155582592,
+      "sha256": "d69f2e5f10c9c69be7c63d0c6ec9b612c6d87d9938746e303062ec2e87e10d88"
+    },
+    {
+      "path": "host/text_embedding_scales.npy",
+      "bytes": 9724032,
+      "sha256": "54b57877e53e12b54c5dc557babf209e88f1a2f4d5f8eb0d40fbde09ade71256"
+    },
+    {
+      "path": "host/text_proj_linear_fc1_b.npy",
+      "bytes": 8320,
+      "sha256": "2ca292516e9574fa67e0174a49770051156246bb0679096f0514286091eea7c3"
+    },
+    {
+      "path": "host/text_proj_linear_fc1_w.npy",
+      "bytes": 16777344,
+      "sha256": "dda51d812d48d382a516895e024528f6328105d08c988a06a525ebd68fc404aa"
+    },
+    {
+      "path": "host/text_proj_linear_fc2_b.npy",
+      "bytes": 4224,
+      "sha256": "0725b7f7d0318f430723177d046eaf3b08c7a65d4a4a6dd264d61e574e66ff19"
+    },
+    {
+      "path": "host/text_proj_linear_fc2_w.npy",
+      "bytes": 8388736,
+      "sha256": "622562056e35f97af3266ed9efc187ceef73c38b1cb70829d50721bb52143654"
+    },
+    {
+      "path": "host/tokenizer.json",
+      "bytes": 4762740,
+      "sha256": "a2e18118ed0a096f6f7f1afa7e746ff77fe343bd2dc0d4da266dde0434b19958"
+    },
+    {
+      "path": "vochead/pre_conv.conv.bias.npy",
+      "bytes": 2176,
+      "sha256": "106a8ea5121ff28d038320eedb7e3bd33625277da549fc273d623abec93fdd09"
+    },
+    {
+      "path": "vochead/pre_conv.conv.weight.npy",
+      "bytes": 3145856,
+      "sha256": "60832fc60193a713e871133c1c97907215be600bf578df81cb3399a888b04e6b"
+    },
+    {
+      "path": "vochead/pre_transformer.input_proj.bias.npy",
+      "bytes": 1152,
+      "sha256": "c5c93a078c11f54d58ac0f51cd3e12c5be1ae339dc0fea8aaf53eadb1feae4f1"
+    },
+    {
+      "path": "vochead/pre_transformer.input_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "e38b121e4e1e954ceeb5a31fe1ecf2396e39f0c3295617d879cc7bd107ddb10b"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.0.input_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "da21ab3b625366b2862d452fc3b15c6f229e3e8bca98cd06398ab8484b3c3d86"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.0.mlp.down_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "c1ebb28ea6b73b48bc15cbe6280415185cfde1fe85a429da1c6be773191c5272"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.0.mlp.gate_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "95da6c21440ecb7149c8d30eded2c858ed6193aa24dbe32f49258f7886ec650c"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.0.mlp.up_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "8bb62cdd4f72077b4bcbd0eb847080d7cd7b97f011eb36c07b073393e1ec83c6"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.0.mlp_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "1613528fa07907c1325ecf0507ae4f4de152f5d1ab05816d0002d5c1e72ac6c7"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.0.post_attention_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "0adbdd536778e175bc56ca3ecd96934440fcc5ff75707844f742e87bec4773a5"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.0.self_attn.k_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "3b42d0e019b17ee2f8773d2f1baa7e931e777971e02d15292c9608ee9c40a7a7"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.0.self_attn.o_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "404dc54a1d6ca5c46d6448ea99dde725e21c0338c7007cbe6ac2a35f6d43b394"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.0.self_attn.q_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "474b5a97b4015dc1f468b9c49801895388ea733fc1dc79afe5a504ea2e4802c6"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.0.self_attn.v_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "fbd3957b6fa3b58e0fb4b410663976a727efaa4d9b79a0362dd21236ca04e399"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.0.self_attn_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "2e2c350efa83d07a0b54089005f06c72a2c0d0b449658e856952a69c617d7716"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.1.input_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "7f1fbc2d9a08db324cf5c30aadc75a27e715b0eaec2468f16ea1fca89a153d23"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.1.mlp.down_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "dec830e4576645263abcdee38f55f1ca8ae23a7684415d42aec1950419225a94"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.1.mlp.gate_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "9523232d6b1b0306fea5512dd18a44ff7405a24dc8e8e36ca41451692753d092"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.1.mlp.up_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "1d0b93bb275ca499ed1990de05a869920b775b432fcc68c0d85155f36f36427b"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.1.mlp_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "ddefc64f7c28fc18540765168a7c68eb6f0a24b37e931d9cf6ad4d68ef9e7859"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.1.post_attention_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "c673ce817a04c09756dcaaa5e72e7d129ed7e51a1d497bb162fc04d59144a393"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.1.self_attn.k_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "3da80a9c8899356432a99ce3719aad6e927e126d60f35f6bb8c7cba2de7a727d"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.1.self_attn.o_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "7aa1c46004e387646aa0c6284e8fc42318edb25b478115b571f44df29d8f06b0"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.1.self_attn.q_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "a12d62630d4b7bbefa9e98d76f0ba1fb448505b45ac4b1df3bfa0f660927aec2"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.1.self_attn.v_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "fa840081c1af76e0aabff1a25c4b588e4138486ea395549c4d6d8b798157119d"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.1.self_attn_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "65eb4df9712eaeb66869d4355c31cf2f45dd569e34027cecbd057cd5cee6262f"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.2.input_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "8749c229ec1451768926b693656e0e23fe130d73ab50833487f95a5ddb9e39f5"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.2.mlp.down_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "ff45dcde1560d6a78ff93e92e2999d4291656a626029e1b1ade8715b16d096df"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.2.mlp.gate_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "d1309b5e61f6f7ed53a37310e96a3ef6f795b9a488cefba0468aab7dbca932be"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.2.mlp.up_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "2f2c3a99bac378bf44fd2c996351e6ab37bd39ff384eb88cd8e6ff238ee30a25"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.2.mlp_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "8ec16a664295d7f9810ce48b7594091f7792b7dfa263fb06d3c1d14ee68b8191"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.2.post_attention_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "38a2f2837fb30aad7fff88b84d9c201d5fc92365f0b368821f403d960296aff6"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.2.self_attn.k_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "5b6bc9e525391a4468af6d8b2a3604e3a805cbadc3e2939d263573cb5b130cee"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.2.self_attn.o_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "553f44f11cd9c455e17f0687b7e01682af6e8d61cd8c9e22cd7ec0c4df604a0c"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.2.self_attn.q_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "df51c7f286903302e2bb07d1dbf53d20e33357fe5064145abc7d4e93709f7656"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.2.self_attn.v_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "46409efa3d1678031885acb17ed80727c8605666d41cffc514c497d0b3e09c14"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.2.self_attn_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "3a4f1b6f4ac9d3ef41908c171cd073e253a915857be7bfff11cda9ecc5468a4f"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.3.input_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "c468b5037609ca94ae36d44e65ab634f46c652b4f2d9d936c881708c96c4299a"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.3.mlp.down_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "2f51337ab3b1f619bce6ada636250b837e179244c57d0673d680d635ef5b1650"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.3.mlp.gate_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "955f78ec8a033b645b154aa88501575812d3faa1692725c778b61f422e2d6e34"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.3.mlp.up_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "86b0b447bf35a84b679bc2cfcf9d15c1137fd09666fbd709c4a25b13e46fdea3"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.3.mlp_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "a7559c86a7ebc8f453a8ff856c0b4be9dd3e33fd4dcc8bba65619fb7035ab4e1"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.3.post_attention_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "0e83f4ef34bf21de9d1eccca6c95a23fd87d1b3dd24900e263c50923a9ff56a1"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.3.self_attn.k_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "eaa31905db68fe2b226983c9fca87420997cbd42400fa46b376173f1abf115a3"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.3.self_attn.o_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "52ca6e7fb2a941db22f6c9ea04a7df37efc506bfa88f8a054ea098e7fccd66d7"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.3.self_attn.q_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "5676d5b8c86eaa5499a89d8341d1cac7d1a3c339f8e4800c99d1b231e6325021"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.3.self_attn.v_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "a1e67c97914547d4d2b46447c43f37f7e93232309407515457eb2ecf12cae9c4"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.3.self_attn_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "4a035ab50dd8f04c6b1cabdb6a724c5924e783ac7a06bc6812fb2a17687110af"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.4.input_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "49cd118b39713e8e383fcb00a3b81b0a5c284306b731c2a51625379b38e5d8db"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.4.mlp.down_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "20ebcdf29d8fecb243ffb7f2c9551a0e39392fdee2b87eeb1b41e4868f7a093a"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.4.mlp.gate_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "4c4a3d7d5372f54355ffd4617054c166f915bd69958a73be5f7c6ba8a2857a01"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.4.mlp.up_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "db97205bba9f67351c85c076ea2d553141e09c141f003f2932ecdf61b14c9d5d"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.4.mlp_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "8cb462d998e55ed6ddc7ff1d8287a401d0263d536b5125dab9b207eb69b899c1"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.4.post_attention_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "bbce035aa4a73258ecdb902793a5237be671210aa13065af561ab368b3383287"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.4.self_attn.k_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "ae869243ac02e1426119e720d2b82642d7ea66e185de5672cd28213d555be343"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.4.self_attn.o_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "5638f9ef99d3343526fb02e7eceed2dfef2ad572945497abcafd42ba3ce0c12f"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.4.self_attn.q_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "efbd8e54bb3fe1ea4a54b0b359a31182bd7b99c61b5d5a854c33d50c61558b0e"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.4.self_attn.v_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "1f7bf876c967f2e9ec89f2ea824d560542d9dc0e043068e468eef10fe537b6da"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.4.self_attn_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "e916f00417026af5c85c354d76d720aa882aa10b02d394f3224e8bd5776e810f"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.5.input_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "02e08d9c5b115f9b9ab7c6b3a1bf4123743031b3252772c6a7b4b8feb8f54d1a"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.5.mlp.down_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "b2278c9b64e7c429fb152cf08a56b99df8bc779de499cd4828410bae5c8306cb"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.5.mlp.gate_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "d3849ea12eea863183c0261051d6a51f5367a135fed4e0b2f35e12dc97d6070f"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.5.mlp.up_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "ded4b952d9aa545c930e749f0c4a9afcf8d70b6711c0802bd71143f6230edf17"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.5.mlp_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "de1523b8b90bd20885855f3c5bfb307a18e09c3e0513d3f89ba3632ec6f56b21"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.5.post_attention_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "661daca1bd6c0dea50a1a754cf1ed75f215ff8a0b7002eec3203130dd8b1152f"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.5.self_attn.k_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "8b26e2cb9aec7e577663a352ee6c9863faebd68d6798441c226be10137304e2f"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.5.self_attn.o_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "298f74e8b794f19dea37286989673fa8d1038ddc7abfc4878d616c36f782c0a1"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.5.self_attn.q_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "b054b388899dee9946f348f09ca89faa0f04329305938192461299ed1158678e"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.5.self_attn.v_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "ec3c54d5027d9fd64d1a38e5566529c53a3850ef1d7e02b83f05fac3525acea6"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.5.self_attn_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "e8a6c3616597cac3ab66002177f0fe430c60d4f348033775b81db22343afbd62"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.6.input_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "6ab04595fdc3bf57a19df4ad383c9079cd9c0bc14ea4e3b4fb3e8295dccc01cb"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.6.mlp.down_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "43702c8b9f5ed7f299f3b0e41efa523fc9fdaf8442d4e609b903ed37481079d1"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.6.mlp.gate_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "116a553f5f4c41829b3b5aa02af634683be549d7698e3f01098d5cdd22d09f2c"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.6.mlp.up_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "e233f17766276b7ccfd1590b896c42fdea4d5391515157868d5124ded293a6a5"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.6.mlp_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "4af360b27e74afc639474e8257602e7067dbc3c8ed34ec31d87bada80beb0dac"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.6.post_attention_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "07e9d9cc06b715efd507601f036bc3aadb6a15a7d24260aa0a4237f526cca6d7"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.6.self_attn.k_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "e922d8c25c995e92ef07af487306451fe7008a85940ea38f45d72b57a158d2ac"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.6.self_attn.o_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "4290cd7623fbcc868da34babeb9fae1e4d8cd2b51b95d01d289543f25b04d8c8"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.6.self_attn.q_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "5a02888f3af174193c92696b9daad6a80b83ac44093cd1d8b1f73150843d5a4e"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.6.self_attn.v_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "0990c02720918a6547c650405a155dd2161f8b43d4c8386ab8df57151d772869"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.6.self_attn_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "02f5d5846c9872a59ba51ea86683d2761f51b9540599c764f3a2ed3e4dc338ff"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.7.input_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "c294d991ca9490194f8d9744419bea7a7767b7e91f9803e2fb3a4196704371b2"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.7.mlp.down_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "156e7e4ea8cdee1872791d3d2820cb1be9128148274c1079266ff3877eeb9531"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.7.mlp.gate_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "bffefb4ae96710993951141ee5c519abbfd4d812d1700982d9f56a82837df268"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.7.mlp.up_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "6226b9ab6d00382e6d70de65f9725ddd1d77aafa612499aea02040ac02c7efa0"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.7.mlp_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "452208e50d492804521dd7fa06282274ad51a67fabf736b05e67708b5f81604a"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.7.post_attention_layernorm.weight.npy",
+      "bytes": 1152,
+      "sha256": "b6fa11bb40ae31857d2f4d0aab3198f8ecee40a65a53293581818335dc537c10"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.7.self_attn.k_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "20bae7fdf1720b7ddca4695d8b9e8707fa06ff7c1bb29b6f588c9ed2d883d22f"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.7.self_attn.o_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "6d3ea4ef4a17543f2f4ce9cde309138e2ddd6465be0e3f02c883c1afba0359e9"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.7.self_attn.q_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "49690fe20140aa7567d324044eb5f1a930f2f2aa81cabdbdb8d2f79e41468d74"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.7.self_attn.v_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "01fc685e22078a170e553ffad2fe4a7e1b1a05faf72ff191ae677e493768cf5d"
+    },
+    {
+      "path": "vochead/pre_transformer.layers.7.self_attn_layer_scale.scale.npy",
+      "bytes": 1152,
+      "sha256": "d872033b11907e3d977f5d0c528bcc43a2ebc62862f88790084e098ab1ca05cb"
+    },
+    {
+      "path": "vochead/pre_transformer.norm.weight.npy",
+      "bytes": 1152,
+      "sha256": "cc0d17824a17d955ff5941a4b565c046d4a56d898680f438c3fecdc6b528868b"
+    },
+    {
+      "path": "vochead/pre_transformer.output_proj.bias.npy",
+      "bytes": 2176,
+      "sha256": "397241d9b006228febad5699ab542558b05751cf6fbb72aa7e1290964f8bb969"
+    },
+    {
+      "path": "vochead/pre_transformer.output_proj.weight.npy",
+      "bytes": 1048704,
+      "sha256": "38cc5edfe86ead025cb99ac4dff6b49a3414ccb1244458f56234b04fee184a8d"
+    },
+    {
+      "path": "vochead/quantizer.rvq_first.input_proj.weight.npy",
+      "bytes": 262272,
+      "sha256": "560c8e0a29ba55093f9df5bad90adaa27993ab07597bdb0bc9a0ffb472b705da"
+    },
+    {
+      "path": "vochead/quantizer.rvq_first.output_proj.weight.npy",
+      "bytes": 262272,
+      "sha256": "e0ec48eb24f486768fe1bab8b50cdf15df6b26c004430d98c5564082bb2782c9"
+    },
+    {
+      "path": "vochead/quantizer.rvq_first.vq.layers.0._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "e78d70e402d8e2dc9c2f35ba2b3ad12328d5981196fadb894654585a71a82ba1"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.input_proj.weight.npy",
+      "bytes": 262272,
+      "sha256": "ed909f4e68eed7f345933662d91a689c02cb3d4b05f1d699b9acd41eed23962f"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.output_proj.weight.npy",
+      "bytes": 262272,
+      "sha256": "e52d3d7f4ee7e5e182bac7b6729957d0bd6b6bce838d53e694d15159002aa92c"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.0._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "26cd33af9b2cc91a39dfbccd4283d78b98e5276d466ff2ffb6eb816fee6b0bdf"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.1._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "ec5ce8e80f7570111cfff34902c48226b067f66f6cc246ad070954f30c070871"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.10._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "9e5427828a4fbd7b09676a3655627d9c120def26178e8fdc4fd0bc9c5cc83fc4"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.11._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "df159e149de95a7c032d375897dcf53c896049e325f0db29afa152fe292639df"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.12._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "14d8879aa18213f44de6bdc31d871706c85faff17e7c194e33afa1e57a256d30"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.13._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "5eda154f06e1a44691b1a1c6ae173639ebc7a49d3d8a83e3c57d07c5e1a73b3b"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.14._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "2b741f4b8891024e85da258551857874811bb88cdf3175ae357e80bec7cb5de7"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.2._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "5040c4c3600b43be39b4a36da7f263a695791a49791276e62eaf1fe071d04576"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.3._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "95ad0925d6051fad2c964f90e706fe749b4613ca5c27ebc81d743c3c4dba352a"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.4._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "37b64ebec3e3ba96b58d9fc6edeb599e8c0c41f227729144260a39cdb380945f"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.5._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "6cd08287e5347131daa05f5376c18cd10c9eca91fd7139d3c96f6ef58bede1e7"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.6._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "2a9d57b654c3047254efb4202d0b30dd4644bf4c6972d91413856ec4e02a898d"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.7._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "e42089114d374e12befda9cb3fbfbeb3702876ea8c6b692d06db53e053d6991b"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.8._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "a26e9606c08681227decde6e346c853620e43e9fcf7c381546501d5b4c8a0f4e"
+    },
+    {
+      "path": "vochead/quantizer.rvq_rest.vq.layers.9._codebook.embed.npy",
+      "bytes": 1048704,
+      "sha256": "15b72281594f4b329e1a7507079810602eabe37ac81cd46c13f16b903eb6abe4"
+    }
+  ]
+}

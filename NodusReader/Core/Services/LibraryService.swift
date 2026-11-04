@@ -5,6 +5,7 @@ import SwiftData
 import SwiftUI
 
 extension Notification.Name {
+    static let nodusReadingPositionChanged = Notification.Name("nodus.library.readingPositionChanged")
     static let nodusLibraryBooksDeleted = Notification.Name("nodus.library.booksDeleted")
 }
 
@@ -383,7 +384,7 @@ public final class LibraryService {
     }
 
     public func updateProgress(_ book: Book, locator: ReadingLocator, progress: Double,
-                               preservingNarrationPosition: Bool = true) {
+                               preservingNarrationPosition: Bool = true, characterOffset: Int? = nil) {
         var updated = locator
         if preservingNarrationPosition, updated.narrationPosition == nil {
             updated.narrationPosition = book.locator.narrationPosition
@@ -401,6 +402,12 @@ public final class LibraryService {
         }
         book.touch()
         save()
+        // PDF's stored fraction is for the whole document, not this page.
+        // Visual text readers can provide their exact first visible character.
+        var position: [String: Any] = ["bookID": book.id, "chapter": updated.chapterIndex,
+                                       "fraction": book.format == .pdf ? 0 : updated.scrollFraction]
+        if let offset = characterOffset ?? locator.narrationPosition?.characterOffset { position["offset"] = offset }
+        NotificationCenter.default.post(name: .nodusReadingPositionChanged, object: self, userInfo: position)
     }
 
     public func setFavorite(_ book: Book, isFavorite: Bool) {
