@@ -1,6 +1,17 @@
 # Public TestFlight beta
 
-## Current release — 3 November 2026
+## Current release — 4 November 2026
+
+Build **0.1.0 (53)** adds experimental Qwen voice cloning, Studio voice import/recording and persistent whole-book or progressive chapter audio generation.
+
+- iOS/iPadOS: **Internal** and **Nodus Reader — Public Beta**, externally **IN_BETA_TESTING**, beta review **APPROVED**.
+- macOS: **Internal only**, internally **IN_BETA_TESTING**, with no public-group assignment or beta-review submission.
+- The [public iOS link](https://testflight.apple.com/join/SjCk8AZ1) remains enabled; iOS builds on Apple silicon Macs remain disabled.
+- English (US) and Spanish (Spain) What to Test notes are saved and verified on both platforms. No App Store production release was submitted.
+
+See [build 53 verification and delivery](BUILD53_VERIFICATION.md).
+
+## Previous release — 3 November 2026
 
 Build **0.1.0 (52)** updates privacy, About and public documentation and is processed as **VALID** on both platforms.
 

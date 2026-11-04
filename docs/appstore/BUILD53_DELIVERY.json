@@ -1,0 +1,73 @@
+{
+  "verifiedAt": "2026-11-04T11:04:14.313146+01:00",
+  "version": "0.1.0",
+  "build": "53",
+  "distribution": {
+    "ios": {
+      "phase": "distributed",
+      "buildId": "558b2567-5716-43a8-b3c9-b1f944731c6a",
+      "groups": [
+        "6fca3f0a-fada-4405-a6a0-9357bab03698",
+        "b2c18bee-362c-4fc0-804a-6869fb3ee638"
+      ],
+      "notesVerified": [
+        "en-US",
+        "es-ES"
+      ],
+      "beta": {
+        "autoNotifyEnabled": true,
+        "internalBuildState": "IN_BETA_TESTING",
+        "externalBuildState": "IN_BETA_TESTING"
+      },
+      "review": {
+        "betaReviewState": "APPROVED",
+        "submittedDate": null
+      }
+    },
+    "mac": {
+      "phase": "distributed",
+      "buildId": "6ab96179-d732-4136-9422-699fd56beed1",
+      "groups": [
+        "6fca3f0a-fada-4405-a6a0-9357bab03698"
+      ],
+      "notesVerified": [
+        "en-US",
+        "es-ES"
+      ],
+      "beta": {
+        "autoNotifyEnabled": true,
+        "internalBuildState": "IN_BETA_TESTING",
+        "externalBuildState": "READY_FOR_BETA_SUBMISSION"
+      },
+      "review": null
+    }
+  },
+  "exports": [
+    {
+      "platform": "ios",
+      "version": "0.1.0",
+      "build": "53",
+      "sourceSnapshot": "working tree, build 53",
+      "package": "build/export-ios-53/Nodus Reader.ipa",
+      "bytes": 54245429,
+      "sha256": "72a324d526c1ab84041edde0855a6656c33d60f2085fbd1d232bda15163fc9b8",
+      "signatureVerified": true,
+      "productionICloud": true,
+      "architecture": "arm64"
+    },
+    {
+      "platform": "mac",
+      "version": "0.1.0",
+      "build": "53",
+      "sourceSnapshot": "working tree, build 53",
+      "package": "build/export-macOS-53/Nodus Reader.pkg",
+      "bytes": 49294488,
+      "sha256": "ab46b2e7c92ffacf8810b8d731202323094425a8efe7fd9468949a7c12975fc4",
+      "signatureVerified": true,
+      "productionICloud": true,
+      "architecture": "arm64"
+    }
+  ],
+  "iosBuildsOnAppleSiliconMac": false,
+  "appStoreProductionSubmission": false
+}
