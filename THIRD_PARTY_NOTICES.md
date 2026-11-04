@@ -54,6 +54,7 @@ Resolved versions are pinned in
 | Swift Numerics | <https://github.com/apple/swift-numerics> | 1.1.1 | Apache-2.0 with Runtime Library Exception | MLX Swift dependency |
 | NemoTextProcessing (binary) | <https://github.com/FluidInference/text-processing-rs> | v0.3.1 | Apache-2.0 | English text normalization for Kokoro |
 | `ptts` / PhononTTS | <https://github.com/gradium-ai/xn-ptts> | v0.4.1 (Swift sources vendored in `Modules/PhononTTS/`) | MIT OR Apache-2.0 | Phonon narration |
+| QwenANE, GVoiceKit, GVoiceProductionKit | <https://github.com/TinyTrashLabs/gloam-voice-studio> | `f46258b1889dd0c94d227c265831853f54fd9f7d`, vendored in `Modules/QwenANE/` | MIT, © 2026 TinyTrashLabs | Core ML Qwen speech and voice preparation; Mac `upMall` placement adapted, see `NODUS_VENDOR.md`. Full notice in `Modules/QwenANE/LICENSE` |
 | PhononCore (binary, **modified**) | xn-ptts v0.4.1, rebuilt by this project | `phononcore-0.4.1-nodus.1` release of this repository | MIT OR Apache-2.0 | Phonon runtime; see below |
 
 The MIT notices keep their copyright lines; the Apache-2.0 licence text is at

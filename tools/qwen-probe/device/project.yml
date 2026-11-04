@@ -1,0 +1,41 @@
+name: QwenDeviceProbe
+options:
+  deploymentTarget:
+    iOS: "18.0"
+packages:
+  QwenANE:
+    path: ../../../Modules/QwenANE
+targets:
+  QwenDeviceProbe:
+    type: application
+    platform: iOS
+    sources:
+      - path: QwenDeviceProbe.swift
+      - path: ../../../NodusReader/Resources/MingVoices/es-dave.wav
+        buildPhase: resources
+      - path: ../../../NodusReader/Resources/MingVoices/es-dave.txt
+        buildPhase: resources
+      - path: ../../../NodusReader/Resources/QwenModelManifest.json
+        buildPhase: resources
+    dependencies:
+      - package: QwenANE
+        product: QwenANE
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.nodus.reader.qwenprobe
+        PRODUCT_NAME: Nodus Qwen Check
+        DEVELOPMENT_TEAM: 6RPLS9EA4X
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: Nodus Qwen Check
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations: {}
+        UIBackgroundModes: [audio]
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true

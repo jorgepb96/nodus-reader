@@ -84,6 +84,7 @@ public final class PlaybackController {
     @ObservationIgnored private let defaults: UserDefaults
     public let voices: VoiceCatalog
     @ObservationIgnored private let models: ModelManager
+    let offlineAudio: OfflineNarrationQueue
 
     #if canImport(MediaPlayer) && os(iOS)
     /// The lock screen and Dynamic Island artwork, built once per book.
@@ -97,10 +98,9 @@ public final class PlaybackController {
     /// Sentences made ahead of the one playing (by index, with the voice that
     /// made them), so the next sentence starts without waiting for synthesis.
     @ObservationIgnored private var prefetched: [Int: (voiceID: String, key: String, narration: CachedNarration)] = [:]
-    @ObservationIgnored private var prefetchTask: Task<Void, Never>?
-    private static let prefetchDepth = 2
+    @ObservationIgnored private let prefetchWorker = NarrationPrefetchWorker()
+    @ObservationIgnored private var prefetchContext: String?
     @ObservationIgnored private var neuralProgressTask: Task<Void, Never>?
-    @ObservationIgnored private var cacheTask: Task<Void, Never>?
     @ObservationIgnored private var samplePlayer: AVAudioPlayer?
     @ObservationIgnored private var sampleTask: Task<Void, Never>?
     @ObservationIgnored private var sampleToken = UUID()
@@ -115,13 +115,13 @@ public final class PlaybackController {
     @ObservationIgnored private var neuralPlaybackToken = UUID()
     @ObservationIgnored private var neuralPaused = false
     @ObservationIgnored private var loadToken = UUID()
-    @ObservationIgnored private var cacheToken = UUID()
     @ObservationIgnored private var restartOnResume = false
     @ObservationIgnored private var restartVoiceOnResume = false
     @ObservationIgnored private var readerResumePosition: (bookID: UUID, chapterIndex: Int, offset: Int)?
     @ObservationIgnored private var pendingChapterSeek: (chapter: Int, offset: Int?, fraction: Double)?
     @ObservationIgnored private var voiceChangeObserver: NSObjectProtocol?
     @ObservationIgnored private var libraryDeletionObserver: NSObjectProtocol?
+    @ObservationIgnored private var readingPositionObserver: NSObjectProtocol?
     @ObservationIgnored private let synthesisGate = SynthesisGate()
 
     public private(set) var activeBook: Book?
@@ -137,7 +137,7 @@ public final class PlaybackController {
             if oldValue != isPlaying { updateNowPlaying() }
         }
     }
-    public private(set) var isLoading = false
+    public private(set) var isLoading = false { didSet { updateEngineUse() } }
     public private(set) var narrationFinished = false
     /// The loudest sample of the sentence playing (0…1). Immersive Audio keeps
     /// its own mix below what is left, so narration plus music never clips.
@@ -153,17 +153,26 @@ public final class PlaybackController {
     /// Tells the model manager whether narration needs the neural engine to
     /// stay in memory (it is released a few minutes after playback stops).
     private func updateEngineUse() {
-        models.setNarrationInUse(isPlaying || isPlayingSample)
+        let busy = isPlaying || isPlayingSample || isPreparingSample
+        models.setNarrationInUse(busy)
+        offlineAudio.setInteractiveBusy(isPreparingSample || isPlayingSample || (isPlaying && isLoading))
     }
     public private(set) var sampleVoiceID: String?
     /// The sample of `sampleVoiceID` is still being synthesised (a neural
     /// model may first have to load): its play button shows progress.
-    public private(set) var isPreparingSample = false
+    public private(set) var isPreparingSample = false {
+        didSet { updateEngineUse() }
+    }
     public private(set) var currentWordRange: NSRange?
     public private(set) var currentWord: String?
     public private(set) var audioCacheBytes: Int64 = 0
-    public private(set) var audioCacheProgress: Double?
-    public private(set) var isGeneratingAudioCache = false
+    public var audioCacheProgress: Double? { currentAudioJob?.progress }
+    public var isGeneratingAudioCache: Bool {
+        currentAudioJob.map { [.queued, .generating, .waiting, .caughtUp].contains($0.state.status) } ?? false
+    }
+    var currentAudioJob: OfflineNarrationQueue.Job? {
+        offlineAudio.jobs.last { $0.plan.bookID == activeBook?.id && $0.plan.voiceID == activeVoiceID }
+    }
     public var errorMessage: String?
     public var cacheErrorMessage: String?
     public var mode: ReadingMode = .listen
@@ -182,6 +191,8 @@ public final class PlaybackController {
         self.defaults = defaults
         self.voices = voices
         self.models = models
+        self.offlineAudio = OfflineNarrationQueue(root: library.fileStore.root.appendingPathComponent("AudioJobs", isDirectory: true),
+                                                  cache: models.narrationCache)
         let savedSpeed = defaults.double(forKey: Self.speedPreferenceKey)
         speedMultiplier = Self.speedOptions.contains(savedSpeed) ? savedSpeed : 1.0
         // Restore the audio rate as well as its label before any narration
@@ -207,9 +218,10 @@ public final class PlaybackController {
         ) { [weak self] notification in
             let ids = notification.userInfo?["ids"] as? [UUID] ?? []
             Task { @MainActor [weak self] in
-                guard let self, let activeID = self.activeBook?.id,
-                      ids.contains(activeID) else { return }
-                self.forgetDeletedBook()
+                guard let self else { return }
+                if let activeID = self.activeBook?.id, ids.contains(activeID) { self.forgetDeletedBook() }
+                let jobs = self.offlineAudio.jobs.filter { ids.contains($0.plan.bookID) }
+                for job in jobs { await self.offlineAudio.remove(job.id, deletingAudio: true) }
             }
         }
         voiceChangeObserver = NotificationCenter.default.addObserver(
@@ -219,7 +231,6 @@ public final class PlaybackController {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self, self.activeBook != nil else { return }
-                self.cancelAudioCacheGeneration()
                 let offset = self.currentWordRange?.location ?? self.neuralStartOffset
                 if self.isPlaying {
                     self.stopAudio()
@@ -239,6 +250,47 @@ public final class PlaybackController {
         observeAudioSession()
         #endif
         observeEngineConfiguration()
+        offlineAudio.configure(available: { [weak self] plan in
+            guard let self else { return false }
+            if self.isPlaying, self.activeBook?.id != plan.bookID || self.activeVoiceID != plan.voiceID { return false }
+            return self.library.allBooks().contains(where: { $0.id == plan.bookID }) && self.voices.voice(withID: plan.voiceID) != nil
+        }, idle: { [weak self] in
+            guard let self else { return false }
+            return !self.isLoading && !self.isPreparingSample && !self.isPlayingSample && !self.models.isSynthesizing && self.models.loadingEngine == nil
+        }, validate: { [weak self] plan in
+            guard let book = self?.library.allBooks().first(where: { $0.id == plan.bookID }),
+                  book.contentHash == plan.bookHash, book.pronunciationsJSON == plan.pronunciationRevision else {
+                throw OfflineNarrationQueue.QueueError.bookChanged
+            }
+        }, render: { [weak self] plan, sentence in
+            guard let self, let book = self.library.allBooks().first(where: { $0.id == plan.bookID }),
+                  book.contentHash == plan.bookHash, book.pronunciationsJSON == plan.pronunciationRevision,
+                  let voice = self.voices.voice(withID: plan.voiceID) else { throw OfflineNarrationQueue.QueueError.bookChanged }
+            _ = try await self.narration(for: sentence.text, voice: voice, book: book, background: true)
+        })
+        observeOfflineResources()
+        readingPositionObserver = NotificationCenter.default.addObserver(forName: .nodusReadingPositionChanged, object: nil, queue: .main) { [weak self] notification in
+            guard let bookID = notification.userInfo?["bookID"] as? UUID,
+                  let chapter = notification.userInfo?["chapter"] as? Int else { return }
+            let fraction = notification.userInfo?["fraction"] as? Double ?? 0
+            let offset = notification.userInfo?["offset"] as? Int
+            Task { @MainActor [weak self] in
+                self?.offlineAudio.updateReadingPosition(bookID: bookID, chapterIndex: chapter, fraction: fraction, offset: offset)
+            }
+        }
+    }
+
+    private func observeOfflineResources() {
+        withObservationTracking {
+            _ = models.isSynthesizing
+            _ = models.loadingEngine
+            _ = voices.allInstalledVoices
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.offlineAudio.resourcesDidChange()
+                self?.observeOfflineResources()
+            }
+        }
     }
 
     /// The output changed under a running engine (headphones, AirPlay, a new
@@ -253,7 +305,6 @@ public final class PlaybackController {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 guard self.activeBook?.id == observedID else { self.observePronunciations(); return }
-                self.cancelAudioCacheGeneration()
                 self.resetPrefetch()
                 guard let book = self.activeBook, self.sentences.indices.contains(self.currentIndex),
                       PronunciationTransformer.prepare(self.sentences[self.currentIndex].text, rules: previousRules).signature !=
@@ -621,6 +672,7 @@ public final class PlaybackController {
 
     public func pause() {
         captureNarrationTime()
+        suspendPrefetch()
         if isNeuralVoice {
             if audioPlayer.isPlaying {
                 audioPlayer.pause()
@@ -710,6 +762,7 @@ public final class PlaybackController {
                 neuralPaused = false
                 isPlaying = true
                 startNeuralProgress()
+                if let voice = activeVoice { schedulePrefetch(after: currentIndex, voice: voice) }
             } else {
                 speakCurrent(fromOffset: currentWordRange?.location ?? neuralStartOffset,
                              fromTime: neuralPositionTime)
@@ -728,8 +781,7 @@ public final class PlaybackController {
     /// The SwiftData object is already deleted; do not save progress into it.
     private func forgetDeletedBook() {
         let deletedBookID = activeBook?.id
-        let pendingCacheTask = cacheTask
-        cancelAudioCacheGeneration()
+        let generation = deletedBookID.flatMap { offlineAudio.cancel(bookID: $0) }
         sleepTask?.cancel()
         sleepTask = nil
         sleepTimer = .off
@@ -751,7 +803,7 @@ public final class PlaybackController {
         if let deletedBookID {
             let cache = models.narrationCache
             Task.detached {
-                _ = await pendingCacheTask?.value
+                _ = await generation?.value
                 await cache.deleteBook(bookID: deletedBookID)
             }
         }
@@ -774,7 +826,6 @@ public final class PlaybackController {
             restartVoiceOnResume = false
             readerResumePosition = nil
             pendingChapterSeek = nil
-            cancelAudioCacheGeneration()
             activeBook = nil
             narrationFinished = false
             chapters = []
@@ -914,7 +965,6 @@ public final class PlaybackController {
 
     public func setVoice(_ voice: VoiceCatalog.Voice) {
         guard let book = activeBook else { return }
-        cancelAudioCacheGeneration()
         library.setPreferredVoice(book, voiceID: voice.id)
         if isPlaying {
             let offset = currentWordRange?.location ?? 0
@@ -1048,72 +1098,54 @@ public final class PlaybackController {
         audioCacheBytes = await models.narrationCache.bytes(for: book.id)
     }
 
-    func generateAudioCacheForCurrentBook() {
+    func generateAudioCacheForCurrentBook(paragraphsPerBlock: Int = 10) {
         guard let book = activeBook, let voice = activeVoice else {
-            errorMessage = String(localized: "Choose a Kokoro or Phonon voice before generating audio.")
+            errorMessage = String(localized: "Choose a voice before generating audio.")
             return
         }
-        guard !isGeneratingAudioCache else { return }
-        let allSentences = sentences
-        guard !allSentences.isEmpty else { return }
-        isGeneratingAudioCache = true
-        audioCacheProgress = 0
         cacheErrorMessage = nil
-        let token = UUID()
-        cacheToken = token
-        let bookID = book.id
-        cacheTask = Task { [weak self] in
-            guard let self else { return }
-            var completed = 0
-            for sentence in allSentences {
-                guard !Task.isCancelled, token == self.cacheToken,
-                      self.activeBook?.id == bookID else { break }
-                do {
-                    _ = try await self.narration(for: sentence.text, voice: voice, book: book)
-                } catch {
-                    if !Task.isCancelled, token == self.cacheToken { self.cacheErrorMessage = error.localizedDescription }
-                    break
-                }
-                completed += 1
-                if token == self.cacheToken {
-                    self.audioCacheProgress = Double(completed) / Double(allSentences.count)
-                }
-            }
-            guard token == self.cacheToken else { return }
-            self.isGeneratingAudioCache = false
-            self.audioCacheProgress = nil
-            await self.refreshAudioCacheSize()
-            self.cacheTask = nil
-        }
+        do {
+            let plan = OfflineNarrationPlan.make(book: book, chapters: chapters, voice: voice,
+                                                  paragraphsPerBlock: paragraphsPerBlock, cache: models.narrationCache)
+            try offlineAudio.enqueue(plan)
+        } catch { cacheErrorMessage = error.localizedDescription }
+    }
+
+    func enqueueOfflineAudio(book: Book, voice: VoiceCatalog.Voice, paragraphsPerBlock: Int, lookAhead: Int? = nil) async throws {
+        let chapters = try await BookTextLoader.loadChapters(for: book, fileStore: library.fileStore)
+        let plan = OfflineNarrationPlan.make(book: book, chapters: chapters, voice: voice,
+                                              paragraphsPerBlock: paragraphsPerBlock, cache: models.narrationCache)
+        try offlineAudio.enqueue(plan, lookAhead: lookAhead)
+        offlineAudio.updateReadingPosition(bookID: book.id, chapterIndex: book.locator.chapterIndex, fraction: book.locator.scrollFraction)
     }
 
     func cancelAudioCacheGeneration() {
         cacheErrorMessage = nil
-        cacheToken = UUID()
-        cacheTask?.cancel()
-        cacheTask = nil
-        isGeneratingAudioCache = false
-        audioCacheProgress = nil
+        if let bookID = activeBook?.id { _ = offlineAudio.cancel(bookID: bookID) }
     }
 
     func deleteAudioCacheForCurrentBook() async {
         guard let book = activeBook else { return }
-        let task = cacheTask
         let playback = neuralTask
-        cancelAudioCacheGeneration()
-        await task?.value
+        let prefetch = suspendPrefetch()
+        let generation = offlineAudio.cancel(bookID: book.id)
         await playback?.value
+        await prefetch?.value
+        await generation?.value
         await models.narrationCache.deleteBook(bookID: book.id)
+        offlineAudio.resetProgress(bookID: book.id)
         await refreshAudioCacheSize()
     }
 
     func deleteAllNarrationCaches() async {
-        let task = cacheTask
         let playback = neuralTask
-        cancelAudioCacheGeneration()
-        await task?.value
+        let prefetch = suspendPrefetch()
+        let generation = offlineAudio.pauseAll()
         await playback?.value
+        await prefetch?.value
+        await generation?.value
         await models.narrationCache.deleteAll()
+        offlineAudio.resetProgress(bookID: nil)
         audioCacheBytes = 0
     }
 
@@ -1290,14 +1322,20 @@ public final class PlaybackController {
     /// The cache is checked again once synthesis is free, so a sentence a
     /// prefetch has just made is not made twice.
     private func narration(for text: String, voice: VoiceCatalog.Voice,
-                           book: Book) async throws -> CachedNarration {
+                           book: Book, background: Bool = false) async throws -> CachedNarration {
         let cache = models.narrationCache
         let revision = book.pronunciationsJSON
         let prepared = PronunciationTransformer.prepare(text, rules: book.pronunciations)
         let key = pronunciationKey(text, voice: voice, book: book)
         if let cached = await cache.load(bookID: book.id, key: key) { return cached }
-        return try await synthesisGate.run {
+        return try await synthesisGate.run(background: background) {
+            // A seek/stop can cancel a producer while it is queued behind
+            // playback or an offline job. Don't start new synthesis afterward.
+            try Task.checkCancellation()
+            if background, self.isLoading || self.isPreparingSample || self.isPlayingSample ||
+                (self.isPlaying && (self.activeBook?.id != book.id || self.activeVoiceID != voice.id)) { throw CancellationError() }
             if let cached = await cache.load(bookID: book.id, key: key) { return cached }
+            try Task.checkCancellation()
             let audio = try await self.withBackgroundTime {
                 try await self.synthesizeUnlocked(text: prepared.spoken, voice: voice)
             }
@@ -1319,30 +1357,51 @@ public final class PlaybackController {
         }
     }
 
-    /// Makes the next sentences while this one plays.
+    /// Keeps up to thirty seconds of future playback ready. Advancing normally
+    /// changes demand without cancelling an in-flight sentence.
     private func schedulePrefetch(after index: Int, voice: VoiceCatalog.Voice) {
-        guard let book = activeBook else { return }
-        let last = min(index + Self.prefetchDepth, sentences.count - 1)
-        guard last > index else { return }
-        prefetchTask?.cancel()
-        prefetchTask = Task { [weak self] in
-            for target in (index + 1)...last {
-                guard let self, !Task.isCancelled,
-                      self.activeBook?.id == book.id, self.sentences.indices.contains(target) else { return }
-                if let ready = self.prefetched[target], ready.voiceID == voice.id { continue }
-                let text = self.sentences[target].text
-                let key = self.pronunciationKey(text, voice: voice, book: book)
-                guard let made = try? await self.narration(for: text, voice: voice, book: book),
-                      !Task.isCancelled, self.activeBook?.id == book.id,
-                      self.pronunciationKey(text, voice: voice, book: book) == key else { return }
+        guard index == currentIndex, let book = activeBook else { return }
+        let context = "\(book.id)|\(voice.id)|\(book.pronunciationsJSON)"
+        if prefetchContext != context {
+            resetPrefetch()
+            prefetchContext = context
+        }
+        prefetchWorker.start(next: { [weak self] in
+            guard let self, self.isPlaying, !self.neuralPaused,
+                  self.activeBook?.id == book.id, self.prefetchContext == context else { return nil }
+            let start = self.currentIndex + 1
+            guard start < self.sentences.count else { return nil }
+            let end = min(start + 24, self.sentences.count)
+            let durations: [TimeInterval?] = (start..<end).map { target in
+                guard let ready = self.prefetched[target], ready.voiceID == voice.id,
+                      ready.key == self.pronunciationKey(self.sentences[target].text, voice: voice, book: book) else { return nil }
+                return ready.narration.duration
+            }
+            return NarrationPrefetchPolicy.nextOffset(durations: durations, rate: self.speedMultiplier).map { start + $0 }
+        }, produce: { [weak self] target in
+            guard let self else { throw CancellationError() }
+            let text = self.sentences[target].text
+            let key = self.pronunciationKey(text, voice: voice, book: book)
+            let made = try await self.narration(for: text, voice: voice, book: book)
+            try Task.checkCancellation()
+            guard self.activeBook?.id == book.id, self.prefetchContext == context,
+                  self.pronunciationKey(text, voice: voice, book: book) == key else { throw CancellationError() }
+            // The player may have consumed this sentence while synthesis was
+            // finishing. Its disk cache remains useful; don't retain old PCM.
+            if target > self.currentIndex {
                 self.prefetched[target] = (voice.id, key, made)
             }
-        }
+        })
+    }
+
+    @discardableResult
+    private func suspendPrefetch() -> Task<Void, Never>? {
+        prefetchWorker.cancel()
     }
 
     private func resetPrefetch() {
-        prefetchTask?.cancel()
-        prefetchTask = nil
+        suspendPrefetch()
+        prefetchContext = nil
         prefetched = [:]
     }
 
@@ -1350,6 +1409,7 @@ public final class PlaybackController {
     /// refused in the background). Pause cleanly: playing a node on a stopped
     /// engine raises an exception that closes the app.
     private func audioUnavailable() {
+        suspendPrefetch()
         audioPlayer.stop()
         neuralProgressTask?.cancel()
         neuralProgressTask = nil
@@ -1554,6 +1614,7 @@ public final class PlaybackController {
     }
 
     private func stopAudio(keepingEngine: Bool = false) {
+        if !keepingEngine { suspendPrefetch() }
         neuralTask?.cancel()
         neuralTask = nil
         neuralProgressTask?.cancel()
@@ -1777,9 +1838,10 @@ enum NeuralNarrationError: LocalizedError {
 private actor SynthesisGate {
     private var busy = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
+    private var backgroundWaiters: [CheckedContinuation<Void, Never>] = []
 
-    func run<T>(_ operation: () async throws -> T) async rethrows -> T {
-        await acquire()
+    func run<T>(background: Bool = false, _ operation: () async throws -> T) async rethrows -> T {
+        await acquire(background: background)
         do {
             let result = try await operation()
             release()
@@ -1790,21 +1852,24 @@ private actor SynthesisGate {
         }
     }
 
-    private func acquire() async {
+    private func acquire(background: Bool) async {
         if !busy {
             busy = true
             return
         }
         await withCheckedContinuation { continuation in
-            waiters.append(continuation)
+            if background { backgroundWaiters.append(continuation) }
+            else { waiters.append(continuation) }
         }
     }
 
     private func release() {
-        if waiters.isEmpty {
-            busy = false
-        } else {
+        if !waiters.isEmpty {
             waiters.removeFirst().resume()
+        } else if !backgroundWaiters.isEmpty {
+            backgroundWaiters.removeFirst().resume()
+        } else {
+            busy = false
         }
     }
 }

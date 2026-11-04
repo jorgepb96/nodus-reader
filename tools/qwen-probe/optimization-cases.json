@@ -1,0 +1,7 @@
+[
+  {"id":"es-short","language":"es","text":"La lluvia caía sobre la plaza mientras cerrábamos la biblioteca."},
+  {"id":"es-numbers","language":"es","text":"El diecinueve de noviembre, Lucía pagó veintitrés euros con cincuenta céntimos."},
+  {"id":"es-names","language":"es","text":"Jorge y María viajaron de Zaragoza a Guadalajara para visitar a Íñigo."},
+  {"id":"es-paragraph","language":"es","text":"Al abrir el libro, Elena encontró una carta entre las páginas. La había escrito su abuelo muchos años antes, durante un invierno especialmente frío. Decidió leerla despacio, junto a la ventana, mientras la ciudad despertaba."},
+  {"id":"en-cross-language","language":"en","text":"The library opened early, and the first readers arrived before the rain."}
+]

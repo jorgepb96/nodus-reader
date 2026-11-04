@@ -6,17 +6,12 @@ import SwiftUI
 enum VoicesMode: String, CaseIterable, Identifiable {
     case models = "Models"
     case voices = "Voices"
-    /// Voices the user records or adds from audio files for Ming, which only
-    /// runs on the Mac.
+    /// Device-local reference voices for Qwen and Ming.
     case studio = "Studio"
     var id: String { rawValue }
 
     static var available: [VoicesMode] {
-        #if os(macOS)
         allCases
-        #else
-        [.models, .voices]
-        #endif
     }
 }
 
@@ -107,11 +102,7 @@ struct VoicesView: View {
                 case .models:
                     modelsContent
                 case .studio:
-                    #if os(macOS)
                     StudioSection(onShowModels: { mode = .models })
-                    #else
-                    EmptyView()
-                    #endif
                 }
             }
             .padding(.horizontal, 20)

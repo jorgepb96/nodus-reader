@@ -11,6 +11,7 @@ struct PlayerView: View {
 
     @State private var showVoicePicker = false
     @State private var showPronunciations = false
+    @State private var showAudioJobs = false
 
     /// The app theme's palette, or the reader theme's when the player is
     /// opened from the reader: the player matches the screen it covers.
@@ -51,6 +52,7 @@ struct PlayerView: View {
         .sheet(isPresented: $showPronunciations) {
             if let book = playback.activeBook { PronunciationView(book: book) }
         }
+        .sheet(isPresented: $showAudioJobs) { OfflineNarrationView().nodusPalette(palette) }
         .sheet(isPresented: $showVoicePicker) {
             VoicePickerSheet()
                 .nodusPalette(palette)
@@ -85,6 +87,9 @@ struct PlayerView: View {
 
     private var audioCacheCard: some View {
         VStack(alignment: .leading, spacing: 10) {
+            Button("Audio generation…") { showAudioJobs = true }
+                .font(.system(size: 11, weight: .semibold)).foregroundStyle(palette.accent)
+                .nodusTextButtonStyle().accessibilityIdentifier("OpenOfflineAudioJobs")
             HStack(spacing: 10) {
                 Image(systemName: "internaldrive")
                     .font(.system(size: 15))
@@ -106,11 +111,12 @@ struct PlayerView: View {
                 ProgressView(value: playback.audioCacheProgress ?? 0)
                     .tint(palette.accent)
                 HStack {
-                    Text("Generating every sentence with \(playback.activeVoice?.name ?? String(localized: "this voice"))…")
+                    Text(playback.currentAudioJob?.state.status == .generating ? "Generating audio…" :
+                         playback.currentAudioJob?.state.status == .caughtUp ? "Window ready · follows your reading" : "Queued · resumes when voice engines are free")
                         .font(.system(size: 10))
                         .foregroundStyle(palette.muted)
                     Spacer()
-                    Button("Cancel") { playback.cancelAudioCacheGeneration() }
+                    Button("Pause") { playback.cancelAudioCacheGeneration() }
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(palette.accent)
                         .nodusTextButtonStyle()
@@ -136,7 +142,7 @@ struct PlayerView: View {
                     Spacer()
                 }
                 if !playback.isNeuralVoice {
-                    Text("Choose a Kokoro or Phonon voice to generate offline audio.")
+                    Text("Choose a voice to generate offline audio.")
                         .font(.system(size: 10))
                         .foregroundStyle(palette.muted)
                         .fixedSize(horizontal: false, vertical: true)

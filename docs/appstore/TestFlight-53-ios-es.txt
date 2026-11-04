@@ -1,0 +1,17 @@
+Nodus Reader 0.1.0 (53) — Qué probar
+
+QWEN Y VOCES PERSONALIZADAS
+• Nuevo Qwen3-TTS 0.6B experimental: narración y clonación local en iPhone/iPad compatibles. Descarga de unos 2,1 GB; la primera carga puede superar un minuto. Prueba descargar, interrumpir/reanudar la descarga, cambiar de modelo y eliminarlo.
+• En Voces y modelos → Studio, importa audio o graba tu propia voz. Escoge inicio y duración, escucha el recorte y guarda varias voces. Qwen admite muestras de 3 a 20 segundos (recomendados 6–15). Revisa que la transcripción coincida exactamente con lo grabado. Prueba renombrar, seleccionar y borrar voces. Usa solo tu voz o voces con permiso.
+• Prueba español y otros idiomas admitidos; comunica palabras omitidas/repetidas, pronunciación, estabilidad o cierres. La generación se realiza en el dispositivo. Qwen puede introducir pausas en directo: recomendamos preparar el audio antes de escucharlo.
+
+AUDIO PARA OBRAS LARGAS
+• Reproductor → Audio sin conexión → Generación de audio; también desde Ajustes → iCloud y almacenamiento.
+• Genera toda la obra o elige «Seguir mi lectura» con X capítulos/partes: 2 incluye el actual y el siguiente. Al avanzar, debe preparar los siguientes sin generar todo el libro. Sin capítulos, usa grupos ajustables de párrafos y límites de oración completos.
+• Prueba con distintos modelos instalados, EPUB/PDF/texto, saltos hacia delante y atrás y cambio de libro. Comprueba progreso, capítulos listos, reproducción de audio guardado y seguimiento/resaltado del texto.
+• Pausa, cierra y vuelve a abrir la app; reanuda sin perder lo ya preparado. Prueba eliminar el audio de una parte, eliminar todo o quitar solo la tarea conservando el audio. Comprueba que las tareas cedan prioridad a la narración y las previsualizaciones de voz.
+• En iOS, las generaciones largas requieren mantener la app abierta: el sistema puede suspender el trabajo en segundo plano y se retomará al volver. Las voces y el audio generado se guardan localmente; no se sincronizan por iCloud.
+
+REPRODUCCIÓN Y REGRESIONES
+• Mejor preparación de frases para reducir cortes. Prueba sesiones largas, cambios de velocidad, pausa/reanudación, pantalla bloqueada, auriculares y controles del sistema con los modelos habituales.
+• Envía comentarios desde TestFlight indicando dispositivo, modelo/voz, idioma, pasos y si ocurrió en primer plano o con pantalla bloqueada. Evita adjuntar audio o textos privados sin permiso.

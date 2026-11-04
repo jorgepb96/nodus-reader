@@ -3,11 +3,12 @@ import AVFoundation
 import Foundation
 import Speech
 
-/// Voices cloned for Ming from a short reference clip: recorded on this Mac or
+/// Reference recordings for Qwen and Ming: recorded on this device or
 /// added from an audio file, with the exact words spoken in it. Each voice is a
 /// folder with `reference.wav` (mono, 44.1 kHz, 16-bit) and `voice.json`, under
-/// Application Support. Like models, voices stay on this device and never sync.
-enum MingVoiceStore {
+/// Application Support. The original Ming folder is retained for compatibility.
+/// Like models, voices stay on this device and never sync.
+enum StudioVoiceStore {
     struct ClonedVoice: Codable, Identifiable, Hashable, Sendable {
         enum Origin: String, Codable, Sendable {
             case recorded
@@ -24,7 +25,7 @@ enum MingVoiceStore {
         var createdAt: Date
         var origin: Origin
 
-        var voiceID: String { MingVoiceStore.voiceIDPrefix + id }
+        var voiceID: String { StudioVoiceStore.voiceIDPrefix + id }
         var isBundled: Bool { origin == .bundled }
     }
 
@@ -62,6 +63,16 @@ enum MingVoiceStore {
     static let minimumSeconds: Double = 3
     static let recommendedSeconds: ClosedRange<Double> = 6...15
     static let maximumSeconds: Double = 30
+
+    /// Keep Qwen's reference within the portable 256-frame voice format.
+    /// Ming accepts up to thirty seconds. Only engines with cloning use Studio.
+    static func maximumSeconds(for engine: ModelManager.Engine) -> Double { engine == .qwen ? 20 : 30 }
+
+    static func duration(url: URL) throws -> Double {
+        guard let file = try? AVAudioFile(forReading: url), file.processingFormat.sampleRate.isFinite,
+              file.processingFormat.sampleRate > 0, file.length > 0 else { throw StoreError.unreadableAudio }
+        return Double(file.length) / file.processingFormat.sampleRate
+    }
 
     /// Languages Ming speaks, as the tag stored with a cloned voice.
     static let languages = ["es-ES", "en-US", "en-GB", "fr-FR", "de-DE", "zh-CN", "ja-JP", "ko-KR"]
@@ -185,6 +196,7 @@ enum MingVoiceStore {
     // MARK: Audio
 
     static func validate(_ clip: PreparedClip) throws {
+        guard clip.samples.allSatisfy(\.isFinite) else { throw StoreError.unreadableAudio }
         guard clip.durationS >= minimumSeconds else { throw StoreError.tooShort }
         guard clip.durationS <= maximumSeconds else { throw StoreError.tooLong }
     }
@@ -195,8 +207,34 @@ enum MingVoiceStore {
         let file: AVAudioFile
         do { file = try AVAudioFile(forReading: url) } catch { throw StoreError.unreadableAudio }
         let source = file.processingFormat
-        guard file.length > 0,
-              let input = AVAudioPCMBuffer(pcmFormat: source, frameCapacity: AVAudioFrameCount(file.length)),
+        // Check duration before allocating a buffer: an imported audiobook
+        // must not exhaust a phone's memory before the clip can be validated.
+        guard source.sampleRate > 0, Double(file.length) / source.sampleRate <= maximumSeconds + 5 else {
+            throw StoreError.tooLong
+        }
+        return try prepare(file: file, frames: file.length)
+    }
+
+    /// Seek into a long recording before allocating PCM. RAM use depends on
+    /// the selected reference, never on the imported audiobook's duration.
+    static func prepare(url: URL, start: Double, duration: Double, maximumSeconds: Double) throws -> PreparedClip {
+        guard start.isFinite, start >= 0, duration.isFinite, duration > 0,
+              duration <= maximumSeconds, maximumSeconds > 0, maximumSeconds <= Self.maximumSeconds else { throw StoreError.tooLong }
+        guard let file = try? AVAudioFile(forReading: url), file.processingFormat.sampleRate.isFinite,
+              file.processingFormat.sampleRate > 0 else { throw StoreError.unreadableAudio }
+        let rate = file.processingFormat.sampleRate
+        let total = Double(file.length) / rate
+        guard start < total else { throw StoreError.tooShort }
+        file.framePosition = AVAudioFramePosition((min(start, total) * rate).rounded(.down))
+        let frames = min(file.length - file.framePosition, AVAudioFramePosition((duration * rate).rounded(.down)))
+        let clip = try prepare(file: file, frames: frames)
+        return PreparedClip(samples: Array(clip.samples.prefix(Int(duration * sampleRate))))
+    }
+
+    private static func prepare(file: AVAudioFile, frames: AVAudioFramePosition) throws -> PreparedClip {
+        let source = file.processingFormat
+        guard frames > 0, frames <= Int64(UInt32.max),
+              let input = AVAudioPCMBuffer(pcmFormat: source, frameCapacity: AVAudioFrameCount(frames)),
               (try? file.read(into: input)) != nil,
               let target = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1),
               let converter = AVAudioConverter(from: source, to: target)
@@ -312,6 +350,12 @@ enum MingVoiceStore {
             ["この章では、研究の主要な仮説を分析します。結果は、亜鉛の濃度が工程の効率に直接影響することを示していますが、慎重に解釈する必要があります。"]
         case "ko":
             ["이 장에서는 연구의 주요 가설을 분석합니다. 결과는 아연 농도가 공정의 효율에 직접적인 영향을 준다는 것을 보여 주지만, 신중하게 해석해야 합니다."]
+        case "it":
+            ["La pioggia cadeva sulla piazza mentre chiudevamo la biblioteca. Il giorno dopo abbiamo deciso di rivedere le fonti, confrontare i risultati e scrivere una conclusione più precisa."]
+        case "pt":
+            ["A chuva caía sobre a praça enquanto fechávamos a biblioteca. No dia seguinte, decidimos rever as fontes, comparar os resultados e escrever uma conclusão mais precisa."]
+        case "ru":
+            ["Когда мы закрывали библиотеку, на площади шёл дождь. На следующий день мы решили ещё раз проверить источники, сравнить результаты и написать более точное заключение."]
         default:
             [
                 "In this chapter we examine the study's main hypothesis. The results suggest that zinc concentration directly affects the efficiency of the process, although they should be interpreted with caution.",
