@@ -165,9 +165,10 @@ struct MacRootView: View {
         // the inspector's toolbar area otherwise fall back to the system white
         // or grey when the window is resized or moves into full screen.
         .containerBackground(palette.background, for: .window)
-        // A transparent native toolbar lets each column's background reach
-        // the top without a separate grey/material strip above the sidebar.
-        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        // Give the native toolbar an explicit colour, including its separate
+        // full-screen host, instead of exposing the system grey material.
+        .toolbarBackground(palette.background, for: .windowToolbar)
+        .toolbarBackgroundVisibility(navigation.macReaderBookID == nil ? .visible : .hidden, for: .windowToolbar)
         .tint(palette.accent)
         .onChange(of: navigation.macReaderBookID != nil, initial: true) { _, reading in
             if reading {
