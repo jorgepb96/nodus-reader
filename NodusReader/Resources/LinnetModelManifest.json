@@ -1,0 +1,36 @@
+{
+  "repository": "VoxRT/linnet-en-35m",
+  "revision": "afd7578a5f5a9652788b9913bed9e7e961348062",
+  "files": [
+    {
+      "path": "linnet-en-35m.fp16.safetensors",
+      "bytes": 83075620,
+      "sha256": "af8186a83611498ddaf162d773d1318b13a0222a49f896c1ae05da00ecbce823"
+    },
+    {
+      "path": "tokenizer.model",
+      "bytes": 102075,
+      "sha256": "359994b0d226d0aa0b13d3a8401d6ad064ef2605b338ab7283bc64a67696850d"
+    },
+    {
+      "path": "voices/linnet-en-f1.npy",
+      "bytes": 14720,
+      "sha256": "fa3496447599a5a2f8075168c9795b8b8dc3f30490a35c0b4ad79c5aaf376145"
+    },
+    {
+      "path": "voices/linnet-en-m1.npy",
+      "bytes": 14720,
+      "sha256": "86e3ec59fb7de1cb13362638df5504b4c9d99670c3b0263c2f1642452a6e42d0"
+    },
+    {
+      "path": "WEIGHTS_LICENSE.md",
+      "bytes": 20920,
+      "sha256": "4d9b7f1ac6f0dba77f783647b6da4d0ba3359fddf23bef7565f05fc5bc634795"
+    },
+    {
+      "path": "model-card.md",
+      "bytes": 12279,
+      "sha256": "4a7726757e8d5de6663c3c7db9d061ad6976787a74ce7505e42e69574ffd6980"
+    }
+  ]
+}

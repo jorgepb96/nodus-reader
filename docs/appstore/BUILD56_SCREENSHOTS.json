@@ -1,0 +1,248 @@
+[
+  {
+    "locale": "en-US",
+    "set": "18e1266c-ed2a-47ce-9422-c98a8e7b5c88",
+    "display": "APP_IPAD_PRO_3GEN_129",
+    "files": [
+      "docs/appstore/screenshots/AppStore-iPad-20261105-en-01-Welcome.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-en-02-01-Home.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-en-03-02-Library.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-en-04-03-Reader.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-en-05-04-Search.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-en-06-05-ReadAndListen.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-en-07-06-Player.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-en-08-07-PDF.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-en-09-08-Settings.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-en-10-09-VoiceModels.png"
+    ],
+    "states": [
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE"
+    ],
+    "ids": [
+      "f9c00019-6e96-8246-8010-9d6b8eca5051",
+      "d8800019-6e96-8246-802b-77b44f37e59a",
+      "e7400019-6e96-8246-803c-7512d638c10a",
+      "6cc00019-6e96-8246-8024-19c9f72fc55a",
+      "de000019-6e96-8246-8008-2772664532a9",
+      "0b400019-6e96-8246-8017-577e39427711",
+      "76000019-6e96-8246-8012-181826353864",
+      "5a800019-6e96-8246-803e-2ad0a119c56f",
+      "27000019-6e96-8246-8025-b8d9cbe7c07f",
+      "0e800019-6e96-8246-8002-225fc07a5ad5"
+    ]
+  },
+  {
+    "locale": "en-US",
+    "set": "7496f100-8242-43c2-8805-3f8a13046b8f",
+    "display": "APP_IPHONE_67",
+    "files": [
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-en-01-Welcome.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-en-02-01-Home.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-en-03-02-Library.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-en-04-03-Reader.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-en-05-04-Search.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-en-06-05-ReadAndListen.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-en-07-06-Player.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-en-08-07-PDF.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-en-09-08-Settings.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-en-10-09-VoiceModels.png"
+    ],
+    "states": [
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE"
+    ],
+    "ids": [
+      "4f000019-6e96-8246-8018-8f08cb3711c1",
+      "99000019-6e96-8246-8015-54a4b6957971",
+      "78400019-6e96-8246-8007-ccc24f36ee37",
+      "c7c00019-6e96-8246-8031-0469df612602",
+      "1a000019-6e96-8246-8010-ee91fce5960b",
+      "8e800019-6e96-8246-802d-fc1b2ae9ef1f",
+      "f2c00019-6e96-8246-8003-350d177843bc",
+      "58400019-6e96-8246-802c-314fffc53fca",
+      "05c00019-6e96-8246-8001-b37ce1c17b5a",
+      "4a800019-6e96-8246-8001-05638e137329"
+    ]
+  },
+  {
+    "locale": "en-US",
+    "set": "cdd44531-63a5-49be-a491-95bf8da8a6a6",
+    "display": "APP_IPHONE_DUO",
+    "files": [
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-en-01-Welcome.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-en-02-01-Home.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-en-03-02-Library.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-en-04-03-Reader.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-en-05-03-Reader.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-en-06-05-ReadAndListen.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-en-07-06-Player.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-en-08-07-PDF.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-en-09-08-Settings.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-en-10-09-VoiceModels.png"
+    ],
+    "states": [
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE"
+    ],
+    "ids": [
+      "8ec00019-6e96-8246-8010-08d975b5621d",
+      "a7000019-6e96-8246-8021-4a2ded046a48",
+      "f4400019-6e96-8246-8001-53e54581609b",
+      "0a400019-6e96-8246-8037-12e9d794ab5f",
+      "73c00019-6e96-8246-803b-91e8c71dd3ab",
+      "b8400019-6e96-8246-8016-a09134ebb3cf",
+      "50400019-6e96-8246-8009-8735e0300738",
+      "51000019-6e96-8246-802f-258e13661366",
+      "70000019-6e96-8246-8038-28543e4547ee",
+      "21c00019-6e96-8246-8037-412d7c258343"
+    ]
+  },
+  {
+    "locale": "es-ES",
+    "set": "52db81f0-fc9b-4172-90c1-c95f15d5f688",
+    "display": "APP_IPAD_PRO_3GEN_129",
+    "files": [
+      "docs/appstore/screenshots/AppStore-iPad-20261105-es-01-Welcome.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-es-02-01-Home.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-es-03-02-Library.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-es-04-03-Reader.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-es-05-04-Search.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-es-06-05-ReadAndListen.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-es-07-06-Player.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-es-08-07-PDF.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-es-09-08-Settings.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261105-es-10-09-VoiceModels.png"
+    ],
+    "states": [
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE"
+    ],
+    "ids": [
+      "e3800019-6e96-8246-800b-c64987915f19",
+      "09000019-6e96-8246-802a-6d2434c5519a",
+      "d2000019-6e96-8246-802f-52847f53f53f",
+      "d3000019-6e96-8246-8013-a90650e81650",
+      "ef400019-6e96-8246-8022-27c832d2a87e",
+      "22400019-6e96-8246-8024-3df1009abefe",
+      "33800019-6e96-8246-800d-cf54942ce913",
+      "60000019-6e96-8246-803a-5cafccd57005",
+      "d1000019-6e96-8246-8000-ddb4ec84f0d0",
+      "2e800019-6e96-8246-801a-a81204718a3e"
+    ]
+  },
+  {
+    "locale": "es-ES",
+    "set": "07f4712e-379b-4f69-ae5d-3a5bfb1cb8fd",
+    "display": "APP_IPHONE_67",
+    "files": [
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-es-01-Welcome.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-es-02-01-Home.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-es-03-02-Library.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-es-04-03-Reader.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-es-05-04-Search.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-es-06-05-ReadAndListen.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-es-07-06-Player.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-es-08-07-PDF.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-es-09-08-Settings.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261105-es-10-09-VoiceModels.png"
+    ],
+    "states": [
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE"
+    ],
+    "ids": [
+      "47800019-6e96-8246-8002-0f42a6e7249b",
+      "9e800019-6e96-8246-803d-3c4afa039c21",
+      "b0400019-6e96-8246-802b-ab23a193bb5c",
+      "0b400019-6e96-8246-8025-4d6be4775099",
+      "65800019-6e96-8246-8013-7ba2019ebd37",
+      "62800019-6e96-8246-8026-8102249965f9",
+      "b7c00019-6e96-8246-803a-25e37e5f99f1",
+      "a1000019-6e96-8246-8016-b0ad90779a4b",
+      "c1400019-6e96-8246-8014-3734265f9be9",
+      "8ec00019-6e96-8246-8023-d80b48c1cee2"
+    ]
+  },
+  {
+    "locale": "es-ES",
+    "set": "a2d181bb-cc0f-4a9b-a969-725ad3782340",
+    "display": "APP_IPHONE_DUO",
+    "files": [
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-es-01-Welcome.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-es-02-01-Home.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-es-03-02-Library.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-es-04-03-Reader.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-es-05-03-Reader.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-es-06-05-ReadAndListen.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-es-07-06-Player.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-es-08-07-PDF.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-es-09-08-Settings.png",
+      "docs/appstore/screenshots/AppStore-iPhoneDuo-20261105-es-10-09-VoiceModels.png"
+    ],
+    "states": [
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE"
+    ],
+    "ids": [
+      "34400019-6e96-8246-801d-26a9848ad63c",
+      "aa400019-6e96-8246-8003-91c9cc0ea0a3",
+      "10c00019-6e96-8246-8039-946f5e42e4a6",
+      "c4800019-6e96-8246-801b-934bb28f8a36",
+      "b0800019-6e96-8246-8027-a17b4c871677",
+      "af800019-6e96-8246-8013-1bb710df98ae",
+      "0a800019-6e96-8246-8011-c640ed60968b",
+      "b6400019-6e96-8246-8020-11d6b7c26da7",
+      "7bc00019-6e96-8246-8039-6d30eae0a36a",
+      "b8c00019-6e96-8246-8025-53ef6ff7234a"
+    ]
+  }
+]

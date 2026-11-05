@@ -4,12 +4,15 @@ import AVFoundation
 import Foundation
 import KokoroTTS
 import Observation
+import OSLog
 import PhononTTS
 #if canImport(MediaPlayer)
 import MediaPlayer
 #endif
 #if os(iOS)
 import UIKit
+#elseif os(macOS)
+import AppKit
 #endif
 
 public enum SleepTimerOption: String, CaseIterable, Identifiable, Sendable {
@@ -86,8 +89,8 @@ public final class PlaybackController {
     @ObservationIgnored private let models: ModelManager
     let offlineAudio: OfflineNarrationQueue
 
-    #if canImport(MediaPlayer) && os(iOS)
-    /// The lock screen and Dynamic Island artwork, built once per book.
+    #if canImport(MediaPlayer)
+    /// System Now Playing artwork, built once per book.
     @ObservationIgnored private var nowPlayingArtwork: (bookID: UUID, artwork: MPMediaItemArtwork)?
     #endif
     @ObservationIgnored private let audioEngine = AVAudioEngine()
@@ -175,7 +178,13 @@ public final class PlaybackController {
     }
     public var errorMessage: String?
     public var cacheErrorMessage: String?
-    public var mode: ReadingMode = .listen
+    public var mode: ReadingMode = .listen {
+        didSet {
+            #if os(macOS)
+            if oldValue != mode { updateNowPlaying() }
+            #endif
+        }
+    }
     public private(set) var speedMultiplier: Double = 1.0
     public var sleepTimer: SleepTimerOption = .off
     public private(set) var sleepEndsAt: Date?
@@ -230,7 +239,9 @@ public final class PlaybackController {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                guard let self, self.activeBook != nil else { return }
+                guard let self else { return }
+                self.stopSamplePlayback()
+                guard self.activeBook != nil else { return }
                 let offset = self.currentWordRange?.location ?? self.neuralStartOffset
                 if self.isPlaying {
                     self.stopAudio()
@@ -327,7 +338,7 @@ public final class PlaybackController {
 
     private func pronunciationKey(_ text: String, voice: VoiceCatalog.Voice, book: Book) -> String {
         models.narrationCache.key(text: text, engine: voice.engineRaw, voice: voice.id,
-            pronunciation: PronunciationTransformer.prepare(text, rules: book.pronunciations).signature)
+            pronunciation: PronunciationTransformer.prepare(text, rules: book.pronunciations + (voice.engineRaw == "linnet" ? LinnetText.rules(text) : [])).signature)
     }
 
     private func observeEngineConfiguration() {
@@ -505,9 +516,11 @@ public final class PlaybackController {
         String(format: "%g×", speedMultiplier)
     }
 
+    private let voiceResolver = VoiceSelectionResolver()
+
     public var activeVoice: VoiceCatalog.Voice? {
         guard let book = activeBook else { return voices.defaultVoice }
-        return voices.narrationVoice(preferredID: book.preferredVoiceID, language: book.language)
+        return voiceResolver.resolve(book: book, catalog: voices, commit: false)
     }
 
     public var activeVoiceID: String? {
@@ -522,7 +535,7 @@ public final class PlaybackController {
     /// fallback voice is reading it instead.
     public var preferredVoiceIsMissing: Bool {
         guard let id = activeBook?.preferredVoiceID else { return false }
-        return voices.voice(withID: id) == nil
+        return activeVoice?.id != id
     }
 
     public var engineLabel: String {
@@ -547,6 +560,10 @@ public final class PlaybackController {
     public func start(book: Book, mode: ReadingMode = .listen,
                       startingSentence: String? = nil, wordOffset: Int = 0,
                       startingChapterIndex: Int? = nil, startingChapterOffset: Int? = nil) async {
+        if mode != .read,
+           voices.defaultVoiceID.hasPrefix("com.apple") || book.preferredVoiceID?.hasPrefix("com.apple") == true || voices.allInstalledVoices.isEmpty {
+            await voices.loadIfNeeded()
+        }
         if activeBook?.id == book.id {
             self.mode = mode
             if let startingChapterIndex, let startingChapterOffset,
@@ -582,6 +599,7 @@ public final class PlaybackController {
         stopSpeaking(clearBook: true)
         let token = UUID()
         loadToken = token
+        _ = voiceResolver.resolve(book: book, catalog: voices, commit: true)
         activeBook = book
         narrationFinished = false
         self.mode = mode
@@ -965,7 +983,12 @@ public final class PlaybackController {
 
     public func setVoice(_ voice: VoiceCatalog.Voice) {
         guard let book = activeBook else { return }
-        library.setPreferredVoice(book, voiceID: voice.id)
+        stopSamplePlayback()
+        if let engine = ModelManager.Engine(rawValue: voice.engineRaw) {
+            models.prepareForVoiceChange(to: engine)
+        }
+        library.setPreferredVoice(book, voiceID: voice.id, voice: voice)
+        voiceResolver.clear(bookID: book.id)
         if isPlaying {
             let offset = currentWordRange?.location ?? 0
             stopAudio()
@@ -1034,8 +1057,10 @@ public final class PlaybackController {
                 let audio = try await self.synthesize(text: sample, voice: voice)
                 guard !Task.isCancelled, token == self.sampleToken,
                       let buffer = self.makeBuffer(samples: audio.samples, sampleRate: audio.sampleRate) else {
-                    if token == self.sampleToken { self.isPreparingSample = false }
-                    self.isPlayingSample = false
+                    if token == self.sampleToken {
+                        self.isPreparingSample = false
+                        self.isPlayingSample = false
+                    }
                     return
                 }
                 let file = try AVAudioFile(forWriting: url, settings: buffer.format.settings,
@@ -1046,7 +1071,6 @@ public final class PlaybackController {
                 if ProcessInfo.processInfo.arguments.contains("-NodusSilentAudioTests") { player.volume = 0 }
                 #endif
                 guard token == self.sampleToken else {
-                    self.isPlayingSample = false
                     return
                 }
                 self.samplePlayer = player
@@ -1068,7 +1092,7 @@ public final class PlaybackController {
 
     /// Stops the sample being prepared or played.
     func previewPronunciation(_ text: String, book: Book) {
-        let voice = activeBook?.id == book.id ? activeVoice : voices.narrationVoice(preferredID: book.preferredVoiceID, language: book.language)
+        let voice = activeBook?.id == book.id ? activeVoice : voiceResolver.resolve(book: book, catalog: voices, commit: true)
         if let voice = voice ?? activeVoice { playSample(voice: voice, text: text) }
         else { errorMessage = String(localized: "Install a voice model to preview pronunciation.") }
     }
@@ -1194,8 +1218,7 @@ public final class PlaybackController {
 
     private func speakCurrent(fromOffset offset: Int = 0, fromTime time: TimeInterval? = nil) {
         guard let book = activeBook, sentences.indices.contains(currentIndex) else { return }
-        guard let voice = voices.narrationVoice(preferredID: book.preferredVoiceID,
-                                                language: book.language) else {
+        guard let voice = voiceResolver.resolve(book: book, catalog: voices, commit: true) else {
             errorMessage = String(localized: "No voice is available for this document.")
             return
         }
@@ -1258,6 +1281,7 @@ public final class PlaybackController {
             if cached == nil { restoredTime = nil }
         }
         if cached == nil {
+            Logger(subsystem: "ai.nodus.reader", category: "NarrationQueue").info("Waiting for uncached sentence index=\(index)")
             do {
                 cached = try await narration(for: text, voice: voice, book: book)
             } catch {
@@ -1325,7 +1349,7 @@ public final class PlaybackController {
                            book: Book, background: Bool = false) async throws -> CachedNarration {
         let cache = models.narrationCache
         let revision = book.pronunciationsJSON
-        let prepared = PronunciationTransformer.prepare(text, rules: book.pronunciations)
+        let prepared = PronunciationTransformer.prepare(text, rules: book.pronunciations + (voice.engineRaw == "linnet" ? LinnetText.rules(text) : []))
         let key = pronunciationKey(text, voice: voice, book: book)
         if let cached = await cache.load(bookID: book.id, key: key) { return cached }
         return try await synthesisGate.run(background: background) {
@@ -1342,8 +1366,10 @@ public final class PlaybackController {
             // Phonon returns the partial audio it managed to produce when a
             // task is cancelled. Never cache that as a complete sentence.
             try Task.checkCancellation()
-            let aligned = await Self.alignWords(text: prepared.spoken, samples: audio.samples,
-                                              sampleRate: audio.sampleRate, language: voice.language)
+            let aligned: [NarrationWordTiming]
+            if let words = audio.words { aligned = words }
+            else if audio.checkedWords { aligned = AudioWordAligner.align(text: prepared.spoken, samples: audio.samples, sampleRate: audio.sampleRate) }
+            else { aligned = await Self.alignWords(text: prepared.spoken, samples: audio.samples, sampleRate: audio.sampleRate, language: voice.language) }
             guard book.pronunciationsJSON == revision else { throw CancellationError() }
             let words = prepared.project(aligned)
             try Task.checkCancellation()
@@ -1431,10 +1457,7 @@ public final class PlaybackController {
         return try await work()
     }
 
-    private struct NeuralAudio {
-        var samples: [Float]
-        var sampleRate: Double
-    }
+    private typealias NeuralAudio = NarrationSynthesis
 
     private func synthesize(text: String, voice: VoiceCatalog.Voice) async throws -> NeuralAudio {
         try await synthesisGate.run {
@@ -1447,7 +1470,7 @@ public final class PlaybackController {
             throw NeuralNarrationError.engineNotLoaded(voice.engineRaw)
         }
         let audio = try await models.synthesize(text, voiceID: voice.id, engine: engine)
-        return NeuralAudio(samples: audio.samples, sampleRate: audio.sampleRate)
+        return audio
     }
 
     private func makeBuffer(samples: [Float], sampleRate: Double) -> AVAudioPCMBuffer? {
@@ -1728,7 +1751,7 @@ public final class PlaybackController {
     }
 
     private func configureRemoteCommands() {
-        #if canImport(MediaPlayer) && os(iOS)
+        #if canImport(MediaPlayer)
         let center = MPRemoteCommandCenter.shared()
         center.playCommand.isEnabled = true
         center.pauseCommand.isEnabled = true
@@ -1739,6 +1762,16 @@ public final class PlaybackController {
         // not suggest; the lock screen shows previous/next sentence instead.
         center.skipForwardCommand.isEnabled = false
         center.skipBackwardCommand.isEnabled = false
+        #if os(macOS)
+        // There is no full-book time-based seek for generated narration.
+        center.changePlaybackPositionCommand.isEnabled = false
+        center.seekForwardCommand.isEnabled = false
+        center.seekBackwardCommand.isEnabled = false
+        center.stopCommand.addTarget { [weak self] _ in
+            Task { @MainActor in self?.stopAndClose() }
+            return .success
+        }
+        #endif
 
         center.playCommand.addTarget { [weak self] _ in
             Task { @MainActor in self?.resume() }
@@ -1768,52 +1801,101 @@ public final class PlaybackController {
             Task { @MainActor in self?.previousChapter() }
             return .success
         }
+        #if os(macOS)
+        updateNowPlaying()
+        #endif
         #endif
     }
 
     private func updateNowPlaying() {
-        #if canImport(MediaPlayer) && os(iOS)
+        #if canImport(MediaPlayer)
+        let infoCenter = MPNowPlayingInfoCenter.default()
+        #if os(macOS)
+        let hasNarration = activeBook != nil && mode != .read && !sentences.isEmpty
+        let commands = MPRemoteCommandCenter.shared()
+        commands.playCommand.isEnabled = hasNarration
+        commands.pauseCommand.isEnabled = hasNarration
+        commands.togglePlayPauseCommand.isEnabled = hasNarration
+        commands.nextTrackCommand.isEnabled = hasNarration
+        commands.previousTrackCommand.isEnabled = hasNarration
+        commands.stopCommand.isEnabled = hasNarration
+        guard hasNarration else {
+            infoCenter.playbackState = .stopped
+            infoCenter.nowPlayingInfo = nil
+            nowPlayingArtwork = nil
+            return
+        }
+        #endif
         guard let book = activeBook else {
-            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            infoCenter.nowPlayingInfo = nil
             return
         }
         var info: [String: Any] = [
             MPMediaItemPropertyTitle: book.title,
             MPMediaItemPropertyArtist: book.displayAuthor,
             MPMediaItemPropertyAlbumTitle: chapterTitle,
-            MPNowPlayingInfoPropertyPlaybackRate: isPlaying ? 1.0 : 0.0,
-            MPNowPlayingInfoPropertyElapsedPlaybackTime: Double(currentIndex),
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue
         ]
+        #if os(macOS)
+        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? speedMultiplier : 0.0
+        info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = speedMultiplier
+        // A sentence index is not elapsed seconds. Omit the timeline until
+        // a complete narration duration is known.
+        #else
+        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = Double(currentIndex)
+        #endif
         info[MPNowPlayingInfoPropertyPlaybackQueueCount] = sentences.count
         info[MPNowPlayingInfoPropertyPlaybackQueueIndex] = currentIndex
         if let artwork = artwork(for: book) {
             info[MPMediaItemPropertyArtwork] = artwork
         }
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        infoCenter.nowPlayingInfo = info
+        #if os(macOS)
+        // macOS has no AVAudioSession to infer this state from.
+        infoCenter.playbackState = isPlaying ? .playing : (narrationFinished ? .stopped : .paused)
+        #endif
         #endif
     }
 
-    #if canImport(MediaPlayer) && os(iOS)
+    #if canImport(MediaPlayer)
     /// The book's cover, or the same typographic cover the library draws when
     /// the book has none (or it has not downloaded yet).
     private func artwork(for book: Book) -> MPMediaItemArtwork? {
         if let cached = nowPlayingArtwork, cached.bookID == book.id { return cached.artwork }
+        #if os(macOS)
+        let data = library.fileStore.coverURL(for: book.coverFileName)
+            .flatMap { try? Data(contentsOf: $0) }
+            .flatMap { NSImage(data: $0) == nil ? nil : $0 }
+            ?? CoverGenerator.typographicCover(title: book.title, author: book.displayAuthor)
+        guard let data, let image = NSImage(data: data) else { return nil }
+        let artwork = Self.makeArtwork(data, boundsSize: image.size)
+        #else
         let image = library.fileStore.coverURL(for: book.coverFileName)
             .flatMap { UIImage(contentsOfFile: $0.path) }
             ?? CoverGenerator.typographicCover(title: book.title, author: book.displayAuthor)
                 .flatMap { UIImage(data: $0) }
         guard let image else { return nil }
         let artwork = Self.makeArtwork(image)
+        #endif
         nowPlayingArtwork = (book.id, artwork)
         return artwork
     }
 
     /// Built outside the main actor: MediaPlayer calls the image handler on
     /// its own queue.
+    #if os(macOS)
+    private nonisolated static func makeArtwork(_ data: Data, boundsSize: CGSize) -> MPMediaItemArtwork {
+        MPMediaItemArtwork(boundsSize: boundsSize) { size in
+            // Decode per request instead of sharing a mutable NSImage across queues.
+            NSImage(data: data) ?? NSImage(size: size)
+        }
+    }
+    #else
     private nonisolated static func makeArtwork(_ image: UIImage) -> MPMediaItemArtwork {
         MPMediaItemArtwork(boundsSize: image.size) { _ in image }
     }
+    #endif
     #endif
 }
 
@@ -1826,53 +1908,11 @@ enum NeuralNarrationError: LocalizedError {
         case .engineNotLoaded(let engine):
             String(localized: "The \(engine) engine is not loaded. Open Settings › Voices & Models and install it again.")
         case .invalidAudio:
-            String(localized: "The neural engine returned audio in an unsupported format.")
+            String(localized: "The voice could not generate usable audio. Try again or choose another voice.")
         }
     }
 }
 
-
-/// Serialises neural synthesis across playback and offline-cache generation.
-/// Phonon keeps a single mutable voice per engine, so `setVoice` and `speak`
-/// must run as one unit; Kokoro gets the same protection for predictable memory.
-private actor SynthesisGate {
-    private var busy = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
-    private var backgroundWaiters: [CheckedContinuation<Void, Never>] = []
-
-    func run<T>(background: Bool = false, _ operation: () async throws -> T) async rethrows -> T {
-        await acquire(background: background)
-        do {
-            let result = try await operation()
-            release()
-            return result
-        } catch {
-            release()
-            throw error
-        }
-    }
-
-    private func acquire(background: Bool) async {
-        if !busy {
-            busy = true
-            return
-        }
-        await withCheckedContinuation { continuation in
-            if background { backgroundWaiters.append(continuation) }
-            else { waiters.append(continuation) }
-        }
-    }
-
-    private func release() {
-        if !waiters.isEmpty {
-            waiters.removeFirst().resume()
-        } else if !backgroundWaiters.isEmpty {
-            backgroundWaiters.removeFirst().resume()
-        } else {
-            busy = false
-        }
-    }
-}
 
 #if os(iOS)
 /// A background-time request that is always ended: by its owner when the work

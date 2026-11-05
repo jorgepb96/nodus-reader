@@ -1,0 +1,5 @@
+iPhone and iPad offer three first-launch choices: Use iOS voices (no Nodus model download), Download a model, and Just read. To exercise narration immediately, select iOS voices, import an unprotected EPUB/PDF/text document, open it and tap Listen. No account is required; iCloud is optional. Model downloads contain model assets, not executable app updates.
+
+Qwen and Studio voice cloning are not offered on iOS/iPadOS in this version. The Mac version is coming soon and remains a private beta; it is not part of this public release. Linnet uses its bundled standard voices only. Downloads display publisher licences and any use restrictions. All imported content and narration processing stay on device; optional iCloud uses the user's private account.
+
+When a voice is unavailable, a compatible installed voice is automatically selected on that device. This does not alter the voice selected on another device.

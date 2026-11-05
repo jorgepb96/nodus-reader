@@ -12,17 +12,23 @@ struct PhoneRootView: View {
     var body: some View {
         @Bindable var navigation = navigation
 
-        tabView(selection: $navigation.phoneTab)
-            .safeAreaInset(edge: .bottom) {
-                if playback.hasActiveBook {
-                    miniPlayer
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, miniPlayerBottomInset)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
+        Group {
+            if #available(iOS 26.1, *) {
+                tabView(selection: $navigation.phoneTab)
+                    .tabBarMinimizeBehavior(.never)
+                    .tabViewBottomAccessory(isEnabled: playback.hasActiveBook) {
+                        miniPlayer.padding(.horizontal, 12).padding(.vertical, 6)
+                    }
+            } else {
+                tabView(selection: $navigation.phoneTab)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        if playback.hasActiveBook { miniPlayer.padding(.horizontal, 16).padding(.vertical, 6) }
+                    }
             }
-            .animation(.easeInOut(duration: 0.22), value: playback.hasActiveBook)
-            .playerSheet(isPresented: $showPlayer)
+        }
+        .toolbar(.visible, for: .tabBar)
+        .animation(.easeInOut(duration: 0.22), value: playback.hasActiveBook)
+        .playerSheet(isPresented: $showPlayer)
     }
 
     private func tabView(selection: Binding<AppTab>) -> some View {
@@ -49,6 +55,7 @@ struct PhoneRootView: View {
         NavigationStack {
             content()
         }
+        .toolbar(.visible, for: .tabBar)
         .overlay(alignment: .bottom) {
             LinearGradient(
                 stops: [
@@ -64,10 +71,6 @@ struct PhoneRootView: View {
             .ignoresSafeArea(edges: .bottom)
             .allowsHitTesting(false)
         }
-    }
-
-    private var miniPlayerBottomInset: CGFloat {
-        if #available(iOS 26.0, *) { 64 } else { 4 }
     }
 
     @ViewBuilder

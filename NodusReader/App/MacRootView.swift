@@ -3,6 +3,7 @@
 import DesignSystem
 import SwiftData
 import SwiftUI
+import AppKit
 
 struct MacRootView: View {
     @Environment(NavigationModel.self) private var navigation
@@ -26,6 +27,7 @@ struct MacRootView: View {
     @State private var showDelete = false
     /// The sidebar as it was before a book opened, restored when it closes.
     @State private var visibilityBeforeReader: NavigationSplitViewVisibility?
+    @State private var sidebarChromeInset: CGFloat = 0
     #if DEBUG
     /// `-NodusShowVoices YES`: Voices & Models in the window, for screen captures.
     @State private var showsDebugVoices = false
@@ -113,15 +115,10 @@ struct MacRootView: View {
 
         return NavigationSplitView(columnVisibility: $navigation.columnVisibility) {
             sidebar
-                .navigationSplitViewColumnWidth(min: 220, ideal: 244, max: 300)
-                // In full screen the toolbar lives in its own window with a
-                // grey material; it takes the app's colours as it does in a
-                // window, where the page shows through it.
-                .toolbarBackground(palette.sidebar, for: .windowToolbar)
-                .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
-                // The reader bar has its own sidebar button where the
-                // toolbar's would cover it.
-                .toolbar(removing: navigation.macReaderBookID != nil ? .sidebarToggle : nil)
+                .navigationSplitViewColumnWidth(min: 244, ideal: 260, max: 320)
+                // Both library and reader put the toggle in the detail
+                // header, leaving the sidebar header for the brand.
+                .toolbar(removing: .sidebarToggle)
         } detail: {
             if let bookID = navigation.macReaderBookID {
                 MacReaderHost(bookID: bookID) { navigation.macReaderBookID = nil }
@@ -132,18 +129,46 @@ struct MacRootView: View {
                         }
                     }
             } else {
-                NavigationStack(path: $detailPath) {
-                    detailContent
-                        .searchable(text: $searchText, placement: .toolbar, prompt: "Search library")
+                VStack(spacing: 0) {
+                    NavigationStack(path: $detailPath) {
+                        detailContent
+                            .searchable(text: $searchText, placement: .toolbar, prompt: "Search library")
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    // A separate layout row reserves the player's real
+                    // height, including on pushed navigation destinations
+                    // and native Table/inspector content.
+                    if playback.hasActiveBook {
+                        MacPlayerBar()
+                            .padding(.top, 8)
+                    }
                 }
-                .toolbarBackground(palette.background, for: .windowToolbar)
-                .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
+                .toolbar {
+                    ToolbarItem(placement: .navigation) {
+                        Button {
+                            withAnimation {
+                                navigation.columnVisibility = navigation.columnVisibility == .detailOnly ? .all : .detailOnly
+                            }
+                        } label: {
+                            Image(systemName: "sidebar.left")
+                        }
+                        .help(navigation.columnVisibility == .detailOnly ? "Show sidebar (⌃⌘S)" : "Hide sidebar (⌃⌘S)")
+                        .accessibilityLabel(navigation.columnVisibility == .detailOnly ? "Show sidebar" : "Hide sidebar")
+                        .accessibilityIdentifier("LibrarySidebarToggle")
+                    }
+                    .nodusPlainBackground()
+                }
             }
         }
         // Colour the window itself as well as its content. The title bar and
         // the inspector's toolbar area otherwise fall back to the system white
         // or grey when the window is resized or moves into full screen.
         .containerBackground(palette.background, for: .window)
+        // Give the native toolbar an explicit colour, including its separate
+        // full-screen host, instead of exposing the system grey material.
+        .toolbarBackground(palette.background, for: .windowToolbar)
+        .toolbarBackgroundVisibility(navigation.macReaderBookID == nil ? .visible : .hidden, for: .windowToolbar)
         .tint(palette.accent)
         .onChange(of: navigation.macReaderBookID != nil, initial: true) { _, reading in
             if reading {
@@ -165,14 +190,31 @@ struct MacRootView: View {
     }
 
     private var sidebar: some View {
+        GeometryReader { geometry in
+            sidebarContent(headerHeight: max(44, geometry.safeAreaInsets.top))
+                .ignoresSafeArea(.container, edges: .top)
+        }
+        .background {
+            MacSidebarChromeInset { sidebarChromeInset = $0 }
+        }
+    }
+
+    private func sidebarContent(headerHeight: CGFloat) -> some View {
         VStack(spacing: 0) {
             HStack {
-                BrandToolbar()
-                Spacer()
+                ViewThatFits(in: .horizontal) {
+                    BrandToolbar()
+                    BrandToolbar()
+                        .fixedSize()
+                        .scaleEffect(0.8, anchor: .leading)
+                        .frame(width: 144, height: 21, alignment: .leading)
+                }
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 14)
-            .padding(.top, 6)
-            .padding(.bottom, 6)
+            .padding(.leading, max(14, sidebarChromeInset))
+            .padding(.trailing, 14)
+            .frame(height: headerHeight)
+            .padding(.bottom, 16)
 
             List(selection: selectionBinding) {
                 Section {
@@ -293,11 +335,6 @@ struct MacRootView: View {
         }
         // One window colour under every page and its toolbar.
         .background { palette.background.ignoresSafeArea() }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if playback.hasActiveBook {
-                MacPlayerBar()
-            }
-        }
     }
 
     private func count(for list: SmartList) -> Int {
@@ -320,6 +357,56 @@ struct MacRootView: View {
     private func beginDelete(_ collection: LibraryCollection) {
         deleteTarget = collection
         showDelete = true
+    }
+}
+
+/// Reserve space for the window buttons when the sidebar header extends
+/// into the titlebar. Full-screen headers keep their normal leading margin.
+private struct MacSidebarChromeInset: NSViewRepresentable {
+    var onChange: (CGFloat) -> Void
+    func makeNSView(context: Context) -> Probe {
+        let view = Probe()
+        view.onChange = onChange
+        return view
+    }
+    func updateNSView(_ view: Probe, context: Context) {
+        view.onChange = onChange
+        view.refresh()
+    }
+    static func dismantleNSView(_ view: Probe, coordinator: ()) { view.removeObservers() }
+
+    final class Probe: NSView {
+        var onChange: ((CGFloat) -> Void)?
+        private var observers: [NSObjectProtocol] = []
+        private var lastInset: CGFloat?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            removeObservers()
+            if let window {
+                for name in [NSWindow.didEnterFullScreenNotification, NSWindow.didExitFullScreenNotification,
+                             NSWindow.didResizeNotification] {
+                    observers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
+                        MainActor.assumeIsolated { self?.refresh() }
+                    })
+                }
+            }
+            refresh()
+        }
+        func refresh() {
+            guard let window else { return }
+            let inset: CGFloat
+            if !window.styleMask.contains(.fullScreen), let button = window.standardWindowButton(.zoomButton) {
+                inset = button.convert(button.bounds, to: nil).maxX + 12
+            } else { inset = 14 }
+            guard inset != lastInset else { return }
+            lastInset = inset
+            DispatchQueue.main.async { [weak self] in self?.onChange?(inset) }
+        }
+        func removeObservers() {
+            for observer in observers { NotificationCenter.default.removeObserver(observer) }
+            observers.removeAll()
+        }
     }
 }
 #endif

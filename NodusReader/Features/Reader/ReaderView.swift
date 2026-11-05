@@ -3,6 +3,9 @@ import DesignSystem
 import PDFKit
 import SwiftData
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 private enum ReaderContent {
     case loading
@@ -110,6 +113,19 @@ struct ReaderView: View {
         return "\(book.id.uuidString)-\(selection)-\(custom)-\(colorScheme.hashValue)-\(type.fontScale)-\(type.lineSpacing)-\(type.margin)-\(type.justify)-\(type.useSerif)-\(type.weightIndex)-\(type.flow.rawValue)"
     }
 
+    #if os(macOS)
+    private var effectiveReadingFlow: ReadingFlow {
+        if book.format == .pdf { return pdfMode == .original ? .paged : .scrollVertical }
+        return narrationActive && playback.mode == .readAndListen && typography.autoScrollNarration
+            ? .scrollVertical : typography.flow
+    }
+
+    private var keyboardNavigationEnabled: Bool {
+        narrationReady && !search.isPresented && !showContents && !showAppearance &&
+            !showAppearanceSheet && !showPlayer && !showStory && annotationDraft == nil
+    }
+    #endif
+
     var body: some View {
         let theme = readerTheme
         ZStack {
@@ -118,7 +134,32 @@ struct ReaderView: View {
                 // The search keyboard covers the page instead of shrinking it:
                 // a smaller page would lay out the whole book again.
                 .ignoresSafeArea(.keyboard)
+                #if os(macOS)
+                // Reserve separate gutters: navigation must never cover words.
+                .padding(.horizontal, effectiveReadingFlow == .paged ? 48 : 0)
+                #endif
+            #if os(macOS)
+            if chromeVisible, !search.isPresented, effectiveReadingFlow == .paged, narrationReady {
+                HStack {
+                    pageNavigationButton(previous: true, theme: theme)
+                    Spacer(minLength: 0)
+                    pageNavigationButton(previous: false, theme: theme)
+                }
+                .padding(.horizontal, 2)
+            }
+            #endif
         }
+        #if os(macOS)
+        .background {
+            MacReaderKeyboardNavigation(isEnabled: keyboardNavigationEnabled,
+                                        flow: effectiveReadingFlow,
+                                        canGoPrevious: canGoPreviousPage, canGoNext: canGoNextPage,
+                                        onPrevious: { turnPage(by: -1) }, onNext: { turnPage(by: 1) })
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        #endif
         .safeAreaInset(edge: .top, spacing: 0) {
             if search.isPresented {
                 ReaderSearchBar(model: search, theme: theme)
@@ -247,11 +288,16 @@ struct ReaderView: View {
             ReaderAppearanceSheet(book: book)
                 .readerPresentation(readerTheme)
         }
+        #if os(macOS)
+        .macPlayerPresentation(isPresented: $showPlayer, palette: NodusPalette.reader(readerTheme),
+                               onOpenReader: { _ in showPlaybackPosition() })
+        #else
         .sheet(isPresented: $showPlayer) {
             PlayerView(onOpenReader: { _ in showPlaybackPosition() })
                 .presentationDragIndicator(.hidden)
                 .readerPresentation(readerTheme)
         }
+        #endif
         .pronunciationHost(book: book)
         .sheet(item: $annotationDraft) { draft in
             AnnotationEditorSheet(book: book, draft: draft)
@@ -476,17 +522,6 @@ struct ReaderView: View {
 
     private func topBar(_ theme: ReaderTheme) -> some View {
         HStack(spacing: 2) {
-            Button {
-                closeReader()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 19, weight: .medium))
-                    .foregroundStyle(theme.text)
-                    .frame(width: 44, height: 44)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Back to library")
-
             #if os(macOS)
             if let toggleLibrarySidebar {
                 Button(action: toggleLibrarySidebar) {
@@ -500,6 +535,17 @@ struct ReaderView: View {
                 .accessibilityLabel(librarySidebarVisible ? "Hide sidebar" : "Show sidebar")
             }
             #endif
+
+            Button {
+                closeReader()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 19, weight: .medium))
+                    .foregroundStyle(theme.text)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Back to library")
 
             Spacer(minLength: 2)
 
@@ -607,6 +653,25 @@ struct ReaderView: View {
     #if os(macOS)
     /// Room for the close, minimise and zoom buttons of the window.
     private static let windowButtonsWidth: CGFloat = 70
+
+    private func pageNavigationButton(previous: Bool, theme: ReaderTheme) -> some View {
+        let enabled = previous ? canGoPreviousPage : canGoNextPage
+        let title: LocalizedStringKey = previous ? "Previous page" : "Next page"
+        return Button { turnPage(by: previous ? -1 : 1) } label: {
+            Image(systemName: previous ? "chevron.left" : "chevron.right")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(theme.text)
+                .frame(width: 44, height: 56)
+                .background(theme.background.opacity(0.96), in: Capsule())
+                .overlay(Capsule().stroke(theme.line, lineWidth: 1))
+                .opacity(enabled ? 1 : 0.3)
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .accessibilityLabel(title)
+        .accessibilityIdentifier(previous ? "ReaderPreviousPage" : "ReaderNextPage")
+        .help(title)
+    }
     #endif
 
     private func bottomBar(_ theme: ReaderTheme) -> some View {
@@ -1219,5 +1284,129 @@ extension EnvironmentValues {
     /// The library sidebar is beside the reader, so the window buttons sit
     /// over it instead of over the reader bar.
     @Entry var librarySidebarVisible: Bool = false
+}
+#endif
+
+#if os(macOS)
+/// A window-scoped key handler: native text views otherwise consume arrow
+/// keys before SwiftUI can use them for reader navigation.
+private struct MacReaderKeyboardNavigation: NSViewRepresentable {
+    var isEnabled: Bool
+    var flow: ReadingFlow
+    var canGoPrevious: Bool
+    var canGoNext: Bool
+    var onPrevious: () -> Void
+    var onNext: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(configuration: self) }
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        context.coordinator.probe = view
+        context.coordinator.install()
+        return view
+    }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        context.coordinator.configuration = self
+    }
+
+    static func dismantleNSView(_ view: NSView, coordinator: Coordinator) {
+        coordinator.stop()
+    }
+
+    @MainActor
+    final class Coordinator {
+        var configuration: MacReaderKeyboardNavigation
+        weak var probe: NSView?
+        private var monitor: Any?
+
+        init(configuration: MacReaderKeyboardNavigation) {
+            self.configuration = configuration
+        }
+
+        func install() {
+            guard monitor == nil else { return }
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+                let handled = MainActor.assumeIsolated { self?.handle(event) ?? false }
+                return handled ? nil : event
+            }
+        }
+
+        func stop() {
+            if let monitor { NSEvent.removeMonitor(monitor) }
+            monitor = nil
+        }
+
+        private func handle(_ event: NSEvent) -> Bool {
+            guard configuration.isEnabled, let probe, let window = probe.window,
+                  window.isKeyWindow, event.window === window, window.attachedSheet == nil,
+                  !probe.isHiddenOrHasHiddenAncestor,
+                  event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
+                  [123, 124, 125, 126].contains(event.keyCode) else { return false }
+            let readerFrame = probe.convert(probe.bounds, to: nil)
+            if let text = window.firstResponder as? NSTextView {
+                guard text is ReaderMacTextView, !text.isEditable, !text.isFieldEditor,
+                      text.selectedRange().length == 0,
+                      readerFrame.intersects(text.convert(text.bounds, to: nil)) else { return false }
+            } else if let focused = window.firstResponder as? NSView {
+                guard !(focused is NSControl), !(focused is NSCollectionView),
+                      readerFrame.intersects(focused.convert(focused.bounds, to: nil)) else { return false }
+                var ancestor: NSView? = focused
+                while let view = ancestor {
+                    if let pdf = view as? PDFView, !(pdf.currentSelection?.string ?? "").isEmpty { return false }
+                    ancestor = view.superview
+                }
+            } else if let responder = window.firstResponder, responder !== window {
+                return false
+            }
+
+            let previous = event.keyCode == 123 || event.keyCode == 126
+            if event.keyCode == 125 || event.keyCode == 126 {
+                guard configuration.flow != .scrollHorizontal else { return false }
+                if configuration.flow == .scrollVertical {
+                    guard let root = window.contentView,
+                          let scroll = readerScrollView(in: root, readerFrame: readerFrame),
+                          let document = scroll.documentView else { return false }
+                    let clip = scroll.contentView
+                    var target = clip.bounds
+                    let direction: CGFloat = previous ? -1 : 1
+                    target.origin.y += direction * 64 * (document.isFlipped ? 1 : -1)
+                    clip.scroll(to: clip.constrainBoundsRect(target).origin)
+                    scroll.reflectScrolledClipView(clip)
+                    return true
+                }
+            }
+            if previous {
+                if configuration.canGoPrevious { configuration.onPrevious() }
+            } else if configuration.canGoNext {
+                configuration.onNext()
+            }
+            return true
+        }
+
+        private func readerScrollView(in view: NSView, readerFrame: NSRect) -> NSScrollView? {
+            guard !view.isHiddenOrHasHiddenAncestor else { return nil }
+            if let text = view as? ReaderMacTextView,
+               readerFrame.intersects(text.convert(text.bounds, to: nil)),
+               let scroll = text.enclosingScrollView { return scroll }
+            if let pdf = view as? PDFView,
+               readerFrame.intersects(pdf.convert(pdf.bounds, to: nil)) {
+                return descendantScrollView(in: pdf)
+            }
+            for child in view.subviews {
+                if let scroll = readerScrollView(in: child, readerFrame: readerFrame) { return scroll }
+            }
+            return nil
+        }
+
+        private func descendantScrollView(in view: NSView) -> NSScrollView? {
+            if let scroll = view as? NSScrollView { return scroll }
+            for child in view.subviews {
+                if let scroll = descendantScrollView(in: child) { return scroll }
+            }
+            return nil
+        }
+    }
 }
 #endif

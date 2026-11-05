@@ -1,0 +1,11 @@
+Nodus Reader 0.1.0 (56) — Beta privada para Mac
+
+• Narración en «Ahora suena», con título, autor, portada y controles del sistema y teclas multimedia para reproducir, pausar y cambiar de frase.
+• Clic en una palabra para narrar desde ella, conservando la selección por arrastre y doble clic. Flechas del teclado para navegar o desplazarse y botones laterales en lectura por páginas.
+• Cabecera con sidebar a la izquierda de Volver, marca alineada en la biblioteca, fondo superior uniforme y más margen debajo de Nodus / Reader.
+• Tabla de biblioteca ajustada al ancho y a las columnas con datos. El reproductor inferior reserva su propio espacio para dejar accesibles los botones del contenido.
+• Reproductor ampliado compacto en dos columnas, ajustado a la ventana. Clic fuera o Escape lo cierra sin detener el audio. Comprueba ambiente, caché y los selectores de voces.
+• Filtros de voces con selección múltiple de modelos, idiomas y géneros y persistencia entre obras y sesiones. Selector de modo de lectura sin etiqueta duplicada; se oculta mientras está activo el desplazamiento automático.
+• Comprueba resaltado en temas claros/oscuros, EPUB/PDF/texto, cambios de motor y conservación de posición. Qwen sigue disponible en Mac como experimental; prueba también Linnet, Kokoro, Phonon y Ming.
+
+Distribución exclusivamente privada en macOS. La publicación de macOS llegará más adelante. Indica chip, versión del sistema, modelo, voz y pasos si detectas errores.

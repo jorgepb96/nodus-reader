@@ -1,0 +1,15 @@
+Nodus Reader 0.1.0 (54) — What to test
+
+MODELS AND LINNET
+• Compare the new model cards: speed bars, indicative naturalness, language flags, parameters and separate code/asset licences. Speed starts as an estimate and uses local uncached generations after three samples and thirty seconds of audio. Naturalness is an editorial indication, not a measured benchmark.
+• Download LinnetTTS (about 83 MB), interrupt/resume its download, select both US English voices, read a book offline and delete/reinstall the model. Test numbers, prices, dates, long sentences and word highlighting. Linnet has no Studio cloning option; its weights and voices have a separate licence, shown in the app.
+
+QWEN RELIABILITY
+• Qwen now checks each take before playing or saving it. When local recognition is available, it checks the requested words and reuses the result for highlighting. If recognition is unavailable, basic audio checks still apply.
+• Failed parts have at most three attempts with a clean session and a different seed. If all fail, playback should pause on the same sentence; retry or choose another voice. Check that invalid audio is not cached and that no text is skipped or voice changed automatically.
+• Earlier Qwen audio is regenerated under the new cache version. Qwen remains experimental and can generate slower than playback on iPhone; prepare audio ahead. Its roughly 2.1 GB download and first load can take time.
+
+REGRESSIONS
+• Check model switching, voice previews, Studio recording/import and deletion, whole-book/progressive audio jobs, offline playback, pronunciation rules and word highlighting.
+• Check pause/resume, speed changes, lock-screen controls and headphones. Keep individual continuous phone tests to five minutes or less.
+• Report device, model/voice, language, steps and whether the issue happened in the foreground or with the screen locked. Do not attach private text or audio without permission.

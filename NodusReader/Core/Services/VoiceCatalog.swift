@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import Foundation
 import Observation
+#if os(iOS)
+import AVFoundation
+#endif
 
 /// A voice's gender as its publisher lists it. Voices without one (Phonon's
 /// base and character voices) appear only when no gender filter is chosen.
-public enum VoiceGender: String, CaseIterable, Hashable, Sendable {
+public enum VoiceGender: String, Codable, CaseIterable, Hashable, Sendable {
     case female
     case male
 
@@ -16,8 +19,7 @@ public enum VoiceGender: String, CaseIterable, Hashable, Sendable {
     }
 }
 
-/// The neural voices installed on this device. Nodus Reader never enumerates,
-/// offers or uploads the system's AVSpeechSynthesisVoice list.
+/// Downloaded voices plus Apple's available voices on iOS. The inventory stays on device.
 @MainActor
 @Observable
 public final class VoiceCatalog {
@@ -50,9 +52,11 @@ public final class VoiceCatalog {
         public var engineLabel: String {
             if let modelName { return modelName }
             switch engineRaw {
+            case "system": return String(localized: "iOS voices")
             case "kokoro": return "Kokoro"
             case "phonon": return "Phonon"
             case "qwen": return "Qwen"
+            case "linnet": return "LinnetTTS"
             default: return String(localized: "Neural voice")
             }
         }
@@ -63,6 +67,7 @@ public final class VoiceCatalog {
     public private(set) var voices: [Voice] = []
     /// Voices of every installed neural model, selected or not. The Voices
     /// screen lists them so any model can be tried.
+    public private(set) var systemVoices: [Voice] = []
     public private(set) var installedNeuralVoices: [Voice] = []
     public private(set) var favorites: Set<String> = []
     public private(set) var isLoading = false
@@ -71,16 +76,27 @@ public final class VoiceCatalog {
     private let defaults: UserDefaults
     private let favoritesKey = "nodus.voices.favorites"
     private let defaultKey = "nodus.voices.default"
+    static var systemLanguageCodes: [String] = []
+    var onSystemVoicesChanged: (() -> Void)?
+    @ObservationIgnored private var systemLoadTask: Task<Void, Never>?
+
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.favorites = Set(defaults.stringArray(forKey: favoritesKey) ?? [])
         self.defaultVoiceID = defaults.string(forKey: defaultKey) ?? ""
+        #if os(iOS)
+        NotificationCenter.default.addObserver(forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.refreshSystemVoices() }
+        }
+        #endif
     }
 
     /// Kept as the single asynchronous entry point used by screens that open
     /// before ModelManager publishes the installed neural catalogue.
     public func loadIfNeeded() async {
+        if systemVoices.isEmpty { refreshSystemVoices() }
+        await systemLoadTask?.value
         isLoading = false
     }
 
@@ -100,7 +116,7 @@ public final class VoiceCatalog {
     public func voice(withID id: String?,
                       engine: String? = nil) -> Voice? {
         guard let id else { return nil }
-        let available = voices + installedNeuralVoices
+        let available = allInstalledVoices
         if let exact = available.first(where: {
             $0.id == id && (engine == nil || $0.engineRaw == engine)
         }) {
@@ -116,27 +132,61 @@ public final class VoiceCatalog {
     }
 
     /// Voices of every installed neural model.
-    public var allInstalledVoices: [Voice] { installedNeuralVoices }
+    public var allInstalledVoices: [Voice] { installedNeuralVoices.filter { $0.engineRaw != "system" } + systemVoices }
 
     /// Resolves a saved per-book voice ID to a real installed neural voice.
     /// Voice IDs identify the engine and checkpoint as well as the voice.
     /// A missing voice uses a temporary language-aware fallback; callers
     /// retain the saved preference so reinstalling its model restores it.
     public func narrationVoice(preferredID: String?, language: String?) -> Voice? {
-        if let exact = voice(withID: preferredID) {
-            return exact
-        }
-        if let language = Self.languageCode(language) {
-            if let preferred = defaultVoice, Self.languageCode(preferred.language) == language {
-                return preferred
+        if let exact = voice(withID: preferredID) { return exact }
+        return Self.replacement(in: allInstalledVoices, language: language, gender: nil, defaultID: defaultVoiceID)
+    }
+
+    public func refreshSystemVoices() {
+        #if os(iOS)
+        guard systemLoadTask == nil else { return }
+        if systemVoices.isEmpty { isLoading = true }
+        systemLoadTask = Task { [weak self] in
+            let entries = await Task.detached(priority: .userInitiated) {
+                AVSpeechSynthesisVoice.speechVoices().filter {
+                    !$0.voiceTraits.contains(.isPersonalVoice) && !$0.voiceTraits.contains(.isNoveltyVoice)
+                }.map { voice in
+                    SystemVoiceDescriptor(id: voice.identifier, name: voice.name, language: voice.language,
+                        quality: voice.quality.rawValue,
+                        gender: voice.gender == .male ? .male : voice.gender == .female ? .female : nil)
+                }
+            }.value
+            guard let self else { return }
+            self.systemVoices = entries.map {
+                Voice(id: $0.id, name: $0.name, language: $0.language,
+                    languageName: Self.variantName(for: $0.language), quality: $0.quality, gender: $0.gender,
+                    engineRaw: "system", modelID: "ios-system", modelName: String(localized: "iOS voices"))
             }
-            if let match = (voices + installedNeuralVoices).first(where: {
-                Self.languageCode($0.language) == language
-            }) {
-                return match
-            }
+            Self.systemLanguageCodes = Array(Set(entries.map(\.language))).sorted()
+            if self.voices.first?.engineRaw == "system" { self.voices = self.systemVoices }
+            self.isLoading = false
+            self.systemLoadTask = nil
+            self.onSystemVoicesChanged?()
         }
-        return defaultVoice
+        #endif
+    }
+
+    public static func replacement(in available: [Voice], language: String?, gender: VoiceGender?, defaultID: String) -> Voice? {
+        let language = language.flatMap { $0.isEmpty ? nil : $0 } ?? Locale.current.identifier
+        let matches = available.filter { languageCode($0.language) == languageCode(language) }
+        return matches.sorted { a, b in
+            func tier(_ v: Voice) -> Int {
+                (v.engineRaw == "system" ? 2 : 0) + (gender == nil || v.gender == gender ? 0 : 1)
+            }
+            if tier(a) != tier(b) { return tier(a) < tier(b) }
+            let exactA = a.language.lowercased() == language.replacingOccurrences(of: "_", with: "-").lowercased()
+            let exactB = b.language.lowercased() == language.replacingOccurrences(of: "_", with: "-").lowercased()
+            if exactA != exactB { return exactA }
+            if (a.id == defaultID) != (b.id == defaultID) { return a.id == defaultID }
+            if a.quality != b.quality { return a.quality > b.quality }
+            return a.id < b.id
+        }.first
     }
 
     /// One entry per language (`en`, `es`, `zh`…), not per regional variant:
@@ -198,6 +248,9 @@ public final class VoiceCatalog {
     public func setDefault(_ voice: Voice) {
         defaultVoiceID = voice.id
         defaults.set(voice.id, forKey: defaultKey)
+        if let data = try? JSONEncoder().encode(VoiceSelectionSnapshot.capture(voice.id, voice: voice)) {
+            defaults.set(data, forKey: "nodus.voices.defaultSnapshot")
+        }
     }
 
     public func toggleFavorite(_ voice: Voice) {
@@ -220,4 +273,13 @@ public final class VoiceCatalog {
         return voices.first { $0.language.lowercased().hasPrefix(preferred) }?.id
             ?? voices.first?.id
     }
+}
+
+
+private struct SystemVoiceDescriptor: Sendable {
+    var id: String
+    var name: String
+    var language: String
+    var quality: Int
+    var gender: VoiceGender?
 }

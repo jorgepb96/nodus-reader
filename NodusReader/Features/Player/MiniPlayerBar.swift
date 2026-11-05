@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import DesignSystem
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct SquareCoverThumb: View {
     @Environment(LibraryService.self) private var library
@@ -68,6 +71,7 @@ struct MiniPlayerBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("MiniPlayerOpen")
             .accessibilityLabel(playback.mode == .listen
                 ? Text("Open player, \(playback.activeBook?.title ?? "")")
                 : Text("Read, \(playback.activeBook?.title ?? "")"))
@@ -147,6 +151,16 @@ private struct PlayerSheetModifier: ViewModifier {
     @State private var readingBook: Book?
 
     func body(content: Content) -> some View {
+        #if os(macOS)
+        content
+            .macPlayerPresentation(isPresented: $isPresented, onOpenReader: { pendingReaderBook = $0 })
+            .onChange(of: isPresented) { _, presented in
+                guard !presented, let book = pendingReaderBook else { return }
+                pendingReaderBook = nil
+                readingBook = book
+            }
+            .readerCover(item: $readingBook)
+        #else
         content
             .sheet(isPresented: $isPresented, onDismiss: {
                 guard let book = pendingReaderBook else { return }
@@ -157,8 +171,110 @@ private struct PlayerSheetModifier: ViewModifier {
                     .presentationDragIndicator(.hidden)
             }
             .readerCover(item: $readingBook)
+        #endif
     }
 }
+
+#if os(macOS)
+/// A compact panel sized from its content and the host window, rather than
+/// a tall form sheet. Dismissal never stops the narration.
+private struct MacPlayerPresentation: ViewModifier {
+    @Environment(\.nodusPalette) private var inheritedPalette
+    @Binding var isPresented: Bool
+    var paletteOverride: NodusPalette?
+    var onOpenReader: (Book) -> Void
+    @FocusState private var panelFocused: Bool
+
+    func body(content: Content) -> some View {
+        let palette = paletteOverride ?? inheritedPalette
+        content
+            .allowsHitTesting(!isPresented)
+            .accessibilityHidden(isPresented)
+            .overlay {
+                if isPresented {
+                    GeometryReader { geometry in
+                        ZStack {
+                            Color.black.opacity(0.18)
+                                .contentShape(Rectangle())
+                                .onTapGesture { isPresented = false }
+                                .accessibilityHidden(true)
+                            PlayerView(onOpenReader: onOpenReader,
+                                       onClose: { isPresented = false },
+                                       availableHeight: max(0, geometry.size.height - 32))
+                                .frame(width: min(820, max(0, geometry.size.width - 32)))
+                                .nodusPalette(palette)
+                                .tint(palette.accent)
+                                .background {
+                                    MacPlayerDismissRegion { isPresented = false }
+                                }
+                                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .stroke(palette.line, lineWidth: 1))
+                                .shadow(color: .black.opacity(0.18), radius: 20, y: 8)
+                                .contentShape(Rectangle())
+                                .onTapGesture { }
+                                .focusable()
+                                .focusEffectDisabled()
+                                .focused($panelFocused)
+                                .onExitCommand { isPresented = false }
+                                .onAppear { panelFocused = true }
+                        }
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                    }
+                }
+            }
+    }
+}
+
+/// Also dismiss when a click lands in the sidebar or native toolbar, beyond
+/// the SwiftUI backdrop. Consume that click so it only closes the panel.
+private struct MacPlayerDismissRegion: NSViewRepresentable {
+    var onDismiss: () -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        context.coordinator.view = view
+        context.coordinator.onDismiss = onDismiss
+        context.coordinator.monitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak coordinator = context.coordinator] event in
+            let outside = MainActor.assumeIsolated {
+                guard let coordinator, let view = coordinator.view,
+                      let window = view.window, event.window === window,
+                      window.attachedSheet == nil else { return false }
+                guard !view.bounds.contains(view.convert(event.locationInWindow, from: nil)) else { return false }
+                coordinator.onDismiss?()
+                return true
+            }
+            return outside ? nil : event
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        context.coordinator.onDismiss = onDismiss
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
+        if let monitor = coordinator.monitor { NSEvent.removeMonitor(monitor) }
+        coordinator.monitor = nil
+        coordinator.view = nil
+    }
+
+    @MainActor final class Coordinator {
+        weak var view: NSView?
+        var onDismiss: (() -> Void)?
+        var monitor: Any?
+    }
+}
+
+extension View {
+    func macPlayerPresentation(isPresented: Binding<Bool>, palette: NodusPalette? = nil,
+                               onOpenReader: @escaping (Book) -> Void) -> some View {
+        modifier(MacPlayerPresentation(isPresented: isPresented, paletteOverride: palette, onOpenReader: onOpenReader))
+    }
+}
+#endif
 
 extension View {
     func playerSheet(isPresented: Binding<Bool>) -> some View {

@@ -253,28 +253,39 @@ struct ReaderAppearanceControls: View {
     private var readingModeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Eyebrow("Reading mode")
-            Picker("Reading mode", selection: binding(\.flow)) {
-                ForEach(ReadingFlow.allCases) { flow in
-                    Text(flow.label)
-                        .accessibilityLabel(flow.accessibilityLabel)
-                        .tag(flow)
-                }
-            }
-            .pickerStyle(.segmented)
-            #if os(iOS)
-            if typography.flow == .paged {
-                Picker("Page turn", selection: binding(\.pageTurn)) {
-                    ForEach(PageTurnStyle.allCases) { turn in
-                        Text(turn.label).tag(turn)
+            if typography.autoScrollNarration {
+                Text("Reading mode is unavailable while Auto-scroll while listening is enabled. Turn it off in Read & Listen to choose pages or a scrolling direction.")
+                    .font(.caption2)
+                    .foregroundStyle(palette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("ReadingModeUnavailable")
+            } else {
+                Picker("Reading mode", selection: binding(\.flow)) {
+                    ForEach(ReadingFlow.allCases) { flow in
+                        Text(flow.label)
+                            .accessibilityLabel(flow.accessibilityLabel)
+                            .tag(flow)
                     }
                 }
                 .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("Reading mode")
+                #if os(iOS)
+                if typography.flow == .paged {
+                    Picker("Page turn", selection: binding(\.pageTurn)) {
+                        ForEach(PageTurnStyle.allCases) { turn in
+                            Text(turn.label).tag(turn)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                #endif
+                Text(modeFootnote)
+                    .font(.caption2)
+                    .foregroundStyle(palette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            #endif
-            Text(modeFootnote)
-                .font(.caption2)
-                .foregroundStyle(palette.muted)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

@@ -46,6 +46,11 @@ references using the original speaker encoder. Consult
 `docs/QWEN_OPTIMIZATION.md` before using any candidate: the tested INT8
 variants were not promoted because of quality/stability results.
 
+`--talker-top-k 50` and `--eos-on-argmax false` allow separate sampling ablations;
+defaults remain top-k 0 and the existing argmax-EOS guard. The installed residual
+predictor remains greedy, so these flags do not claim full upstream sampling
+parity. Compare intelligibility before using timings as evidence of improvement.
+
 ## Physical iPhone check
 
 `device/` contains a separate SwiftUI diagnostic app, generated with
@@ -59,6 +64,17 @@ for five minutes of playback after setup, or `smoke` for short generation and
 cancellation checks. There is no 30-minute option. The five-minute deadline
 cancels any current synthesis and stops queued playback. The app uses the
 included CC0 recording and does not request microphone access.
+
+The `sampling` mode compares the baseline, top-k 50, and top-k 50 with sampled
+EOS, interleaved over four ES/EN cases and two fixed seeds without redraws. It
+saves original codes, PCM before silence trimming, final PCM and stage timings.
+After the synthesis matrix it replays fixed codes with different chunk schedules
+and inline/overlapped execution, logging sample counts and waveform error. Its
+five-minute deadline starts before model setup and is checked between native
+load/warm-up calls and generated frames. One native Core ML call itself cannot
+be forcibly interrupted. The mode never plays audio and does not change Nodus's
+installed models, settings or cached narration. Export `events.json` and
+`Outputs/`; use local ASR and listening to judge words, not amplitude alone.
 
 `Documents/events.json`, `Outputs/` and the fresh `Voice-<UUID>/` contain the
 metrics, generated audio and on-device reference representation. Export those

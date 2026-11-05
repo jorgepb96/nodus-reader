@@ -1,5 +1,6 @@
 name: NodusReader
 options:
+  preGenCommand: python3 tools/prepare-linnet.py
   bundleIdPrefix: ai.nodus
   deploymentTarget:
     iOS: "18.0"
@@ -14,7 +15,7 @@ settings:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: minimal
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "53"
+    CURRENT_PROJECT_VERSION: "56"
     # English is the base language and Spanish the one translation: a device
     # in Spanish shows Spanish, any other language shows English.
     SWIFT_EMIT_LOC_STRINGS: YES
@@ -27,6 +28,8 @@ settings:
     DEVELOPMENT_TEAM: 6RPLS9EA4X
 
 packages:
+  LinnetTTS:
+    path: Modules/LinnetTTS
   DesignSystem:
     path: Modules/DesignSystem
   PhononTTS:
@@ -76,6 +79,8 @@ targets:
         buildPhase: resources
       - path: Shared
     dependencies:
+      - package: LinnetTTS
+        product: LinnetTTS
       - package: DesignSystem
         product: DesignSystem
       - package: ZIPFoundation

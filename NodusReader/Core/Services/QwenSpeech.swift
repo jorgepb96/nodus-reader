@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import Foundation
 import QwenANE
+import OSLog
 
 /// All Core ML work stays off the main actor. A single actor serializes the
 /// stateful engine; only one voice representation is kept in memory.
@@ -12,28 +13,43 @@ actor QwenSpeech {
     private let directory: URL
     private var preparedVoiceID: String?
     private var preparedVoice: QwenVoiceFiles?
+    private static let loadQueue = DispatchQueue(label: "ai.nodus.reader.qwen-load", qos: .userInitiated)
 
-    private init(directory: URL) throws {
+    private init(directory: URL, cancelled: () -> Bool) throws {
         self.directory = directory
-        engine = try QwenANEEngine(modelsDirectory: directory)
+        engine = try QwenANEEngine(modelsDirectory: directory, cancelled: cancelled)
     }
 
     static func load(directory: URL) async throws -> QwenSpeech {
-        let work = Task.detached(priority: .userInitiated) {
-            try Task.checkCancellation()
-            let loaded = try QwenSpeech(directory: directory)
-            try Task.checkCancellation()
-            return loaded
+        let cancellation = QwenLoadCancellation()
+        let work = Task<QwenSpeech, Error> {
+            try await withCheckedThrowingContinuation { continuation in
+                // A serial dispatch queue bounds compilation without blocking Swift's cooperative
+                // executor with a lock when several rapid model changes arrive together.
+                loadQueue.async {
+                    do {
+                        if cancellation.isCancelled { throw CancellationError() }
+                        let loaded = try QwenSpeech(directory: directory, cancelled: { cancellation.isCancelled })
+                        if cancellation.isCancelled { throw CancellationError() }
+                        continuation.resume(returning: loaded)
+                    } catch { continuation.resume(throwing: error) }
+                }
+            }
         }
-        return try await withTaskCancellationHandler { try await work.value } onCancel: { work.cancel() }
+        return try await withTaskCancellationHandler {
+            try await CancellableTaskValue.value(of: work)
+        } onCancel: { cancellation.cancel(); work.cancel() }
     }
 
-    func synthesize(_ text: String, referenceID: String, language: String) throws -> [Float] {
+    func synthesize(_ text: String, referenceID: String, language: String) async throws -> NarrationSynthesis {
         try Task.checkCancellation()
         let voice: QwenVoiceFiles
         if preparedVoiceID == referenceID, let preparedVoice {
             voice = preparedVoice
+            Logger(subsystem: "ai.nodus.reader", category: "QwenQuality").debug("reference_reused voice=\(referenceID, privacy: .private)")
         } else {
+            let preparationStart = ProcessInfo.processInfo.systemUptime
+            Logger(subsystem: "ai.nodus.reader", category: "QwenQuality").info("reference_prepare_begin voice=\(referenceID, privacy: .private)")
             guard let recording = StudioVoiceStore.voice(id: referenceID),
                   let url = StudioVoiceStore.referenceURL(for: recording) else {
                 throw StudioVoiceStore.StoreError.unreadableAudio
@@ -45,18 +61,59 @@ actor QwenSpeech {
             ModelManager.excludeQwenFromBackup(QwenModels.voiceCache)
             preparedVoice = voice
             preparedVoiceID = referenceID
+            Logger(subsystem: "ai.nodus.reader", category: "QwenQuality").info("reference_ready seconds=\(ProcessInfo.processInfo.systemUptime - preparationStart)")
         }
         try Task.checkCancellation()
-        let session = QwenTalkSession(engine: engine, voice: voice, language: language, seedText: text)
-        let result = try session.renderBreak(text, cancelled: { Task.isCancelled })
-        try Task.checkCancellation()
-        guard !result.samples.isEmpty, result.samples.allSatisfy(\.isFinite),
-              result.samples.contains(where: { abs($0) > 0.001 }),
-              !result.parts.isEmpty, result.parts.allSatisfy({ !$0.derailed }) else {
-            throw QwenSpeechError.incompleteSpeech
+        let parts = QwenReadRules.split(text, maxPartChars: 160)
+        let baseSeed = QwenTalkSession.stableSeed(referenceID + language + text)
+        var samples: [Float] = []
+        var heard: [SpeechWordAligner.RecognizedWord] = []
+        var verified = true
+        var session = QwenTalkSession(engine: engine, voice: voice, language: language, seed: baseSeed)
+        for (index, part) in parts.enumerated() {
+            var accepted = false
+            for attempt in 0..<3 {
+                try Task.checkCancellation()
+                let seed = attempt == 0 ? session.seed : baseSeed &+ UInt64(index * 3 + attempt)
+                if attempt > 0 {
+                    session = QwenTalkSession(engine: engine, voice: voice, language: language, seed: seed)
+                }
+                session.maxRedraws = 0 // This loop owns the entire three-take budget.
+                let start = ProcessInfo.processInfo.systemUptime
+                let result = try session.render(part, cancelled: { Task.isCancelled })
+                try Task.checkCancellation()
+                let basicValid = !QwenTalkSession.derailed(result) && SpeechQuality.accepts(samples: result.samples, text: part, recognized: nil)
+                let recognition = basicValid
+                    ? await SpeechWordAligner.inspect(samples: result.samples, sampleRate: Self.sampleRate, language: language) : nil
+                let valid = basicValid && SpeechQuality.accepts(samples: result.samples,
+                    text: part, recognized: recognition, language: language)
+                Logger(subsystem: "ai.nodus.reader", category: "QwenQuality").info("part=\(index) take=\(attempt + 1) seed=\(seed) voice=\(referenceID, privacy: .private) stop=\(String(describing: result.stopReason)) pause=\(result.silenceBefore.longestPause) seconds=\(ProcessInfo.processInfo.systemUptime - start) valid=\(valid) verified=\(recognition != nil)")
+                guard valid else { continue }
+                if index > 0 { samples += [Float](repeating: 0, count: 3600) }
+                let offset = Double(samples.count) / Self.sampleRate
+                if let recognition {
+                    heard += recognition.map { .init(text: $0.text, start: $0.start + offset, end: $0.end + offset) }
+                } else { verified = false }
+                samples += result.samples
+                accepted = true
+                break
+            }
+            guard accepted else { throw QwenSpeechError.incompleteSpeech }
         }
-        return result.samples
+        try Task.checkCancellation()
+        guard !samples.isEmpty else { throw QwenSpeechError.incompleteSpeech }
+        let words = verified ? SpeechWordAligner.place(words: AudioWordAligner.words(in: text), recognized: heard,
+                                                       duration: Double(samples.count) / Self.sampleRate) : nil
+        return NarrationSynthesis(samples: samples, sampleRate: Self.sampleRate, words: words, checkedWords: true, verification: verified ? .valid : .unavailable)
+
     }
+}
+
+private final class QwenLoadCancellation: @unchecked Sendable {
+    private let lock = NSLock()
+    private var cancelled = false
+    var isCancelled: Bool { lock.lock(); defer { lock.unlock() }; return cancelled }
+    func cancel() { lock.lock(); cancelled = true; lock.unlock() }
 }
 
 extension ModelManager {

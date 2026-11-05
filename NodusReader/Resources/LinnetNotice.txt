@@ -1,0 +1,6 @@
+LinnetTTS
+Copyright 2026 Wiseport Ltd. (trading as VoxRT)
+
+The source code in this repository is licensed under the Apache License, Version 2.0 (LICENSE).
+The model weights, tokenizer and voice files are not part of the source code; they are licensed under
+the Linnet Weights License (WEIGHTS_LICENSE.md).

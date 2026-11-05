@@ -1,0 +1,153 @@
+{
+  "verifiedAt": "2026-11-05T08:45:30.448815+01:00",
+  "version": "0.1.0",
+  "build": "55",
+  "exports": [
+    {
+      "platform": "ios",
+      "version": "0.1.0",
+      "build": "55",
+      "sourceSnapshot": "working tree, build 55",
+      "package": "build/export-ios-55/Nodus Reader.ipa",
+      "bytes": 54748617,
+      "sha256": "909996d68a9f4d1b65ad0a8bebd9d97df3a31cba2bdc5758f113b5315a45322e",
+      "signatureVerified": true,
+      "productionICloud": true,
+      "architecture": "arm64"
+    },
+    {
+      "platform": "mac",
+      "version": "0.1.0",
+      "build": "55",
+      "sourceSnapshot": "working tree, build 55",
+      "package": "build/export-macOS-55/Nodus Reader.pkg",
+      "bytes": 49802957,
+      "sha256": "f085d6ae8cb69e75247ca0bfd372e6934a0b5e36903a908795b4945478fddc87",
+      "signatureVerified": true,
+      "productionICloud": true,
+      "architecture": "arm64"
+    }
+  ],
+  "builds": [
+    {
+      "id": "80cbdf5b-925d-4074-96bc-33e60c9a1466",
+      "version": "55",
+      "uploadedDate": "2026-11-04T22:40:40-08:00",
+      "expirationDate": "2027-02-02T22:40:40-08:00",
+      "expired": false,
+      "minOsVersion": "15.0",
+      "lsMinimumSystemVersion": "15.0",
+      "computedMinMacOsVersion": null,
+      "computedMinVisionOsVersion": null,
+      "iconAssetToken": {
+        "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/8b/1a/db/8b1adbcf-900d-6e36-e2cd-f198d6bbddb1/AppIcon.icns/{w}x{h}bb.{f}",
+        "width": 256,
+        "height": 256
+      },
+      "processingState": "VALID",
+      "buildAudienceType": "APP_STORE_ELIGIBLE",
+      "usesNonExemptEncryption": false,
+      "preReleaseVersion": {
+        "version": "0.1.0",
+        "platform": "MAC_OS"
+      },
+      "buildBetaDetail": {
+        "autoNotifyEnabled": true,
+        "internalBuildState": "IN_BETA_TESTING",
+        "externalBuildState": "READY_FOR_BETA_SUBMISSION"
+      },
+      "betaAppReviewSubmission": null,
+      "groups": [
+        "6fca3f0a-fada-4405-a6a0-9357bab03698"
+      ]
+    },
+    {
+      "id": "941bbdd3-77f6-4422-bc2d-6bf0f9fbc2ff",
+      "version": "55",
+      "uploadedDate": "2026-11-04T22:39:41-08:00",
+      "expirationDate": "2027-02-02T22:39:41-08:00",
+      "expired": false,
+      "minOsVersion": "18.0",
+      "lsMinimumSystemVersion": "15.0",
+      "computedMinMacOsVersion": "15.0",
+      "computedMinVisionOsVersion": "2.0",
+      "iconAssetToken": {
+        "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/fc/8a/36/fc8a3638-7451-9136-56c6-1606a8544195/AppIcon76x76@2x_U007eipad.png/{w}x{h}bb.{f}",
+        "width": 152,
+        "height": 152
+      },
+      "processingState": "VALID",
+      "buildAudienceType": "APP_STORE_ELIGIBLE",
+      "usesNonExemptEncryption": false,
+      "preReleaseVersion": {
+        "version": "0.1.0",
+        "platform": "IOS"
+      },
+      "buildBetaDetail": {
+        "autoNotifyEnabled": true,
+        "internalBuildState": "IN_BETA_TESTING",
+        "externalBuildState": "IN_BETA_TESTING"
+      },
+      "betaAppReviewSubmission": {
+        "betaReviewState": "APPROVED",
+        "submittedDate": null
+      },
+      "groups": [
+        "6fca3f0a-fada-4405-a6a0-9357bab03698",
+        "b2c18bee-362c-4fc0-804a-6869fb3ee638"
+      ]
+    }
+  ],
+  "notesVerified": [
+    "MAC_OS/en-US",
+    "MAC_OS/es-ES",
+    "IOS/en-US",
+    "IOS/es-ES"
+  ],
+  "applicationInputsSha256": "e308c9d627a2f062e82947777e7b1e2781c8e21f61aa2f8c92da554b6c164c9e",
+  "sourceSnapshot": "build/build55-source-snapshot.json",
+  "sourceArchive": "build/NodusReader-source-0.1.0-55.tar.gz",
+  "sourceArchiveSha256": "60bd1e1db46bfbeadba8d5d558daa74cb7e63e66e15e0daf0220097968152954",
+  "signedStartup": {
+    "mac": {
+      "build": "55",
+      "signedArchiveApp": "build/NodusReader-macOS-0.1.0-55.xcarchive/Products/Applications/Nodus Reader.app",
+      "pid": 40619,
+      "launchedAt": 1793860456.163882,
+      "syncDisabledForSmokeCheck": true,
+      "aliveAfterSeconds": 45.8,
+      "alive": true,
+      "libraryWindowObserved": true,
+      "passed": true
+    },
+    "ios": {
+      "build": "55",
+      "app": "/tmp/nodus-reader-build55-sim-release/Build/Products/Release-iphonesimulator/Nodus Reader.app",
+      "pid": 41364,
+      "launchedAt": 1793860608.5550332,
+      "signed": true,
+      "iCloudEntitlementsPresent": true,
+      "appGroupEntitlementsPresent": true,
+      "entitlementsLocation": "Simulator Mach-O __TEXT,__entitlements",
+      "syncDisabledForSmokeCheck": true,
+      "aliveAfterSeconds": 40.4,
+      "onboardingScreenObserved": true,
+      "screenshot": "build/build55-signed-simulator-startup.png",
+      "passed": true
+    }
+  },
+  "iosBuildsOnAppleSiliconMac": false,
+  "appStoreProductionSubmission": false,
+  "dependencies": "Clean MLX checkout at existing pinned revisions; see build/SourcePackages-release55/clean-mlx-revisions.json",
+  "physicalQwenSwitchRegression": "Pending; explicitly documented in beta notes",
+  "uploads": {
+    "ios": {
+      "deliveryUUID": "941bbdd3-77f6-4422-bc2d-6bf0f9fbc2ff",
+      "acceptedWithoutErrors": true
+    },
+    "mac": {
+      "deliveryUUID": "80cbdf5b-925d-4074-96bc-33e60c9a1466",
+      "acceptedWithoutErrors": true
+    }
+  }
+}

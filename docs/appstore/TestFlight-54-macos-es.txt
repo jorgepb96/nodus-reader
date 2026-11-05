@@ -1,0 +1,15 @@
+Nodus Reader 0.1.0 (54) — Qué probar
+
+MODELOS Y LINNET
+• Compara las nuevas tarjetas: barras de velocidad, naturalidad orientativa, banderas de idiomas, parámetros y licencias separadas para código y pesos. La velocidad parte de una estimación y se ajusta con generaciones locales tras reunir tres muestras y treinta segundos de audio. La naturalidad es una valoración editorial, no un resultado medido.
+• Descarga LinnetTTS (unos 83 MB), interrumpe y reanuda la descarga, selecciona sus dos voces en inglés estadounidense, escucha un libro sin conexión y elimina y reinstala el modelo. Prueba números, precios, fechas, frases largas y resaltado de palabras. Linnet no ofrece clonación en Studio; sus pesos y voces tienen una licencia propia, consultable en la app.
+
+FIABILIDAD DE QWEN
+• Qwen comprueba cada toma antes de reproducirla o guardarla. Si hay reconocimiento local disponible, contrasta las palabras solicitadas y reutiliza el resultado para el resaltado. Si no está disponible, mantiene los controles básicos del audio.
+• Cada fragmento fallido tiene hasta tres intentos, con una sesión limpia y otra semilla. Si ninguno es válido, la reproducción debe detenerse en la misma frase y permitir reintentar o elegir otra voz. Comprueba que no se guarde audio defectuoso, se salte texto ni se cambie de voz automáticamente.
+• El audio anterior de Qwen se regenera con la nueva versión de caché. Qwen sigue siendo experimental y su velocidad depende del Mac: recomendamos preparar el audio antes. Su descarga de unos 2,1 GB y la primera carga pueden tardar.
+
+REGRESIONES
+• Comprueba cambios de modelo, muestras de voces, grabación e importación en Studio, eliminación de voces, generación de audio completa o progresiva, escucha sin conexión, pronunciaciones y resaltado.
+• Prueba pausa y reanudación, cambios de velocidad, controles de la pantalla de bloqueo y auriculares.
+• Indica dispositivo, modelo y voz, idioma, pasos y si ocurrió en primer plano o con la pantalla bloqueada. Evita adjuntar textos o audio privados sin permiso.

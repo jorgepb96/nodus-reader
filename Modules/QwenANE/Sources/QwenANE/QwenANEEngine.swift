@@ -225,12 +225,15 @@ public final class QwenANEEngine: @unchecked Sendable {
     /// `experimentalCodePredictor` is a probe-only override for a separately
     /// pinned INT8 export. App callers leave it nil; the installed model set
     /// and the full 1024-slot ICL talker remain unchanged.
-    public init(modelsDirectory: URL, experimentalCodePredictor: URL? = nil) throws {
+    public init(modelsDirectory: URL, experimentalCodePredictor: URL? = nil,
+                cancelled: () -> Bool = { false }) throws {
+        if cancelled() { throw CancellationError() }
         self.modelsDirectory = modelsDirectory
         host = try HostTables(dir: modelsDirectory.appendingPathComponent("host").path)
-        vocoder = try ANEVocoder(modelsDirectory: modelsDirectory)
+        if cancelled() { throw CancellationError() }
+        vocoder = try ANEVocoder(modelsDirectory: modelsDirectory, cancelled: cancelled)
         talker = try ANETalkerEngine(coreMLDirectory: modelsDirectory.appendingPathComponent("coreml"), host: host,
-                                    experimentalCodePredictor: experimentalCodePredictor)
+                                    experimentalCodePredictor: experimentalCodePredictor, cancelled: cancelled)
     }
 
     /// Reads `voices/<name>/{voice.json, ref_codes.npy, spk_embed.npy}` from the models directory.
@@ -258,14 +261,45 @@ public final class QwenANEEngine: @unchecked Sendable {
     ///     0.1 s is delivered at the end), and internal pauses are NOT shortened. The delivered samples are
     ///     a contiguous slice, bit for bit, of the un-capped line; `QwenRender.samples` is unchanged by
     ///     this hook (it still gets `Options.capPauses`). Nothing is delivered for a cancelled render.
+    ///   - onRawRender: optional diagnostic capture before silence trimming, with original codes and
+    ///     termination reason. Runs under the engine lock; must not call back into the engine.
     public func render(text: String, voice: QwenVoiceFiles, seed: UInt64? = nil, maxFrames: Int? = nil,
                        chunkFrames: [Int]? = nil, language: String? = nil,
                        cancelled: () -> Bool = { false }, pace: () -> Void = {},
-                       onAudio: (([Float]) -> Void)? = nil) throws -> QwenRender {
+                       onAudio: (([Float]) -> Void)? = nil,
+                       onRawRender: ((QwenRender) -> Void)? = nil) throws -> QwenRender {
         lock.lock(); defer { lock.unlock() }
         var sampler = makeSampler(seed: seed ?? UInt64.random(in: 0...UInt64.max))
         return try renderLocked(text: text, voice: voice, sampler: &sampler, maxFrames: maxFrames, chunkFrames: chunkFrames,
-                                language: language, continuation: nil, cancelled: cancelled, pace: pace, onAudio: onAudio)
+                                language: language, continuation: nil, cancelled: cancelled, pace: pace, onAudio: onAudio,
+                                onRawRender: onRawRender)
+    }
+
+    /// Diagnostic replay of fixed codes through the installed vocoder. Does not synthesize text or
+    /// apply silence trimming. This lets a device probe distinguish code-generation defects from
+    /// chunk/context defects without a second sampled take. Not used by narration or its cache.
+    public func decodeCodesForDiagnostics(_ codes: [Int64], voice: QwenVoiceFiles,
+                                          chunkFrames: [Int] = [12], overlap: Bool = true,
+                                          cancelled: () -> Bool = { false }) throws -> [Float] {
+        guard !codes.isEmpty, codes.count % 16 == 0, codes.count / 16 <= QwenReadRules.maxFrameCap,
+              !chunkFrames.isEmpty, chunkFrames.allSatisfy({ (1...12).contains($0) }),
+              codes.allSatisfy({ (0..<Int64(QwenVoiceFiles.codebookSize)).contains($0) }) else {
+            throw QwenANEError.invalid("invalid diagnostic codes or chunk schedule")
+        }
+        try QwenVoiceFiles.validate(refCodes: voice.refCodes)
+        lock.lock(); defer { lock.unlock() }
+        vocoder.resetStats()
+        vocoder.overlap = overlap
+        vocoder.chunkSchedule = chunkFrames
+        vocoder.begin(context: voice.referenceFrames)
+        defer { vocoder.drain() }
+        for offset in stride(from: 0, to: codes.count, by: 16) {
+            if cancelled() { throw CancellationError() }
+            try vocoder.push(frame: codes[offset..<(offset + 16)])
+        }
+        let samples = try vocoder.finish()
+        if cancelled() { throw CancellationError() }
+        return samples
     }
 
     func makeSampler(seed: UInt64) -> Sampler {
@@ -283,7 +317,8 @@ public final class QwenANEEngine: @unchecked Sendable {
     func renderLocked(text: String, voice: QwenVoiceFiles, sampler: inout Sampler, maxFrames: Int?,
                       chunkFrames: [Int]?, language: String?, continuation: QwenContinuation?,
                       cancelled: () -> Bool, pace: () -> Void,
-                      onAudio: (([Float]) -> Void)?) throws -> QwenRender {
+                      onAudio: (([Float]) -> Void)?,
+                      onRawRender: ((QwenRender) -> Void)? = nil) throws -> QwenRender {
         try QwenVoiceFiles.validate(refCodes: voice.refCodes)
         guard voice.spkEmbedding.count == host.hidden else {
             throw QwenANEError.invalid("spkEmbedding must have \(host.hidden) values (this model set's x-vector size)")
@@ -336,31 +371,17 @@ public final class QwenANEEngine: @unchecked Sendable {
         }
         guard n > 0, g.stop != .cancelled else { voc.drain(); n = 0; return result([], g.stop, []) }
         pace()
-        var wav: [Float]
+        let wav: [Float]
         do { wav = try voc.finish() } catch { voc.drain(); throw error }   // flushes the partial last chunk, waits for the queue
         if let onAudio, let trimmer { let tail = trimmer.finish(); if !tail.isEmpty { onAudio(tail) } }
         pace()
-        var stop = g.stop
-        var codes = g.codes
-        let cut = trailingSilenceCut(wav, frames: n)
-        if cut < n {
-            n = cut; wav = Array(wav[0..<(cut * samplesPerFrame)]); codes = Array(codes[0..<(cut * 16)])
-            if stop != .contextFull { stop = .trailingSilence }
-        }
-        var out = result(wav, stop, codes)
+        var out = result(wav, g.stop, g.codes)
         out.generatedFrames = g.frames
         out.prefixRowsReused = g.prefixRowsReused
         out.contextFrames = carried
         out.frameCap = min(requested, ANETalkerEngine.windowFrames(promptRows: prompt.T))
-        out.silenceBefore = QwenSilence.analyze(samples: wav, sampleRate: sampleRate)
-        out.silence = out.silenceBefore
-        if options.capPauses {
-            let c = QwenSilence.cap(samples: wav, sampleRate: sampleRate)
-            if c.samples.count != wav.count {
-                out.samples = c.samples; out.pausesCapped = c.pausesCapped
-                out.silence = QwenSilence.analyze(samples: c.samples, sampleRate: sampleRate)
-            }
-        }
+        onRawRender?(out)
+        out.trimSilence(capPauses: options.capPauses)
         return out
     }
 }

@@ -27,6 +27,8 @@ final class ModelManager {
         /// Ming 3.0 0.5B on MLX; offered only on the Mac.
         case ming
         case qwen
+        case linnet
+        case system
 
         var label: String {
             switch self {
@@ -34,6 +36,8 @@ final class ModelManager {
             case .phonon: String(localized: "Phonon")
             case .ming: String(localized: "Ming")
             case .qwen: String(localized: "Qwen")
+            case .system: String(localized: "iOS voices")
+            case .linnet: "LinnetTTS"
             }
         }
     }
@@ -75,6 +79,7 @@ final class ModelManager {
         var installNote: String?
 
         var isAvailable: Bool {
+            guard engine.isEnabled else { return false }
             if case .available = availability { return true }
             return false
         }
@@ -109,10 +114,12 @@ final class ModelManager {
         var phononBytes: Int64 = 0
         var mingBytes: Int64 = 0
         var qwenBytes: Int64 = 0
+        var linnetBytes: Int64 = 0
         var narrationCacheBytes: Int64 = 0
-        var totalBytes: Int64 { kokoroBytes + phononBytes + mingBytes + qwenBytes + narrationCacheBytes }
+        var totalBytes: Int64 { kokoroBytes + phononBytes + mingBytes + qwenBytes + linnetBytes + narrationCacheBytes }
     }
 
+    let performance: ModelPerformance
     private(set) var states: [String: State] = [:]
     private(set) var storage = StorageSummary()
     private(set) var selectedModelID: String
@@ -120,6 +127,7 @@ final class ModelManager {
     /// The engine being loaded into memory for narration, shown on the play
     /// buttons (the first load of a model can take several seconds).
     private(set) var loadingEngine: Engine?
+    @ObservationIgnored private var loadingEngineToken = UUID()
 
     private let voices: VoiceCatalog
     private let audioCache: NarrationAudioCache
@@ -137,6 +145,9 @@ final class ModelManager {
     }
     /// Which Phonon checkpoint `phonon` holds (English 31M or Spanish 40M).
     @ObservationIgnored private var phononModelID: String?
+    @ObservationIgnored private var linnetLoadTask: Task<LinnetSpeech, Error>?
+    @ObservationIgnored private var linnetLoadToken = UUID()
+    @ObservationIgnored private var linnet: LinnetSpeech?
     @ObservationIgnored private var qwen: QwenSpeech?
     @ObservationIgnored private var qwenLoadTask: Task<QwenSpeech, Error>?
     @ObservationIgnored private var qwenLoadToken = UUID()
@@ -217,8 +228,10 @@ final class ModelManager {
             case phonon40MultilingualID: phonon40MultilingualDirectory
             default: phononDirectory
             }
+        case .system: modelsDirectory.appendingPathComponent("system-unused")
         case .ming: mingDirectory
         case .qwen: QwenModels.directory
+        case .linnet: LinnetModels.directory
         }
     }
 
@@ -232,7 +245,9 @@ final class ModelManager {
         "https://huggingface.co/mosiah/phonon-31m-en-coreml/resolve/0a2596e9154f0340005b6445514fdd57f7bc9ddb"
     )!
 
-    let models: [Model] = [
+    let models: [Model] = ModelManager.catalogModels
+
+    static var catalogModels: [Model] { ModelManager.systemModels + [
         Model(
             id: "kokoro-82m",
             engine: .kokoro,
@@ -294,15 +309,21 @@ final class ModelManager {
             phononLanguage: .spanish,
             installNote: String(localized: "Requires a Hugging Face account with access to this model. Sign in below after accepting Gradium's terms. The model is downloaded and prepared on this device: about 130 MB to download and 200 MB installed. For non-commercial use under CC BY-NC 4.0.")
         )
-    ] + [ModelManager.qwenModel] + ModelManager.macOnlyModels
+    ] + [ModelManager.qwenModel, ModelManager.linnetModel] + ModelManager.macOnlyModels }
 
     init(voices: VoiceCatalog,
          audioCache: NarrationAudioCache = NarrationAudioCache(),
-         defaults: UserDefaults = .standard) {
+         defaults: UserDefaults = .standard,
+         discoverSystemVoices: Bool = true) {
         self.voices = voices
         self.audioCache = audioCache
         self.defaults = defaults
+        self.performance = ModelPerformance(defaults: defaults)
         self.selectedModelID = defaults.string(forKey: "nodus.models.selected") ?? ""
+        if !defaults.bool(forKey: "nodus.voiceSetup.migrated"), !self.selectedModelID.isEmpty || !(defaults.string(forKey: "nodus.voices.default") ?? "").isEmpty {
+            defaults.set(true, forKey: "nodus.voiceSetup.legacyConfigured")
+        }
+        defaults.set(true, forKey: "nodus.voiceSetup.migrated")
         #if os(iOS) && !targetEnvironment(simulator)
         // MLX runs only Kokoro's English fallback phonemizer (a small model for
         // words missing from its dictionary). On the GPU it is refused while
@@ -320,6 +341,15 @@ final class ModelManager {
         Self.excludeFromBackup(Self.mingDirectory)
         Self.excludeFromBackup(QwenModels.directory)
         Self.excludeFromBackup(QwenModels.voiceCache)
+        if discoverSystemVoices {
+        voices.onSystemVoicesChanged = { [weak self] in
+            guard let self else { return }
+            self.refreshStates()
+            self.validateSelection()
+            self.publishVoices()
+        }
+        voices.refreshSystemVoices()
+        }
         studioVoices = StudioVoiceStore.voices()
         // Nothing is installing yet: any conversion folder was left by an
         // interrupted one.
@@ -353,13 +383,15 @@ final class ModelManager {
               model.isAvailable,
               isInstalled(model) else { return }
         selectedModelID = id
+        loadingEngineToken = UUID()
+        loadingEngine = nil
         defaults.set(id, forKey: "nodus.models.selected")
         // Only one neural engine stays in memory: the one just selected (and
         // for Phonon, only the selected checkpoint).
         releaseEngines(keeping: model.engine)
         if model.engine == .phonon, phononModelID != model.id { phonon = nil }
         publishVoices()
-        if let first = voices.voice(withID: model.voices.first?.id) {
+        if let first = (model.engine == .system ? voices.voices.first(where: { VoiceCatalog.languageCode($0.language) == Locale.current.language.languageCode?.identifier }) ?? voices.voices.first : voices.voice(withID: model.voices.first?.id)) {
             voices.setDefault(first)
         }
         NotificationCenter.default.post(name: .nodusVoiceEngineChanged, object: nil)
@@ -369,9 +401,34 @@ final class ModelManager {
         selectModel(model.id)
     }
 
+    /// A book can choose a different engine without changing the global default. Retire the old
+    /// engine/load even when the new voice's sentence is already cached and synthesis is skipped.
+    func prepareForVoiceChange(to engine: Engine) {
+        engineLoadTask?.cancel()
+        engineLoadTask = nil
+        engineLoadToken = UUID()
+        loadingEngineToken = UUID()
+        loadingEngine = nil
+        releaseEngines(keeping: engine)
+    }
+
     private func validateSelection() {
         guard !(selectedModel.map { $0.isAvailable && isInstalled($0) } ?? false) else { return }
-        selectedModelID = models.first { $0.isAvailable && isInstalled($0) }?.id ?? ""
+        let snapshot = defaults.data(forKey: "nodus.voices.defaultSnapshot")
+            .flatMap { try? JSONDecoder().decode(VoiceSelectionSnapshot.self, from: $0) }
+            .flatMap { $0.id == voices.defaultVoiceID ? $0 : nil }
+            ?? VoiceSelectionSnapshot.capture(voices.defaultVoiceID)
+        let candidates = models.filter { $0.isAvailable && isInstalled($0) }.flatMap { model in
+            model.engine == .system ? voices.systemVoices : model.voices.map {
+                VoiceCatalog.Voice(id: $0.id, name: $0.name, language: $0.language,
+                    languageName: VoiceCatalog.variantName(for: $0.language), quality: 3,
+                    gender: $0.gender, engineRaw: model.engine.rawValue, modelID: model.id, modelName: model.name)
+            }
+        }
+        let replacement = VoiceCatalog.replacement(in: candidates, language: snapshot.language,
+                                                   gender: snapshot.gender, defaultID: voices.defaultVoiceID)
+        selectedModelID = replacement?.modelID ?? models.first { $0.isAvailable && isInstalled($0) }?.id ?? ""
+        if let replacement { voices.setDefault(replacement) }
         defaults.set(selectedModelID, forKey: "nodus.models.selected")
     }
 
@@ -382,18 +439,21 @@ final class ModelManager {
     // MARK: State
 
     func state(for model: Model) -> State {
-        states[model.id] ?? (isInstalled(model) ? .installed : .notInstalled)
+        if model.engine == .system { return isInstalled(model) ? .installed : .loading }
+        return states[model.id] ?? (isInstalled(model) ? .installed : .notInstalled)
     }
 
     func isInstalled(_ model: Model) -> Bool {
         guard model.isAvailable else { return false }
         switch model.engine {
+        case .system: return !voices.systemVoices.isEmpty
         case .kokoro:
             return model.id == "kokoro-82m" && Self.kokoroBundleIsComplete(at: Self.kokoroCacheDirectory)
         case .phonon:
             return PhononModels.isInstalled(at: directory(for: model))
         case .ming:
             return Self.mingCheckpointIsComplete(at: Self.mingDirectory)
+        case .linnet: return LinnetModels.isInstalled()
         case .qwen:
             return QwenModels.isInstalled()
         }
@@ -460,6 +520,7 @@ final class ModelManager {
         summary.phononBytes = sizes.1
         summary.mingBytes = sizes.2
         summary.qwenBytes = sizes.3
+        summary.linnetBytes = await Task.detached(priority: .utility) { Self.directorySize(LinnetModels.directory) + Self.directorySize(LinnetModels.stagingDirectory) }.value
         summary.narrationCacheBytes = await audioCache.totalBytes()
         storage = summary
     }
@@ -471,6 +532,7 @@ final class ModelManager {
     // MARK: Install
 
     func install(_ model: Model) {
+        guard model.isAvailable, model.engine != .system else { return }
         guard model.isAvailable, model.downloadable else { return }
         guard installTasks[model.id] == nil else { return }
         states[model.id] = .downloading(0)
@@ -498,6 +560,7 @@ final class ModelManager {
     }
 
     func delete(_ model: Model) {
+        guard model.engine != .system else { return }
         engineLoadTask?.cancel()
         engineLoadTask = nil
         engineLoadToken = UUID()
@@ -516,10 +579,17 @@ final class ModelManager {
                       self.states[model.id] == .notInstalled else { return }
                 try? FileManager.default.removeItem(at: directory)
                 if model.engine == .qwen { try? FileManager.default.removeItem(at: QwenModels.stagingDirectory) }
+                if model.engine == .linnet { try? FileManager.default.removeItem(at: LinnetModels.stagingDirectory) }
                 await self.refreshStorage()
             }
         }
         switch model.engine {
+        case .system: return
+        case .linnet:
+            linnet = nil
+            linnetLoadTask?.cancel(); linnetLoadTask = nil; linnetLoadToken = UUID()
+            try? FileManager.default.removeItem(at: LinnetModels.directory)
+            try? FileManager.default.removeItem(at: LinnetModels.stagingDirectory)
         case .qwen:
             qwen = nil
             qwenLoadTask?.cancel()
@@ -554,6 +624,14 @@ final class ModelManager {
         states[model.id] = .downloading(0)
         do {
             switch model.engine {
+            case .system: return
+            case .linnet:
+                try await LinnetModels.download { [weak self] fraction in
+                    Task { @MainActor [weak self] in
+                        guard let self, self.installTokens[model.id] == token else { return }
+                        self.states[model.id] = .downloading(fraction)
+                    }
+                }
             case .qwen:
                 try await QwenModels.download { [weak self] fraction in
                     Task { @MainActor [weak self] in
@@ -712,7 +790,7 @@ final class ModelManager {
         case .phonon:
             modelID = detected.languages == ["es"] ? Self.phonon40SpanishID
                 : detected.languages.count > 1 ? Self.phonon40MultilingualID : "phonon-31m-en"
-        case .ming, .qwen: return
+        case .system, .ming, .qwen, .linnet: return
         }
         guard let model = models.first(where: { $0.id == modelID }) else { return }
         guard model.isAvailable else {
@@ -726,7 +804,7 @@ final class ModelManager {
         switch engine {
         case .kokoro: kokoro = nil
         case .phonon: phonon = nil
-        case .ming, .qwen: return
+        case .system, .ming, .qwen, .linnet: return
         }
         states[model.id] = .loading
         do {
@@ -748,7 +826,7 @@ final class ModelManager {
             case .phonon:
                 phonon = try await Phonon.load(models: destination, language: model.phononLanguage)
                 phononModelID = model.id
-            case .ming, .qwen:
+            case .system, .ming, .qwen, .linnet:
                 break
             }
             states[model.id] = .installed
@@ -795,9 +873,14 @@ final class ModelManager {
     /// One sentence of neural speech (mono Float PCM) from an installed
     /// engine. The voice decides the model, selected or not (the Voices screen
     /// previews any installed model); its engine is loaded if needed.
-    func synthesize(_ text: String, voiceID: String, engine: Engine) async throws -> (samples: [Float], sampleRate: Double) {
+    func synthesize(_ text: String, voiceID: String, engine: Engine) async throws -> NarrationSynthesis {
+        try Task.checkCancellation()
+        guard engine.isEnabled else { throw NeuralNarrationError.engineNotLoaded(engine.label) }
         beginSynthesis()
         defer { endSynthesis() }
+        #if os(iOS)
+        if engine == .system { return try await SystemSpeech.shared.synthesize(text, voiceID: voiceID) }
+        #endif
         let target = model(forVoiceID: voiceID)
             ?? selectedModel.flatMap { model in
                 // An ID this build does not know: try the selected model with
@@ -809,7 +892,16 @@ final class ModelManager {
             throw NeuralNarrationError.engineNotLoaded(engine.label)
         }
         try await ensureLoaded(model)
+        try Task.checkCancellation()
+        let started = ProcessInfo.processInfo.systemUptime
+        var produced: NarrationSynthesis?
+        defer { if let produced { performance.record(model: model, seconds: ProcessInfo.processInfo.systemUptime - started, audio: Double(produced.samples.count) / produced.sampleRate) } }
+        func measured(_ audio: NarrationSynthesis) -> NarrationSynthesis { produced = audio; return audio }
         switch engine {
+        case .system: throw NeuralNarrationError.engineNotLoaded(engine.label)
+        case .linnet:
+            guard let linnet else { throw NeuralNarrationError.engineNotLoaded("LinnetTTS") }
+            return measured(try await linnet.synthesize(text, voice: name))
         case .qwen:
             guard let qwen else { throw NeuralNarrationError.engineNotLoaded("Qwen") }
             let referenceID = name.hasPrefix(QwenSpeech.clonePrefix)
@@ -817,16 +909,16 @@ final class ModelManager {
             let language = name.hasPrefix(QwenSpeech.clonePrefix)
                 ? studioVoices.first { $0.id == referenceID }?.language ?? "es-ES"
                 : name
-            var samples = try await qwen.synthesize(text, referenceID: referenceID, language: language)
+            var audio = try await qwen.synthesize(text, referenceID: referenceID, language: language)
             try Task.checkCancellation()
-            NarrationPCM.fadeEdges(&samples, sampleRate: QwenSpeech.sampleRate)
-            return (samples, QwenSpeech.sampleRate)
+            NarrationPCM.fadeEdges(&audio.samples, sampleRate: QwenSpeech.sampleRate)
+            return measured(audio)
         case .kokoro:
             guard let kokoro else { throw NeuralNarrationError.engineNotLoaded("Kokoro") }
             if KokoroSpanish.isSpanishVoice(name) {
                 let samples = try await KokoroSpanish.synthesize(text, voice: name, engine: kokoro,
                                                                  bundle: Self.kokoroCacheDirectory)
-                return (samples, 24_000)
+                return measured(NarrationSynthesis(samples: samples, sampleRate: 24_000))
             }
             let inputs = try await kokoro.prepare(text, voice: KokoroVoiceID(name))
             var samples: [Float] = []
@@ -838,7 +930,7 @@ final class ModelManager {
                     continuesNext: index + 1 < inputs.count && !NarrationPCM.endsClause(input.text ?? ""))
                 NarrationPCM.append(chunk, to: &samples, sampleRate: Double(audio.sampleRate))
             }
-            return (samples, 24_000)
+            return measured(NarrationSynthesis(samples: samples, sampleRate: 24_000))
         case .ming:
             #if os(macOS)
             guard let ming else { throw NeuralNarrationError.engineNotLoaded("Ming") }
@@ -858,7 +950,7 @@ final class ModelManager {
                                                     language: String(language.prefix(2)))
             try Task.checkCancellation()
             NarrationPCM.fadeEdges(&samples, sampleRate: MingSpeech.sampleRate)
-            return (samples, MingSpeech.sampleRate)
+            return measured(NarrationSynthesis(samples: samples, sampleRate: MingSpeech.sampleRate))
             #else
             throw NeuralNarrationError.engineNotLoaded("Ming")
             #endif
@@ -881,32 +973,50 @@ final class ModelManager {
             var samples = try await phonon.synthesize(text)
             try Task.checkCancellation()
             NarrationPCM.fadeEdges(&samples, sampleRate: Phonon.sampleRate)
-            return (samples, Phonon.sampleRate)
+            return measured(NarrationSynthesis(samples: samples, sampleRate: Phonon.sampleRate))
         }
     }
 
     /// Loads `model`'s engine if it is not the one in memory. Only one Phonon
     /// checkpoint is kept; trying another engine drops the idle one.
     private func ensureLoaded(_ model: Model) async throws {
+        try Task.checkCancellation()
+        let statusToken = UUID()
+        loadingEngineToken = statusToken
+        defer { if loadingEngineToken == statusToken { loadingEngine = nil } }
         // The selected engine may already be loading since launch: wait for
         // it rather than load a second copy of the same model.
-        if let launching = engineLoadTask {
+        if let launching = engineLoadTask, selectedModel?.engine == model.engine {
             loadingEngine = model.engine
-            await launching.value
+            _ = try await CancellableTaskValue.value(of: launching)
         }
-        defer { loadingEngine = nil }
+        try Task.checkCancellation()
+        // Playback marks narration busy before asking for a sentence. Busy must not prevent
+        // dropping the previous engine when a per-book voice or preview selects another one.
+        releaseEngines(keeping: model.engine)
         switch model.engine {
+        case .system: return
+        case .linnet:
+            guard linnet == nil else { return }
+            loadingEngine = .linnet
+            let token = linnetLoadToken
+            let task = linnetLoadTask ?? Task { try await LinnetSpeech.load() }
+            linnetLoadTask = task
+            defer { if linnetLoadToken == token, !Task.isCancelled { linnetLoadTask = nil } }
+            let loaded = try await CancellableTaskValue.value(of: task)
+            try Task.checkCancellation()
+            guard token == linnetLoadToken else { throw CancellationError() }
+            linnet = loaded
         case .qwen:
             guard qwen == nil else { return }
-            if !narrationInUse { releaseEngines(keeping: .qwen) }
             loadingEngine = .qwen
             // Preview and prefetch can arrive together: never load two copies
             // of this checkpoint into a phone's memory.
             let token = qwenLoadToken
             let task = qwenLoadTask ?? Task { try await QwenSpeech.load(directory: QwenModels.directory) }
             qwenLoadTask = task
-            defer { if qwenLoadToken == token { qwenLoadTask = nil } }
-            let loaded = try await task.value
+            defer { if qwenLoadToken == token, !Task.isCancelled { qwenLoadTask = nil } }
+            let loaded = try await CancellableTaskValue.value(of: task)
             try Task.checkCancellation()
             guard qwenLoadToken == token else { throw CancellationError() }
             qwen = loaded
@@ -915,7 +1025,6 @@ final class ModelManager {
             // CPU (prefetched sentences cover the reload).
             if kokoro != nil, isInBackground, !kokoroIsCPUOnly { kokoro = nil }
             guard kokoro == nil else { return }
-            if !narrationInUse { releaseEngines(keeping: .kokoro) }
             #if targetEnvironment(simulator)
             throw NeuralNarrationError.engineNotLoaded("Kokoro")
             #else
@@ -926,7 +1035,6 @@ final class ModelManager {
             #endif
         case .phonon:
             guard phonon == nil || phononModelID != model.id else { return }
-            if !narrationInUse { releaseEngines(keeping: .phonon) }
             phonon = nil
             loadingEngine = .phonon
             let loaded = try await Phonon.load(models: directory(for: model), language: model.phononLanguage)
@@ -935,7 +1043,6 @@ final class ModelManager {
         case .ming:
             #if os(macOS)
             guard ming == nil else { return }
-            if !narrationInUse { releaseEngines(keeping: .ming) }
             loadingEngine = .ming
             ming = try await MingSpeech.load(directory: directory(for: model))
             #else
@@ -1021,8 +1128,15 @@ final class ModelManager {
     /// A sentence already being generated keeps its own reference until it
     /// finishes; the next one loads the engine again.
     private func releaseEngines(keeping engine: Engine?) {
+        #if os(iOS)
+        if engine != .system { SystemSpeech.shared.cancel() }
+        #endif
+        if engine != .linnet { linnet = nil; linnetLoadTask?.cancel(); linnetLoadTask = nil; linnetLoadToken = UUID() }
         if engine != .qwen {
+            let retired = qwen
             qwen = nil
+            // Core ML teardown can block. Do not destroy a multi-GB engine on the UI thread.
+            if let retired { Task.detached(priority: .userInitiated) { withExtendedLifetime(retired) {} } }
             qwenLoadTask?.cancel()
             qwenLoadTask = nil
             qwenLoadToken = UUID()
@@ -1135,7 +1249,7 @@ final class ModelManager {
                     (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 )
             }
-        case .ming, .qwen:
+        case .system, .ming, .qwen, .linnet:
             // Loaded on the first sentence: 1.6 GB is not worth holding for a
             // library window that may never narrate.
             break
@@ -1148,6 +1262,7 @@ final class ModelManager {
     func voices(for model: Model) -> [Voice] {
         guard isInstalled(model) else { return [] }
         switch model.engine {
+        case .system: return voices.systemVoices.map { Voice(id: $0.id, name: $0.name, language: $0.language, engine: .system, gender: $0.gender) }
         case .ming: return model.voices + studioReferences(for: .ming).map(Self.voice(fromClone:))
         case .qwen: return model.voices + studioVoices.filter { !$0.isBundled }.map(Self.qwenVoice(from:))
         default: return model.voices
@@ -1163,7 +1278,8 @@ final class ModelManager {
         func catalogVoices(for model: Model) -> [VoiceCatalog.Voice] {
             let available = switch model.engine {
             case .kokoro: model.voices.filter { installedKokoro.contains(String($0.id.dropFirst("kokoro:".count))) }
-            case .phonon: model.voices
+            case .system: voices.systemVoices.map { Voice(id: $0.id, name: $0.name, language: $0.language, engine: .system, gender: $0.gender) }
+            case .phonon, .linnet: model.voices
             case .ming: model.voices + studioReferences(for: .ming).map(Self.voice(fromClone:))
             case .qwen: model.voices + studioVoices.filter { !$0.isBundled }.map(Self.qwenVoice(from:))
             }
@@ -1193,6 +1309,11 @@ final class ModelManager {
     /// it. "phonon:" is the 31M English checkpoint; books whose voice was
     /// chosen with an earlier build of 40M Spanish ("phonon:Alba") resolve to it.
     func model(forVoiceID voiceID: String) -> (model: Model, name: String)? {
+        if voices.systemVoices.contains(where: { $0.id == voiceID }), let model = models.first(where: { $0.engine == .system }) { return (model, voiceID) }
+        if voiceID.hasPrefix("linnet:"), let model = models.first(where: { $0.engine == .linnet }),
+           model.voices.contains(where: { $0.id == voiceID }) {
+            return (model, String(voiceID.dropFirst("linnet:".count)))
+        }
         if let qwen = models.first(where: { $0.engine == .qwen }) {
             if voiceID.hasPrefix(QwenSpeech.clonePrefix) { return (qwen, voiceID) }
             if voiceID.hasPrefix("qwen:") { return (qwen, String(voiceID.dropFirst("qwen:".count))) }

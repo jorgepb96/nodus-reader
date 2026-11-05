@@ -39,6 +39,28 @@ struct OfflineNarrationPlan: Codable, Identifiable, Sendable {
         return true
     }
 
+    /// Qwen cache-policy revisions also apply to persisted offline jobs. Recompute their keys
+    /// before rendering, so the reader and the queue cannot disagree about where audio is saved.
+    func needsQwenCacheMigration(cache: NarrationAudioCache) -> Bool {
+        guard engine == "qwen", let first = sentences.first else { return false }
+        let rules = (try? JSONDecoder().decode([PronunciationRule].self, from: Data(pronunciationRevision.utf8))) ?? []
+        let prepared = PronunciationTransformer.prepare(first.text, rules: rules)
+        return first.key != cache.key(text: first.text, engine: engine, voice: voiceID, pronunciation: prepared.signature)
+    }
+
+    func migratingQwenCache(cache: NarrationAudioCache) -> Self {
+        let rules = (try? JSONDecoder().decode([PronunciationRule].self, from: Data(pronunciationRevision.utf8))) ?? []
+        let updated = sentences.map { sentence in
+            let prepared = PronunciationTransformer.prepare(sentence.text, rules: rules)
+            return Sentence(text: sentence.text,
+                            key: cache.key(text: sentence.text, engine: engine, voice: voiceID, pronunciation: prepared.signature),
+                            chapterIndex: sentence.chapterIndex, offset: sentence.offset)
+        }
+        return Self(id: id, bookID: bookID, bookHash: bookHash, title: title, voiceID: voiceID,
+                    voiceName: voiceName, engine: engine, pronunciationRevision: pronunciationRevision,
+                    createdAt: createdAt, sentences: updated, units: units)
+    }
+
     @MainActor
     static func make(book: Book, chapters: [ExtractedChapter], voice: VoiceCatalog.Voice,
                      paragraphsPerBlock: Int, cache: NarrationAudioCache) -> Self {
@@ -94,7 +116,7 @@ final class OfflineNarrationQueue {
         var readingSentence: Int = 0
     }
     struct Job: Identifiable {
-        let plan: OfflineNarrationPlan
+        var plan: OfflineNarrationPlan
         var state: State
         var id: UUID { plan.id }
         var target: Range<Int> {
@@ -116,6 +138,7 @@ final class OfflineNarrationQueue {
     @ObservationIgnored private var interactiveBusy = false
     @ObservationIgnored private var editorClaims: Set<UUID> = []
     @ObservationIgnored private var pendingVerification: Set<UUID> = []
+    @ObservationIgnored private var pendingCacheMigrations: Set<UUID> = []
     @ObservationIgnored private var available: (OfflineNarrationPlan) -> Bool = { _ in false }
     @ObservationIgnored private var idle: () -> Bool = { false }
     @ObservationIgnored private var validate: (OfflineNarrationPlan) throws -> Void = { _ in }
@@ -137,6 +160,11 @@ final class OfflineNarrationQueue {
             if state.status == .generating { state.status = .queued }
             state.readingSentence = min(max(0, state.readingSentence), plan.sentences.count - 1)
             state.lookAhead = state.lookAhead.map { min(1000, max(1, $0)) }
+            if plan.needsQwenCacheMigration(cache: cache) {
+                pendingCacheMigrations.insert(id)
+                state.completed.removeAll()
+                if [.completed, .caughtUp].contains(state.status) { state.status = .queued }
+            }
             jobs.append(Job(plan: plan, state: state))
             pendingVerification.insert(id)
         }
@@ -307,6 +335,16 @@ final class OfflineNarrationQueue {
     }
 
     private func kick() {
+        for index in jobs.indices where ModelManager.Engine(rawValue: jobs[index].plan.engine)?.isEnabled == false {
+            guard [.queued, .generating, .waiting].contains(jobs[index].state.status) else { continue }
+            let reason = String(localized: "This voice engine is unavailable on this device. Choose another voice to generate new audio.")
+            if jobs[index].state.status != .waiting || jobs[index].state.error != reason {
+                jobs[index].state.status = .waiting
+                jobs[index].state.error = reason
+                persist(jobs[index].id)
+            }
+        }
+
         guard worker == nil, !interactiveBusy, editorClaims.isEmpty, idle() else { return }
         guard nextJob() != nil else { return }
         let token = UUID(); workerToken = token
@@ -321,6 +359,31 @@ final class OfflineNarrationQueue {
             while !Task.isCancelled, !self.interactiveBusy, self.editorClaims.isEmpty, self.idle(),
                   let i = self.nextJob() {
                 let plan = self.jobs[i].plan
+                if self.pendingCacheMigrations.contains(plan.id) {
+                    // Large books can have many thousands of keys. Hashing and rewriting the plan
+                    // must not monopolize the UI thread when changing voices or opening the player.
+                    let cache = self.cache, destination = self.directory(plan.id).appendingPathComponent("plan.json")
+                    do {
+                        let updated = try await Task.detached(priority: .utility) {
+                            let updated = plan.migratingQwenCache(cache: cache)
+                            try JSONEncoder().encode(updated).write(to: destination, options: .atomic)
+                            return updated
+                        }.value
+                        try Task.checkCancellation()
+                        guard let index = self.index(plan.id) else { return }
+                        self.jobs[index].plan = updated
+                        self.pendingCacheMigrations.remove(plan.id)
+                        self.persist(plan.id)
+                    } catch {
+                        if Task.isCancelled { return }
+                        if let index = self.index(plan.id) {
+                            self.jobs[index].state.status = .failed
+                            self.jobs[index].state.error = error.localizedDescription
+                            self.persist(plan.id)
+                        }
+                    }
+                    continue
+                }
                 if self.pendingVerification.remove(plan.id) != nil {
                     let completed = self.jobs[i].state.completed
                     for sentence in completed {

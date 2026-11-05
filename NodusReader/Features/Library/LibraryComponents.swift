@@ -620,3 +620,14 @@ struct CollectionFolderTile: View {
         .accessibilityLabel(bookCount == 1 ? "\(collection.name), collection, 1 book" : "\(collection.name), collection, \(bookCount) books")
     }
 }
+
+
+extension View {
+    @ViewBuilder func persistentAppTabs() -> some View {
+        #if os(iOS)
+        self.toolbar(.visible, for: .tabBar)
+        #else
+        self
+        #endif
+    }
+}

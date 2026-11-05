@@ -1,0 +1,15 @@
+Nodus Reader 0.1.0 (55) — What to test
+
+VOICE SWITCHING AND RESPONSIVENESS
+• In EPUB, PDF and plain text, select Qwen and switch back to a faster model while it loads or generates a sentence. Try both the book voice picker and Settings. Check that the interface remains responsive, preserves your position, and does not restore a cancelled request's voice or loading indicator.
+• Switch rapidly between voice previews, then return to narration. The previous preview should stop without affecting its replacement.
+• Model loading and sentence generation now use different messages. “Generating the next sentence…” means audio is being synthesized, not that the reference voice is being prepared again.
+
+QWEN AND OFFLINE AUDIO
+• Takes that reach a generation limit remain rejected even if trailing silence can be trimmed. Check recovery after a failed sentence: up to three takes, a pause at the same position, and the ability to retry or choose another voice.
+• Older Qwen audio is regenerated under a new cache revision. Saved offline jobs migrate their keys and recalculate progress while preserving an explicit pause. Include pronunciation rules in testing.
+• Qwen remains experimental. This build does not claim faster sustained synthesis or change its sampling or weights. On iPhone generation may fall behind playback; generating offline audio first is recommended.
+
+REGRESSIONS
+• Test Linnet, Kokoro and Phonon, word highlighting, pause/resume, speed changes, headphones and locked-screen playback. Limit each continuous phone session to five minutes.
+• Report device, model, voice, document format, and whether the issue occurred during loading, generation or playback. Full physical-device confirmation of model switching and the reported app termination remains pending; this beta provides the changes to validate.

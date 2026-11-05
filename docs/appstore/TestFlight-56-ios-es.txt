@@ -1,0 +1,11 @@
+Nodus Reader 0.1.0 (56) — Qué probar
+
+• Nueva bienvenida con tres opciones equilibradas: usar voces de iOS sin descarga, descargar un modelo o sólo leer. La elección se recuerda; eliminar modelos no impone de nuevo la bienvenida.
+• Voces de iOS en el catálogo y en cada libro, con velocidad 5/5 y naturalidad orientativa 1/5. Se usan las voces disponibles de Apple. Qwen y Studio quedan temporalmente ocultos en iPhone y iPad; los archivos existentes se conservan.
+• Sustitución de voces no disponibles por otra del mismo idioma, guardada sólo en ese dispositivo. Comprueba que una elección manual nueva se sincronice sin cambiar automáticamente la voz del Mac por una sustitución del iPhone.
+• Filtros de voces por uno o varios modelos, idiomas y géneros, recordados entre libros y sesiones. El selector del reproductor parte del modelo de la voz actual cuando aún no hay filtros personales guardados.
+• Catálogo con filtro persistente por idiomas y mostrar más/menos cuando hay más de diez idiomas. Bienvenida, reproductor, márgenes y navegación adaptados a iPhone, iPad y las dos pantallas del iPhone Duo.
+• Se oculta el selector de páginas/vertical/horizontal mientras está activo el desplazamiento automático. Comprueba texto y resaltado con temas claros y oscuros.
+• Prueba cambios entre voces de iOS y descargadas, EPUB/PDF/texto, pronunciaciones, pausa, velocidad, audio sin conexión, auriculares, pantalla bloqueada e interrupciones.
+
+La validación física de esta versión está pendiente. Limita cada sesión en iPhone/iPad a cinco minutos e indica dispositivo, voz, documento y pasos al comunicar errores. macOS llegará más adelante; por ahora tiene sólo beta privada.

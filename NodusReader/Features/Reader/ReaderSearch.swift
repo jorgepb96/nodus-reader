@@ -3,6 +3,9 @@ import DesignSystem
 import Foundation
 import Observation
 import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 
 /// One occurrence of the search text: a range of a chapter's text.
 struct ReaderSearchMatch: Hashable, Sendable {
@@ -106,6 +109,15 @@ struct ReaderSearchBar: View {
     let theme: ReaderTheme
     @FocusState private var focused: Bool
 
+    private func finishEditing() {
+        focused = false
+        #if os(iOS)
+        // Also end the native editing session before this bar is removed.
+        // Otherwise a resized/folded scene can retain its keyboard overlay.
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        #endif
+    }
+
     private var counter: String {
         if model.query.trimmingCharacters(in: .whitespaces).isEmpty { return "" }
         if model.isSearching { return String(localized: "Searching…") }
@@ -133,13 +145,13 @@ struct ReaderSearchBar: View {
                     .textInputAutocapitalization(.never)
                     .submitLabel(.search)
                     #endif
-                    .onSubmit {
+                    .onSubmit(of: [.text, .search]) {
                         #if os(macOS)
                         model.next()
                         #else
                         // The Search key shows the results: the keyboard
                         // would cover half the page. The arrows step on.
-                        focused = false
+                        finishEditing()
                         #endif
                     }
                     .accessibilityIdentifier("ReaderSearchField")
@@ -182,6 +194,7 @@ struct ReaderSearchBar: View {
             .accessibilityLabel("Next match")
 
             Button("Done") {
+                finishEditing()
                 model.dismiss()
             }
             .buttonStyle(.plain)
@@ -189,6 +202,7 @@ struct ReaderSearchBar: View {
             .foregroundStyle(theme.accent)
             .frame(minWidth: 44, minHeight: 44)
             .keyboardShortcut(.cancelAction)
+            .accessibilityIdentifier("ReaderSearchClose")
         }
         .padding(.leading, 12)
         .padding(.trailing, 6)
@@ -200,5 +214,6 @@ struct ReaderSearchBar: View {
             Rectangle().fill(theme.line).frame(height: 0.5)
         }
         .onAppear { focused = true }
+        .onDisappear { finishEditing() }
     }
 }

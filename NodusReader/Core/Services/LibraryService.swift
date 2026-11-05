@@ -588,8 +588,8 @@ public final class LibraryService {
         save()
     }
 
-    public func setPreferredVoice(_ book: Book, voiceID: String?) {
-        guard book.preferredVoiceID != voiceID else { return }
+    func setPreferredVoice(_ book: Book, voiceID: String?, voice: VoiceCatalog.Voice? = nil) {
+        book.preferredVoiceSnapshotJSON = voiceID.flatMap { try? JSONEncoder().encode(VoiceSelectionSnapshot.capture($0, voice: voice)) }.flatMap { String(data: $0, encoding: .utf8) } ?? ""
         book.preferredVoiceID = voiceID
         book.touch()
         save()

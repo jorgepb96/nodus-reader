@@ -1,1 +1,30 @@
-Nodus Reader is a free, open-source reading and listening app for iPhone, iPad and Mac. Import EPUB, PDF, TXT, Markdown, HTML and RTF documents; organize your local library with collections; and read with themes, bookmarks, highlights, notes and search. Intelligent Reading rebuilds PDF text with on-device OCR. Download a Kokoro or Phonon voice model, then listen offline with neural narration that runs on your device. Optional synchronization uses your personal iCloud account. Voice models and generated audio stay on each device. No ads, tracking or telemetry.
+Nodus Reader brings your library to life with natural voices, a way back into the story and soundscapes that accompany your reading. An immersive experience that is free, private and powered by your own device.
+
+GIVE YOUR BOOKS A VOICE
+Turn books, texts and documents into natural narration generated on your iPhone or iPad. On iPhone and iPad, start with the included iOS voices without downloading a model, download more natural voices, or just read. Narration runs on your device without sending your text to an AI service.
+
+Choose Kokoro or Phonon voices, try LinnetTTS with two US English voices, with more models to choose from. Model cards show supported languages, licences, estimated or locally measured speed and indicative naturalness. Follow the sentence and word being read, tap a word to start there, and adjust how names are pronounced in each book without changing its text. Choose the voice, playback speed and sleep timer, with background playback and lock-screen controls.
+
+PICK UP THE STORY AGAIN
+Been away from a book for a few days? Return with recaps that help you remember where you left off and who the characters are. On devices that support Apple Intelligence, Nodus Reader uses Apple’s on-device models through Foundation Models. Recaps draw on the pages you have already read and are generated on your device.
+
+STEP INTO THE ATMOSPHERE
+Add instrumental music and ambient sound with Immersive Audio. Choose an atmosphere for a focused reading session, or let Automatic mode adapt it to the passage on devices that support Apple Intelligence. Music softens while narration speaks so the words remain clear.
+
+Sound packs download once and play offline. Your reading atmosphere does not need a continuous internet connection.
+
+MAKE THE LIBRARY YOURS
+• Import EPUB, PDF, TXT, Markdown, HTML and RTF from Files or another app’s Share button.
+• Turn pages or scroll continuously, and adjust the theme, typeface, size, margins and spacing.
+• Use Intelligent Reading to read and listen to PDFs, with on-device text recognition for scanned pages.
+• Organize collections, save favorites and add bookmarks, highlights and notes.
+• Synchronize books, covers, reading progress, annotations and pronunciations through your personal iCloud account, only when you enable it.
+
+LOCAL, FREE AND UNDER YOUR CONTROL
+Once voice models and sound packs are downloaded, you can read, listen and enjoy the atmosphere offline. Narration and document processing run on your device. Models, generated audio and custom voices stay on each device.
+
+No advertising, subscriptions or Nodus account. iCloud synchronization is optional and off by default.
+
+Recaps and Automatic atmosphere require Apple Intelligence to be available on a supported device running iOS or iPadOS 26 or later. Mac version: coming soon. On iPhone and iPad, iOS voices need no model download; downloaded voices offer greater naturalness with performance that varies by model and device. Linnet uses its built-in voices only. Some voice models require a Hugging Face account and acceptance of the publisher’s terms; some are for non-commercial use only. DRM-protected books are not supported.
+
+Privacy: nodusresearch.com/reader/privacy/

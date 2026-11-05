@@ -25,6 +25,7 @@ struct RootView: View {
     @State private var navigation = NavigationModel()
     @State private var importedBook: Book?
     @State private var showVoiceSetup = false
+    @AppStorage("nodus.voiceSetup.choice") private var voiceSetupChoice = ""
     @State private var voiceSetupBypassed = false
 
     private var palette: NodusPalette {
@@ -137,8 +138,10 @@ struct RootView: View {
                 await models.loadInstalledEnginesIfNeeded()
                 await cleanUpStorage()
             }
-            .onChange(of: models.hasInstalledModel) { _, installed in
-                showVoiceSetup = !installed && !voiceSetupBypassed
+            .onChange(of: models.hasInstalledModel) { _, _ in
+                #if os(macOS)
+                updateVoiceSetup()
+                #endif
             }
             .onChange(of: scenePhase) { _, phase in
                 #if os(iOS)
@@ -151,6 +154,7 @@ struct RootView: View {
                 if phase == .active {
                     Task {
                         if !LibraryStorageScope.isIsolated { await imports.consumeSharedInbox() }
+                        voices.refreshSystemVoices()
                         await sync.refreshAvailability()
                         await sync.syncNow()
                     }
@@ -189,7 +193,14 @@ struct RootView: View {
             return
         }
         #endif
+        #if os(iOS)
+        if voiceSetupChoice.isEmpty && (UserDefaults.standard.bool(forKey: "nodus.voiceSetup.legacyConfigured") || !library.allBooks().isEmpty || models.models.contains(where: { $0.engine != .system && models.isInstalled($0) })) {
+            voiceSetupChoice = "existing"
+        }
+        showVoiceSetup = voiceSetupChoice.isEmpty && !voiceSetupBypassed
+        #else
         showVoiceSetup = !models.hasInstalledModel && !voiceSetupBypassed
+        #endif
     }
 
     private func openPendingImportedBook() {

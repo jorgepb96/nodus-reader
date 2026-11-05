@@ -56,13 +56,17 @@ final class ANEVocoder {
     /// between lines; it must not block. nil (the default) changes nothing about the returned audio.
     var onChunk: (([Float]) -> Void)?
 
-    init(modelsDirectory: URL) throws {
+    init(modelsDirectory: URL, cancelled: () -> Bool = { false }) throws {
+        if cancelled() { throw CancellationError() }
         head = try VocoderHead(dir: modelsDirectory.appendingPathComponent("vochead").path)
         let dir = modelsDirectory.appendingPathComponent("coreml")
         func load(_ n: String, _ units: MLComputeUnits, function: String? = nil) throws -> MLModel {
+            if cancelled() { throw CancellationError() }
             let c = MLModelConfiguration(); c.computeUnits = units
             if let function { c.functionName = function }
-            return try MLModel(contentsOf: dir.appendingPathComponent("\(n).mlmodelc"), configuration: c)
+            let model = try MLModel(contentsOf: dir.appendingPathComponent("\(n).mlmodelc"), configuration: c)
+            if cancelled() { throw CancellationError() }
+            return model
         }
         // One multifunction upF.mlmodelc ("w12", "w20": same weights, two window widths); the older
         // layout shipped the weights twice as upF_12 / upF_20.
@@ -88,8 +92,11 @@ final class ANEVocoder {
         in12 = try MLMultiArray(shape: [1, 1024, 12], dataType: .float32)
         in20 = try MLMultiArray(shape: [1, 1024, 20], dataType: .float32)
         // warm-up: first predictions compile / specialise the graphs (ANE) and are cached by the system
+        if cancelled() { throw CancellationError() }
         _ = try predict(window: in12, first: true)
+        if cancelled() { throw CancellationError() }
         _ = try predict(window: in20, first: false)
+        if cancelled() { throw CancellationError() }
     }
 
     /// Drops the primed per-voice states; the next line of each voice primes again.

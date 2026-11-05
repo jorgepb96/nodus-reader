@@ -1,0 +1,15 @@
+Nodus Reader 0.1.0 (55) — Qué probar
+
+CAMBIO DE VOZ Y RESPUESTA DE LA INTERFAZ
+• En EPUB, PDF y texto, selecciona Qwen y vuelve a un modelo rápido mientras carga o genera una frase. Prueba tanto el selector de voz del libro como Ajustes. Comprueba que la interfaz siga respondiendo, conserve la posición y no reaparezcan la voz ni los indicadores de una petición cancelada.
+• Cambia rápidamente entre muestras de voces y vuelve a la lectura. La muestra anterior debe detenerse sin interferir con la nueva.
+• La carga del modelo y la espera de síntesis tienen mensajes distintos. «Generando la siguiente frase…» indica que se está creando audio, no que se prepare otra vez la voz.
+
+QWEN Y AUDIO SIN CONEXIÓN
+• Las tomas que alcanzan un límite de generación se rechazan aunque tengan un silencio final recortable. Comprueba la recuperación tras un fallo: hasta tres tomas, pausa en la misma frase y opción de reintentar o elegir otra voz.
+• El audio anterior de Qwen se regenera con una nueva versión de caché. Los trabajos guardados migran sus claves y recalculan el progreso; una pausa explícita debe mantenerse. Prueba también reglas de pronunciación.
+• Qwen sigue siendo experimental. No se anuncia una mejora de velocidad sostenida ni se cambia su muestreo o sus pesos. En iPhone puede generar más despacio de lo que se reproduce: recomendamos preparar el audio antes de escuchar.
+
+REGRESIONES
+• Prueba Linnet, Kokoro y Phonon, resaltado de palabras, pausa/reanudación, cambios de velocidad, auriculares y pantalla bloqueada. Limita cada sesión continua en el teléfono a cinco minutos.
+• Indica dispositivo, modelo, voz, formato del documento y si ocurrió durante carga, generación o reproducción. La validación física completa del cambio de motor y del cierre informado sigue pendiente; esta beta incorpora las correcciones para contrastarlas.

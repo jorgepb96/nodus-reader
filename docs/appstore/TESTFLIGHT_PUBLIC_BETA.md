@@ -1,6 +1,32 @@
 # Public TestFlight beta
 
-## Current release — 4 November 2026
+## Current release — 5 November 2026
+
+**0.1.0 (56)**: iOS Internal + Public Beta (**IN_BETA_TESTING**); macOS Internal only. [Verification](BUILD56_VERIFICATION.md). No production App Store submission.
+
+## Previous release — 5 November 2026
+
+Build **0.1.0 (55)** improves engine switching and Qwen failure/cache handling.
+
+- iOS/iPadOS: Internal and Public Beta; external state **IN_BETA_TESTING**, beta review **APPROVED**.
+- Native macOS: Internal only; **IN_BETA_TESTING**.
+- English/Spanish test notes and reviewer instructions verified. [Public iOS beta](https://testflight.apple.com/join/SjCk8AZ1).
+- iOS builds on Apple silicon Macs remain disabled. No App Store production submission.
+
+See [build 55 verification](BUILD55_VERIFICATION.md).
+
+## Previous release — 4 November 2026
+
+Build **0.1.0 (54)** adds model comparison cards, Qwen audio checks and LinnetTTS.
+
+- iOS/iPadOS: **Internal** and **Nodus Reader — Public Beta**, external state **IN_BETA_TESTING**, beta review **APPROVED**.
+- Native macOS: **Internal only**, internally **IN_BETA_TESTING**, with no public-group assignment or external review submission.
+- English/Spanish notes and listing descriptions are saved and verified. iOS builds on Apple silicon Macs remain disabled; the [public iOS link](https://testflight.apple.com/join/SjCk8AZ1) remains enabled.
+- No App Store production release was submitted.
+
+See [build 54 verification and delivery](BUILD54_VERIFICATION.md).
+
+## Previous release — 4 November 2026
 
 Build **0.1.0 (53)** adds experimental Qwen voice cloning, Studio voice import/recording and persistent whole-book or progressive chapter audio generation.
 

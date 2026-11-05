@@ -1,0 +1,11 @@
+Nodus Reader 0.1.0 (56) beta review notes
+
+No Nodus account or demo account is needed. At first launch on iPhone/iPad, choose Use iOS voices to listen immediately without downloading a voice model, Download a model for additional voices, or Just read. All three choices enter the same library workflow. Import EPUB/PDF/TXT/Markdown/HTML/RTF from Files or paste text using Import. DRM-protected content is unsupported.
+
+Apple system voices are available in Settings > Voices & Models and the per-book voice picker. They synthesize locally through public AVSpeechSynthesizer APIs, with native word markers and PCM conversion for the common playback pipeline. The app excludes personal and novelty voices. Optional model and atmosphere downloads happen only after the user requests them; no model weights are bundled in the binary.
+
+Qwen and Studio cloning are temporarily unavailable on iOS/iPadOS and do not appear in its interface. Existing files are retained for removal in storage settings. Mac retains these experimental features in its private beta only. LinnetTTS offers only its two bundled US English voices; no Linnet cloning is offered. Code, weights and voice terms/attributions are shown in the model catalogue and Legal & Licences.
+
+Narration, PDF text/OCR and audio processing run on the device. Optional iCloud synchronization is off by default and uses the user's private iCloud database. Books, covers, progress, annotations, pronunciation rules and manual voice-selection metadata can sync; downloaded models, generated audio and automatic device-specific replacement voices remain local. Apple speech recognition permission is only relevant to optional precise word timing for neural models; iOS voices use native synthesis markers instead. Recaps and automatic atmosphere require supported Apple Intelligence devices and OS availability. Manual atmosphere works without it after downloading sound packs.
+
+This delivery is TestFlight only: iOS Internal and Public Beta, macOS Internal only. macOS is coming soon as a public release. No production App Store review submission is requested. Physical iPhone/iPad regression validation remains pending and is stated in What to Test. Testers should keep individual phone/tablet sessions within five minutes.

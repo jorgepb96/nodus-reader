@@ -178,14 +178,16 @@ struct HomeView: View {
             Text("EPUB, PDF, Markdown, text, HTML and RTF stay on this device. Nothing is uploaded.")
                 .font(.subheadline)
                 .foregroundStyle(palette.muted)
-            PrimaryPillButton("Import documents", systemImage: "plus") {
-                imports.beginImport()
+            VStack(spacing: 14) {
+                PrimaryPillButton("Import documents", systemImage: "plus") {
+                    imports.beginImport()
+                }
+                OutlinePillButton("Paste text", systemImage: "doc.on.clipboard") {
+                    imports.beginPasteText()
+                }
             }
             .frame(maxWidth: 280)
-            OutlinePillButton("Paste text", systemImage: "doc.on.clipboard") {
-                imports.beginPasteText()
-            }
-            .frame(maxWidth: 280)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)

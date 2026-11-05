@@ -126,7 +126,7 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
-            .padding(.bottom, 110)
+            .padding(.bottom, 24)
             .frame(maxWidth: 820, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .center)
         }
@@ -138,6 +138,7 @@ struct SettingsView: View {
         }
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)
+        .persistentAppTabs()
         .onAppear { target = .app }
         .sheet(item: $editorContext) { context in
             CustomThemeEditor(existing: context.theme)

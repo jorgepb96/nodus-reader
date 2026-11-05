@@ -10,6 +10,8 @@
 
 # Nodus Reader
 
+Public release: iPhone and iPad. **macOS: coming soon** (private TestFlight only).
+
 Nodus Reader is a free, open-source app for reading and listening to your library on iPhone, iPad and Mac. Narration and document processing run on your device. You can keep your library local or synchronize it through your personal iCloud account.
 
 It opens EPUB, PDF, TXT, Markdown, HTML and RTF files.
@@ -20,7 +22,7 @@ It opens EPUB, PDF, TXT, Markdown, HTML and RTF files.
 - **Library:** browse books in a grid on iPhone and iPad or a table on Mac. Search titles, authors and document text. Filter by reading status, favorite, collection and format. Create nested collections and assign a book to more than one collection.
 - **Reader:** use paged, continuous or two-page reading. Change the theme, typeface, size, line spacing, margins and alignment. Add bookmarks, highlights and notes. Search inside a book and export annotations.
 - **PDF:** read the original page layout or switch to Intelligent Reading. Intelligent Reading rebuilds reading order, handles multi-column pages, runs on-device OCR when the text layer is unreadable, keeps tables as page images and provides a page scrollbar.
-- **Narration:** read aloud with Kokoro, Phonon or Qwen3-TTS, or Ming on Mac. Record or import a short clip in Studio to create a voice on your device. The current sentence and word are highlighted. Tap a word to start Read & Listen from that word. Audio is generated locally and can be cached sentence by sentence. The player includes speed, voice, sleep timer and background playback.
+- **Narration:** read aloud immediately with iOS voices on iPhone/iPad, or download Kokoro, Phonon or LinnetTTS. Qwen3-TTS, Ming and Studio are available on Mac. The current sentence and word are highlighted. Tap a word to start Read & Listen from that word. Audio is generated locally and can be cached sentence by sentence. The player includes speed, voice, sleep timer and background playback.
 - **Pronunciation:** select a name and choose Pronunciation, or open Pronunciations from the book or player menu. Write how it should sound, compare the original and corrected sentence, and save it for that book. Rules sync through optional iCloud; narration audio remains local.
 - **Sync:** enable optional iCloud sync through the user's own iCloud account. Library data, reading positions, bookmarks, highlights and notes are synced. Files can also be downloaded on demand.
 - **Sharing:** send documents to Nodus Reader from the iOS Share Extension. Choose a collection before the import starts.
@@ -38,11 +40,14 @@ Nodus Reader does not use Apple's system voices. Narration requires one of these
 | Phonon 40M Spanish | Spanish | 25 | About 130 MB | CC BY-NC 4.0 |
 | Phonon 40M Multilingual | English, Spanish, French, German, Portuguese | 102 | About 150 MB | CC BY-NC 4.0 |
 | Qwen3-TTS 0.6B Base | English, Spanish, French, German, Mandarin, Japanese, Korean, Italian, Portuguese, Russian | Included Dave reference and Studio voices | About 2.1 GB | Apache-2.0 |
+| LinnetTTS (41.4M) | English | 2 | About 83 MB | Linnet Weights License 1.0 |
 | Ming 3.0 0.5B (Mac) | English, Spanish, French, German, Mandarin, Japanese, Korean | 106 built-in and custom voices | About 1.6 GB | MIT |
+
+Model cards show estimated or locally measured speed, indicative naturalness, supported locales and separate code/asset licences. Linnet uses its two authorised voices only; its weights are not open source and voice cloning requires a separate licence. See [catalogue and quality validation](docs/MODEL_CATALOG_AND_QUALITY.md).
 
 Kokoro provides 28 English voices and 3 Spanish voices. Phonon 31M provides 9 English voices. Phonon 40M Spanish provides 25 voices from Spain and Mexico. Phonon 40M Multilingual provides 102 voices across its five languages.
 
-Qwen is experimental and requires a real iPhone, iPad or Apple silicon Mac. Its download includes both encoders needed to create voices locally. In Studio, record or import 6–15 seconds of clear speech and provide its exact words. References are prepared on first use and cached only on this device. The same recording can also be used by Ming on Mac. The included CC0 Dave recording can read in all ten Qwen languages. A five-minute iPhone 16 Pro Max test confirmed locked-screen generation, but ran slightly slower than playback. On iPhone, use Offline audio → Generate for this book before listening to avoid pauses. See [device validation](docs/QWEN_TTS.md).
+Qwen is experimental and currently offered only on Apple silicon Mac; iOS entrypoints are disabled while its implementation and existing assets are retained. Its download includes both encoders needed to create voices locally. In Studio, record or import 6–15 seconds of clear speech and provide its exact words. References are prepared on first use and cached only on this device. The same recording can also be used by Ming on Mac. The included CC0 Dave recording can read in all ten Qwen languages. A five-minute iPhone 16 Pro Max test confirmed locked-screen generation, but ran slightly slower than playback. The historical iPhone results below do not indicate current iOS availability. See [device validation](docs/QWEN_TTS.md).
 
 The two Phonon 40M models require a Hugging Face account that has accepted Gradium's licence. Nodus Reader downloads them with the user's sign-in and converts them to Core ML on the device. They are licensed for non-commercial use under CC BY-NC 4.0, including the locally converted model files.
 

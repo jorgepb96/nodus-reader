@@ -55,14 +55,18 @@ final class ANETalkerEngine {
     /// Also stop when the raw (unsampled) argmax is EOS, not only when EOS is drawn.
     var eosOnArgmax = true
 
-    init(coreMLDirectory dir: URL, host: HostTables, experimentalCodePredictor: URL? = nil) throws {
+    init(coreMLDirectory dir: URL, host: HostTables, experimentalCodePredictor: URL? = nil,
+         cancelled: () -> Bool = { false }) throws {
         self.host = host
         H = host.hidden; chunks = host.cfg.talkerChunks; layersPerChunk = host.cfg.layers / host.cfg.talkerChunks
         func load(_ name: String, _ fn: String?) throws -> MLModel {
+            if cancelled() { throw CancellationError() }
             let c = MLModelConfiguration()
             c.computeUnits = .cpuAndNeuralEngine
             if let fn { c.functionName = fn }
-            return try MLModel(contentsOf: dir.appendingPathComponent(name + ".mlmodelc"), configuration: c)
+            let model = try MLModel(contentsOf: dir.appendingPathComponent(name + ".mlmodelc"), configuration: c)
+            if cancelled() { throw CancellationError() }
+            return model
         }
         let n = host.cfg.talkerChunks
         dec = try (0..<n).map { try load("talker\($0)", "decode") }
@@ -73,7 +77,9 @@ final class ANETalkerEngine {
             }
             let configuration = MLModelConfiguration()
             configuration.computeUnits = .cpuAndNeuralEngine
+            if cancelled() { throw CancellationError() }
             cp = try MLModel(contentsOf: experimentalCodePredictor, configuration: configuration)
+            if cancelled() { throw CancellationError() }
             if cp.modelDescription.inputDescriptionsByName["hidden"]?.multiArrayConstraint?.shape.map(\.intValue) == [1, 1024],
                cp.modelDescription.inputDescriptionsByName["e0"]?.multiArrayConstraint?.shape.map(\.intValue) == [1, 1024],
                cp.modelDescription.outputDescriptionsByName["codes"]?.multiArrayConstraint?.shape.map(\.intValue) == [15] {
@@ -437,7 +443,8 @@ final class ANETalkerEngine {
     var usePrefixCache = true
     /// Also stop when the raw (unsampled) argmax is EOS, not only when EOS is drawn.
     var eosOnArgmax = true
-    init(coreMLDirectory dir: URL, host: HostTables, experimentalCodePredictor: URL? = nil) throws {
+    init(coreMLDirectory dir: URL, host: HostTables, experimentalCodePredictor: URL? = nil,
+         cancelled: () -> Bool = { false }) throws {
         throw QwenANEError.invalid("the Neural Engine voice needs a Mac with Apple silicon")
     }
     static func allFinite(_ v: [Float]) -> Bool { v.allSatisfy { $0.isFinite } }

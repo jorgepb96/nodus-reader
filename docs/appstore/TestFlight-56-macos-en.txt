@@ -1,0 +1,11 @@
+Nodus Reader 0.1.0 (56) — Private Mac beta
+
+• Narration in Now Playing, with title, author, cover, system playback controls and media keys for play, pause and sentence navigation.
+• Click a word to start narration there, preserving drag selection and double-click behavior. Arrow keys navigate or scroll; paged reading also has side navigation buttons.
+• Sidebar toggle precedes Back. Library headers share a row, with a consistent top background and more space below Nodus / Reader.
+• Library table columns fit the available width and populated metadata. The bottom player reserves its own space so content buttons remain accessible.
+• Compact expanded player in two columns, sized to the window. Clicking outside or Escape closes it without stopping audio. Check atmosphere, cache and voice controls.
+• Multi-select model, language and gender voice filters persist across books and sessions. Reading-flow controls no longer show a duplicate label and are unavailable while narration auto-scroll is enabled.
+• Check highlighting with light/dark themes, EPUB/PDF/text, engine switching and position retention. Qwen remains experimental on Mac; also test Linnet, Kokoro, Phonon and Ming.
+
+macOS distribution is private only. The public Mac release is coming later. Please report the chip, OS version, model, voice and steps for any issue.
