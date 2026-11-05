@@ -6,6 +6,12 @@ final class NodusReaderUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    override func tearDownWithError() throws {
+        if (testRun?.failureCount ?? 0) > 0, ProcessInfo.processInfo.environment["NODUS_EXTERNAL_CAPTURE"] == "1" {
+            snap("Failure-\(name)")
+        }
+    }
+
     func testPronunciationDictionaryCRUD() throws {
         let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
@@ -350,6 +356,109 @@ final class NodusReaderUITests: XCTestCase {
         snap("iPad-05-Settings")
     }
 
+    func testVoiceSetupThreePaths() throws {
+        for language in ["en", "es"] {
+            let app = XCUIApplication()
+            app.launchArguments = ["-NodusResetVoiceSetup", "-AppleLanguages", "(\(language))", "-AppleLocale", language == "es" ? "es_ES" : "en_US"]
+            app.launch()
+            XCTAssertTrue(app.buttons["VoiceSetupSystem"].waitForExistence(timeout: 20))
+            XCTAssertTrue(app.buttons["VoiceSetupReadOnly"].exists)
+            XCTAssertTrue(app.buttons["VoiceSetupChooseModel"].exists)
+            for id in ["VoiceSetupSystem", "VoiceSetupChooseModel", "VoiceSetupReadOnly"] {
+                XCTAssertTrue(app.buttons[id].isHittable, "All welcome choices must be visible without scrolling")
+                XCTAssertTrue(app.windows.firstMatch.frame.contains(app.buttons[id].frame), "Welcome choice is outside the viewport")
+            }
+            snap("Welcome-\(language)")
+            app.buttons["VoiceSetupChooseModel"].tap()
+            XCTAssertTrue(app.staticTexts[language == "es" ? "Voces de iOS" : "iOS voices"].firstMatch.waitForExistence(timeout: 10))
+            XCTAssertFalse(app.staticTexts["Qwen3-TTS"].exists)
+            snap("VoiceModels-\(language)")
+            app.terminate()
+            app.launch()
+            app.buttons["VoiceSetupReadOnly"].tap()
+            XCTAssertFalse(app.buttons["VoiceSetupSystem"].waitForExistence(timeout: 2))
+            app.terminate()
+            app.launch()
+            app.buttons["VoiceSetupSystem"].tap()
+            XCTAssertFalse(app.buttons["VoiceSetupReadOnly"].waitForExistence(timeout: 2))
+            app.terminate()
+        }
+    }
+
+    /// Capture the welcome on the active display, including Duo posture changes.
+    func testDuoWelcomeScreenshots() throws {
+        guard let language = ProcessInfo.processInfo.environment["NODUS_APPSTORE_LANG"] else {
+            throw XCTSkip("Set TEST_RUNNER_NODUS_APPSTORE_LANG to capture Duo")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-NodusResetVoiceSetup", "-AppleLanguages", "(\(language))",
+                               "-AppleLocale", language == "es" ? "es_ES" : "en_US"]
+        app.launch()
+        XCTAssertTrue(app.buttons["VoiceSetupSystem"].waitForExistence(timeout: 30))
+        for id in ["VoiceSetupSystem", "VoiceSetupChooseModel", "VoiceSetupReadOnly"] {
+            XCTAssertTrue(app.buttons[id].isHittable, "All welcome choices must fit without scrolling")
+            XCTAssertTrue(app.windows.firstMatch.frame.contains(app.buttons[id].frame))
+        }
+        snap("Duo-Choices-\(language)-Welcome")
+    }
+
+    func testModelLanguageFiltersPersist() throws {
+        let app = launch()
+        func assertSelected(_ code: String) {
+            let selected = expectation(for: NSPredicate(format: "value == 'Selected'"), evaluatedWith: app.buttons["ModelLanguage-\(code)"])
+            wait(for: [selected], timeout: 5)
+        }
+        func openFilter() {
+            XCTAssertTrue(app.buttons["Settings"].firstMatch.waitForExistence(timeout: 30))
+            app.buttons["Settings"].firstMatch.tap()
+            XCTAssertTrue(app.staticTexts["Voices & Models"].firstMatch.waitForExistence(timeout: 10))
+            app.staticTexts["Voices & Models"].firstMatch.tap()
+            let filter = app.buttons["ModelLanguageFilter"]
+            XCTAssertTrue(filter.waitForExistence(timeout: 15))
+            for _ in 0..<4 where !filter.isHittable { app.swipeUp() }
+            filter.tap()
+            XCTAssertTrue(app.textFields["ModelLanguageSearch"].waitForExistence(timeout: 8))
+        }
+        openFilter()
+        app.buttons["All languages"].tap()
+        let search = app.textFields["ModelLanguageSearch"]
+        search.tap()
+        search.typeText("English\n")
+        app.buttons["ModelLanguage-en"].tap()
+        assertSelected("en")
+        search.tap()
+        search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 7) + "Spanish\n")
+        app.buttons["ModelLanguage-es"].tap()
+        assertSelected("es")
+        app.buttons["Done"].firstMatch.tap()
+        XCTAssertTrue((app.buttons["ModelLanguageFilter"].value as? String ?? "").contains("English"))
+        XCTAssertTrue((app.buttons["ModelLanguageFilter"].value as? String ?? "").contains("Spanish"))
+        app.terminate()
+        app.launch()
+        openFilter()
+        let restoredSearch = app.textFields["ModelLanguageSearch"]
+        restoredSearch.tap()
+        restoredSearch.typeText("English\n")
+        assertSelected("en")
+        restoredSearch.tap()
+        restoredSearch.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 7) + "Spanish\n")
+        assertSelected("es")
+        app.buttons["All languages"].tap()
+        app.buttons["Done"].firstMatch.tap()
+        XCTAssertEqual(app.buttons["ModelLanguageFilter"].value as? String, "All languages")
+        let disclosure = app.buttons["ModelLanguagesToggle-ios-system"]
+        XCTAssertTrue(disclosure.waitForExistence(timeout: 10))
+        for _ in 0..<4 where !disclosure.isHittable { app.swipeUp() }
+        XCTAssertEqual(disclosure.value as? String, "Collapsed")
+        disclosure.tap()
+        let expanded = expectation(for: NSPredicate(format: "value == 'Expanded'"), evaluatedWith: disclosure)
+        wait(for: [expanded], timeout: 5)
+        for _ in 0..<4 where !disclosure.isHittable { app.swipeUp() }
+        disclosure.tap()
+        let collapsed = expectation(for: NSPredicate(format: "value == 'Collapsed'"), evaluatedWith: disclosure)
+        wait(for: [collapsed], timeout: 5)
+    }
+
     /// App Store screenshots of the sample library in English or Spanish, on
     /// whichever simulator runs it (6.9" iPhone, 13" iPad). Opt in with
     /// `TEST_RUNNER_NODUS_APPSTORE_LANG=en` or `es`; the images are attached to
@@ -369,6 +478,11 @@ final class NodusReaderUITests: XCTestCase {
         let device = isPad ? "iPad" : "iPhone"
         func shot(_ name: String) {
             sleep(2)
+            XCTAssertFalse(app.staticTexts["Narration unavailable"].exists, "Do not publish a failed narration screenshot")
+            XCTAssertFalse(app.staticTexts["Narración no disponible"].exists, "Do not publish a failed narration screenshot")
+            if name != "04-Search" {
+                XCTAssertFalse(app.keyboards.firstMatch.exists, "Close the keyboard before capturing the screen")
+            }
             snap("AppStore-\(device)-\(language)-\(name)")
         }
 
@@ -437,9 +551,11 @@ final class NodusReaderUITests: XCTestCase {
         // The keyboard's first-use tip, then the Search key hides the keyboard.
         let tip = app.buttons[label("Continue", "Continuar")].firstMatch
         if tip.waitForExistence(timeout: 2) { tip.tap() }
-        field.typeText("\n")
+        let searchKey = app.keyboards.buttons[label("Search", "Buscar")].firstMatch
+        if searchKey.exists { searchKey.tap() } else { field.typeText("\n") }
         shot("04-Search")
-        app.buttons[label("Done", "OK")].firstMatch.tap()
+        app.buttons["ReaderSearchClose"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Reader search must release the keyboard when closed")
 
         page.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
         XCTAssertTrue(app.staticTexts[label("READ & LISTEN", "LEER Y ESCUCHAR")].waitForExistence(timeout: 25))
@@ -448,6 +564,13 @@ final class NodusReaderUITests: XCTestCase {
         let openPlayer = app.buttons[label("Open player", "Abrir reproductor")].firstMatch
         if openPlayer.waitForExistence(timeout: 5) {
             openPlayer.tap()
+            XCTAssertTrue(app.buttons[label("Playback speed", "Velocidad de reproducción")].firstMatch.waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons[label("Playback speed", "Velocidad de reproducción")].firstMatch.isHittable, "Playback controls must fit without scrolling")
+            XCTAssertTrue(app.buttons[label("Voice for this book", "Voz para este libro")].firstMatch.isHittable, "Voice controls must fit without scrolling")
+            for id in ["PlayerSleepTimer", "PlayerReadingMode"] {
+                XCTAssertTrue(app.buttons[id].firstMatch.isHittable, "All player controls must fit without scrolling")
+            }
+            XCTAssertTrue(app.windows.firstMatch.frame.contains(app.buttons["PlayerReturnToNarration"].firstMatch.frame))
             shot("06-Player")
             app.buttons[label("Close player", "Cerrar reproductor")].firstMatch.tap()
         }
@@ -465,6 +588,19 @@ final class NodusReaderUITests: XCTestCase {
             app.swipeUp()
         }
         XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+        // An element can be hittable while its centre is covered by the
+        // floating player. Move the PDF's tap point above that accessory.
+        for _ in 0..<5 {
+            let player = app.buttons["MiniPlayerOpen"].firstMatch
+            let safeBottom = player.exists ? player.frame.minY - 12 : app.windows.firstMatch.frame.maxY - 100
+            if pdf.isHittable, pdf.frame.midY < safeBottom { break }
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65))
+                .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)),
+                       withVelocity: .slow, thenHoldForDuration: 0.25)
+        }
+        XCTAssertTrue(pdf.isHittable)
+        let playerBeforePDF = app.buttons["MiniPlayerOpen"].firstMatch
+        if playerBeforePDF.exists { XCTAssertLessThan(pdf.frame.midY, playerBeforePDF.frame.minY - 12) }
         pdf.tap()
         let intelligent = app.segmentedControls.buttons[label("Intelligent Reading", "Lectura inteligente")].firstMatch
         XCTAssertTrue(intelligent.waitForExistence(timeout: 15))
@@ -481,7 +617,20 @@ final class NodusReaderUITests: XCTestCase {
         }
         XCTAssertTrue(app.staticTexts[label("Voices & Models", "Voces y modelos")].firstMatch
             .waitForExistence(timeout: 10))
+        let miniPlayer = app.buttons["MiniPlayerOpen"].firstMatch
+        XCTAssertTrue(miniPlayer.exists)
+        XCTAssertGreaterThan(miniPlayer.frame.midY, app.windows.firstMatch.frame.midY, "Mini player belongs at the bottom")
+        XCTAssertLessThan(app.windows.firstMatch.frame.maxY - miniPlayer.frame.maxY, 120, "Mini player must stay near the bottom safe area")
         shot("08-Settings")
+        app.staticTexts[label("Voices & Models", "Voces y modelos")].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts[label("iOS voices", "Voces de iOS")].firstMatch.waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons[label("Settings", "Ajustes")].exists, "App navigation must remain visible in voice settings")
+        XCTAssertTrue(app.buttons[label("Settings", "Ajustes")].firstMatch.isHittable, "App navigation must remain usable in voice settings")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.70))
+            .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)),
+                   withVelocity: .slow, thenHoldForDuration: 0.25)
+        XCTAssertTrue(app.buttons[label("Settings", "Ajustes")].firstMatch.isHittable)
+        shot("09-VoiceModels")
     }
 
     func testListenStartsNarration() throws {
@@ -1017,6 +1166,17 @@ final class NodusReaderUITests: XCTestCase {
                       "The voice setup button did not open the model catalogue")
         XCTAssertFalse(app.buttons["System"].exists,
                        "The model catalogue still offers system voices")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Speed")).firstMatch.exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Naturalness")).firstMatch.exists)
+        let top = XCTAttachment(screenshot: app.screenshot())
+        top.name = "Model catalogue metrics"; top.lifetime = .keepAlways
+        add(top)
+        let linnet = app.staticTexts["LinnetTTS"].firstMatch
+        for _ in 0..<12 where !linnet.isHittable { app.swipeUp() }
+        XCTAssertTrue(linnet.isHittable, "Linnet must be discoverable in the same catalogue")
+        let bottom = XCTAttachment(screenshot: app.screenshot())
+        bottom.name = "Linnet catalogue card"; bottom.lifetime = .keepAlways
+        add(bottom)
     }
 
     func testReaderNarrationChapterModeScrubberAndSavedSpeed() throws {
@@ -1187,6 +1347,22 @@ final class NodusReaderUITests: XCTestCase {
     }
 
     private func snap(_ name: String) {
+        if ProcessInfo.processInfo.environment["NODUS_EXTERNAL_CAPTURE"] == "1" {
+            // XCUIScreen.main always captures Duo's outer screen, even when the inner screen is active.
+            // The host captures the explicitly selected native display and acknowledges this frame.
+            let root = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            let token = UUID().uuidString
+            let data = try! JSONEncoder().encode(["name": name, "token": token])
+            try! data.write(to: root.appendingPathComponent("nodus-capture-request.json"), options: .atomic)
+            let deadline = Date().addingTimeInterval(40)
+            while Date() < deadline {
+                if (try? String(contentsOf: root.appendingPathComponent("nodus-capture-ack.txt"), encoding: .utf8)) == token { return }
+                Thread.sleep(forTimeInterval: 0.05)
+            }
+            XCTFail("Host did not acknowledge native-display screenshot")
+            return
+        }
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways

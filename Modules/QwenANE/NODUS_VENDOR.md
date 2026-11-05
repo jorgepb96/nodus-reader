@@ -26,3 +26,10 @@ code-predictor override for the command-line probe. App callers leave the
 override nil. QwenVoiceScore is an additional Nodus evaluation executable.
 See `docs/QWEN_OPTIMIZATION.md` in the repository root for rejected INT8
 experiments; the app's model manifest has not been changed by those probes.
+
+The iOS hardening pass preserves a generation-limit stop after silence trimming,
+adds cooperative cancellation between model loading/warm-up stages, and exposes
+opt-in raw-render capture and fixed-code vocoder replay for diagnostics. Narration
+does not retain diagnostic codes or samples. The default weights and sampling
+remain unchanged pending physical-device comparisons. See
+`docs/QWEN_IOS_HARDENING_2026-11-04.md` for evidence and remaining device checks.

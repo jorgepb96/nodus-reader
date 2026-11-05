@@ -25,7 +25,9 @@ final class ReaderSelectableTextView: UIView, UITextViewDelegate {
         self.mapping = mapping
         super.init(frame: .zero)
         backgroundColor = .clear
+        isOpaque = false
         textView.backgroundColor = .clear
+        textView.isOpaque = false
         textView.isEditable = false
         textView.isSelectable = true
         textView.isScrollEnabled = false
@@ -41,6 +43,7 @@ final class ReaderSelectableTextView: UIView, UITextViewDelegate {
         // so even opaque narration colours never hide words.
         overlay.textView = textView
         overlay.backgroundColor = .clear
+        overlay.isOpaque = false
         overlay.isUserInteractionEnabled = false
         insertSubview(overlay, belowSubview: textView)
 

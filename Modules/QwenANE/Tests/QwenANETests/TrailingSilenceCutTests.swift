@@ -19,4 +19,38 @@ final class TrailingSilenceCutTests: XCTestCase {
         XCTAssertLessThan(cut, n)
         XCTAssertGreaterThanOrEqual(cut * 1920, Int(6 * 24000), "all speech kept")
     }
+
+    @available(iOS 18.0, macOS 15.0, *)
+    func testTrimmingRunawaySilenceStillRejectsTakeAndPreventsCarry() {
+        for stop in [QwenStopReason.maxTokens, .contextFull] {
+            var r = render(tone(2) + quiet(4), stop: stop)
+            let generated = r.frames
+            r.trimSilence(capPauses: true)
+            XCTAssertLessThan(r.frames, generated)
+            XCTAssertEqual(r.generatedFrames, generated)
+            XCTAssertEqual(r.stopReason, stop)
+            XCTAssertTrue(QwenTalkSession.derailed(r), "trimming cannot make an unfinished take acceptable")
+            XCTAssertFalse(QwenReadRules.carries(frames: r.frames, derailed: QwenTalkSession.derailed(r)))
+            XCTAssertEqual(r.codes.count, r.frames * 16)
+        }
+    }
+
+    func testNaturalEndingCanTrimSilenceWithoutLosingSpeech() {
+        var r = render(tone(2) + quiet(4), stop: .eos)
+        let speech = Array(r.samples.prefix(2 * 24000))
+        r.trimSilence(capPauses: false)
+        XCTAssertEqual(r.stopReason, .trailingSilence)
+        XCTAssertEqual(Array(r.samples.prefix(speech.count)), speech)
+        XCTAssertEqual(r.samples.count, r.frames * 1920)
+        XCTAssertEqual(r.codes.count, r.frames * 16)
+    }
+
+    private func render(_ samples: [Float], stop: QwenStopReason) -> QwenRender {
+        let (pcm, n) = frames(samples)
+        var r = QwenRender(samples: pcm, sampleRate: 24000, frames: n,
+                           codes: [Int64](repeating: 0, count: n * 16), stopReason: stop,
+                           timings: QwenTimings(prompt: 0, prefill: 0, loop: 0, vocoder: 0, vocoderWait: 0, total: 0))
+        r.generatedFrames = n
+        return r
+    }
 }

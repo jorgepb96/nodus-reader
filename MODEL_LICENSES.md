@@ -17,6 +17,7 @@ Neural model weights and voice embeddings are downloaded on request and remain o
 | Ming 3.0 0.5B (macOS only) | [mlx-community/Ming-3.0-tts-0.5B-8bit](https://huggingface.co/mlx-community/Ming-3.0-tts-0.5B-8bit) @ `c807b99d2ea77d896fcffc917f0330d36470bb29`, an 8-bit MLX conversion of [inclusionAI/Ming-3.0-tts-0.5B](https://huggingface.co/inclusionAI/Ming-3.0-tts-0.5B); runtime [Blaizzy/mlx-audio-swift](https://github.com/Blaizzy/mlx-audio-swift) @ `0dda61b` | MIT (CAM++ speaker encoder: Apache-2.0, 3D-Speaker) | Downloaded from the pinned revision; twelve files, each checked against its size and SHA-256. 106 built-in voices (5 English, 101 Mandarin, without those that imitate film and series characters); voices cloned on the Mac from the user's own clips stay on that Mac |
 | Ming reference clip `es-dave` | [OHF-Voice/voice-datasets](https://github.com/OHF-Voice/voice-datasets) v1.0.0, `es_ES/dave` clip `0000000003` | CC0 1.0 | The one voice asset bundled in the app (9.8 s, 44.1 kHz mono), used as Ming's included Castilian voice |
 | Qwen3-TTS 0.6B Base | [tinytrashlabs/Qwen3-TTS-0.6B-Base-ANE](https://huggingface.co/tinytrashlabs/Qwen3-TTS-0.6B-Base-ANE) @ `551e82a5618b4804a51559bc508fece40d63b6a7`, a Core ML conversion of [Qwen/Qwen3-TTS-12Hz-0.6B-Base](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-0.6B-Base) | Apache-2.0 | 162 files pinned by size and SHA-256 in `QwenModelManifest.json`, including the upstream licence and both reference encoders. No weights are bundled. The CC0 `es-dave` clip is also Qwen's included reference. User recordings and prepared voices remain on the device |
+| LinnetTTS 0.1.1 / `linnet-en-35m` | [VoxRT/LinnetTTS](https://github.com/VoxRT/LinnetTTS/tree/v0.1.1); assets [VoxRT/linnet-en-35m](https://huggingface.co/VoxRT/linnet-en-35m/tree/afd7578a5f5a9652788b9913bed9e7e961348062) | Code: Apache-2.0. Weights, tokenizer and voices: Linnet Weights License 1.0, **not open source** | Original FP16 weights (41,425,219 parameters; 83,075,620 bytes), tokenizer, two authorised US English voices and licence/model card downloaded from the official pinned revision. Six files checked by size/SHA-256. Read-aloud and local cache inside Nodus only; no cloning, weight conversion or standalone asset export. |
 | Phonon 40M Multilingual | [gradium/phonon-40m-multilingual](https://huggingface.co/gradium/phonon-40m-multilingual) @ `1537ce4` | CC BY-NC 4.0, gated | Same on-device path as Spanish: downloaded with the user's own access, verified, converted on the device; never hosted or shipped. Runs with all 102 voices of `gradium/phonon-voices` (English, Spanish, French, German, Portuguese), each normalizing text in its own language. Non-commercial use |
 
 ## Third-party runtime packages
@@ -29,6 +30,7 @@ Neural model weights and voice embeddings are downloaded on request and remain o
 | `NemoTextProcessing` binary | Apache-2.0 | Text normalisation FSTs |
 | `ptts` / `PhononCore` | Apache-2.0 (package also includes MIT) | Phonon Core ML inference |
 | `QwenANE`, `GVoiceKit`, `GVoiceProductionKit` | MIT, © 2026 TinyTrashLabs | Qwen Core ML inference and on-device preparation of reference voices; vendored at `f46258b`, with Mac-only vocoder placement adaptation |
+| LinnetTTS 0.1.1 / CLinnetTTS | Apache-2.0, © 2026 Wiseport Ltd. (VoxRT) | Swift sources vendored unchanged; official checksum-verified static SDK archives repackaged as frameworks to isolate module maps. No weights in the SDK. See `Modules/LinnetTTS/NODUS_VENDOR.md` |
 | ZIPFoundation | MIT | EPUB container parsing |
 
 Exact source, licence and attribution notices are in
@@ -67,3 +69,29 @@ Exact source, licence and attribution notices are in
 The Models screen links to each model card and shows the publisher’s licence.
 Component copyright and permission notices are retained in
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+## Linnet asset licence and credits
+
+The [Linnet Weights License 1.0](https://huggingface.co/VoxRT/linnet-en-35m/blob/afd7578a5f5a9652788b9913bed9e7e961348062/WEIGHTS_LICENSE.md)
+permits unmodified authorised assets for read-aloud within a product, including
+commercial products. It does not grant general-purpose TTS service, custom voice
+creation (including one's own voice), persistent weight modification/conversion,
+model-training or standalone redistribution rights. These require separate written
+authorisation from VoxRT. It is separate from Nodus Reader's AGPL-3.0-only source
+licence; the app's licence does not grant rights to third-party model assets.
+
+Nodus downloads assets from the publisher's official location for operation inside
+the app. It includes the complete asset licence, Apache-2.0 code licence and VoxRT
+NOTICE in Resources and makes them readable from the Linnet card. Required notices:
+
+> Linnet model weights by VoxRT, licensed under the Linnet Weights License 1.0
+>
+> Powered by Linnet (VoxRT)
+
+The free price of Nodus Reader does not expand the non-commercial grant of Phonon
+40M or remove any publisher's conditions. Users must follow the licence applying
+to the model they select. No change to the project's source licence is made here.
+
+## iOS system voices
+
+On iOS/iPadOS, Apple system voices are enumerated and rendered using public AVFAudio APIs. Nodus does not redistribute Apple voice assets, require a model download for this option or provide cloning of these voices. Apple software terms apply: https://www.apple.com/legal/sla/. Qwen inference and its third-party notices remain in the source/binary, but its iOS interface and runtime entrypoints are disabled; Mac availability is unchanged.

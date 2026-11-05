@@ -55,6 +55,7 @@ Resolved versions are pinned in
 | NemoTextProcessing (binary) | <https://github.com/FluidInference/text-processing-rs> | v0.3.1 | Apache-2.0 | English text normalization for Kokoro |
 | `ptts` / PhononTTS | <https://github.com/gradium-ai/xn-ptts> | v0.4.1 (Swift sources vendored in `Modules/PhononTTS/`) | MIT OR Apache-2.0 | Phonon narration |
 | QwenANE, GVoiceKit, GVoiceProductionKit | <https://github.com/TinyTrashLabs/gloam-voice-studio> | `f46258b1889dd0c94d227c265831853f54fd9f7d`, vendored in `Modules/QwenANE/` | MIT, © 2026 TinyTrashLabs | Core ML Qwen speech and voice preparation; Mac `upMall` placement adapted, see `NODUS_VENDOR.md`. Full notice in `Modules/QwenANE/LICENSE` |
+| LinnetTTS / CLinnetTTS | <https://github.com/VoxRT/LinnetTTS> | 0.1.1, Swift sources unchanged; official static SDK repackaged as frameworks | Apache-2.0, © 2026 Wiseport Ltd. (trading as VoxRT) | Local English narration; full publisher NOTICE and code/asset licences available in the app |
 | PhononCore (binary, **modified**) | xn-ptts v0.4.1, rebuilt by this project | `phononcore-0.4.1-nodus.1` release of this repository | MIT OR Apache-2.0 | Phonon runtime; see below |
 
 The MIT notices keep their copyright lines; the Apache-2.0 licence text is at
@@ -74,9 +75,9 @@ can be converted to Core ML on the device. The change is
 
 Each downloaded model and voice is governed by its publisher’s licence. Phonon 40M Spanish and Phonon 40M Multilingual are provided by Gradium under CC BY-NC 4.0 for non-commercial use. Those terms also apply to the Core ML files prepared on the user’s device.
 
-No model weights or voices are stored in this repository or in the app. Each is
-downloaded on request, checked against pinned sizes and SHA-256 hashes, and run only on
-the device that downloaded it.
+No model weights are bundled. The CC0 `es-dave` reference recording below is bundled;
+other model and voice assets are downloaded on request, verified against pinned
+sizes and SHA-256 hashes, and run on the device that downloaded them.
 
 | Model or voices | Source | Licence | How the app gets it |
 |---|---|---|---|
@@ -87,13 +88,26 @@ the device that downloaded it.
 | Phonon 40M Spanish by Gradium | <https://huggingface.co/gradium/phonon-40m-es> at `f0d2f39` | CC BY-NC 4.0, gated | Downloaded with **the user's own** Hugging Face access after they accept Gradium's conditions, converted to Core ML on the device, weights deleted after conversion |
 | Phonon 40M Multilingual by Gradium | <https://huggingface.co/gradium/phonon-40m-multilingual> at `1537ce4` | CC BY-NC 4.0, gated | Same as Phonon 40M Spanish |
 | Ming 3.0 0.5B by inclusionAI (Mac only) | 8-bit MLX conversion <https://huggingface.co/mlx-community/Ming-3.0-tts-0.5B-8bit> at `c807b99` (weights, tokenizer and CAM++ speaker encoder), from <https://huggingface.co/inclusionAI/Ming-3.0-tts-0.5B> | MIT (CAM++ from 3D-Speaker, Apache-2.0) | Downloaded on request; every file verified against its pinned size and SHA-256 |
-| `es-dave` reference clip (bundled) | 9.8 s clip `0000000003` of `es_ES/dave` from <https://github.com/OHF-Voice/voice-datasets> (release v1.0.0), as Nodus ships it | CC0 1.0 | **Bundled** in `NodusReader/Resources/MingVoices/` as Ming's included cloned voice; `NOTICE.md` credits the dataset |
+| Qwen3-TTS 0.6B Base | <https://huggingface.co/tinytrashlabs/Qwen3-TTS-0.6B-Base-ANE> at `551e82a5618b4804a51559bc508fece40d63b6a7` | Apache-2.0 | Pinned on-device download; included CC0 `es-dave` reference is shared with Ming. User references/prepared voices are local |
+| Linnet `linnet-en-35m` assets by VoxRT | <https://huggingface.co/VoxRT/linnet-en-35m> at `afd7578a5f5a9652788b9913bed9e7e961348062` | Linnet Weights License 1.0 (**not open source**) | Byte-identical FP16 weights, tokenizer and two authorised voices; verified download for read-aloud within Nodus. No custom voice creation |
+| `es-dave` reference clip (bundled) | 9.8 s clip `0000000003` of `es_ES/dave` from <https://github.com/OHF-Voice/voice-datasets> (release v1.0.0), as Nodus ships it | CC0 1.0 | **Bundled** in `NodusReader/Resources/MingVoices/` as the included reference for Ming and Qwen; `NOTICE.md` credits the dataset |
 
 Phonon 40M models: the Core ML conversion is an adaptation of the original weights made
 on the user's device for non-commercial use, as CC BY-NC 4.0
 (<https://creativecommons.org/licenses/by-nc/4.0/>) allows. Nodus Reader is free and
 carries no advertising. The converted files are not shared or synced. See
 `MODEL_LICENSES.md` for details.
+
+### Linnet publisher notice
+
+LinnetTTS — Copyright 2026 Wiseport Ltd. (trading as VoxRT).
+Code: Apache License 2.0; the weights, tokenizer and voice files have their own
+Linnet Weights License 1.0. The full source NOTICE and both licence texts are
+included in the app's Resources and linked from the Linnet model card.
+
+Linnet model weights by VoxRT, licensed under the Linnet Weights License 1.0
+
+Powered by Linnet (VoxRT)
 
 ## Apple frameworks
 

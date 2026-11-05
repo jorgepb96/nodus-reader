@@ -55,15 +55,42 @@ final class ReaderMacTextView: NSTextView {
     var onNote: ((NSRange) -> Void)?
     var onPronounce: ((String) -> Void)?
 
-    private var clickRecognizer: NSClickGestureRecognizer?
+    private var pendingNarrationClick: DispatchWorkItem?
 
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        guard clickRecognizer == nil else { return }
-        let click = NSClickGestureRecognizer(target: self, action: #selector(handleClick(_:)))
-        click.numberOfClicksRequired = 1
-        addGestureRecognizer(click)
-        clickRecognizer = click
+    override func mouseDown(with event: NSEvent) {
+        pendingNarrationClick?.cancel()
+        pendingNarrationClick = nil
+        let point = convert(event.locationInWindow, from: nil)
+        let isPlainClick = event.clickCount == 1 &&
+            event.modifierFlags.intersection([.shift, .control, .option, .command]).isEmpty
+
+        // NSTextView tracks selection and dragging inside mouseDown. A click
+        // recognizer competes with that tracking and can miss the release.
+        super.mouseDown(with: event)
+
+        guard isPlainClick, selectedRange().length == 0, let window else { return }
+        let end = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+        let dx = end.x - point.x
+        let dy = end.y - point.y
+        guard dx * dx + dy * dy <= 16,
+              let offset = narrationOffset(at: point) else { return }
+        let clickedText = string
+
+        // Let a second click select a word, or a third select a paragraph,
+        // without starting narration from the first click of that sequence.
+        let action = DispatchWorkItem { [weak self] in
+            guard let self, self.window != nil, self.selectedRange().length == 0,
+                  self.string == clickedText else { return }
+            self.onWordTap?(offset)
+        }
+        pendingNarrationClick = action
+        DispatchQueue.main.asyncAfter(deadline: .now() + NSEvent.doubleClickInterval, execute: action)
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        pendingNarrationClick?.cancel()
+        pendingNarrationClick = nil
+        super.rightMouseDown(with: event)
     }
 
     private func chapterRange(for localRange: NSRange) -> NSRange? {
@@ -112,17 +139,23 @@ final class ReaderMacTextView: NSTextView {
         onNote?(range)
     }
 
-    @objc private func handleClick(_ gesture: NSClickGestureRecognizer) {
-        guard selectedRange().length == 0, let mapping else { return }
-        let point = gesture.location(in: self)
+    private func narrationOffset(at point: NSPoint) -> Int? {
+        guard let mapping, let container = textContainer, let layoutManager,
+              let text = textStorage, text.readerVisibleLength > 0 else { return nil }
         let containerPoint = CGPoint(x: point.x - textContainerOrigin.x,
                                      y: point.y - textContainerOrigin.y)
-        guard let container = textContainer, let layoutManager else { return }
-        let index = layoutManager.characterIndex(for: containerPoint, in: container,
-                                                 fractionOfDistanceBetweenInsertionPoints: nil)
-        if let offset = mapping.anchorOffset(index) {
-            onWordTap?(offset)
-        }
+        layoutManager.ensureLayout(for: container)
+        let glyph = layoutManager.glyphIndex(for: containerPoint, in: container)
+        guard glyph < layoutManager.numberOfGlyphs else { return nil }
+        let bounds = layoutManager.boundingRect(forGlyphRange: NSRange(location: glyph, length: 1), in: container)
+        guard bounds.insetBy(dx: -1, dy: -1).contains(containerPoint) else { return nil }
+        let index = layoutManager.characterIndexForGlyph(at: glyph)
+        guard index < text.readerVisibleLength else { return nil }
+        let word = selectionRange(forProposedRange: NSRange(location: index, length: 0), granularity: .selectByWord)
+        guard word.location != NSNotFound, word.location < text.readerVisibleLength,
+              word.length > 0, NSMaxRange(word) <= text.length,
+              (text.string as NSString).substring(with: word).rangeOfCharacter(from: .alphanumerics) != nil else { return nil }
+        return mapping.anchorOffset(word.location)
     }
 }
 

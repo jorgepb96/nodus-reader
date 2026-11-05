@@ -22,7 +22,7 @@ xcodegen generate
 open NodusReader.xcodeproj
 ```
 
-Re-run `xcodegen generate` whenever files are added or removed. XcodeGen does not overwrite `NodusReader/Info.plist` anymore because the project uses `INFOPLIST_FILE` and there is no `info:` block. If an `info:` block is added, XcodeGen will replace the full plist with a minimal one and remove `UILaunchScreen`, document types and background audio modes.
+Re-run `xcodegen generate` whenever files are added or removed. Its pre-generation hook runs `tools/prepare-linnet.py`, which downloads and checksum-verifies LinnetTTS 0.1.1 on first use and isolates its static SDK headers from PhononCore. Generated SDK slices are ignored by Git; no model weights are bundled. XcodeGen does not overwrite `NodusReader/Info.plist` anymore because the project uses `INFOPLIST_FILE` and there is no `info:` block. If an `info:` block is added, XcodeGen will replace the full plist with a minimal one and remove `UILaunchScreen`, document types and background audio modes.
 
 ## Command-line builds
 
@@ -174,8 +174,9 @@ use `CFFIXED_USER_HOME` because their test host is built with
 
 ## TestFlight (iOS/iPadOS and macOS)
 
-Current delivery: **0.1.0 (48)** on iOS and macOS. iOS is available in Internal and
-the public beta; macOS is Internal only. See [build 48](appstore/BUILD48_VERIFICATION.md).
+Current delivery: **0.1.0 (55)** on iOS and macOS. iOS is assigned to Internal and
+the public beta; macOS is Internal only. See [build 55](appstore/BUILD55_VERIFICATION.md)
+for the current Apple review state.
 
 The project signs automatically with team `6RPLS9EA4X`; `ITSAppUsesNonExemptEncryption`
 is `false` (the app only uses HTTPS), so uploads need no export-compliance answer.
@@ -380,3 +381,7 @@ Post-build-29 macOS cleanup, nonmodal model setup and product-copy updates are s
 ## Build 30 — iCloud event queue
 
 The event-driven sync fixes were merged in [PR #30](https://github.com/jorgepb96/nodus-reader/pull/30). iOS/iPadOS 0.1.0 (30) is VALID and available to Internal and Public Beta testers. Final iPhone, iPad and macOS unit suites each passed 115 tests with 10 optional skips; the three selected iPhone UI regressions passed (the iCloud UI case is skipped on iPad). See [build 30 verification and delivery](appstore/BUILD30_VERIFICATION.md) for exact evidence, signed artifacts, source identity and live iCloud validation limits.
+
+### iOS voices and first launch (November 2026)
+
+On iOS/iPadOS, a downloaded model is optional. First launch offers native iOS voices, model downloads, or reading without narration. Native voices use the existing PCM/cache pipeline. Qwen and Studio are unavailable on iOS while their code and existing assets are retained; Mac private beta behavior is unchanged. Public copy describes Mac as coming soon. See `docs/appstore/IOS_SYSTEM_VOICES_READINESS_2026-11-05.md` for checks and deferred physical validation.

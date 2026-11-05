@@ -155,7 +155,9 @@ final class ReaderMacSelectableView: NSView {
         textView.textContainer?.heightTracksTextView = false
         addSubview(textView)
         overlay.textView = textView
-        textView.addSubview(overlay)
+        // Light themes use opaque highlight fills. Keep every highlight
+        // behind the glyphs, just as in the paginated Mac reader.
+        addSubview(overlay, positioned: .below, relativeTo: textView)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -167,7 +169,7 @@ final class ReaderMacSelectableView: NSView {
         let frame = bounds.insetBy(dx: horizontalInset, dy: 0)
         textView.frame = frame
         textView.textContainer?.containerSize = CGSize(width: frame.width, height: .greatestFiniteMagnitude)
-        overlay.frame = textView.bounds
+        overlay.frame = frame
         overlay.needsDisplay = true
     }
 

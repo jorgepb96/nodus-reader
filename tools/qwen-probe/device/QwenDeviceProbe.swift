@@ -17,13 +17,14 @@ struct QwenDeviceProbeApp: App {
                 Text("Usa la grabación CC0 incluida. No accede a tu biblioteca ni graba el micrófono.")
                     .font(.footnote).foregroundStyle(.secondary)
                 Button("Probar clonación") { model.start("smoke") }.disabled(model.running)
+                Button("Comparar muestreo y bloques") { model.start("sampling") }.disabled(model.running)
                 Button("Lectura continua · 5 minutos") { model.start("soak") }.disabled(model.running)
                 Text("Durante la lectura continua puedes bloquear el iPhone.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
             .padding(28)
             .task {
-                if let mode = CommandLine.arguments.dropFirst().first(where: { ["smoke", "soak"].contains($0) }) {
+                if let mode = CommandLine.arguments.dropFirst().first(where: { ["smoke", "soak", "sampling"].contains($0) }) {
                     model.start(mode)
                 }
             }
@@ -64,13 +65,17 @@ final class ProbeModel: ObservableObject {
         log.emit("start", ["mode": mode, "system": UIDevice.current.systemVersion,
                            "batteryLevel": UIDevice.current.batteryLevel, "batteryState": UIDevice.current.batteryState.rawValue])
         let log = log
+        let diagnosticDeadline = ProcessInfo.processInfo.systemUptime + 300
         Task {
             do {
                 try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [])
                 try AVAudioSession.sharedInstance().setActive(true)
                 try await Task.detached(priority: .userInitiated) {
-                    let worker = try ProbeWorker(log: log)
+                    let worker = try ProbeWorker(log: log, cancelled: {
+                        mode == "sampling" && ProcessInfo.processInfo.systemUptime >= diagnosticDeadline
+                    })
                     if mode == "smoke" { try worker.smoke() }
+                    else if mode == "sampling" { try worker.samplingDiagnostics(until: diagnosticDeadline) }
                     else { try worker.soak(seconds: 300) }
                 }.value
                 status = "Prueba terminada. Los resultados están guardados en el dispositivo."
@@ -134,7 +139,7 @@ final class ProbeWorker {
     let voice: QwenVoiceFiles
     let outputs: URL
 
-    init(log: ProbeLog) throws {
+    init(log: ProbeLog, cancelled: () -> Bool = { false }) throws {
         self.log = log
         outputs = log.root.appendingPathComponent("Outputs", isDirectory: true)
         try FileManager.default.createDirectory(at: outputs, withIntermediateDirectories: true)
@@ -147,15 +152,17 @@ final class ProbeWorker {
         // reference is prepared, so this includes the app's memory overlap.
         log.emit("load_begin")
         let t1 = Date()
-        engine = try QwenANEEngine(modelsDirectory: models)
+        engine = try QwenANEEngine(modelsDirectory: models, cancelled: cancelled)
         log.emit("load_end", ["seconds": Date().timeIntervalSince(t1)])
         let clip = Bundle.main.url(forResource: "es-dave", withExtension: "wav")!
         let transcript = try String(contentsOf: Bundle.main.url(forResource: "es-dave", withExtension: "txt")!, encoding: .utf8)
         let cache = log.root.appendingPathComponent("Voice-\(UUID().uuidString)")
         log.emit("clone_begin", ["cache": cache.lastPathComponent])
         let t0 = Date()
+        if cancelled() { throw CancellationError() }
         voice = try QwenVoicePrep.prepared(referenceWAV: Data(contentsOf: clip), transcript: transcript,
                                            cacheDirectory: cache, modelsDirectory: models)
+        if cancelled() { throw CancellationError() }
         log.emit("clone_end", ["seconds": Date().timeIntervalSince(t0), "frames": voice.refCodes[0].count,
                                "speakerDimensions": voice.spkEmbedding.count, "cache": cache.lastPathComponent])
     }
@@ -236,7 +243,7 @@ final class ProbeWorker {
                               "elapsedSeconds": Date().timeIntervalSince(playbackStart)])
     }
 
-    private func write(_ samples: [Float], name: String) throws {
+    func write(_ samples: [Float], name: String) throws {
         let url = outputs.appendingPathComponent(name + ".wav")
         let format = AVAudioFormat(standardFormatWithSampleRate: 24_000, channels: 1)!
         let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(samples.count))!

@@ -499,6 +499,8 @@ struct ReaderContentsScrollView<Content: View>: View {
                         let index = min(Int((fraction * CGFloat(ids.count - 1)).rounded()), ids.count - 1)
                         proxy.scrollTo(ids[index], anchor: fraction >= 1 ? .bottom : .top)
                     }
+                    .padding(.leading, 8)
+                    .padding(.trailing, 6)
                     .padding(.vertical, ReaderContentsLayout.scrollbarInset)
                 }
             }

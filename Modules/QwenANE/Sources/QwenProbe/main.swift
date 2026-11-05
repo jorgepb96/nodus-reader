@@ -10,12 +10,12 @@ let args = CommandLine.arguments
 setbuf(stdout, nil)
 func fail(_ message: String) -> Never { fputs("\(message)\n", stderr); exit(1) }
 guard args.count >= 7, (args.count - 7) % 2 == 0 else {
-    fail("Usage: qwen-probe MODELS REFERENCE TRANSCRIPT LANGUAGE TEXT OUTPUT.wav [--cases FILE.json] [--report FILE.json] [--repetitions N] [--warmup N] [--experimental-cp MODEL.mlmodelc]")
+    fail("Usage: qwen-probe MODELS REFERENCE TRANSCRIPT LANGUAGE TEXT OUTPUT.wav [--cases FILE.json] [--report FILE.json] [--repetitions N] [--warmup N] [--experimental-cp MODEL.mlmodelc] [--talker-top-k N] [--eos-on-argmax true|false]")
 }
 struct ProbeCase: Codable { let id: String; let language: String; let text: String }
 var flags: [String: String] = [:]
 for i in stride(from: 7, to: args.count, by: 2) {
-    guard ["--cases", "--report", "--repetitions", "--warmup", "--experimental-cp"].contains(args[i]), flags[args[i]] == nil else {
+    guard ["--cases", "--report", "--repetitions", "--warmup", "--experimental-cp", "--talker-top-k", "--eos-on-argmax"].contains(args[i]), flags[args[i]] == nil else {
         fail("Unknown or repeated option: \(args[i])")
     }
     flags[args[i]] = args[i + 1]
@@ -84,6 +84,17 @@ do {
     var started = ProcessInfo.processInfo.systemUptime
     let engine = try QwenANEEngine(modelsDirectory: root,
         experimentalCodePredictor: flags["--experimental-cp"].map { URL(fileURLWithPath: $0) })
+    if let raw = flags["--talker-top-k"] {
+        guard let k = Int(raw), (0...2048).contains(k) else { fail("Invalid --talker-top-k") }
+        engine.options.sampling.topK = k
+    }
+    if let raw = flags["--eos-on-argmax"] {
+        guard let enabled = Bool(raw) else { fail("Invalid --eos-on-argmax") }
+        engine.options.sampling.eosOnArgmax = enabled
+    }
+    report["sampling"] = ["talkerTopK": engine.options.sampling.topK,
+                          "eosOnArgmax": engine.options.sampling.eosOnArgmax,
+                          "residualSampling": "greedy"]
     report["modelLoadSeconds"] = ProcessInfo.processInfo.systemUptime - started
     report["loadedFootprintBytes"] = memory.sample(force: true)
     print("Engine loaded in \(report["modelLoadSeconds"]!) s")

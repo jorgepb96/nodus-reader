@@ -57,14 +57,18 @@ struct ImmersiveQuickControls: View {
             } else if preferences.isEnabled {
                 // Return to automatic sits in this row so locking or choosing
                 // never changes the panel's height and moves the popover.
-                HStack(spacing: 8) {
-                    bedMenu
-                    musicMenu
-                    if immersive.isLocked || immersive.isChosenByReader {
-                        CircleIconButton("wand.and.stars", label: "Return to automatic") {
-                            immersive.returnToAutomatic()
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        bedMenu
+                        musicMenu
+                        automaticControl
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            bedMenu
+                            musicMenu
                         }
-                        .accessibilityIdentifier("immersive.automatic")
+                        automaticControl
                     }
                 }
                 LabeledSlider("Music", value: $preferences.musicVolume,
@@ -72,6 +76,16 @@ struct ImmersiveQuickControls: View {
                 LabeledSlider("Ambience", value: $preferences.ambienceVolume,
                               display: percent(preferences.ambienceVolume), systemImage: "leaf")
             }
+        }
+    }
+
+    @ViewBuilder
+    private var automaticControl: some View {
+        if immersive.isLocked || immersive.isChosenByReader {
+            CircleIconButton("wand.and.stars", label: "Return to automatic") {
+                immersive.returnToAutomatic()
+            }
+            .accessibilityIdentifier("immersive.automatic")
         }
     }
 

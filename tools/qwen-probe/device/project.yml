@@ -11,6 +11,7 @@ targets:
     platform: iOS
     sources:
       - path: QwenDeviceProbe.swift
+      - path: QwenIOSDiagnostics.swift
       - path: ../../../NodusReader/Resources/MingVoices/es-dave.wav
         buildPhase: resources
       - path: ../../../NodusReader/Resources/MingVoices/es-dave.txt

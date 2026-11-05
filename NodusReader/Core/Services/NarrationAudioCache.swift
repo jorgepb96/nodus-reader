@@ -39,7 +39,8 @@ actor NarrationAudioCache {
     }
 
     nonisolated func key(text: String, engine: String, voice: String, pronunciation: String = "") -> String {
-        // Regenerate audio made before chunk-padding removal and edge fades.
+        // v2 preserves generation-limit failures even after trailing silence is trimmed.
+        let engine = engine == "qwen" ? "qwen-quality-v2" : engine == "system" ? "system-pcm-v1-\(ProcessInfo.processInfo.operatingSystemVersionString)" : engine
         let input = pronunciation.isEmpty ? "v3|\(engine)|\(voice)|\(text)" : "pronunciation1|\(engine)|\(voice)|\(text)|\(pronunciation)"
         let digest = SHA256.hash(data: Data(input.utf8))
         return digest.map { String(format: "%02x", $0) }.joined()

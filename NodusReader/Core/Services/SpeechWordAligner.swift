@@ -51,6 +51,24 @@ enum SpeechWordAligner {
                      duration: Double(samples.count) / sampleRate)
     }
 
+    struct RecognitionUnavailable: Error {}
+
+    /// nil means unavailable/timed out, [] means recognition completed without words.
+    static func inspect(samples: [Float], sampleRate: Double, language: String) async -> [RecognizedWord]? {
+        guard #available(iOS 26.0, macOS 26.0, *) else { return nil }
+        return await withCheckedContinuation { continuation in
+            let once = ResumeOnce(continuation)
+            let work = Task.detached(priority: .userInitiated) {
+                once.resume(try? await recognize(samples: samples, sampleRate: sampleRate, language: language))
+            }
+            Task.detached {
+                try? await Task.sleep(for: timeLimit)
+                work.cancel()
+                once.resume(nil)
+            }
+        }
+    }
+
     struct RecognizedWord: Equatable {
         var text: String
         var start: TimeInterval
@@ -191,15 +209,17 @@ enum SpeechWordAligner {
     /// transcript. Empty while the language's speech model is not installed.
     @available(iOS 26.0, macOS 26.0, *)
     static func recognizedText(samples: [Float], sampleRate: Double, language: String) async throws -> String {
-        try await recognize(samples: samples, sampleRate: sampleRate, language: language)
-            .map(\.text).joined(separator: " ")
+        do {
+            return try await recognize(samples: samples, sampleRate: sampleRate, language: language)
+                .map(\.text).joined(separator: " ")
+        } catch is RecognitionUnavailable { return "" }
     }
 
     @available(iOS 26.0, macOS 26.0, *)
-    private static func recognize(samples: [Float], sampleRate: Double,
+    static func recognize(samples: [Float], sampleRate: Double,
                                   language: String) async throws -> [RecognizedWord] {
         let requested = Locale(identifier: language.replacingOccurrences(of: "_", with: "-"))
-        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: requested) else { return [] }
+        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: requested) else { throw RecognitionUnavailable() }
         let transcriber = SpeechTranscriber(locale: locale, transcriptionOptions: [],
                                             reportingOptions: [], attributeOptions: [.audioTimeRange])
         // The system's speech model for the language: requested once in the
@@ -207,7 +227,7 @@ enum SpeechWordAligner {
         let installed = await SpeechTranscriber.installedLocales
         guard installed.contains(where: { $0.identifier(.bcp47) == locale.identifier(.bcp47) }) else {
             requestInstall(of: transcriber, locale: locale)
-            return []
+            throw RecognitionUnavailable()
         }
 
         let url = FileManager.default.temporaryDirectory

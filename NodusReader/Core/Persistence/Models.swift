@@ -177,6 +177,7 @@ public final class Book {
     /// Stable voice ID including its engine/checkpoint. Stored and synced
     /// with this book, independently of the global model and default voice.
     public var preferredVoiceID: String?
+    public var preferredVoiceSnapshotJSON: String = ""
     public var readingModeRaw: String = ReadingMode.read.rawValue
     /// JSON `BookAppearance`; empty when the book uses the global appearance.
     public var appearanceJSON: String = ""

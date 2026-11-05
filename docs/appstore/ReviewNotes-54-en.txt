@@ -1,0 +1,17 @@
+Nodus Reader 0.1.0 (54) is a free reading and listening app. No Nodus account or demo login is required. This delivery is for TestFlight: iOS Internal and Public Beta; native macOS Internal only. No App Store production version or external Mac beta review is being submitted.
+
+FIRST-RUN SETUP
+On the voice setup screen, tap “Choose a voice model”. Scroll to LinnetTTS and download it (about 83 MB). Its two US English voices require no account. Phonon 31M English (about 300 MB) is another account-free option. Kokoro (about 210 MB) supports English and Spanish on physical devices. After installing a model, continue to the library.
+
+TEST FLOW
+1. Import a public-domain EPUB, PDF or text file. Test paged/continuous reading and start Read & Listen.
+2. Check sentence/word highlighting, pronunciation rules, playback speed, pause/resume, sleep timer and lock-screen controls.
+3. Open Voices & Models. Cards show supported languages, estimated or locally measured speed, indicative naturalness and code/model licences. Linnet offers only its built-in voices; there is no Linnet cloning feature.
+4. Optional: generate book/chapter audio ahead in Audio generation and listen offline. On iOS, long generation jobs can be suspended in the background and resume when the app returns.
+5. Optional: Qwen3-TTS (about 2.1 GB) supports local voice creation in Studio on compatible iPhone/iPad and Mac devices. Record/import a short clip, review its exact transcript and confirm permission. The model remains experimental and may generate slower than playback on iPhone. It checks audio before playback/cache, retries failed parts up to three times and pauses if none passes. Qwen is not required for the basic review flow.
+6. Optional iCloud sync is off by default and uses the tester's own Apple account. The iOS Share Extension imports files and shared web content. On native Mac, use File > Import or drag documents into the library.
+
+PRIVACY AND LICENCES
+Book processing, narration, local speech recognition and voice preparation happen on the device. Models, recordings and generated audio are not synced. No analytics SDK is included. The app downloads model assets, not executable engines; its native inference SDKs ship inside the app. Downloads are initiated by the user.
+
+Phonon 40M models are optional, gated and licensed for non-commercial use; they require the user's own Hugging Face access and are not required for review. Linnet uses original assets under Linnet Weights License 1.0; its SDK is Apache-2.0. Full Linnet code/asset licences and publisher notice are accessible from its model card. The privacy policy and source/support links are in Settings.

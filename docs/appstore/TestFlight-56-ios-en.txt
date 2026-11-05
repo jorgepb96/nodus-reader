@@ -1,0 +1,11 @@
+Nodus Reader 0.1.0 (56) — What to test
+
+• Three balanced welcome choices: use iOS voices without a download, download a model, or just read. Your choice persists; deleting a model does not force setup again.
+• Apple voices appear in the catalogue and per-book picker, with fixed speed 5/5 and indicative naturalness 1/5. Qwen and Studio are temporarily hidden on iPhone and iPad; existing files are retained.
+• An unavailable voice is replaced by a compatible voice in the same language, stored only on that device. Check that new manual choices sync while an iPhone replacement does not overwrite the Mac choice.
+• Voice filters support multiple models, languages and genders and persist across books and sessions. Before custom filters are saved, the player picker starts from the current book's voice model.
+• Persistent model-language filters and expandable language lists above ten languages. Refined welcome, player, margins and navigation for iPhone, iPad and both iPhone Duo displays.
+• Page/vertical/horizontal options are unavailable while narration auto-scroll is enabled. Check text and highlighting with light and dark themes.
+• Test switching between Apple and downloaded voices, EPUB/PDF/text, pronunciations, pause, speed, offline audio, headphones, locked-screen playback and interruptions.
+
+Physical-device validation is pending. Keep each iPhone/iPad session within five minutes and report the device, voice, document and steps for any issue. macOS is coming soon; it remains a private beta for now.

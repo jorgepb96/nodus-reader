@@ -24,6 +24,7 @@ struct MacLibraryContentView: View {
     @Query(sort: \Book.addedAt, order: .reverse) private var books: [Book]
 
     @State private var viewMode: LibraryViewMode = .list
+    @State private var tableWidth: CGFloat = 600
     @State private var selectedBookID: Book.ID?
     @State private var fallbackBookID: Book.ID?
     @State private var sortOrder: [KeyPathComparator<Book>] = [
@@ -65,7 +66,14 @@ struct MacLibraryContentView: View {
 
     var body: some View {
         Group {
-            if viewMode == .list {
+            if shownBooks.isEmpty {
+                GeometryReader { geometry in
+                    ScrollView {
+                        emptyState
+                            .frame(minHeight: geometry.size.height)
+                    }
+                }
+            } else if viewMode == .list {
                 table
             } else {
                 grid
@@ -146,69 +154,98 @@ struct MacLibraryContentView: View {
     // MARK: Table
 
     private var table: some View {
-        // The column headers set `sortOrder`; the rows must follow it.
+        let layout = LibraryTableLayout(
+            width: tableWidth,
+            hasAuthors: shownBooks.contains { !$0.author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty },
+            hasCollections: shownBooks.contains { !$0.collectionNames.isEmpty },
+            hasHistory: shownBooks.contains { $0.lastOpenedAt != nil }
+        )
+        return bookTable(layout: layout)
+            .id(layout.columnIdentity)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { tableWidth = $0 }
+    }
+
+    private func bookTable(layout: LibraryTableLayout) -> some View {
+        // Fit the columns to the actual content area after the sidebar and
+        // inspector have taken their space. Hidden details remain in each
+        // compact title row or the inspector.
         Table(shownBooks.sorted(using: sortOrder), selection: $selectedBookID, sortOrder: $sortOrder) {
             TableColumn("Title", value: \.title) { book in
                 HStack(spacing: 9) {
                     BookCoverView(book: book, showBadges: false)
                         .frame(width: 34, height: 51)
-                    Text(book.title)
-                        .font(.system(size: 14, design: .serif))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(book.title)
+                            .font(.system(size: 14, design: .serif))
+                            .lineLimit(1)
+                        if !layout.showsAuthor || !layout.showsFormat || !layout.showsProgress {
+                            Text(compactDetails(for: book, layout: layout))
+                                .font(.caption)
+                                .foregroundStyle(palette.muted)
+                                .lineLimit(1)
+                        }
+                    }
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                    if book.downloadState == .cloudOnly {
+                        Image(systemName: "icloud.and.arrow.down")
+                            .font(.caption)
+                            .foregroundStyle(palette.muted)
+                            .help("In iCloud, not downloaded")
+                    }
+                }
+            }
+            .width(min: min(120, layout.titleWidth), ideal: layout.titleWidth, max: layout.titleWidth)
+
+            if layout.showsAuthor {
+                TableColumn("Author", value: \.author) { book in
+                    Text(book.displayAuthor)
+                        .foregroundStyle(palette.muted)
                         .lineLimit(1)
                 }
+                .width(144)
             }
-            .width(min: 180, ideal: 280)
 
-            TableColumn("Author", value: \.author) { book in
-                Text(book.displayAuthor)
-                    .foregroundStyle(palette.muted)
-                    .lineLimit(1)
-            }
-            .width(min: 110, ideal: 170)
-
-            TableColumn("Format", value: \.formatRaw) { book in
-                Text(book.format.label)
-                    .font(.caption)
-                    .foregroundStyle(palette.muted)
-            }
-            .width(60)
-
-            TableColumn("Progress", value: \.progress) { book in
-                HStack(spacing: 8) {
-                    NodusProgressBar(value: book.progress)
-                        .frame(width: 64)
-                    Text("\(Int((book.progress * 100).rounded()))%")
-                        .font(.caption2)
-                        .foregroundStyle(palette.muted)
-                        .monospacedDigit()
-                }
-            }
-            .width(min: 100, ideal: 120)
-
-            TableColumn("Collections") { book in
-                Text(book.collectionNames.joined(separator: ", "))
-                    .foregroundStyle(palette.muted)
-                    .lineLimit(1)
-            }
-            .width(min: 120, ideal: 180)
-
-            TableColumn("Last opened", value: \.lastOpenedSort) { book in
-                Text(relativeDate(book.lastOpenedAt))
-                    .foregroundStyle(palette.muted)
-            }
-            .width(min: 90, ideal: 120)
-
-            TableColumn("") { book in
-                if book.downloadState == .cloudOnly {
-                    Image(systemName: "icloud.and.arrow.down")
+            if layout.showsFormat {
+                TableColumn("Format", value: \.formatRaw) { book in
+                    Text(book.format.label)
                         .font(.caption)
                         .foregroundStyle(palette.muted)
-                        .help("In iCloud, not downloaded")
-                } else {
-                    Color.clear
+                        .lineLimit(1)
                 }
+                .width(72)
             }
-            .width(24)
+
+            if layout.showsProgress {
+                TableColumn("Progress", value: \.progress) { book in
+                    HStack(spacing: 8) {
+                        NodusProgressBar(value: book.progress)
+                            .frame(width: 64)
+                        Text("\(Int((book.progress * 100).rounded()))%")
+                            .font(.caption2)
+                            .foregroundStyle(palette.muted)
+                            .monospacedDigit()
+                    }
+                }
+                .width(116)
+            }
+
+            if layout.showsCollections {
+                TableColumn("Collections") { book in
+                    Text(book.collectionNames.joined(separator: ", "))
+                        .foregroundStyle(palette.muted)
+                        .lineLimit(1)
+                }
+                .width(160)
+            }
+
+            if layout.showsLastOpened {
+                TableColumn("Last opened", value: \.lastOpenedSort) { book in
+                    Text(relativeDate(book.lastOpenedAt))
+                        .foregroundStyle(palette.muted)
+                        .lineLimit(1)
+                }
+                .width(112)
+            }
         }
         // Empty alternating rows drew a column of grey bars under short lists.
         .alternatingRowBackgrounds(.disabled)
@@ -235,10 +272,40 @@ struct MacLibraryContentView: View {
         // The window's colour, not the grey of a system table.
         .scrollContentBackground(.hidden)
         .background(palette.background)
-        .overlay {
-            if shownBooks.isEmpty {
-                emptyState
-            }
+    }
+
+    private func compactDetails(for book: Book, layout: LibraryTableLayout) -> String {
+        var details: [String] = []
+        if !layout.showsAuthor { details.append(book.displayAuthor) }
+        if !layout.showsFormat { details.append(book.format.label) }
+        if !layout.showsProgress { details.append("\(Int((book.progress * 100).rounded()))%") }
+        return details.joined(separator: " · ")
+    }
+
+    private struct LibraryTableLayout {
+        let width: CGFloat
+        let hasAuthors: Bool
+        let hasCollections: Bool
+        let hasHistory: Bool
+
+        var showsAuthor: Bool { hasAuthors && width >= 620 }
+        var showsFormat: Bool { width >= 340 }
+        var showsProgress: Bool { width >= 480 }
+        var showsCollections: Bool { hasCollections && width >= 980 }
+        var showsLastOpened: Bool { hasHistory && width >= 800 }
+
+        var columnIdentity: [Bool] {
+            [showsAuthor, showsFormat, showsProgress, showsCollections, showsLastOpened]
+        }
+
+        var titleWidth: CGFloat {
+            let widths: [CGFloat] = [showsAuthor ? 144 : 0, showsFormat ? 72 : 0,
+                                     showsProgress ? 116 : 0, showsCollections ? 160 : 0,
+                                     showsLastOpened ? 112 : 0]
+            // Include room for native table insets, column separators and the
+            // vertical scroller, so the visible columns never force overflow.
+            let nativeInsets = CGFloat(48 + widths.filter { $0 > 0 }.count * 4)
+            return max(1, width - widths.reduce(0, +) - nativeInsets)
         }
     }
 
@@ -246,37 +313,31 @@ struct MacLibraryContentView: View {
 
     private var grid: some View {
         ScrollView {
-            if shownBooks.isEmpty {
-                emptyState
-                    .frame(minHeight: 420)
-                    .padding(40)
-            } else {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 138), spacing: 24)],
-                          alignment: .leading, spacing: 26) {
-                    ForEach(shownBooks) { book in
-                        BookGridCell(book: book, selectionMode: false, isSelected: false) {
-                            open(book)
-                        }
-                        .contextMenu {
-                            BookContextActions(
-                                book: book,
-                                onOpen: { open(book) },
-                                onReadAndListen: { open(book, narrate: true) },
-                                onAddToCollection: {
-                                    collectionBooks = [book]
-                                    showCollectionSheet = true
-                                },
-                                onEditInfo: { editingBook = book },
-                                onDelete: {
-                                    pendingDeletion = [book]
-                                    showDeleteConfirmation = true
-                                }
-                            )
-                        }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 138), spacing: 24)],
+                      alignment: .leading, spacing: 26) {
+                ForEach(shownBooks) { book in
+                    BookGridCell(book: book, selectionMode: false, isSelected: false) {
+                        open(book)
+                    }
+                    .contextMenu {
+                        BookContextActions(
+                            book: book,
+                            onOpen: { open(book) },
+                            onReadAndListen: { open(book, narrate: true) },
+                            onAddToCollection: {
+                                collectionBooks = [book]
+                                showCollectionSheet = true
+                            },
+                            onEditInfo: { editingBook = book },
+                            onDelete: {
+                                pendingDeletion = [book]
+                                showDeleteConfirmation = true
+                            }
+                        )
                     }
                 }
-                .padding(20)
             }
+            .padding(20)
         }
         .background(palette.background)
     }
@@ -288,6 +349,9 @@ struct MacLibraryContentView: View {
                 title: "No books here yet",
                 message: "Import an EPUB, PDF, Markdown, text, HTML or RTF document."
             )
+            // Keep the explanation and its actions together. The shared
+            // empty state otherwise expands and pushes buttons to the edge.
+            .fixedSize(horizontal: false, vertical: true)
             PrimaryPillButton("Import documents", systemImage: "plus") {
                 imports.beginImport()
             }
@@ -514,7 +578,7 @@ struct BookInspector: View {
                             Divider()
                             ForEach(bookVoices) { voice in
                                 Button("\(voice.name) · \(voice.engineLabel) · \(voice.languageName)") {
-                                    library.setPreferredVoice(book, voiceID: voice.id)
+                                    library.setPreferredVoice(book, voiceID: voice.id, voice: voice)
                                 }
                             }
                         } label: {

@@ -189,7 +189,7 @@ func pdfReflowKeepsTheFollowedLineAcrossLayoutUpdates() async throws {
     let preferences = ReaderPreferences(defaults: defaults)
     let voices = VoiceCatalog(defaults: defaults)
     let playback = PlaybackController(library: fixture.service, voices: voices,
-                                      models: ModelManager(voices: voices, defaults: defaults), defaults: defaults)
+                                      models: ModelManager(voices: voices, defaults: defaults, discoverSystemVoices: false), defaults: defaults)
     let book = Book(title: "Reflow scrolling", author: "Test", format: .pdf,
                     fileName: "test.pdf", relativePath: "test.pdf", fileSize: 0, contentHash: "scroll-test")
     fixture.container.mainContext.insert(book)
@@ -409,7 +409,7 @@ func exactNarrationCursorSurvivesPageSavesCloseAndControllerRecreation() async t
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
     let voices = VoiceCatalog(defaults: defaults)
-    let models = ModelManager(voices: voices, defaults: defaults)
+    let models = ModelManager(voices: voices, defaults: defaults, discoverSystemVoices: false)
     let voice = VoiceCatalog.Voice(id: "phonon:Harper", name: "Harper", language: "en-US", languageName: "English", quality: 3, engineRaw: "phonon")
     voices.setNeuralVoices([voice])
     let url = try SampleLibrary.makeEPUB(sampleSpec())
@@ -471,7 +471,7 @@ func eachBookResolvesItsSavedVoiceAcrossGlobalModelChanges() throws {
     #expect(reopened.voice(withID: "phonon:Alba") == spanish)
     // Uninstalling a model permits a temporary fallback without erasing it.
     reopened.setNeuralVoices([english], installed: [english])
-    #expect(reopened.narrationVoice(preferredID: second.preferredVoiceID, language: "es") == english)
+    #expect(reopened.narrationVoice(preferredID: second.preferredVoiceID, language: "es") == nil) // Never switch a Spanish book to English silently.
     #expect(second.preferredVoiceID == otherAlba.id)
 }
 
@@ -483,7 +483,7 @@ func narrationSpeedSurvivesControllerRecreation() throws {
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
     let voices = VoiceCatalog(defaults: defaults)
-    let models = ModelManager(voices: voices, defaults: defaults)
+    let models = ModelManager(voices: voices, defaults: defaults, discoverSystemVoices: false)
     let first = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
     #expect(first.speedMultiplier == 1)
     first.setSpeed(1.35)
@@ -502,7 +502,7 @@ func pausedReaderChapterSeekMovesNarrationAndTransfersItsPosition() async throws
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
     let voices = VoiceCatalog(defaults: defaults)
-    let models = ModelManager(voices: voices, defaults: defaults)
+    let models = ModelManager(voices: voices, defaults: defaults, discoverSystemVoices: false)
     let playback = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
     let url = try SampleLibrary.makeEPUB(sampleSpec())
     defer { try? FileManager.default.removeItem(at: url) }
@@ -535,7 +535,7 @@ func completedNarrationReplaysTheWholeDocument(action: String) async throws {
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
     let voices = VoiceCatalog(defaults: defaults)
-    let models = ModelManager(voices: voices, defaults: defaults)
+    let models = ModelManager(voices: voices, defaults: defaults, discoverSystemVoices: false)
     // Exercise transport and saved positions without loading a speech model.
     voices.setNeuralVoices([])
     let playback = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
@@ -620,7 +620,7 @@ func longNeuralNarrationUsesRealChunksAndCleanPhononEdges() async throws {
     let suite = "nodus.tests.long-narration.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
-    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults, discoverSystemVoices: false)
     let text = "He had noticed much earlier that the speed Han Xiao had was from his shoes, so he used his assault rifle and shot with high accuracy. He knew that Han Xiao would not be able to escape if his shoes were broken."
     for engine in [ModelManager.Engine.kokoro, .phonon] {
         let model = try #require(manager.models.first { $0.engine == engine && !$0.requiresAcceptedLicense })
@@ -1012,7 +1012,7 @@ func neuralVoicesCarryTheirPublishedGender() throws {
     let suite = "nodus.tests.voice-gender.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
-    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults, discoverSystemVoices: false)
     func voices(_ id: String) throws -> [ModelManager.Voice] {
         try #require(manager.models.first { $0.id == id }).voices
     }
@@ -1791,7 +1791,7 @@ func voicesOfEveryInstalledModelAreListedAndRoutedToTheirModel() throws {
     let suite = "nodus.tests.voice-routing.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
-    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults, discoverSystemVoices: false)
 
     // Each voice ID names its model, so a voice of an unselected model plays with it.
     #expect(manager.model(forVoiceID: "phonon:Harper")?.model.id == "phonon-31m-en")
@@ -1904,7 +1904,7 @@ func deletingCachesBooksAndModelsFreesTheirFiles() async throws {
     let suite = "nodus.tests.space.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
-    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults, discoverSystemVoices: false)
     let multilingual = try #require(manager.models.first { $0.id == ModelManager.phonon40MultilingualID })
     let folder = ModelManager.directory(forModelID: multilingual.id, engine: .phonon)
     let english = ModelManager.directory(forModelID: "phonon-31m-en", engine: .phonon)
@@ -1923,7 +1923,7 @@ func voiceEnginesAreReleasedOnlyWhenNarrationIsIdle() throws {
     let suite = "nodus.tests.engine-memory.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
-    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults, discoverSystemVoices: false)
 
     // Playing narration keeps its engine in memory.
     manager.setNarrationInUse(true)
@@ -1952,7 +1952,7 @@ func modelDownloadsSynthesizeAndAlignWithText() async throws {
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
     let catalog = VoiceCatalog(defaults: defaults)
-    let manager = ModelManager(voices: catalog, defaults: defaults)
+    let manager = ModelManager(voices: catalog, defaults: defaults, discoverSystemVoices: false)
 
     let sentence = "Call me Ishmael, and listen closely to every single word."
     var words: [NSRange] = []
@@ -2038,7 +2038,7 @@ func kokoroNarratesSpanish() async throws {
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
     let catalog = VoiceCatalog(defaults: defaults)
-    let manager = ModelManager(voices: catalog, defaults: defaults)
+    let manager = ModelManager(voices: catalog, defaults: defaults, discoverSystemVoices: false)
     let kokoro = try #require(manager.models.first { $0.engine == .kokoro })
     try #require(manager.isInstalled(kokoro), "Install Kokoro first (modelDownloadsSynthesizeAndAlignWithText)")
     _ = await ModelManager.installMissingKokoroVoices()
@@ -2092,7 +2092,7 @@ func convertedPhonon40SpanishBundleNarratesSpanish() async throws {
     let suite = "nodus.tests.phonon40.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
-    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults, discoverSystemVoices: false)
     let model = try #require(manager.models.first { $0.id == ModelManager.phonon40SpanishID })
     #expect(!model.downloadable)
 
@@ -2483,7 +2483,7 @@ func kokoroSpeaksWordsOutsideItsDictionary() async throws {
     let suite = "nodus.tests.kokoro-oov.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
-    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults, discoverSystemVoices: false)
     let kokoro = try #require(manager.models.first { $0.engine == .kokoro })
     try #require(manager.isInstalled(kokoro))
     manager.selectModel(kokoro)
@@ -2612,7 +2612,7 @@ func mingVoiceStoreValidatesAndRoundTripsClips() throws {
     let suite = "nodus.tests.studio-languages.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
-    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults)
+    let manager = ModelManager(voices: VoiceCatalog(defaults: defaults), defaults: defaults, discoverSystemVoices: false)
     #expect(manager.studioReferences(for: .qwen).contains { $0.id == italian.id })
     #expect(!manager.studioReferences(for: .ming).contains { $0.id == italian.id })
     let reference = try StudioVoiceStore.reference(id: saved.id)
@@ -2849,7 +2849,7 @@ func pronunciationSynthesizesWithInstalledEngines() async throws {
     let defaults = try #require(UserDefaults(suiteName: suite))
     defer { defaults.removePersistentDomain(forName: suite) }
     let catalog = VoiceCatalog(defaults: defaults)
-    let manager = ModelManager(voices: catalog, defaults: defaults)
+    let manager = ModelManager(voices: catalog, defaults: defaults, discoverSystemVoices: false)
     let installed = manager.models.filter { manager.isInstalled($0) }
     #expect(!installed.isEmpty, "This opt-in test needs preinstalled models; it never downloads them.")
     for model in installed {

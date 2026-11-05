@@ -25,7 +25,7 @@ struct StorageSettingsView: View {
     }
 
     private var modelBytes: Int64 {
-        models.storage.kokoroBytes + models.storage.phononBytes + models.storage.mingBytes + models.storage.qwenBytes
+        models.storage.kokoroBytes + models.storage.phononBytes + models.storage.mingBytes + models.storage.qwenBytes + models.storage.linnetBytes
     }
 
     private var audioBytes: Int64 {
@@ -116,6 +116,13 @@ struct StorageSettingsView: View {
                 }
                 .panelCard(radius: 20)
 
+                #if os(iOS)
+                if models.storage.qwenBytes > 0 {
+                    Button("Delete unavailable Qwen model", role: .destructive) {
+                        models.delete(ModelManager.qwenModel)
+                    }
+                }
+                #endif
                 cleanupCard
 
                 HStack(alignment: .top, spacing: 10) {

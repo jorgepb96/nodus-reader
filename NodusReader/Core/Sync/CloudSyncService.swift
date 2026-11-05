@@ -719,6 +719,7 @@ final class CloudSyncService {
             record["lastPositionDevice"] = book.lastPositionDevice
             record["lastPositionDate"] = book.lastPositionDate
             record["preferredVoiceID"] = book.preferredVoiceID ?? ""
+            record["preferredVoiceSnapshotJSON"] = book.preferredVoiceSnapshotJSON
             record["readingMode"] = book.readingModeRaw
             record["appearanceJSON"] = book.appearanceJSON
             record["pronunciationsJSON"] = book.pronunciationsJSON
@@ -852,6 +853,7 @@ final class CloudSyncService {
         book.sourceDevice = record["sourceDevice"] as? String ?? book.sourceDevice
         book.lastPositionDevice = record["lastPositionDevice"] as? String ?? book.lastPositionDevice
         book.lastPositionDate = record["lastPositionDate"] as? Date
+        book.preferredVoiceSnapshotJSON = record["preferredVoiceSnapshotJSON"] as? String ?? ""
         book.preferredVoiceID = (record["preferredVoiceID"] as? String).flatMap { $0.isEmpty ? nil : $0 }
         book.readingModeRaw = record["readingMode"] as? String ?? book.readingModeRaw
         book.appearanceJSON = record["appearanceJSON"] as? String ?? book.appearanceJSON

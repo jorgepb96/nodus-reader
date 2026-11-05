@@ -41,6 +41,7 @@ DEFINE SCHEMA
         lastPositionDevice STRING,
         locatorJSON        STRING,
         preferredVoiceID   STRING,
+        preferredVoiceSnapshotJSON STRING,
         progress           DOUBLE,
         pronunciationsJSON STRING,
         published          STRING,

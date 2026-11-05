@@ -30,3 +30,5 @@ tools/parser-corpus/pdfs/
 tools/parser-probe/.build/
 tools/parser-corpus/epubs/
 tools/parser-corpus/formats/
+
+Modules/LinnetTTS/CLinnetTTS.xcframework/

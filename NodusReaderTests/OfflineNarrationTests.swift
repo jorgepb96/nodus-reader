@@ -93,6 +93,42 @@ func queuedAudioRestoresUserPauseAndRechecksEvictedCacheOnResume() async throws 
 }
 
 @Test @MainActor
+func persistedQwenJobMigratesOldCacheKeysBeforeGeneratingMoreAudio() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let cache = NarrationAudioCache(root: root.appendingPathComponent("Audio"))
+    let path = root.appendingPathComponent("Jobs")
+    let text = "Hello, Jorge."
+    let rules = [PronunciationRule(written: "Jorge", spoken: "George")]
+    let signature = PronunciationTransformer.prepare(text, rules: rules).signature
+    let oldKey = cache.key(text: text, engine: "qwen-quality-v1", voice: "qwen:en", pronunciation: signature)
+    let newKey = cache.key(text: text, engine: "qwen", voice: "qwen:en", pronunciation: signature)
+    let plan = OfflineNarrationPlan(id: UUID(), bookID: UUID(), bookHash: "hash", title: "Old Qwen job",
+        voiceID: "qwen:en", voiceName: "Dave", engine: "qwen",
+        pronunciationRevision: String(decoding: try JSONEncoder().encode(rules), as: UTF8.self), createdAt: Date(),
+        sentences: [.init(text: text, key: oldKey, chapterIndex: 0, offset: 0)],
+        units: [.init(id: 0, title: "Text", start: 0, end: 1)])
+    let first = OfflineNarrationQueue(root: path, cache: cache)
+    try first.enqueue(plan)
+    try await saveTestAudio(cache: cache, plan: plan, sentence: plan.sentences[0])
+    let stateURL = path.appendingPathComponent(plan.id.uuidString).appendingPathComponent("state.json")
+    var state = OfflineNarrationQueue.State(); state.status = .completed; state.completed = [0]
+    try JSONEncoder().encode(state).write(to: stateURL)
+    let restored = OfflineNarrationQueue(root: path, cache: cache)
+    #expect(restored.jobs.first?.state.completed.isEmpty == true)
+    restored.configure(available: { _ in true }, idle: { true }, render: { plan, sentence in
+        #expect(sentence.key == newKey)
+        try await saveTestAudio(cache: cache, plan: plan, sentence: sentence)
+    })
+    try await waitFor { restored.jobs.first?.state.status == .completed }
+    #expect(restored.jobs.first?.plan.sentences[0].key == newKey)
+    #expect(await cache.contains(bookID: plan.bookID, key: newKey))
+    let again = OfflineNarrationQueue(root: path, cache: cache)
+    #expect(again.jobs.first?.plan.sentences[0].key == newKey)
+    #expect(again.jobs.first?.state.completed == [0])
+}
+
+@Test @MainActor
 func offlinePlannerKeepsSentencesWholeAcrossParagraphBoundaries() throws {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: root) }

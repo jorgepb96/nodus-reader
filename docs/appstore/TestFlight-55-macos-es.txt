@@ -1,0 +1,9 @@
+Nodus Reader 0.1.0 (55) — Beta privada para Mac
+
+• Alterna entre Qwen y otros motores mientras cargan o generan una frase. Prueba el selector de voz del libro, Ajustes y las muestras. Comprueba que la interfaz responda, conserve la posición y no recupere indicadores o muestras de una petición cancelada.
+• Comprueba los mensajes separados para cargar el modelo y generar la siguiente frase. Qwen reutiliza la referencia preparada mientras no cambie la voz.
+• Las tomas que alcanzan un límite de generación se rechazan aunque termine recortándose un silencio. Prueba la pausa, el reintento y el cambio de voz tras un fallo.
+• El audio anterior de Qwen se regenera con una nueva revisión de caché. Comprueba la migración de los trabajos sin conexión, su progreso y sus pausas, incluidas las reglas de pronunciación.
+• Prueba Linnet, Kokoro, Phonon y Ming, resaltado, escucha sin conexión, pausa/reanudación, velocidad y cambio entre documentos EPUB, PDF y texto.
+
+Qwen sigue siendo experimental: no se cambian sus pesos ni su muestreo y no se anuncia una mejora de velocidad sostenida. Indica versión de macOS, chip, modelo, voz y pasos si encuentras un problema. Esta compilación se distribuye únicamente al grupo privado de macOS.

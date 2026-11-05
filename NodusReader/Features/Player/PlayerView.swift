@@ -5,10 +5,15 @@ import SwiftUI
 struct PlayerView: View {
     @Environment(PlaybackController.self) private var playback
     @Environment(ModelManager.self) private var models
+    @Environment(ImmersiveAudioController.self) private var immersive
     @Environment(\.dismiss) private var dismiss
 
     var onOpenReader: (Book) -> Void
+    var onClose: (() -> Void)? = nil
+    var availableHeight: CGFloat = 600
 
+    @State private var viewport = CGSize(width: 390, height: 700)
+    @State private var macContentHeight: CGFloat = 540
     @State private var showVoicePicker = false
     @State private var showPronunciations = false
     @State private var showAudioJobs = false
@@ -19,6 +24,11 @@ struct PlayerView: View {
 
     var body: some View {
         ScrollView {
+            #if os(macOS)
+            macContent
+                .fixedSize(horizontal: false, vertical: true)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { macContentHeight = $0 }
+            #else
             VStack(spacing: 0) {
                 handle
                 topBar
@@ -33,16 +43,40 @@ struct PlayerView: View {
                         .accessibilityIdentifier("PlayerLoadingText")
                 }
                 controlGrid
-                ImmersiveAudioCard()
-                    .padding(.top, 16)
-                audioCacheCard
-                footer
+                if viewport.height < 600 && viewport.width < 600 {
+                    DisclosureGroup("More playback options") {
+                        ImmersiveAudioCard().padding(.top, 12)
+                        audioCacheCard
+                        footer
+                    }
+                    .font(.footnote)
+                    .padding(.top, 12)
+                } else if viewport.width >= 600 {
+                    if immersive.preferences.isEnabled {
+                        HStack(alignment: .top, spacing: 12) {
+                            ImmersiveAudioCard().frame(maxWidth: .infinity).padding(.top, 12)
+                            audioCacheCard.frame(maxWidth: .infinity)
+                        }
+                    } else {
+                        audioCacheCard
+                    }
+                    footer
+                } else {
+                    ImmersiveAudioCard().padding(.top, 16)
+                    audioCacheCard
+                    footer
+                }
             }
-            .frame(maxWidth: 520)
+            .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 16)
-            .padding(.bottom, 56)
+            .padding(.bottom, 16)
+            #endif
         }
+        #if os(macOS)
+        .frame(height: min(macContentHeight, max(0, availableHeight)))
+        #endif
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
         .scrollIndicators(.hidden)
         .foregroundStyle(palette.text)
         .background(playerBackground)
@@ -80,9 +114,56 @@ struct PlayerView: View {
         // before the listener could change the speed. The page presentation
         // keeps the primary controls visible, with the same sheet on iPhone.
         .presentationSizing(.page)
-        #else
-        .frame(minWidth: 560, idealWidth: 600, minHeight: 720, idealHeight: 900)
         #endif
+    }
+
+    #if os(macOS)
+    private var macContent: some View {
+        VStack(spacing: 0) {
+            topBar
+            if viewport.width >= 680 {
+                HStack(alignment: .top, spacing: 16) {
+                    macPlaybackControls
+                        .frame(maxWidth: .infinity)
+                    macAdditionalControls
+                        .frame(width: 280)
+                }
+            } else {
+                macPlaybackControls
+                macAdditionalControls.padding(.top, 12)
+            }
+        }
+        .padding(16)
+    }
+
+    private var macPlaybackControls: some View {
+        VStack(spacing: 0) {
+            coverAndText
+            scrubber
+            transport
+            if playback.isLoading {
+                Text(loadingText)
+                    .font(.caption)
+                    .foregroundStyle(palette.muted)
+                    .padding(.top, 8)
+                    .accessibilityIdentifier("PlayerLoadingText")
+            }
+            controlGrid
+        }
+    }
+
+    private var macAdditionalControls: some View {
+        VStack(spacing: 0) {
+            if immersive.preferences.isEnabled { ImmersiveAudioCard() }
+            audioCacheCard
+            footer
+        }
+    }
+    #endif
+
+    private func closePlayer() {
+        if let onClose { onClose() }
+        else { dismiss() }
     }
 
     private var audioCacheCard: some View {
@@ -181,7 +262,7 @@ struct PlayerView: View {
     private var topBar: some View {
         HStack {
             Button {
-                dismiss()
+                closePlayer()
             } label: {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 17, weight: .semibold))
@@ -207,7 +288,7 @@ struct PlayerView: View {
                 }
                 Button {
                     playback.stopAndClose()
-                    dismiss()
+                    closePlayer()
                 } label: {
                     Label("Stop narration", systemImage: "stop.fill")
                 }
@@ -229,36 +310,47 @@ struct PlayerView: View {
         .padding(.bottom, 8)
     }
 
+    private var compactPlayer: Bool {
+        #if os(macOS)
+        true
+        #else
+        viewport.height < 720
+        #endif
+    }
+
+    private var cover: some View {
+        Group {
+            if let book = playback.activeBook { BookCoverView(book: book, showBadges: false) }
+            else { RoundedRectangle(cornerRadius: 10).fill(palette.panel) }
+        }
+        .frame(width: compactPlayer ? (viewport.width >= 600 ? 96 : 64) : 108,
+               height: compactPlayer ? (viewport.width >= 600 ? 144 : 96) : 162)
+        .accessibilityHidden(true)
+    }
+
+    private var bookIdentity: some View {
+        VStack(spacing: 4) {
+            Text(playback.activeBook?.title ?? String(localized: "Nothing playing"))
+                .font(.system(size: compactPlayer ? 21 : 25, design: .serif))
+                .foregroundStyle(palette.text)
+                .lineLimit(2)
+            Text("\(playback.activeBook?.displayAuthor ?? "") · \(playback.chapterTitle)")
+                .font(.caption).foregroundStyle(palette.muted).lineLimit(1)
+            if compactPlayer { contextText.padding(.top, 4) }
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+    }
+
     private var coverAndText: some View {
-        VStack(spacing: 20) {
-            Group {
-                if let book = playback.activeBook {
-                    BookCoverView(book: book, showBadges: false)
-                } else {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(palette.panel)
-                }
+        VStack(spacing: 10) {
+            if compactPlayer {
+                HStack(spacing: 16) { cover; bookIdentity }
+            } else {
+                cover
+                bookIdentity
+                contextText
             }
-            .frame(width: 164, height: 246)
-            .padding(.top, 8)
-
-            VStack(spacing: 4) {
-                Text(playback.activeBook?.title ?? String(localized: "Nothing playing"))
-                    .font(.system(size: 26, design: .serif))
-                    .tracking(-0.3)
-                    .foregroundStyle(palette.text)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                Text("\(playback.activeBook?.displayAuthor ?? "") · \(playback.chapterTitle)")
-                    .font(.footnote)
-                    .foregroundStyle(palette.muted)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-            }
-
-            contextText
-                .frame(maxWidth: .infinity)
-                .padding(.top, 2)
         }
     }
 
@@ -279,7 +371,7 @@ struct PlayerView: View {
         }
         var current = AttributedString(playback.currentSentence)
         current.foregroundColor = palette.text
-        current.font = .system(size: 17, design: .serif).weight(.medium)
+        current.font = .system(size: compactPlayer ? 14 : 17, design: .serif).weight(.medium)
         attributed.append(current)
         if let next = playback.nextSentenceText {
             var part = AttributedString(" \(next.prefix(48))…")
@@ -287,10 +379,10 @@ struct PlayerView: View {
             attributed.append(part)
         }
         return Text(attributed)
-            .font(.system(size: 17, design: .serif))
-            .lineSpacing(5)
+            .font(.system(size: compactPlayer ? 14 : 17, design: .serif))
+            .lineSpacing(3)
             .multilineTextAlignment(.center)
-            .lineLimit(3)
+            .lineLimit(compactPlayer ? 2 : 3)
             .truncationMode(.tail)
             .frame(maxWidth: .infinity)
     }
@@ -327,7 +419,7 @@ struct PlayerView: View {
     private var loadingText: String {
         models.loadingEngine != nil
             ? String(localized: "Loading the voice model on this device…")
-            : String(localized: "Preparing the voice…")
+            : String(localized: "Generating the next sentence…")
     }
 
     private var transport: some View {
@@ -343,7 +435,7 @@ struct PlayerView: View {
                     .font(.system(size: 27, weight: .semibold))
                     .offset(x: playback.isPlaying || playback.narrationFinished ? 0 : 2)
                     .foregroundStyle(palette.onAccent)
-                    .frame(width: 76, height: 76)
+                    .frame(width: compactPlayer ? 60 : 72, height: compactPlayer ? 60 : 72)
                     .background(palette.accent, in: Circle())
                     .overlay {
                         if playback.isLoading {
@@ -374,7 +466,7 @@ struct PlayerView: View {
     }
 
     private var controlGrid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 8) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: viewport.width < 500 ? 3 : 5), spacing: 8) {
             speedControl
             voiceControl
             sleepControl
@@ -410,7 +502,7 @@ struct PlayerView: View {
             showVoicePicker = true
         } label: {
             controlTile(top: playback.activeVoice?.name ?? String(localized: "Voice"),
-                        bottom: playback.preferredVoiceIsMissing ? String(localized: "Install voice") : playback.engineLabel,
+                        bottom: playback.preferredVoiceIsMissing ? String(localized: "Replacement voice") : playback.engineLabel,
                         highlighted: playback.preferredVoiceIsMissing)
         }
         .buttonStyle(.plain)
@@ -442,6 +534,7 @@ struct PlayerView: View {
         .nodusMenuLabelStyle()
         .frame(maxWidth: .infinity)
         .accessibilityLabel("Sleep timer")
+        .accessibilityIdentifier("PlayerSleepTimer")
     }
 
     private var returnToNarrationControl: some View {
@@ -449,7 +542,7 @@ struct PlayerView: View {
             guard let book = playback.activeBook else { return }
             playback.requestReaderResume()
             onOpenReader(book)
-            dismiss()
+            closePlayer()
         } label: {
             controlTile(icon: "location.fill", top: String(localized: "Return"),
                         bottom: String(localized: "To narration"), highlighted: false)
@@ -457,7 +550,7 @@ struct PlayerView: View {
         .buttonStyle(.plain)
         .disabled(playback.currentChapterOffset == nil)
         .accessibilityLabel("Return to narration")
-        .accessibilityIdentifier("ReturnToNarration")
+        .accessibilityIdentifier("PlayerReturnToNarration")
     }
 
     private var modeControl: some View {
@@ -468,7 +561,7 @@ struct PlayerView: View {
                     if mode != .listen, let book = playback.activeBook {
                         playback.requestReaderResume()
                         onOpenReader(book)
-                        dismiss()
+                        closePlayer()
                     }
                 } label: {
                     Label(mode.label, systemImage: playback.mode == mode ? "checkmark" : "circle")
@@ -487,6 +580,7 @@ struct PlayerView: View {
         .nodusMenuLabelStyle()
         .frame(maxWidth: .infinity)
         .accessibilityLabel("Reading mode")
+        .accessibilityIdentifier("PlayerReadingMode")
     }
 
     private func controlTile(top: String, bottom: String, highlighted: Bool) -> some View {
@@ -497,11 +591,14 @@ struct PlayerView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
             Text(bottom)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
                 .font(.system(size: 10))
                 .foregroundStyle(palette.muted)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 56)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, minHeight: viewport.width >= 600 ? 76 : 62)
         .background(highlighted ? palette.selection : palette.panel,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
@@ -522,11 +619,14 @@ struct PlayerView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(bottom)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
                 .font(.system(size: 9))
                 .foregroundStyle(palette.muted)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 56)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, minHeight: viewport.width >= 600 ? 76 : 62)
         .background(highlighted ? palette.selection : palette.panel,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
@@ -558,10 +658,18 @@ struct PlayerView: View {
                 .font(.footnote)
                 .foregroundStyle(palette.muted)
                 .multilineTextAlignment(.center)
+            Button("Try again") {
+                playback.errorMessage = nil
+                playback.resume()
+            }.nodusTextButtonStyle()
+            Button("Choose another voice") {
+                playback.errorMessage = nil
+                showVoicePicker = true
+            }.nodusTextButtonStyle()
             Button("Close") {
                 playback.errorMessage = nil
                 playback.stopAndClose()
-                dismiss()
+                closePlayer()
             }
             .foregroundStyle(palette.accent)
             .nodusTextButtonStyle()
@@ -680,11 +788,19 @@ struct VoicePickerSheet: View {
     @Environment(\.nodusPalette) private var palette
 
     @State private var searchText = ""
-    @State private var languageFilter: String?
-    /// An installed model's ID; nil shows every model.
-    @State private var modelFilter: String?
-    @State private var genderFilter: VoiceGender?
-    @State private var didSetInitialLanguage = false
+    @AppStorage(VoiceFilterSelection.storageKey) private var savedVoiceFilters = ""
+    @State private var automaticFilters = VoiceFilterSelection()
+    @State private var didInitializeFilters = false
+
+    private var filters: VoiceFilterSelection {
+        VoiceFilterSelection.decode(savedVoiceFilters) ?? automaticFilters
+    }
+
+    private var filterBinding: Binding<VoiceFilterSelection> {
+        Binding(get: { filters }, set: { value in
+            if let encoded = value.encoded { savedVoiceFilters = encoded }
+        })
+    }
 
     /// The per-book voice syncs, but voices and models are installed per
     /// device (design/DESIGN.md §4). When it is missing here, say so and offer
@@ -703,18 +819,10 @@ struct VoicePickerSheet: View {
         models.models.filter { $0.isAvailable && models.isInstalled($0) }
     }
 
-    private var modelLabel: String? {
-        guard let modelFilter else { return nil }
-        return installedModels.first { $0.id == modelFilter }?.name
-    }
-
     private var filtered: [VoiceCatalog.Voice] {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let language = VoiceCatalog.languageCode(languageFilter)
         return allVoices.filter { voice in
-            if let language, !voice.language.lowercased().hasPrefix(language) { return false }
-            if let modelFilter, voice.modelID != modelFilter { return false }
-            if let genderFilter, voice.gender != genderFilter { return false }
+            guard filters.matches(voice) else { return false }
             guard !trimmed.isEmpty else { return true }
             return voice.name.localizedCaseInsensitiveContains(trimmed)
                 || voice.languageName.localizedCaseInsensitiveContains(trimmed)
@@ -731,30 +839,22 @@ struct VoicePickerSheet: View {
         VoiceCatalog.baseLanguages(of: filtered)
     }
 
-    /// Installed models side by side, one tap each, when they fit; a menu
-    /// otherwise (many models, or a single one with nothing to compare).
     private var filterRow: some View {
-        ViewThatFits(in: .horizontal) {
-            if installedModels.count > 1 {
-                HStack(spacing: 8) {
-                    modelSegments
-                    languageMenu
-                    genderMenu
-                    Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 8) {
+            VoiceFilterControls(selection: filterBinding,
+                                modelOptions: modelOptions,
+                                languageOptions: languageOptions,
+                                genderOptions: genderOptions)
+            if filters.isActive {
+                Button {
+                    filterBinding.wrappedValue = VoiceFilterSelection()
+                } label: {
+                    Label("Clear filters", systemImage: "xmark.circle")
+                        .font(.caption.weight(.semibold))
+                        .padding(.vertical, 6)
                 }
-                VStack(alignment: .leading, spacing: 8) {
-                    modelSegments
-                    HStack(spacing: 6) {
-                        languageMenu
-                        genderMenu
-                    }
-                }
-            }
-            HStack(spacing: 6) {
-                modelMenu
-                languageMenu
-                genderMenu
-                Spacer(minLength: 0)
+                .nodusTextButtonStyle()
+                .foregroundStyle(palette.accent)
             }
         }
         .padding(.horizontal, 16)
@@ -763,55 +863,23 @@ struct VoicePickerSheet: View {
         .background(palette.background)
     }
 
-    private var modelSegments: some View {
-        Picker(String(localized: "Model"), selection: $modelFilter) {
-            Text("All").tag(String?.none)
-            ForEach(installedModels) { model in
-                Text(model.name).tag(Optional(model.id))
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .fixedSize()
-        .accessibilityLabel("Model")
+    private var modelOptions: [VoiceFilterOption] {
+        let ids = Set(installedModels.map(\.id)).union(filters.models)
+        return ids.map { id in
+            VoiceFilterOption(id: id, title: models.models.first { $0.id == id && $0.engine.isEnabled }?.name
+                              ?? String(localized: "Unavailable model"))
+        }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
 
-    private var modelMenu: some View {
-        VoiceFilterMenu(title: String(localized: "Model"), systemImage: "cpu",
-                        value: modelLabel, isActive: modelFilter != nil) {
-            Button("All models") { modelFilter = nil }
-            Divider()
-            ForEach(installedModels) { model in
-                Button(model.name) { modelFilter = model.id }
-            }
-        }
+    private var languageOptions: [VoiceFilterOption] {
+        Set(availableLanguages).union(filters.languages).map {
+            VoiceFilterOption(id: $0, title: voices.languageName(for: $0))
+        }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
 
-    private var languageMenu: some View {
-        VoiceFilterMenu(title: String(localized: "Language"), systemImage: "globe",
-                        value: languageFilter.map { voices.languageName(for: $0) },
-                        isActive: languageFilter != nil) {
-            Button("All languages") { languageFilter = nil }
-            Divider()
-            ForEach(availableLanguages, id: \.self) { language in
-                Button(voices.languageName(for: language)) { languageFilter = language }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var genderMenu: some View {
-        let genders = VoiceCatalog.genders(of: allVoices)
-        if !genders.isEmpty {
-            VoiceFilterMenu(title: String(localized: "Gender"), systemImage: "person.2",
-                            value: genderFilter?.label, isActive: genderFilter != nil) {
-                Button("All genders") { genderFilter = nil }
-                Divider()
-                ForEach(genders, id: \.self) { gender in
-                    Button(gender.label) { genderFilter = gender }
-                }
-            }
-        }
+    private var genderOptions: [VoiceFilterOption] {
+        VoiceGender.allCases.map { VoiceFilterOption(id: $0.rawValue, title: $0.label) }
+            + [VoiceFilterOption(id: VoiceFilterSelection.unspecifiedGender, title: String(localized: "Not specified"))]
     }
 
     var body: some View {
@@ -830,7 +898,7 @@ struct VoicePickerSheet: View {
                                 VoicesView()
                                     .navigationTitle("Voices & Models")
                             } label: {
-                                Label(String(localized: "Install voice"), systemImage: "arrow.down.circle")
+                                Label(String(localized: "Replacement voice"), systemImage: "arrow.down.circle")
                                     .font(.footnote.weight(.semibold))
                                     .foregroundStyle(palette.accent)
                             }
@@ -849,9 +917,7 @@ struct VoicePickerSheet: View {
                                 .foregroundStyle(palette.muted)
                                 .fixedSize(horizontal: false, vertical: true)
                             Button("Show all voices") {
-                                languageFilter = nil
-                                modelFilter = nil
-                                genderFilter = nil
+                                filterBinding.wrappedValue = VoiceFilterSelection()
                                 searchText = ""
                             }
                             .font(.footnote.weight(.semibold))
@@ -906,14 +972,17 @@ struct VoicePickerSheet: View {
                 }
             }
             .task {
-                guard !didSetInitialLanguage else { return }
-                let bookLanguage = VoiceCatalog.languageCode(playback.activeBook?.language)
-                let fallback = VoiceCatalog.languageCode(voices.defaultVoice?.language)
-                // Keep the book's language even when its voices are not
-                // installed. The empty state explains how to show all voices
-                // or install a model, instead of silently listing English.
-                languageFilter = bookLanguage ?? fallback
-                didSetInitialLanguage = true
+                await voices.loadIfNeeded()
+                guard !Task.isCancelled, !didInitializeFilters else { return }
+                let currentVoice = playback.activeVoice ?? voices.defaultVoice
+                let language = VoiceCatalog.languageCode(playback.activeBook?.language)
+                    ?? VoiceCatalog.languageCode(currentVoice?.language)
+                let model = currentVoice?.modelID ?? models.selectedModel?.id ?? installedModels.first?.id
+                automaticFilters = VoiceFilterSelection(
+                    models: model.map { Set([$0]) } ?? [],
+                    languages: language.map { Set([$0]) } ?? []
+                )
+                didInitializeFilters = true
             }
         }
         #if os(iOS)
