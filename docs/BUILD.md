@@ -174,8 +174,8 @@ use `CFFIXED_USER_HOME` because their test host is built with
 
 ## TestFlight (iOS/iPadOS and macOS)
 
-Current delivery: **0.1.0 (55)** on iOS and macOS. iOS is assigned to Internal and
-the public beta; macOS is Internal only. See [build 55](appstore/BUILD55_VERIFICATION.md)
+Current delivery: **0.1.0 (56)** on iOS and macOS. iOS is assigned to Internal and
+the public beta; macOS is Internal only. See [build 56](appstore/BUILD56_VERIFICATION.md)
 for the current Apple review state.
 
 The project signs automatically with team `6RPLS9EA4X`; `ITSAppUsesNonExemptEncryption`

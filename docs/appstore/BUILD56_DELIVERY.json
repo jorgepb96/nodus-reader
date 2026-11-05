@@ -1,0 +1,150 @@
+{
+  "verifiedAt": "2026-11-05T19:07:02.350773+01:00",
+  "version": "0.1.0",
+  "build": "56",
+  "exports": [
+    {
+      "platform": "ios",
+      "version": "0.1.0",
+      "build": "56",
+      "sourceSnapshot": "working tree, build 56",
+      "package": "build/export-ios-56/Nodus Reader.ipa",
+      "bytes": 54966743,
+      "sha256": "63df90c52e14229b2f2eee0c4d28352a5047ecca0c2ef7808174fdf6e42b0d01",
+      "signatureVerified": true,
+      "productionICloud": true,
+      "architecture": "arm64"
+    },
+    {
+      "platform": "mac",
+      "version": "0.1.0",
+      "build": "56",
+      "sourceSnapshot": "working tree, build 56",
+      "package": "build/export-macOS-56/Nodus Reader.pkg",
+      "bytes": 50046327,
+      "sha256": "4477a5430feeb05a99468b3d16c5e624391be1b60ff283c3ae85ce1aceb8e53d",
+      "signatureVerified": true,
+      "productionICloud": true,
+      "architecture": "arm64"
+    }
+  ],
+  "builds": [
+    {
+      "id": "c34a13a4-8146-4e42-b2bf-fdf08ec23126",
+      "version": "56",
+      "uploadedDate": "2026-11-05T10:05:24-08:00",
+      "expirationDate": "2027-02-03T10:05:24-08:00",
+      "expired": false,
+      "minOsVersion": "15.0",
+      "lsMinimumSystemVersion": "15.0",
+      "computedMinMacOsVersion": null,
+      "computedMinVisionOsVersion": null,
+      "iconAssetToken": {
+        "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/0c/95/25/0c952504-e7b0-34b5-82f0-7d6e34a45cc5/AppIcon.icns/{w}x{h}bb.{f}",
+        "width": 256,
+        "height": 256
+      },
+      "processingState": "VALID",
+      "buildAudienceType": "APP_STORE_ELIGIBLE",
+      "usesNonExemptEncryption": false,
+      "preReleaseVersion": {
+        "version": "0.1.0",
+        "platform": "MAC_OS"
+      },
+      "buildBetaDetail": {
+        "autoNotifyEnabled": true,
+        "internalBuildState": "IN_BETA_TESTING",
+        "externalBuildState": "READY_FOR_BETA_SUBMISSION"
+      },
+      "betaAppReviewSubmission": null,
+      "groups": [
+        "6fca3f0a-fada-4405-a6a0-9357bab03698"
+      ]
+    },
+    {
+      "id": "d90dd178-7813-4767-8d0a-2044bf4a5ec0",
+      "version": "56",
+      "uploadedDate": "2026-11-05T10:00:13-08:00",
+      "expirationDate": "2027-02-03T10:00:13-08:00",
+      "expired": false,
+      "minOsVersion": "18.0",
+      "lsMinimumSystemVersion": "15.0",
+      "computedMinMacOsVersion": "15.0",
+      "computedMinVisionOsVersion": "2.0",
+      "iconAssetToken": {
+        "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/01/fd/1e/01fd1e9e-4e6f-d13c-99ec-3982b05440de/AppIcon76x76@2x_U007eipad.png/{w}x{h}bb.{f}",
+        "width": 152,
+        "height": 152
+      },
+      "processingState": "VALID",
+      "buildAudienceType": "APP_STORE_ELIGIBLE",
+      "usesNonExemptEncryption": false,
+      "preReleaseVersion": {
+        "version": "0.1.0",
+        "platform": "IOS"
+      },
+      "buildBetaDetail": {
+        "autoNotifyEnabled": true,
+        "internalBuildState": "IN_BETA_TESTING",
+        "externalBuildState": "IN_BETA_TESTING"
+      },
+      "betaAppReviewSubmission": {
+        "betaReviewState": "APPROVED",
+        "submittedDate": null
+      },
+      "groups": [
+        "6fca3f0a-fada-4405-a6a0-9357bab03698",
+        "b2c18bee-362c-4fc0-804a-6869fb3ee638"
+      ]
+    }
+  ],
+  "signedStartup": {
+    "ios": {
+      "build": "56",
+      "app": "/tmp/nodus-reader-build55-sim-release/Build/Products/Release-iphonesimulator/Nodus Reader.app",
+      "pid": 77150,
+      "launchedAt": 1793901290.895481,
+      "aliveAfterSeconds": 42.0,
+      "alive": true,
+      "signed": true,
+      "syncDisabledForSmokeCheck": true,
+      "visualCheckPending": false,
+      "screenshot": "build/build56-signed-ios-startup.png",
+      "passed": true,
+      "visualBasis": "Manual final-source Mac Debug UI gate; signed Release process startup. iOS unit/UI tours plus signed Release screenshot."
+    },
+    "mac": {
+      "build": "56",
+      "app": "/Users/jorgepb96/Documents/GitHub/nodus-reader/build/NodusReader-macOS-0.1.0-56.xcarchive/Products/Applications/Nodus Reader.app",
+      "pid": 77207,
+      "launchedAt": 1793901334.342022,
+      "aliveAfterSeconds": 42.0,
+      "alive": true,
+      "signed": true,
+      "syncDisabledForSmokeCheck": true,
+      "visualCheckPending": false,
+      "passed": true,
+      "visualBasis": "Manual final-source Mac Debug UI gate; signed Release process startup. iOS unit/UI tours plus signed Release screenshot."
+    }
+  },
+  "screenshots": "BUILD56_SCREENSHOTS.json",
+  "unitTests": 236,
+  "physicalValidation": "Explicitly deferred by user",
+  "macVisualGate": {
+    "passed": true,
+    "checks": [
+      "Mac native sample library: branding in sidebar, not window toolbar",
+      "Full column header and first row visible",
+      "Native Table lays out without explicit GeometryReader size or clipped NavigationStack",
+      "Sidebar hide/show preserves readable table; native scrolling retained",
+      "Home empty-card button group centered in source; final iOS Release smoke captures its rendered state"
+    ],
+    "sources": {
+      "NodusReader/App/MacRootView.swift": "a48054a05a1a02bd4b3168422a28b67b19bbc17503a7efeb48f88e067caa6b8c",
+      "NodusReader/Features/Mac/MacLibraryContentView.swift": "c9e9dde2fbdf37c3f4eb7cc1070d725dc90a019e1c0238c3cfebf63a4ce2f4b6",
+      "NodusReader/Features/Home/HomeView.swift": "bb895cb30106c6da552329c7c638c3d878af7b9241649307dd214be874241e11"
+    },
+    "debugBuildCaveat": "App source compiled. Old embedded test plug-in in cached Debug product caused signing/build.db failures; removed only that generated stale plug-in, re-signed and strictly verified Debug app for the isolated sample-library visual check. Distribution archives use clean /tmp build databases."
+  },
+  "appStoreProductionSubmission": false
+}

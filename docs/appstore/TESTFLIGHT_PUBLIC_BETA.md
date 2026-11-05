@@ -2,6 +2,10 @@
 
 ## Current release — 5 November 2026
 
+**0.1.0 (56)**: iOS Internal + Public Beta (**IN_BETA_TESTING**); macOS Internal only. [Verification](BUILD56_VERIFICATION.md). No production App Store submission.
+
+## Previous release — 5 November 2026
+
 Build **0.1.0 (55)** improves engine switching and Qwen failure/cache handling.
 
 - iOS/iPadOS: Internal and Public Beta; external state **IN_BETA_TESTING**, beta review **APPROVED**.
