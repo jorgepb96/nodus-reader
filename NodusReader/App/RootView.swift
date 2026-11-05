@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import DesignSystem
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct RootView: View {
     @Environment(ThemeManager.self) private var theme
@@ -13,6 +16,10 @@ struct RootView: View {
     @Environment(PlaybackController.self) private var playback
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
+    #if os(macOS)
+    @State private var systemColorScheme: ColorScheme =
+        NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
+    #endif
     #if os(iOS)
     /// The window, safe areas included; it decides the layout.
     @State private var windowSize = CGSize.zero
@@ -29,7 +36,13 @@ struct RootView: View {
     @State private var voiceSetupBypassed = false
 
     private var palette: NodusPalette {
+        #if os(macOS)
+        // Resolve System from the application, independently of a reader's
+        // window preference or the last explicitly selected app theme.
+        theme.palette(colorScheme: systemColorScheme)
+        #else
         theme.palette(colorScheme: colorScheme)
+        #endif
     }
 
     var body: some View {
@@ -53,7 +66,14 @@ struct RootView: View {
             .focusedSceneValue(\.nodusNavigation, navigation)
             .nodusPalette(palette)
             .tint(palette.accent)
+            #if os(macOS)
+            .preferredColorScheme(palette.isDark ? .dark : .light)
+            .background {
+                MacSystemAppearanceObserver { systemColorScheme = $0 }
+            }
+            #else
             .preferredColorScheme(theme.appTheme.preferredColorScheme)
+            #endif
             .background(palette.background)
             .readerCover(item: $importedBook)
             #if os(iOS)
@@ -243,3 +263,34 @@ struct RootView: View {
     }
     #endif
 }
+
+#if os(macOS)
+/// A window's reader theme can override its effective appearance. Observe
+/// the application instead so System still tracks macOS, including live changes.
+private struct MacSystemAppearanceObserver: NSViewRepresentable {
+    var onChange: (ColorScheme) -> Void
+
+    func makeNSView(context: Context) -> Probe {
+        let view = Probe()
+        view.onChange = onChange
+        view.observeAppearance()
+        return view
+    }
+
+    func updateNSView(_ view: Probe, context: Context) { view.onChange = onChange }
+
+    final class Probe: NSView {
+        var onChange: ((ColorScheme) -> Void)?
+        private var observation: NSKeyValueObservation?
+
+        func observeAppearance() {
+            observation = NSApp.observe(\.effectiveAppearance, options: [.initial, .new]) { [weak self] _, _ in
+                DispatchQueue.main.async { [weak self] in
+                    let dark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                    self?.onChange?(dark ? .dark : .light)
+                }
+            }
+        }
+    }
+}
+#endif

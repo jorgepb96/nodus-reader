@@ -6,6 +6,7 @@ import UIKit
 /// Page-curl navigation over TextKit pages. The page controllers own selection,
 /// word taps and the highlight overlay; this controller only turns pages.
 final class ReaderPageCurlController: UIPageViewController, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+    var onManualNavigation: (() -> Void)?
     private(set) var pages: [ReaderPage] = []
     private var style: ReaderPageStyle
     private var highlightsProvider: (ReaderPage) -> ReaderPageHighlights
@@ -217,6 +218,7 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
 
     func pageViewController(_ pageViewController: UIPageViewController,
                             willTransitionTo pendingViewControllers: [UIViewController]) {
+        onManualNavigation?()
         transitioning = true
     }
 
@@ -257,6 +259,7 @@ final class ReaderPageCurlController: UIPageViewController, UIPageViewController
 }
 
 struct PageCurlReader: UIViewControllerRepresentable {
+    @Environment(\.readerManualNavigation) private var onManualNavigation
     var pages: [ReaderPage]
     @Binding var pageIndex: Int
     var generation: UUID
@@ -274,6 +277,7 @@ struct PageCurlReader: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ controller: ReaderPageCurlController, context: Context) {
+        controller.onManualNavigation = onManualNavigation
         controller.onPronounce = pronounce
         controller.configure(
             pages: pages,

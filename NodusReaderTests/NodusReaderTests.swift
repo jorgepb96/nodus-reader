@@ -2305,6 +2305,58 @@ func readerSearchStepsWrapAround() {
     #expect(!model.isPresented && model.count == 0 && model.currentMatch == nil)
 }
 
+@Test @MainActor
+func manualReaderExplorationInvalidatesScrollsUntilExplicitResume() {
+    let follow = ReaderFollowState()
+    let original = follow.revision
+    #expect(!follow.isSuspended)
+    follow.suspend()
+    #expect(follow.isSuspended && follow.revision != original)
+    let searchJump = follow.revision
+    // A second manual scroll must cancel even a newer explicit jump while
+    // automatic following was already suspended by the search bar.
+    follow.suspend()
+    #expect(follow.isSuspended && follow.revision != searchJump)
+    let cancelled = follow.revision
+    follow.resume()
+    #expect(!follow.isSuspended && follow.revision != cancelled)
+}
+
+@Test @MainActor
+func delayedSearchCannotNavigateAfterManualExplorationOrReopening() {
+    let search = ReaderSearchModel()
+    search.isPresented = true
+    search.query = "whale"
+    let firstRun = search.navigationRevision
+    #expect(search.canApplyResults(query: "whale", revision: firstRun))
+    search.setMatches([ReaderSearchMatch(chapterIndex: 2, range: NSRange(location: 10, length: 5))], startingAt: 0)
+    search.cancelPendingNavigation()
+    #expect(!search.canApplyResults(query: "whale", revision: firstRun))
+    #expect(search.currentMatch?.chapterIndex == 2) // Existing results stay usable.
+    let secondRun = search.navigationRevision
+    search.query = "Ishmael"
+    #expect(!search.canApplyResults(query: "whale", revision: secondRun))
+    search.dismiss()
+    search.isPresented = true
+    search.query = "whale"
+    #expect(!search.canApplyResults(query: "whale", revision: secondRun))
+    #expect(search.canApplyResults(query: "whale", revision: search.navigationRevision))
+}
+
+@Test @MainActor
+func searchCanRevisitItsOnlyResultAfterManualScrolling() {
+    let search = ReaderSearchModel()
+    search.isPresented = true
+    search.query = "whale"
+    search.setMatches([ReaderSearchMatch(chapterIndex: 2, range: NSRange(location: 10, length: 5))], startingAt: 0)
+    let request = search.resultNavigationID
+    search.cancelPendingNavigation()
+    #expect(!search.permitsResultNavigation)
+    search.next()
+    #expect(search.permitsResultNavigation && search.current == 0)
+    #expect(search.resultNavigationID != request)
+}
+
 @Test
 func sheetsOverTheReaderUseTheReaderThemeColours() {
     let dark = ReaderTheme.resolve(.dark, colorScheme: .dark)

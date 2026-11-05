@@ -14,6 +14,7 @@ struct PlayerView: View {
 
     @State private var viewport = CGSize(width: 390, height: 700)
     @State private var macContentHeight: CGFloat = 540
+    @State private var macHeaderHeight: CGFloat = 68
     @State private var showVoicePicker = false
     @State private var showPronunciations = false
     @State private var showAudioJobs = false
@@ -23,61 +24,62 @@ struct PlayerView: View {
     @Environment(\.nodusPalette) private var palette
 
     var body: some View {
-        ScrollView {
-            #if os(macOS)
-            macContent
-                .fixedSize(horizontal: false, vertical: true)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { macContentHeight = $0 }
-            #else
-            VStack(spacing: 0) {
-                handle
-                topBar
-                coverAndText
-                scrubber
-                transport
-                if playback.isLoading {
-                    Text(loadingText)
-                        .font(.caption)
-                        .foregroundStyle(palette.muted)
-                        .padding(.top, 8)
-                        .accessibilityIdentifier("PlayerLoadingText")
-                }
-                controlGrid
-                if viewport.height < 600 && viewport.width < 600 {
-                    DisclosureGroup("More playback options") {
-                        ImmersiveAudioCard().padding(.top, 12)
+        VStack(spacing: 0) {
+            playerHeader
+            ScrollView {
+                #if os(macOS)
+                macContent
+                    .fixedSize(horizontal: false, vertical: true)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { macContentHeight = $0 }
+                #else
+                VStack(spacing: 0) {
+                    coverAndText
+                    scrubber
+                    transport
+                    if playback.isLoading {
+                        Text(loadingText)
+                            .font(.caption)
+                            .foregroundStyle(palette.muted)
+                            .padding(.top, 8)
+                            .accessibilityIdentifier("PlayerLoadingText")
+                    }
+                    controlGrid
+                    if viewport.height < 600 && viewport.width < 600 {
+                        DisclosureGroup("More playback options") {
+                            ImmersiveAudioCard().padding(.top, 12)
+                            audioCacheCard
+                            footer
+                        }
+                        .font(.footnote)
+                        .padding(.top, 12)
+                    } else if viewport.width >= 600 {
+                        if immersive.preferences.isEnabled {
+                            HStack(alignment: .top, spacing: 12) {
+                                ImmersiveAudioCard().frame(maxWidth: .infinity).padding(.top, 12)
+                                audioCacheCard.frame(maxWidth: .infinity)
+                            }
+                        } else {
+                            audioCacheCard
+                        }
+                        footer
+                    } else {
+                        ImmersiveAudioCard().padding(.top, 16)
                         audioCacheCard
                         footer
                     }
-                    .font(.footnote)
-                    .padding(.top, 12)
-                } else if viewport.width >= 600 {
-                    if immersive.preferences.isEnabled {
-                        HStack(alignment: .top, spacing: 12) {
-                            ImmersiveAudioCard().frame(maxWidth: .infinity).padding(.top, 12)
-                            audioCacheCard.frame(maxWidth: .infinity)
-                        }
-                    } else {
-                        audioCacheCard
-                    }
-                    footer
-                } else {
-                    ImmersiveAudioCard().padding(.top, 16)
-                    audioCacheCard
-                    footer
                 }
+                .frame(maxWidth: 760)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+                #endif
             }
-            .frame(maxWidth: 760)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
-            #endif
+            .scrollIndicators(.hidden)
         }
         #if os(macOS)
-        .frame(height: min(macContentHeight, max(0, availableHeight)))
+        .frame(height: min(macHeaderHeight + macContentHeight, max(0, availableHeight)))
         #endif
         .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
-        .scrollIndicators(.hidden)
         .foregroundStyle(palette.text)
         .background(playerBackground)
         .nodusPalette(palette)
@@ -117,10 +119,32 @@ struct PlayerView: View {
         #endif
     }
 
+    /// Closing and player options stay available while the book, playback
+    /// controls and additional settings scroll beneath this opaque header.
+    private var playerHeader: some View {
+        VStack(spacing: 0) {
+            #if os(macOS)
+            topBar.padding(.horizontal, 16)
+            #else
+            handle
+            topBar
+                .frame(maxWidth: 760)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 16)
+            #endif
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        #if os(macOS)
+        .padding(.top, 16)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { macHeaderHeight = $0 }
+        #endif
+        .background(palette.background)
+        .accessibilityIdentifier("PlayerHeader")
+    }
+
     #if os(macOS)
     private var macContent: some View {
         VStack(spacing: 0) {
-            topBar
             if viewport.width >= 680 {
                 HStack(alignment: .top, spacing: 16) {
                     macPlaybackControls
@@ -133,7 +157,8 @@ struct PlayerView: View {
                 macAdditionalControls.padding(.top, 12)
             }
         }
-        .padding(16)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 16)
     }
 
     private var macPlaybackControls: some View {
