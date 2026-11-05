@@ -13,3 +13,9 @@ Use `es` for Spanish. `NODUS_CAPTURE_DERIVED_DATA` and `NODUS_CAPTURE_PACKAGES` 
 For iPhone Duo, select **Open** or **Closed** in Apple's Device Hub before starting the tour. Capture `primary-1` when open and `primary` when closed. `XCUIScreen.main.screenshot()` can capture the inactive exterior display even while UI automation runs inside; do not publish those black attachments. Do not change display power to emulate folding: it previously caused a Simulator SpringBoard restart loop.
 
 Run one Simulator tour at a time and build the Mac target separately to avoid exhausting the host. Only synthetic/public-domain sample books are used. A passing Simulator tour does not replace physical-device playback, offline or interruption tests.
+
+For a long local delivery, `watch-delivery.py PID STATUS_JSON LOG PR BODY_FILE`
+keeps the Mac awake only while the authorized worker is alive, refreshes the PR
+body after a verified completion, and records an explicit failure if the worker
+exits early. It does not retry uploads, merge unverified changes, or change sleep
+preferences permanently. Requires the existing `gh` login.
