@@ -1,0 +1,52 @@
+{
+  "id": "7ff98cdb-64c7-4eb9-965b-6323cddcdd36",
+  "version": "57",
+  "uploadedDate": "2026-11-05T14:11:00-08:00",
+  "expirationDate": "2027-02-03T14:11:00-08:00",
+  "expired": false,
+  "minOsVersion": "18.0",
+  "lsMinimumSystemVersion": "15.0",
+  "computedMinMacOsVersion": "15.0",
+  "computedMinVisionOsVersion": "2.0",
+  "iconAssetToken": {
+    "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/ea/a1/4d/eaa14d9e-492a-f14a-eb19-70ac41b4312e/AppIcon76x76@2x_U007eipad.png/{w}x{h}bb.{f}",
+    "width": 152,
+    "height": 152
+  },
+  "processingState": "VALID",
+  "buildAudienceType": "APP_STORE_ELIGIBLE",
+  "usesNonExemptEncryption": false,
+  "preReleaseVersion": {
+    "version": "0.1.0",
+    "platform": "IOS"
+  },
+  "buildBetaDetail": {
+    "autoNotifyEnabled": true,
+    "internalBuildState": "IN_BETA_TESTING",
+    "externalBuildState": "IN_BETA_TESTING"
+  },
+  "betaAppReviewSubmission": {
+    "betaReviewState": "APPROVED",
+    "submittedDate": null
+  },
+  "groups": [
+    "6fca3f0a-fada-4405-a6a0-9357bab03698",
+    "b2c18bee-362c-4fc0-804a-6869fb3ee638"
+  ],
+  "sourceManifest": "build/build57-ios-source.json",
+  "unitResults": "build/build57-unit-ios.xcresult",
+  "verification": {
+    "platform": "ios",
+    "version": "0.1.0",
+    "build": "57",
+    "sourceSnapshot": "working tree, build 57",
+    "package": "build/export-ios-57/Nodus Reader.ipa",
+    "bytes": 55000930,
+    "sha256": "53516b718fd430ad5b82d48650591f93e9592d05eddeab086f19d5db250b7ddf",
+    "signatureVerified": true,
+    "productionICloud": true,
+    "architecture": "arm64"
+  },
+  "physicalValidation": "Explicitly deferred by user",
+  "productionReviewSubmitted": false
+}
