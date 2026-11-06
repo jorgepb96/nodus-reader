@@ -1,3 +1,4 @@
+import Accelerate
 import AVFoundation
 import Foundation
 
@@ -61,10 +62,7 @@ public enum SA3Audio {
         var levels: [Double] = []
         var start = 0
         while start + window <= n {
-            var sum: Double = 0
-            for channel in channels {
-                for i in start ..< (start + window) { sum += Double(channel[i] * channel[i]) }
-            }
+            let sum = channels.reduce(0.0) { $0 + Double(vDSP.sumOfSquares($1[start ..< (start + window)])) }
             levels.append(10 * log10(max(sum / Double(window * channels.count), 1e-12)))
             start += window
         }
@@ -109,7 +107,7 @@ public enum SA3Audio {
             var count = 0
             for channel in channels {
                 for range in ranges {
-                    for i in range { sum += Double(channel[i] * channel[i]) }
+                    sum += Double(vDSP.sumOfSquares(channel[range]))
                     count += range.count
                 }
             }
@@ -139,11 +137,9 @@ public enum SA3Audio {
             let end = min(start + sampleRate, n)
             var windowSum: Double = 0
             for channel in channels {
-                for i in start ..< end {
-                    let v = channel[i]
-                    peak = max(peak, abs(v))
-                    windowSum += Double(v * v)
-                }
+                let slice = channel[start ..< end]
+                peak = max(peak, vDSP.maximumMagnitude(slice))
+                windowSum += Double(vDSP.sumOfSquares(slice))
             }
             sum += windowSum
             count += (end - start) * channels.count
@@ -169,21 +165,13 @@ public extension SA3Audio {
         let block = Int(0.4 * Double(sampleRate))
         let hop = block / 4
         guard n >= block else { return -70 }
-        // Running sums of squares for O(1) block energies.
         var energies: [Double] = []
-        var prefix = [[Double]](repeating: [0], count: weighted.count)
-        for (c, channel) in weighted.enumerated() {
-            prefix[c].reserveCapacity(n + 1)
-            var sum = 0.0
-            for v in channel {
-                sum += Double(v) * Double(v)
-                prefix[c].append(sum)
-            }
-        }
         var start = 0
         while start + block <= n {
             var z = 0.0
-            for c in weighted.indices { z += (prefix[c][start + block] - prefix[c][start]) / Double(block) }
+            for channel in weighted {
+                z += Double(vDSP.sumOfSquares(channel[start ..< (start + block)])) / Double(block)
+            }
             energies.append(z)
             start += hop
         }
@@ -195,36 +183,24 @@ public extension SA3Audio {
         return loudness(gated.reduce(0, +) / Double(max(gated.count, 1)))
     }
 
-    /// True peak in dBTP, estimated with 4× windowed-sinc oversampling.
+    /// True peak in dBTP, estimated with 4× windowed-sinc oversampling (Accelerate, so
+    /// it stays fast in unoptimised builds too).
     static func truePeak(_ channels: [[Float]]) -> Double {
         let taps = 12 // per phase, each side
-        var kernels: [[Float]] = []
-        for phase in 1 ..< 4 {
-            let frac = Double(phase) / 4
-            var kernel: [Float] = []
-            for k in -taps + 1 ... taps {
-                let x = Double(k) - frac
-                let sinc = x == 0 ? 1 : sin(.pi * x) / (.pi * x)
-                let window = 0.5 + 0.5 * cos(.pi * x / Double(taps))
-                kernel.append(Float(sinc * window))
-            }
-            kernels.append(kernel)
-        }
         var peak: Float = 0
-        for channel in channels {
-            for v in channel { peak = max(peak, abs(v)) }
-            let count = channel.count
-            guard count > 2 * taps else { continue }
-            for kernel in kernels {
-                for i in (taps - 1) ..< (count - taps) {
-                    var acc: Float = 0
-                    var j = i - taps + 1
-                    for w in kernel {
-                        acc += w * channel[j]
-                        j += 1
-                    }
-                    peak = max(peak, abs(acc))
+        for channel in channels where !channel.isEmpty {
+            peak = max(peak, vDSP.maximumMagnitude(channel))
+            guard channel.count > 2 * taps else { continue }
+            for phase in 1 ..< 4 {
+                let frac = Double(phase) / 4
+                let kernel: [Float] = (-taps + 1 ... taps).map { k in
+                    let x = Double(k) - frac
+                    let sinc = x == 0 ? 1 : sin(.pi * x) / (.pi * x)
+                    return Float(sinc * (0.5 + 0.5 * cos(.pi * x / Double(taps))))
                 }
+                // correlate: out[n] = Σ_k channel[n + k] · kernel[k], the value between
+                // samples n + taps − 1 and n + taps.
+                peak = max(peak, vDSP.maximumMagnitude(vDSP.correlate(channel, withKernel: kernel)))
             }
         }
         return 20 * log10(max(Double(peak), 1e-9))
@@ -262,16 +238,11 @@ public extension SA3Audio {
             let a0 = 1 + k / q + k * k
             return [1, -2, 1, 1, 2 * (k * k - 1) / a0, (1 - k / q + k * k) / a0]
         }
-        func biquad(_ input: [Float], _ k: [Double]) -> [Float] {
-            let b0 = k[0] / k[3], b1 = k[1] / k[3], b2 = k[2] / k[3], a1 = k[4] / k[3], a2 = k[5] / k[3]
-            var x1 = 0.0, x2 = 0.0, y1 = 0.0, y2 = 0.0
-            return input.map { sample in
-                let x0 = Double(sample)
-                let y0 = b0 * x0 + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2
-                x2 = x1; x1 = x0; y2 = y1; y1 = y0
-                return Float(y0)
-            }
+        // vDSP's biquad takes [b0, b1, b2, a1, a2] per section with a0 = 1.
+        let sections = [shelf(), highPass()].flatMap { k in [k[0], k[1], k[2], k[4], k[5]].map { $0 / k[3] } }
+        guard var filter = vDSP.Biquad(coefficients: sections, channelCount: 1, sectionCount: 2, ofType: Float.self) else {
+            return x
         }
-        return biquad(biquad(x, shelf()), highPass())
+        return filter.apply(input: x)
     }
 }

@@ -59,8 +59,7 @@ enum QualityGate {
     }
 
     private static func level(_ channels: [[Float]], _ range: Range<Int>) -> Double {
-        var sum = 0.0
-        for channel in channels { for i in range { sum += Double(channel[i] * channel[i]) } }
+        let sum = channels.reduce(0.0) { $0 + Double(vDSP.sumOfSquares($1[range])) }
         return 10 * log10(max(sum / Double(range.count * channels.count), 1e-12))
     }
 
@@ -91,7 +90,9 @@ enum QualityGate {
         guard n > 4 * size,
               let setup = vDSP.FFT(log2n: vDSP_Length(log2n), radix: .radix2, ofType: DSPSplitComplex.self)
         else { return 0 }
-        let mono = (0 ..< n).map { i in channels.reduce(0) { $0 + $1[i] } / Float(channels.count) }
+        var mono = channels[0]
+        for channel in channels.dropFirst() { mono = vDSP.add(mono, channel) }
+        mono = vDSP.multiply(1 / Float(channels.count), mono)
         func spectrum(_ frame: ArraySlice<Float>) -> [Float] {
             let window = vDSP.multiply(Array(frame), vDSP.window(ofType: Float.self, usingSequence: .hanningDenormalized,
                                                                  count: size, isHalfWindow: false))
