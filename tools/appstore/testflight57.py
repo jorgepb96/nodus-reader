@@ -8,9 +8,9 @@ APP = '6826844742'
 INTERNAL = '6fca3f0a-fada-4405-a6a0-9357bab03698'
 PUBLIC = 'b2c18bee-362c-4fc0-804a-6869fb3ee638'
 
-def state():
-    result = request('GET', f'/v1/builds?filter[app]={APP}&filter[version]=57&include=preReleaseVersion,buildBetaDetail,betaAppReviewSubmission&limit=20')
-    known = ROOT / 'build/build57-known-deliveries.json'
+def state(version="57"):
+    result = request('GET', f'/v1/builds?filter[app]={APP}&filter[version]={version}&include=preReleaseVersion,buildBetaDetail,betaAppReviewSubmission&limit=20')
+    known = ROOT / f'build/build{version}-known-deliveries.json'
     if known.exists():
         present = {b['id'] for b in result.get('data', [])}
         for bid in json.loads(known.read_text()):
@@ -41,13 +41,13 @@ def state():
             row[name] = included.get((ref['type'], ref['id'])) if ref else None
         row['groups'] = [gid for gid, members in membership.items() if build['id'] in members]
         rows.append(row)
-    (ROOT / 'build/TestFlight-57-deployment.json').write_text(json.dumps(rows, indent=2))
+    (ROOT / f'build/TestFlight-{version}-deployment.json').write_text(json.dumps(rows, indent=2))
     return rows
 
-def distribute(platform):
-    rows = [r for r in state() if (r.get('preReleaseVersion') or {}).get('platform') == platform]
+def distribute(platform, version="57"):
+    rows = [r for r in state(version) if (r.get('preReleaseVersion') or {}).get('platform') == platform]
     if len(rows) != 1 or rows[0]['processingState'] != 'VALID' or rows[0]['expired']:
-        raise RuntimeError('Exactly one valid, non-expired build 57 is required for ' + platform)
+        raise RuntimeError('Exactly one valid, non-expired build is required for ' + platform)
     build = rows[0]
     bid = build['id']
     group = request('GET', '/v1/betaGroups/' + INTERNAL)['data']
@@ -58,7 +58,7 @@ def distribute(platform):
     existing = request('GET', f'/v1/builds/{bid}/betaBuildLocalizations')['data']
     suffix = 'ios' if platform == 'IOS' else 'macos'
     for locale, language in [('en-US', 'en'), ('es-ES', 'es')]:
-        text = (ROOT / f'docs/appstore/TestFlight-57-{suffix}-{language}.txt').read_text()
+        text = (ROOT / f'docs/appstore/TestFlight-{version}-{suffix}-{language}.txt').read_text()
         current = next((r for r in existing if r['attributes']['locale'] == locale), None)
         data = {'type': 'betaBuildLocalizations', 'attributes': {'whatsNew': text}}
         if current:
@@ -74,9 +74,12 @@ def distribute(platform):
             request('DELETE', f'/v1/betaGroups/{PUBLIC}/relationships/builds', {'data': [{'type': 'builds', 'id': bid}]})
         print('MAC_OS private Internal distribution only; no external review submission', flush=True)
         return
+    detail = request('GET', f'/v1/builds/{bid}/buildBetaDetail')['data']
+    if not detail['attributes'].get('autoNotifyEnabled'):
+        request('PATCH', '/v1/buildBetaDetails/' + detail['id'], {'data': {'type': 'buildBetaDetails', 'id': detail['id'], 'attributes': {'autoNotifyEnabled': True}}})
     if PUBLIC not in build['groups']:
         request('POST', f'/v1/betaGroups/{PUBLIC}/relationships/builds', {'data': [{'type': 'builds', 'id': bid}]})
-    current = next(r for r in state() if r['id'] == bid)
+    current = next(r for r in state(version) if r['id'] == bid)
     external = (current.get('buildBetaDetail') or {}).get('externalBuildState')
     if external not in ['IN_BETA_TESTING', 'WAITING_FOR_BETA_REVIEW', 'IN_BETA_REVIEW']:
         request('POST', '/v1/betaAppReviewSubmissions', {'data': {'type': 'betaAppReviewSubmissions', 'relationships': {'build': {'data': {'type': 'builds', 'id': bid}}}}})
