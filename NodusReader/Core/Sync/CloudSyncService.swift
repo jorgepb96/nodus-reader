@@ -1246,7 +1246,11 @@ final class CloudSyncService {
     // MARK: Helpers
 
     private static func hasCloudKitContainerEntitlement() -> Bool {
-        #if os(macOS)
+        #if NODUS_SOUNDSCAPE_LAB
+        // Lab builds install beside the reader with their own bundle ID and no iCloud
+        // entitlements; creating a CKContainer there traps on a device.
+        return false
+        #elseif os(macOS)
         guard let task = SecTaskCreateFromSelf(nil),
               let value = SecTaskCopyValueForEntitlement(
                 task,

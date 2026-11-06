@@ -26,6 +26,10 @@ settings:
     SWIFT_EMIT_LOC_STRINGS: YES
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: 6RPLS9EA4X
+    # Empty for every real build. Probe builds (the Soundscape Lab) set it, e.g.
+    # `.soundscapelab`, so they install beside the reader instead of replacing it.
+    NODUS_BUNDLE_ID_SUFFIX: ""
+    NODUS_DISPLAY_NAME: Nodus Reader
 
 packages:
   LinnetTTS:
@@ -36,6 +40,11 @@ packages:
     path: Modules/PhononTTS
   QwenANE:
     path: Modules/QwenANE
+  # Feasibility proof of concept for generated soundscapes (Stable Audio 3 Small on
+  # MLX). Its code is used only by the Soundscape Lab, compiled with
+  # NODUS_SOUNDSCAPE_LAB. See docs/SOUNDSCAPES_FEASIBILITY.md.
+  StableAudioMLX:
+    path: Modules/StableAudioMLX
   ZIPFoundation:
     url: https://github.com/weichsel/ZIPFoundation
     from: 0.9.19
@@ -89,6 +98,8 @@ targets:
         product: ptts
       - package: QwenANE
         product: QwenANE
+      - package: StableAudioMLX
+        product: StableAudioMLX
       - package: KokoroCoreML
         product: KokoroTTS
       - package: MLXSwift
@@ -110,7 +121,7 @@ targets:
         # embeds SwiftPM frameworks in Contents/Frameworks, so the archived app
         # could not find them and aborted before starting.
         "LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]": "@executable_path/../Frameworks"
-        PRODUCT_BUNDLE_IDENTIFIER: ai.nodus.reader
+        PRODUCT_BUNDLE_IDENTIFIER: ai.nodus.reader$(NODUS_BUNDLE_ID_SUFFIX)
         PRODUCT_NAME: Nodus Reader
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -160,7 +171,7 @@ targets:
       base:
         INFOPLIST_FILE: NodusShareExtension/Info.plist
         CODE_SIGN_ENTITLEMENTS: Config/NodusReaderShare.entitlements
-        PRODUCT_BUNDLE_IDENTIFIER: ai.nodus.reader.share
+        PRODUCT_BUNDLE_IDENTIFIER: ai.nodus.reader$(NODUS_BUNDLE_ID_SUFFIX).share
         PRODUCT_NAME: NodusReaderShare
         APPLICATION_EXTENSION_API_ONLY: YES
         SKIP_INSTALL: YES

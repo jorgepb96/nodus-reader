@@ -120,6 +120,13 @@ struct NodusReaderApp: App {
                 .environment(models)
                 .environment(janitor)
                 .modelContainer(container)
+                #if NODUS_SOUNDSCAPE_LAB
+                .task {
+                    SoundscapeLab.shared.playback = playback
+                    SoundscapeLab.shared.library = library
+                    SoundscapeLab.shared.autorunIfRequested()
+                }
+                #endif
         }
         #if os(macOS)
         .defaultSize(width: 1360, height: 860)
