@@ -1000,12 +1000,13 @@ struct VoicePickerSheet: View {
                 await voices.loadIfNeeded()
                 guard !Task.isCancelled, !didInitializeFilters else { return }
                 let currentVoice = playback.activeVoice ?? voices.defaultVoice
-                let language = VoiceCatalog.languageCode(playback.activeBook?.language)
-                    ?? VoiceCatalog.languageCode(currentVoice?.language)
+                let language = VoiceCatalog.languageCode(currentVoice?.language)
+                    ?? VoiceCatalog.languageCode(playback.activeBook?.language)
                 let model = currentVoice?.modelID ?? models.selectedModel?.id ?? installedModels.first?.id
                 automaticFilters = VoiceFilterSelection(
                     models: model.map { Set([$0]) } ?? [],
-                    languages: language.map { Set([$0]) } ?? []
+                    languages: language.map { Set([$0]) } ?? [],
+                    genders: currentVoice?.gender.map { Set([$0.rawValue]) } ?? []
                 )
                 didInitializeFilters = true
             }

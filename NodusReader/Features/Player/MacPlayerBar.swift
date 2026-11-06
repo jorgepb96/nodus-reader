@@ -6,11 +6,10 @@ import SwiftUI
 struct MacPlayerBar: View {
     @Environment(PlaybackController.self) private var playback
     @Environment(NavigationModel.self) private var navigation
-    @Environment(VoiceCatalog.self) private var voices
-    @Environment(LibraryService.self) private var library
     @Environment(ImmersiveAudioController.self) private var immersive
     @Environment(\.nodusPalette) private var palette
     @State private var showAtmosphere = false
+    @State private var showVoicePicker = false
     var onOpenPlayer: () -> Void
 
     var body: some View {
@@ -88,22 +87,21 @@ struct MacPlayerBar: View {
                 }
                 .nodusMenuLabelStyle()
 
-                Menu {
-                    Button("Book default") {
-                        if let book = playback.activeBook {
-                            library.setPreferredVoice(book, voiceID: nil)
-                        }
-                    }
-                    Divider()
-                    ForEach(voices.allInstalledVoices, id: \.id) { voice in
-                        Button("\(voice.name) · \(voice.engineLabel) · \(voice.languageName)") {
-                            playback.setVoice(voice)
-                        }
-                    }
+                Button {
+                    showVoicePicker = true
                 } label: {
                     chip("\(playback.voiceLabel) · \(playback.engineLabel)")
                 }
-                .nodusMenuLabelStyle()
+                .buttonStyle(.plain)
+                .accessibilityLabel("Voice for this book")
+                .accessibilityIdentifier("MacPlayerVoice")
+                .sheet(isPresented: $showVoicePicker) {
+                    VoicePickerSheet()
+                        .nodusPalette(palette)
+                        .tint(palette.accent)
+                        .environment(\.colorScheme, palette.isDark ? .dark : .light)
+                        .preferredColorScheme(palette.isDark ? .dark : .light)
+                }
 
                 if immersive.preferences.isEnabled {
                     Button {
