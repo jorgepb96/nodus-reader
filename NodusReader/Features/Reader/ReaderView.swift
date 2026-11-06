@@ -105,6 +105,14 @@ struct ReaderView: View {
             (playback.mode == .readAndListen || typography.autoScrollNarration)
     }
 
+    /// The reader is locked to the spoken line: narration of this book in a
+    /// mode that follows it, and no browsing, search or contents in the way.
+    /// The Return to narration arrow shows it in the accent colour.
+    private var followsNarrationNow: Bool {
+        narrationActive && (playback.mode == .readAndListen || typography.autoScrollNarration) &&
+            !followState.isSuspended && !search.isPresented && !showContents
+    }
+
     /// Auto-scroll is a continuous vertical column, whatever flow the reader
     /// was using for silent reading.
     private var usesNarrationScrolling: Bool {
@@ -701,6 +709,7 @@ struct ReaderView: View {
         VStack(spacing: 8) {
             ReaderNarrationCapsule(book: book, theme: theme,
                                    isReady: narrationReady, isPreparing: preparingNarration,
+                                   isFollowing: followsNarrationNow,
                                    canGoPreviousPage: canGoPreviousPage,
                                    canGoNextPage: canGoNextPage,
                                    onPreviousPage: { turnPage(by: -1) },
@@ -1152,6 +1161,9 @@ struct ReaderNarrationCapsule: View {
     let theme: ReaderTheme
     let isReady: Bool
     let isPreparing: Bool
+    /// The reader follows the narrated line; the return arrow turns accent,
+    /// like the moon while a sleep timer runs.
+    let isFollowing: Bool
     let canGoPreviousPage: Bool
     let canGoNextPage: Bool
     var onPreviousPage: () -> Void
@@ -1189,7 +1201,8 @@ struct ReaderNarrationCapsule: View {
                 Button(action: onReturnToNarration) {
                     Image(systemName: "location.fill")
                         .font(.system(size: 17))
-                        .foregroundStyle(theme.text)
+                        .foregroundStyle(isFollowing && hasNarration ? theme.accent : theme.text)
+                        .animation(.easeInOut(duration: 0.2), value: isFollowing)
                         .frame(width: 44, height: 44)
                         .contentShape(.interaction, Circle())
                 }
@@ -1197,6 +1210,7 @@ struct ReaderNarrationCapsule: View {
                 .clipShape(Circle())
                 .disabled(!hasNarration || isPreparing)
                 .accessibilityLabel("Return to narration")
+                .accessibilityValue(Text(isFollowing && hasNarration ? "Following" : "Not following"))
                 .accessibilityIdentifier("ReturnToNarration")
                 if immersive.preferences.isEnabled {
                     atmosphereButton

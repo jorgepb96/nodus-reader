@@ -7,11 +7,44 @@ import AppKit
 import UIKit
 #endif
 
+/// How the reader's scroll view moves to keep a line in view.
+enum ReaderScrollMotion {
+    /// Straight to the destination: a layout rebuild, Reduce Motion, or a
+    /// jump the reader asked to land on at once.
+    case instant
+    /// Eases in and out: a move that starts from rest.
+    case smooth
+    /// Eases out only: the last stretch of a move that is already travelling,
+    /// so the two parts read as one gesture and never change direction.
+    case settle
+}
+
 /// A one-shot visual jump, independent of the automatic-follow preference.
 struct ReaderTextScrollRequest {
     let id: UUID
     let range: NSRange
+    var motion: ReaderScrollMotion = .instant
 }
+
+/// Easing shared by the iOS and Mac scroll animators.
+private func readerScrollProgress(_ t: Double, motion: ReaderScrollMotion) -> Double {
+    let t = min(max(t, 0), 1)
+    switch motion {
+    case .instant: return 1
+    case .settle: return 1 - pow(1 - t, 3)
+    case .smooth: return t < 0.5 ? 4 * t * t * t : 1 - pow(-2 * t + 2, 3) / 2
+    }
+}
+
+/// Longer moves take a little longer, so a line and a full screen both glide.
+private func readerScrollDuration(distance: CGFloat, viewport: CGFloat) -> Double {
+    let screens = Double(distance / max(viewport, 1))
+    return min(0.7, max(0.3, 0.3 + screens * 0.25))
+}
+
+/// The point at which the follow re-centres the spoken line: outside the
+/// central fifth of the reading area. Inside it nothing moves.
+private let readerFollowBand: ClosedRange<CGFloat> = 0.40...0.60
 
 /// SwiftUI wrapper around the reader's selectable text (selection menu,
 /// word taps, highlight overlays). It sizes itself to its text, so it can sit
@@ -33,6 +66,9 @@ struct SelectableReaderText {
     /// highlight layers the user chose to display.
     var narrationFollowRange: NSRange?
     var scrollRequest: ReaderTextScrollRequest? = nil
+    /// False right after a layout rebuild: the first follow lands at once
+    /// instead of sliding in from the slice's top edge.
+    var animatesFollow = true
     var onScrollRequestHandled: (UUID) -> Void = { _ in }
     var onWordTap: (Int) -> Void = { _ in }
     var onHighlight: (NSRange, AnnotationColor) -> Void = { _, _ in }
@@ -49,7 +85,8 @@ struct SelectableReaderText {
 
     private var localScrollRequest: ReaderTextScrollRequest? {
         guard let scrollRequest, let range = mapping.localRange(scrollRequest.range) else { return nil }
-        return ReaderTextScrollRequest(id: scrollRequest.id, range: range)
+        return ReaderTextScrollRequest(id: scrollRequest.id, range: range,
+                                       motion: reduceMotion ? .instant : scrollRequest.motion)
     }
 
     @MainActor private var localNarrationRange: NSRange? {
@@ -85,16 +122,16 @@ extension SelectableReaderText: UIViewRepresentable {
         coordinator.updateID = updateID
         let intent = followState
         let revision = intent?.revision
-        let animated = !reduceMotion
+        let motion: ReaderScrollMotion = !reduceMotion && animatesFollow ? .smooth : .instant
         DispatchQueue.main.async { [weak view] in
             guard let view, coordinator.updateID == updateID, intent?.revision == revision else { return }
             if let request, coordinator.handledScrollRequest != request.id {
-                if view.followNarration(request.range, animated: false, explicit: true) {
+                if view.followNarration(request.range, motion: request.motion, explicit: true) {
                     coordinator.handledScrollRequest = request.id
                     onScrollRequestHandled(request.id)
                 }
             } else if intent?.isSuspended != true, let range, view.narrationFollowRange == range {
-                view.followNarration(range, animated: animated)
+                view.followNarration(range, motion: motion)
             }
         }
     }
@@ -113,7 +150,7 @@ extension ReaderSelectableTextView {
     /// The outer SwiftUI scroll view owns scrolling; the UITextView itself
     /// stays non-scrolling so selections and highlights share one text layout.
     @discardableResult
-    func followNarration(_ range: NSRange, animated: Bool, explicit: Bool = false) -> Bool {
+    func followNarration(_ range: NSRange, motion: ReaderScrollMotion, explicit: Bool = false) -> Bool {
         guard window != nil, (explicit || textView.selectedRange.length == 0) else { return false }
         var ancestor = superview
         while let view = ancestor, !(view is UIScrollView) { ancestor = view.superview }
@@ -132,14 +169,92 @@ extension ReaderSelectableTextView {
         let height = scroll.bounds.height - insets.top - insets.bottom
         let visibleTop = scroll.contentOffset.y + insets.top
         guard height > 0 else { return false }
-        // Keep the spoken line inside the central fifth; when it leaves, put
-        // it back at the exact centre of the reading area.
-        guard rect.midY < visibleTop + height * 0.40 || rect.midY > visibleTop + height * 0.60 else { return true }
         let maximum = max(-insets.top, scroll.contentSize.height - scroll.bounds.height + insets.bottom)
         let target = min(maximum, max(-insets.top, rect.midY - height * 0.5 - insets.top))
+        let animator = ReaderScrollAnimator.animator(for: scroll)
+        // Already gliding to this line: let the running move finish instead
+        // of restarting it, which made the follow stutter.
+        if let heading = animator.destination, abs(heading - target) <= 1 { return true }
+        // Keep the spoken line inside the central fifth; when it leaves, put
+        // it back at the exact centre of the reading area. A line that is
+        // already there never moves, so a return to it cannot bounce.
+        let position = (rect.midY - visibleTop) / height
+        guard !readerFollowBand.contains(position) else { return true }
         guard abs(target - scroll.contentOffset.y) > 1 else { return true }
-        scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: target), animated: animated)
+        animator.scroll(to: target, motion: motion, viewport: height)
         return true
+    }
+}
+
+/// Drives the reader's scroll view frame by frame. Unlike
+/// `setContentOffset(_:animated:)` it can be retargeted mid-flight without
+/// restarting from rest, stops as soon as the reader touches the page, and
+/// takes longer for longer moves so the spoken line always glides.
+@MainActor
+final class ReaderScrollAnimator: NSObject {
+    private static var key: UInt8 = 0
+    private weak var scroll: UIScrollView?
+    private var link: CADisplayLink?
+    private var from: CGFloat = 0
+    private var to: CGFloat = 0
+    private var start: CFTimeInterval = 0
+    private var duration: CFTimeInterval = 0.3
+    private var motion: ReaderScrollMotion = .smooth
+    private var lastApplied: CGFloat = 0
+
+    /// Where a running animation is heading; nil when the view is at rest.
+    var destination: CGFloat? { link == nil ? nil : to }
+
+    static func animator(for scroll: UIScrollView) -> ReaderScrollAnimator {
+        if let existing = objc_getAssociatedObject(scroll, &key) as? ReaderScrollAnimator {
+            return existing
+        }
+        let animator = ReaderScrollAnimator()
+        animator.scroll = scroll
+        objc_setAssociatedObject(scroll, &key, animator, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return animator
+    }
+
+    func scroll(to target: CGFloat, motion: ReaderScrollMotion, viewport: CGFloat) {
+        guard let scroll else { return }
+        guard motion != .instant else {
+            stop()
+            scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: target), animated: false)
+            return
+        }
+        let current = scroll.contentOffset.y
+        // A retarget while moving keeps going and only eases out, so the
+        // page never pauses or reverses between two lines.
+        self.motion = link == nil ? motion : .settle
+        from = current
+        to = target
+        lastApplied = current
+        start = CACurrentMediaTime()
+        duration = readerScrollDuration(distance: abs(target - current), viewport: viewport)
+        if link == nil {
+            let link = CADisplayLink(target: self, selector: #selector(step(_:)))
+            link.add(to: .main, forMode: .common)
+            self.link = link
+        }
+    }
+
+    func stop() {
+        link?.invalidate()
+        link = nil
+    }
+
+    @objc private func step(_ link: CADisplayLink) {
+        // A touch, or any other owner moving the offset, ends the animation.
+        guard let scroll, !scroll.isTracking, !scroll.isDragging,
+              abs(scroll.contentOffset.y - lastApplied) <= 1 else {
+            stop()
+            return
+        }
+        let t = (CACurrentMediaTime() - start) / duration
+        let y = from + (to - from) * CGFloat(readerScrollProgress(t, motion: motion))
+        lastApplied = y
+        scroll.contentOffset = CGPoint(x: scroll.contentOffset.x, y: y)
+        if t >= 1 { stop() }
     }
 }
 #else
@@ -236,16 +351,16 @@ extension SelectableReaderText: NSViewRepresentable {
         coordinator.updateID = updateID
         let intent = followState
         let revision = intent?.revision
-        let animated = false
+        let motion: ReaderScrollMotion = !reduceMotion && animatesFollow ? .smooth : .instant
         DispatchQueue.main.async { [weak view] in
             guard let view, coordinator.updateID == updateID, intent?.revision == revision else { return }
             if let request, coordinator.handledScrollRequest != request.id {
-                if view.followNarration(request.range, animated: false, explicit: true) {
+                if view.followNarration(request.range, motion: request.motion, explicit: true) {
                     coordinator.handledScrollRequest = request.id
                     onScrollRequestHandled(request.id)
                 }
             } else if intent?.isSuspended != true, let range, view.narrationFollowRange == range {
-                view.followNarration(range, animated: animated)
+                view.followNarration(range, motion: motion)
             }
         }
     }
@@ -262,7 +377,7 @@ extension SelectableReaderText: NSViewRepresentable {
 
 extension ReaderMacSelectableView {
     @discardableResult
-    func followNarration(_ range: NSRange, animated: Bool, explicit: Bool = false) -> Bool {
+    func followNarration(_ range: NSRange, motion: ReaderScrollMotion, explicit: Bool = false) -> Bool {
         guard window != nil, (explicit || textView.selectedRange().length == 0),
               let scroll = enclosingScrollView, let document = scroll.documentView,
               let layout = textView.layoutManager, let container = textView.textContainer,
@@ -277,21 +392,89 @@ extension ReaderMacSelectableView {
         let rect = textView.convert(line, to: document)
         let visible = scroll.contentView.documentVisibleRect
         guard visible.height > 0 else { return false }
-        guard rect.midY < visible.minY + visible.height * 0.22 || rect.midY > visible.minY + visible.height * 0.55 else { return true }
         let maximum = max(0, document.bounds.height - visible.height)
-        let target = min(maximum, max(0, rect.midY - visible.height * 0.35))
+        let target = min(maximum, max(0, rect.midY - visible.height * 0.5))
+        let animator = ReaderScrollAnimator.animator(for: scroll)
+        if let heading = animator.destination, abs(heading - target) <= 1 { return true }
+        // The same central band as on iOS: a line already there never moves.
+        let position = (rect.midY - visible.minY) / visible.height
+        guard !readerFollowBand.contains(position) else { return true }
         guard abs(target - visible.minY) > 1 else { return true }
-        let origin = NSPoint(x: visible.minX, y: target)
-        if animated {
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.25
-                scroll.contentView.animator().setBoundsOrigin(origin)
-            }
-        } else {
-            scroll.contentView.scroll(to: origin)
-        }
-        scroll.reflectScrolledClipView(scroll.contentView)
+        animator.scroll(to: target, motion: motion, viewport: visible.height)
         return true
+    }
+}
+
+/// The Mac counterpart of the iOS animator: moves the clip view frame by
+/// frame, can be retargeted without stopping and yields to the reader's own
+/// scrolling.
+@MainActor
+final class ReaderScrollAnimator: NSObject {
+    private static var key: UInt8 = 0
+    private weak var scroll: NSScrollView?
+    private var link: CADisplayLink?
+    private var from: CGFloat = 0
+    private var to: CGFloat = 0
+    private var start: CFTimeInterval = 0
+    private var duration: CFTimeInterval = 0.3
+    private var motion: ReaderScrollMotion = .smooth
+    private var lastApplied: CGFloat = 0
+
+    var destination: CGFloat? { link == nil ? nil : to }
+
+    static func animator(for scroll: NSScrollView) -> ReaderScrollAnimator {
+        if let existing = objc_getAssociatedObject(scroll, &key) as? ReaderScrollAnimator {
+            return existing
+        }
+        let animator = ReaderScrollAnimator()
+        animator.scroll = scroll
+        objc_setAssociatedObject(scroll, &key, animator, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return animator
+    }
+
+    func scroll(to target: CGFloat, motion: ReaderScrollMotion, viewport: CGFloat) {
+        guard let scroll else { return }
+        guard motion != .instant else {
+            stop()
+            apply(target, to: scroll)
+            return
+        }
+        let current = scroll.contentView.bounds.origin.y
+        self.motion = link == nil ? motion : .settle
+        from = current
+        to = target
+        lastApplied = current
+        start = CACurrentMediaTime()
+        duration = readerScrollDuration(distance: abs(target - current), viewport: viewport)
+        if link == nil {
+            let link = scroll.displayLink(target: self, selector: #selector(step(_:)))
+            link.add(to: .main, forMode: .common)
+            self.link = link
+        }
+    }
+
+    func stop() {
+        link?.invalidate()
+        link = nil
+    }
+
+    private func apply(_ y: CGFloat, to scroll: NSScrollView) {
+        let origin = NSPoint(x: scroll.contentView.bounds.origin.x, y: y)
+        scroll.contentView.scroll(to: origin)
+        scroll.reflectScrolledClipView(scroll.contentView)
+    }
+
+    @objc private func step(_ link: CADisplayLink) {
+        guard let scroll, NSEvent.pressedMouseButtons == 0,
+              abs(scroll.contentView.bounds.origin.y - lastApplied) <= 1 else {
+            stop()
+            return
+        }
+        let t = (CACurrentMediaTime() - start) / duration
+        let y = from + (to - from) * CGFloat(readerScrollProgress(t, motion: motion))
+        lastApplied = y
+        apply(y, to: scroll)
+        if t >= 1 { stop() }
     }
 }
 #endif

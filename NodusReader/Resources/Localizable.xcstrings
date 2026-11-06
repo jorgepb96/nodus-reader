@@ -3602,6 +3602,16 @@
         }
       }
     },
+    "Following": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siguiendo"
+          }
+        }
+      }
+    },
     "Follows the story": {
       "localizations": {
         "es": {
@@ -6099,6 +6109,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No está disponible en esta versión de Nodus Reader: todavía no existe una versión Core ML de este modelo para dispositivos Apple. Aceptar ahora la licencia solo da acceso a tu cuenta para más adelante."
+          }
+        }
+      }
+    },
+    "Not following": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin seguir"
           }
         }
       }
