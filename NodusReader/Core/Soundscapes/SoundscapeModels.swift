@@ -66,7 +66,9 @@ final class SoundscapeModels {
     func refresh() {
         for component in Component.allCases {
             switch state[component] {
-            case .downloading, .converting: continue
+            // In-progress states belong to the running install; once it ends (or is
+            // cancelled) the files on disk decide.
+            case .downloading where task != nil, .converting where task != nil: continue
             default: state[component] = isInstalled(component) ? .installed : (state[component].flatMap { if case .failed = $0 { $0 } else { nil } } ?? .notInstalled)
             }
         }
@@ -114,24 +116,27 @@ final class SoundscapeModels {
                 for file in files {
                     try Task.checkCancellation()
                     let base = done
+                    let shown = ShownProgress()
                     _ = try await Self.download(file, into: downloads) { written in
+                        // At most one update per 0.5 %: every packet would flood the main actor.
+                        let fraction = min(1, (base + Double(written)) / total)
+                        guard shown.advance(to: fraction) else { return }
                         Task { @MainActor in
-                            for c in wanted { self?.state[c] = .downloading(min(1, (base + Double(written)) / total)) }
+                            guard self?.task != nil else { return }
+                            for c in wanted { self?.state[c] = .downloading(fraction) }
                         }
                     }
                     done += Double(file.bytes)
                 }
                 for c in wanted { self?.state[c] = .converting }
-                try await Task.detached(priority: .utility) {
-                    try SA3Installer.prepare(kinds: Set(wanted.map(\.kind)), downloads: downloads, directory: directory,
-                                             deleteArchives: true)
-                }.value
+                // Off the main actor and cancellable between files.
+                try await Self.convert(kinds: Set(wanted.map(\.kind)), downloads: downloads, directory: directory)
                 Self.excludeFromBackup(directory.root)
                 self?.task = nil
                 self?.refresh()
             } catch {
                 for c in wanted {
-                    self?.state[c] = error is CancellationError ? .notInstalled : .failed(error.localizedDescription)
+                    self?.state[c] = error is CancellationError || Task.isCancelled ? .notInstalled : .failed(error.localizedDescription)
                 }
                 self?.task = nil
                 self?.refresh()
@@ -141,6 +146,30 @@ final class SoundscapeModels {
 
     func cancelInstall() {
         task?.cancel()
+        task = nil
+        for component in Component.allCases {
+            switch state[component] {
+            case .downloading, .converting: state[component] = .notInstalled
+            default: break
+            }
+        }
+        refresh()
+    }
+
+    nonisolated private static func convert(kinds: Set<SA3ModelKind>, downloads: URL,
+                                            directory: SA3ModelDirectory) async throws {
+        try SA3Installer.prepare(kinds: kinds, downloads: downloads, directory: directory, deleteArchives: true)
+    }
+
+    private final class ShownProgress: @unchecked Sendable {
+        private let lock = NSLock()
+        private var last = -1.0
+        func advance(to value: Double) -> Bool {
+            lock.lock(); defer { lock.unlock() }
+            guard value - last >= 0.005 || (value >= 1 && last < 1) else { return false }
+            last = value
+            return true
+        }
     }
 
     /// Deletes one component (and the shared files with the last). Generated pieces stay.
@@ -152,7 +181,7 @@ final class SoundscapeModels {
 
     // MARK: Download
 
-    private static func download(_ file: SA3RemoteFile, into folder: URL,
+    nonisolated private static func download(_ file: SA3RemoteFile, into folder: URL,
                                  progress: @escaping @Sendable (Int64) -> Void) async throws -> URL {
         let fm = FileManager.default
         try fm.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -171,7 +200,7 @@ final class SoundscapeModels {
         return destination
     }
 
-    private static func excludeFromBackup(_ url: URL) {
+    nonisolated private static func excludeFromBackup(_ url: URL) {
         var url = url
         var values = URLResourceValues()
         values.isExcludedFromBackup = true

@@ -64,6 +64,7 @@ public enum SA3Installer {
         func finish(_ file: SA3RemoteFile) {
             if deleteArchives { try? fm.removeItem(at: archive(file)) }
         }
+        func checkCancellation() throws { if Task.isCancelled { throw CancellationError() } }
 
         if !fm.fileExists(atPath: directory.tokenizer.path) {
             try fm.copyItem(at: archive(SA3Manifest.tokenizer), to: directory.tokenizer)
@@ -72,14 +73,17 @@ public enum SA3Installer {
             let target = directory.root.appendingPathComponent(licence.fileName)
             if !fm.fileExists(atPath: target.path) { try fm.copyItem(at: archive(licence), to: target) }
         }
+        try checkCancellation()
         if !fm.fileExists(atPath: directory.t5.path) {
             try NPZToSafetensors.convert(source: archive(SA3Manifest.t5), destination: directory.t5)
             finish(SA3Manifest.t5)
         }
+        try checkCancellation()
         if !fm.fileExists(atPath: directory.encoder.path) {
             try NPZToSafetensors.convert(source: archive(SA3Manifest.encoder), destination: directory.encoder)
             finish(SA3Manifest.encoder)
         }
+        try checkCancellation()
         if !fm.fileExists(atPath: directory.decoder.path) {
             try NPZToSafetensors.convert(source: archive(SA3Manifest.decoder), destination: directory.decoder)
             finish(SA3Manifest.decoder)
@@ -89,6 +93,7 @@ public enum SA3Installer {
             if !fm.fileExists(atPath: directory.conditioner(kind).path) {
                 try NPZToSafetensors.convert(source: source, destination: directory.conditioner(kind), onlyPrefix: "cond.")
             }
+            try checkCancellation()
             if !fm.fileExists(atPath: directory.dit(kind).path) {
                 try NPZToSafetensors.convert(source: source, destination: directory.dit(kind))
             }
