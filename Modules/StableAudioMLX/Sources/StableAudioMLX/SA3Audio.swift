@@ -17,6 +17,25 @@ public enum SA3Audio {
         return buffer
     }
 
+    /// Writes AAC-LC (variable bit rate around `bitRate`) in an `.m4a`. The encoder's
+    /// priming is recorded in the file, so decoding returns exactly the written frames,
+    /// which seamless loops depend on. Returns the frame count.
+    @discardableResult
+    public static func writeAAC(_ channels: [[Float]], sampleRate: Int, bitRate: Int, to url: URL) throws -> Int64 {
+        guard let buffer = buffer(channels, sampleRate: sampleRate) else { return 0 }
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: sampleRate,
+            AVNumberOfChannelsKey: channels.count, AVEncoderBitRateKey: bitRate,
+            AVEncoderBitRateStrategyKey: AVAudioBitRateStrategy_VariableConstrained,
+        ]
+        try? FileManager.default.removeItem(at: url)
+        do {
+            let file = try AVAudioFile(forWriting: url, settings: settings, commonFormat: .pcmFormatFloat32, interleaved: false)
+            try file.write(from: buffer)
+        }
+        return Int64(buffer.frameLength)
+    }
+
     /// Writes 32-bit float WAV (lossless, so the loop seam is not altered by a codec).
     public static func writeWAV(_ channels: [[Float]], sampleRate: Int, to url: URL) throws {
         guard let buffer = buffer(channels, sampleRate: sampleRate) else { return }
@@ -226,17 +245,22 @@ public extension SA3Audio {
 
     private static func kWeighted(_ x: [Float], sampleRate fs: Double) -> [Float] {
         // Stage 1: high shelf (+4 dB above ~1.7 kHz). Stage 2: high-pass at ~38 Hz.
+        // Bilinear-transform coefficients for any sample rate, as libebur128 (MIT) and
+        // ffmpeg's ebur128 derive them; identical to BS.1770's table at 48 kHz.
         func shelf() -> [Double] {
             let f0 = 1681.974450955533, g = 3.999843853973347, q = 0.7071752369554196
-            let a = pow(10, g / 40), w0 = 2 * .pi * f0 / fs, alpha = sin(w0) / (2 * q), c = cos(w0)
-            let s = 2 * sqrt(a) * alpha
-            return [a * ((a + 1) + (a - 1) * c + s), -2 * a * ((a - 1) + (a + 1) * c), a * ((a + 1) + (a - 1) * c - s),
-                    (a + 1) - (a - 1) * c + s, 2 * ((a - 1) - (a + 1) * c), (a + 1) - (a - 1) * c - s]
+            let k = tan(.pi * f0 / fs)
+            let vh = pow(10, g / 20)
+            let vb = pow(vh, 0.4996667741545416)
+            let a0 = 1 + k / q + k * k
+            return [(vh + vb * k / q + k * k) / a0, 2 * (k * k - vh) / a0, (vh - vb * k / q + k * k) / a0,
+                    1, 2 * (k * k - 1) / a0, (1 - k / q + k * k) / a0]
         }
         func highPass() -> [Double] {
             let f0 = 38.13547087602444, q = 0.5003270373238773
-            let w0 = 2 * .pi * f0 / fs, alpha = sin(w0) / (2 * q), c = cos(w0)
-            return [(1 + c) / 2, -(1 + c), (1 + c) / 2, 1 + alpha, -2 * c, 1 - alpha]
+            let k = tan(.pi * f0 / fs)
+            let a0 = 1 + k / q + k * k
+            return [1, -2, 1, 1, 2 * (k * k - 1) / a0, (1 - k / q + k * k) / a0]
         }
         func biquad(_ input: [Float], _ k: [Double]) -> [Float] {
             let b0 = k[0] / k[3], b1 = k[1] / k[3], b2 = k[2] / k[3], a1 = k[4] / k[3], a2 = k[5] / k[3]

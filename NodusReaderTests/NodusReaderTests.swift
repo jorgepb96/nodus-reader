@@ -290,12 +290,12 @@ func narrationScrollFollowsTheActualLineAndRespectsSelection() throws {
     let range = (source as NSString).range(of: "Target")
     view.textView.selectedRange = NSRange(location: 0, length: 4)
     let selectedOffset = scroll.contentOffset
-    view.followNarration(range, animated: false)
+    _ = view.followNarration(range, motion: .instant)
     #expect(scroll.contentOffset == selectedOffset, "Following must not move the viewport while text is selected")
     view.textView.selectedRange = NSRange(location: 0, length: 0)
     // Leave room below the final line, as the reader does while auto-scrolling.
     scroll.contentSize.height += 400
-    view.followNarration(range, animated: false)
+    _ = view.followNarration(range, motion: .instant)
     #expect(scroll.contentOffset.y > 640)
     let glyph = view.textView.layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
     let line = view.textView.layoutManager.lineFragmentRect(forGlyphAt: glyph.location, effectiveRange: nil)
@@ -338,7 +338,7 @@ func narrationScrollFollowsTheActualLineOnMac() async throws {
         try await Task.sleep(for: .milliseconds(50))
     }
     #expect(NSEvent.pressedMouseButtons == 0)
-    view.followNarration(range, animated: false)
+    _ = view.followNarration(range, motion: .instant)
     #expect(scroll.contentView.documentVisibleRect.minY > 640)
     let layout = try #require(view.textView.layoutManager)
     let glyph = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
