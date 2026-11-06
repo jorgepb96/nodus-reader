@@ -59,6 +59,12 @@ actor GenerationWorker {
 
     private var queue: [GenerationJob] = []
     private var loop: Task<Void, Never>?
+    /// Each loop knows whether it is still the current one when it ends.
+    private var loopID = 0
+    /// The job being generated, put back at the front if it is interrupted.
+    private var inFlight: GenerationJob?
+    /// After a memory warning, the next piece uses the short recipe.
+    private var shortNext = false
     private var started: [Date] = []
     private var consecutiveFailures = 0
     private(set) var isPaused = false
@@ -108,9 +114,25 @@ actor GenerationWorker {
 
     func cancelAll() {
         queue.removeAll()
+        inFlight = nil
         loop?.cancel()
         loop = nil
         defaults.set(false, forKey: Self.inProgressKey)
+    }
+
+    /// Stops the piece in progress (memory warning, heat) without dropping the plan: the
+    /// job goes back to the front and work resumes after `retryAfter` seconds, with the
+    /// short recipe for the next piece when `shorter`.
+    func interrupt(retryAfter: Double, shorter: Bool) {
+        if let job = inFlight, !queue.contains(where: { $0.key == job.key }) {
+            queue.insert(job, at: 0)
+        }
+        inFlight = nil
+        if shorter { shortNext = true }
+        loop?.cancel()
+        loop = nil
+        defaults.set(false, forKey: Self.inProgressKey)
+        startIfNeeded(after: retryAfter)
     }
 
     /// Lifts the pause after repeated failures.
@@ -120,13 +142,18 @@ actor GenerationWorker {
         startIfNeeded()
     }
 
-    private func startIfNeeded() {
+    private func startIfNeeded(after delay: Double = 0) {
         guard loop == nil, !isPaused, !queue.isEmpty else { return }
-        loop = Task { [weak self] in await self?.run() }
+        loopID += 1
+        let id = loopID
+        loop = Task { [weak self] in await self?.run(id: id, after: delay) }
     }
 
-    private func run() async {
-        defer { loop = nil }
+    private func run(id: Int, after delay: Double) async {
+        defer { if loopID == id { loop = nil } }
+        if delay > 0 {
+            do { try await sleep(delay * pacing) } catch { return }
+        }
         while !Task.isCancelled, !isPaused, !queue.isEmpty {
             do {
                 let cap = Self.waitForHourlyCap(started: started, now: Date())
@@ -138,7 +165,10 @@ actor GenerationWorker {
                 let recipe = try await admit(job)
                 guard let current = queue.first, current.key == job.key else { continue }
                 queue.removeFirst()
+                shortNext = false
+                inFlight = current
                 await generate(current, recipe: recipe)
+                if loopID == id { inFlight = nil }
                 if isPaused || Task.isCancelled { break }
                 try await sleep(Self.pause(for: await admission().thermal) * pacing)
             } catch {
@@ -151,7 +181,7 @@ actor GenerationWorker {
     private func admit(_ job: GenerationJob) async throws -> GenerationRecipe {
         while true {
             try Task.checkCancellation()
-            let wanted = forceShort ? GenerationRecipe.short(for: job.recipe.layer) : job.recipe
+            let wanted = forceShort || shortNext ? GenerationRecipe.short(for: job.recipe.layer) : job.recipe
             switch GenerationAdmission.decide(await admission(), recipe: wanted) {
             case .run(let recipe): return recipe
             case .wait(let reason):
@@ -180,10 +210,10 @@ actor GenerationWorker {
                 consecutiveFailures = 0
                 onEvent(.rejected(job, reason))
             }
-        } catch is CancellationError {
-            defaults.set(false, forKey: Self.inProgressKey)
         } catch {
             defaults.set(false, forKey: Self.inProgressKey)
+            // The engine reports a cancelled piece with its own error: not a failure.
+            if error is CancellationError || Task.isCancelled { return }
             consecutiveFailures += 1
             onEvent(.failed(job, String(describing: error)))
             if consecutiveFailures >= 3 {

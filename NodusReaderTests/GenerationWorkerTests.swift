@@ -56,6 +56,24 @@ private func finished(_ events: [WorkerEvent]) -> Int {
     events.filter { if case .finished = $0 { return true } else { return false } }.count
 }
 
+/// Blocks its first render until cancelled and then throws the engine's own error (not
+/// `CancellationError`), as `SA3Engine` does; later renders succeed. Records each recipe.
+private final class InterruptibleGenerator: SoundscapeGenerating, @unchecked Sendable {
+    struct EngineCancelled: Error {}
+    private let lock = NSLock()
+    private var recipes: [GenerationRecipe] = []
+    var rendered: [GenerationRecipe] { lock.lock(); defer { lock.unlock() }; return recipes }
+
+    func render(_ job: GenerationJob, recipe: GenerationRecipe, seed: UInt64) async throws -> RenderedPiece {
+        lock.lock(); recipes.append(recipe); let first = recipes.count == 1; lock.unlock()
+        if first {
+            while !Task.isCancelled { try? await Task.sleep(for: .milliseconds(10)) }
+            throw EngineCancelled()
+        }
+        return try await FixtureGenerator().render(job, recipe: recipe, seed: seed)
+    }
+}
+
 @Suite("Generation worker")
 struct GenerationWorkerTests {
     @Test func admissionRules() {
@@ -151,5 +169,33 @@ struct GenerationWorkerTests {
         await worker.enqueue([job()])
         await events.wait { finished($0) == 1 }
         #expect(library.pieces.first?.frames == 2_646_000)
+    }
+    @Test @MainActor func engineCancellationIsNotAFailure() async {
+        let generator = InterruptibleGenerator()
+        let (worker, _, events) = makeWorker(generator: generator)
+        await worker.enqueue([job()])
+        await events.wait { $0.contains { if case .started = $0 { return true } else { return false } } }
+        await worker.cancelAll()
+        try? await Task.sleep(for: .milliseconds(300))
+        #expect(!events.all.contains { if case .failed = $0 { return true } else { return false } })
+    }
+
+    /// A memory warning stops the piece in progress but not the plan: the same job comes
+    /// back after a pause with the short recipe, and the rest of the queue follows.
+    @Test @MainActor func interruptionKeepsTheQueueAndRetriesShorter() async {
+        let generator = InterruptibleGenerator()
+        let sleeps = Sleeps()
+        let (worker, library, events) = makeWorker(generator: generator, sleeps: sleeps)
+        await worker.enqueue([job(.tense), job(.calm)])
+        await events.wait { $0.contains { if case .started = $0 { return true } else { return false } } }
+        await worker.interrupt(retryAfter: 60, shorter: true)
+        await events.wait { finished($0) == 2 }
+        #expect(finished(events.all) == 2, "events: \(events.all)")
+        #expect(!events.all.contains { if case .failed = $0 { return true } else { return false } })
+        #expect(sleeps.all.contains(60))
+        #expect(generator.rendered.count == 3)
+        #expect(generator.rendered.dropFirst().first == .shortMusic)
+        #expect(generator.rendered.last == .music)
+        #expect(Set(library.pieces.compactMap(\.mood)) == [.tense, .calm])
     }
 }

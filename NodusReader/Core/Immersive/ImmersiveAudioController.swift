@@ -367,6 +367,12 @@ final class ImmersiveAudioController {
         planSoundscapes(force: true)
     }
 
+    /// Stops the piece in progress without dropping what is planned.
+    private func interruptGeneration(retryAfter: Double, shorter: Bool) {
+        guard let worker else { return }
+        Task { await worker.interrupt(retryAfter: retryAfter, shorter: shorter) }
+    }
+
     private func cancelGeneration(keepingPack: Bool = false) {
         if let worker { Task { await worker.cancelAll() } }
         if isPreparingPack, !keepingPack {
@@ -1038,13 +1044,16 @@ final class ImmersiveAudioController {
                                             queue: .main) { [weak self] _ in
             let state = ProcessInfo.processInfo.thermalState
             Task { @MainActor in
-                if state == .serious || state == .critical { self?.cancelGeneration(keepingPack: true) }
+                // Stop the piece now; admission waits until the device cools, then the
+                // same plan (and a starter pack) carries on.
+                if state == .serious || state == .critical { self?.interruptGeneration(retryAfter: 0, shorter: false) }
             }
         })
         #if os(iOS)
         observers.append(center.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil,
                                             queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.cancelGeneration(keepingPack: true) }
+            // Free the generator now and retry a minute later with the short recipe.
+            Task { @MainActor in self?.interruptGeneration(retryAfter: 60, shorter: true) }
         })
         observers.append(center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil,
                                             queue: .main) { [weak self] _ in
@@ -1083,8 +1092,9 @@ final class ImmersiveAudioController {
 
     private func appActiveChanged(_ active: Bool) {
         appActive = active
-        // No GPU work in the background: a piece in progress is cancelled.
-        if !active { cancelGeneration() }
+        // No GPU work in the background: the piece in progress stops and the plan waits
+        // (admission requires the foreground) instead of being dropped.
+        if !active { interruptGeneration(retryAfter: 0, shorter: false) }
         if active {
             lastActivity = Date()
             refreshAvailability(language: book?.language)
