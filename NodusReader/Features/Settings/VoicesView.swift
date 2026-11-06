@@ -1162,64 +1162,141 @@ struct VoiceFilterControls: View {
     let genderOptions: [VoiceFilterOption]
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) { modelMenu; languageMenu; genderMenu }
-            VStack(alignment: .leading, spacing: 8) {
-                modelMenu
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 8) { languageMenu; genderMenu }
-                    VStack(alignment: .leading, spacing: 8) { languageMenu; genderMenu }
-                }
-            }
+        // Fixed, equally flexible slots: long selected names truncate instead
+        // of creating a second row or replacing the menu while it is open.
+        HStack(spacing: 8) {
+            multiFilter(title: String(localized: "Model"), icon: "cpu", all: String(localized: "All models"),
+                        options: modelOptions, selected: $selection.models, identifier: "VoiceModelFilter")
+            multiFilter(title: String(localized: "Language"), icon: "globe", all: String(localized: "All languages"),
+                        options: languageOptions, selected: $selection.languages, identifier: "VoiceLanguageFilter")
+            multiFilter(title: String(localized: "Gender"), icon: "person.2", all: String(localized: "All genders"),
+                        options: genderOptions, selected: $selection.genders, identifier: "VoiceGenderFilter")
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
     }
 
-    private var modelMenu: some View {
-        multiMenu(title: String(localized: "Model"), icon: "cpu", all: String(localized: "All models"),
-                  options: modelOptions, selected: $selection.models, identifier: "VoiceModelFilter")
+    private func multiFilter(title: String, icon: String, all: String, options: [VoiceFilterOption],
+                             selected: Binding<Set<String>>, identifier: String) -> some View {
+        VoiceMultiSelectionFilter(title: title, icon: icon, all: all, options: options, selected: selected,
+                                  identifier: identifier)
+            .frame(minWidth: 0, maxWidth: .infinity)
+    }
+}
+
+/// A stable, scrollable picker rather than a native Menu rebuilt by playback
+/// updates. Snapshot the options when opening; row IDs and scroll state remain
+/// unchanged while the user scrolls or checks multiple languages.
+private struct VoiceMultiSelectionFilter: View {
+    let title: String
+    let icon: String
+    let all: String
+    let options: [VoiceFilterOption]
+    @Binding var selected: Set<String>
+    let identifier: String
+    @Environment(\.nodusPalette) private var palette
+    @State private var isPresented = false
+    @State private var presentedOptions: [VoiceFilterOption] = []
+    @State private var query = ""
+
+    private var selectedNames: [String] {
+        options.filter { selected.contains($0.id) }.map(\.title)
     }
 
-    private var languageMenu: some View {
-        multiMenu(title: String(localized: "Language"), icon: "globe", all: String(localized: "All languages"),
-                  options: languageOptions, selected: $selection.languages, identifier: "VoiceLanguageFilter")
+    private var summary: String {
+        if selected.isEmpty { return title }
+        if selected.count == 1 { return selectedNames.first ?? title }
+        return "\(title) (\(selected.count))"
     }
 
-    private var genderMenu: some View {
-        multiMenu(title: String(localized: "Gender"), icon: "person.2", all: String(localized: "All genders"),
-                  options: genderOptions, selected: $selection.genders, identifier: "VoiceGenderFilter")
+    private var matchingOptions: [VoiceFilterOption] {
+        let search = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return search.isEmpty ? presentedOptions : presentedOptions.filter { $0.title.localizedCaseInsensitiveContains(search) }
     }
 
-    private func multiMenu(title: String, icon: String, all: String, options: [VoiceFilterOption],
-                           selected: Binding<Set<String>>, identifier: String) -> some View {
-        let names = options.filter { selected.wrappedValue.contains($0.id) }.map(\.title)
-        let summary = selected.wrappedValue.count == 1 ? names.first : "\(title) (\(selected.wrappedValue.count))"
-        return VoiceFilterMenu(title: title, systemImage: icon,
-                               value: selected.wrappedValue.isEmpty ? nil : summary,
-                               isActive: !selected.wrappedValue.isEmpty) {
-            Button {
-                selected.wrappedValue = []
-            } label: {
-                if selected.wrappedValue.isEmpty { Label(all, systemImage: "checkmark") }
-                else { Text(all) }
+    var body: some View {
+        Button {
+            presentedOptions = options
+            query = ""
+            isPresented = true
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: icon).font(.system(size: 12, weight: .semibold))
+                Text(summary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .layoutPriority(-1)
+                Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
             }
-            Divider()
-            ForEach(options) { option in
-                Toggle(option.title, isOn: Binding(get: {
-                    selected.wrappedValue.contains(option.id)
-                }, set: { enabled in
-                    var values = selected.wrappedValue
-                    if enabled { values.insert(option.id) } else { values.remove(option.id) }
-                    selected.wrappedValue = values
-                }))
-                .accessibilityIdentifier("\(identifier)-\(option.id)")
-            }
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(selected.isEmpty ? palette.text : palette.onAccent)
+            .padding(.horizontal, 9)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 44)
+            .background(selected.isEmpty ? palette.panel : palette.accent, in: Capsule())
+            .overlay(Capsule().stroke(selected.isEmpty ? palette.line : Color.clear, lineWidth: 1))
+            .contentShape(Capsule())
         }
-        #if os(iOS)
-        .menuActionDismissBehavior(.disabled)
-        #endif
+        .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)
-        .accessibilityValue(selected.wrappedValue.isEmpty ? all : names.joined(separator: ", "))
+        .accessibilityLabel(Text("Filter by \(title)"))
+        .accessibilityValue(selected.isEmpty ? all : selectedNames.joined(separator: ", "))
+        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+            VStack(spacing: 0) {
+                HStack {
+                    Text(title).font(.headline)
+                    Spacer()
+                    Button("Done") { isPresented = false }
+                }
+                .padding(12)
+                if presentedOptions.count > 10 {
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                        TextField("Search", text: $query)
+                            .textFieldStyle(.plain)
+                    }
+                    .padding(10)
+                    .background(palette.panel, in: RoundedRectangle(cornerRadius: 10))
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 8)
+                }
+                List {
+                    Button { selected = [] } label: {
+                        optionLabel(all, checked: selected.isEmpty)
+                    }
+                    .listRowBackground(palette.panel)
+                    ForEach(matchingOptions) { option in
+                        Button {
+                            if selected.contains(option.id) { selected.remove(option.id) }
+                            else { selected.insert(option.id) }
+                        } label: {
+                            optionLabel(option.title, checked: selected.contains(option.id))
+                        }
+                        .accessibilityIdentifier("\(identifier)-\(option.id)")
+                        .accessibilityAddTraits(selected.contains(option.id) ? .isSelected : [])
+                        .listRowBackground(palette.panel)
+                    }
+                }
+                .buttonStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .listStyle(.plain)
+            }
+            .foregroundStyle(palette.text)
+            .background(palette.background)
+            .tint(palette.accent)
+            .frame(width: 300, height: min(440, CGFloat(presentedOptions.count + 1) * 48 + 64))
+            .presentationCompactAdaptation(.popover)
+        }
+    }
+
+    private func optionLabel(_ label: String, checked: Bool) -> some View {
+        HStack(spacing: 10) {
+            Text(label).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            Image(systemName: "checkmark")
+                .foregroundStyle(palette.accent)
+                .opacity(checked ? 1 : 0)
+        }
+        .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
+        .contentShape(Rectangle())
     }
 }
 

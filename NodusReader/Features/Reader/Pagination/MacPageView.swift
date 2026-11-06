@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 #if os(macOS)
 import AppKit
+import DesignSystem
 import SwiftUI
 
 final class ReaderMacPageContainer: NSView {
@@ -48,6 +49,11 @@ final class ReaderMacPageContainer: NSView {
 }
 
 final class ReaderMacTextView: NSTextView {
+    /// Native selection can use a light system fill over a dark reader while
+    /// retaining the page's pale glyphs. Always set both sides of the pair.
+    func setSelectionColors(background: NSColor, foreground: NSColor) {
+        selectedTextAttributes = [.backgroundColor: background, .foregroundColor: foreground]
+    }
     /// Local index ↔ anchor space (chapter offsets, or PDF page offsets).
     var mapping: ReaderTextMapping?
     var onWordTap: ((Int) -> Void)?
@@ -234,6 +240,7 @@ final class MacHighlightOverlayView: NSView {
 
 struct MacPageView: NSViewRepresentable {
     @Environment(\.pronunciationSelection) private var pronounce
+    @Environment(\.nodusPalette) private var palette
     var page: ReaderPage
     var style: ReaderPageStyle
     var highlights: ReaderPageHighlights
@@ -254,6 +261,7 @@ struct MacPageView: NSViewRepresentable {
         container.textView.onHighlight = onHighlight
         container.textView.onNote = onNote
         container.textView.onPronounce = pronounce
+        container.textView.setSelectionColors(background: NSColor(palette.accent), foreground: NSColor(palette.onAccent))
         // A theme change keeps the same characters but changes their colours,
         // so comparing only the plain string would leave stale text colours.
         if styleChanged || container.textView.string != page.attributed.string {

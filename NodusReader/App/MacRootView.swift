@@ -119,14 +119,14 @@ struct MacRootView: View {
                 // Both library and reader put the toggle in the detail
                 // header, leaving the sidebar header for the brand.
                 .toolbar(removing: .sidebarToggle)
+                .toolbarBackground(palette.background, for: .windowToolbar)
+                .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
         } detail: {
             if let bookID = navigation.macReaderBookID {
                 MacReaderHost(bookID: bookID) { navigation.macReaderBookID = nil }
                     .environment(\.librarySidebarVisible, navigation.columnVisibility != .detailOnly)
                     .environment(\.toggleLibrarySidebar) {
-                        withAnimation {
-                            navigation.columnVisibility = navigation.columnVisibility == .detailOnly ? .all : .detailOnly
-                        }
+                        toggleSidebar()
                     }
             } else {
                 VStack(spacing: 0) {
@@ -147,9 +147,7 @@ struct MacRootView: View {
                 .toolbar {
                     ToolbarItem(placement: .navigation) {
                         Button {
-                            withAnimation {
-                                navigation.columnVisibility = navigation.columnVisibility == .detailOnly ? .all : .detailOnly
-                            }
+                            toggleSidebar()
                         } label: {
                             Image(systemName: "sidebar.left")
                         }
@@ -168,7 +166,7 @@ struct MacRootView: View {
         .background { palette.background.ignoresSafeArea() }
         // Give the native toolbar an explicit colour, including its separate
         // full-screen host, instead of exposing the system grey material.
-        .toolbarBackground(.clear, for: .windowToolbar)
+        .toolbarBackground(palette.background, for: .windowToolbar)
         .toolbarColorScheme(palette.isDark ? .dark : .light, for: .windowToolbar)
         // Keep the native controls, but let each column paint behind them.
         // An opaque window-wide toolbar otherwise covers the sidebar brand.
@@ -197,12 +195,23 @@ struct MacRootView: View {
     /// through AppKit can disagree with SwiftUI's window appearance during a
     /// reader/theme transition. A book's palette is scoped to the detail view.
     private var sidebarPalette: NodusPalette {
-        palette
+        var unified = palette
+        unified.sidebar = palette.background
+        return unified
+    }
+
+    /// Avoid animating every intermediate table/reader width during a toggle.
+    private func toggleSidebar() {
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            navigation.columnVisibility = navigation.columnVisibility == .detailOnly ? .all : .detailOnly
+        }
     }
 
     private var sidebar: some View {
         GeometryReader { geometry in
-            sidebarContent(headerHeight: max(sidebarIsWindowed ? 64 : 52, geometry.safeAreaInsets.top))
+            sidebarContent(headerHeight: max(64, geometry.safeAreaInsets.top + 40))
                 .ignoresSafeArea(.container, edges: .top)
         }
             .nodusPalette(sidebarPalette)
@@ -220,9 +229,9 @@ struct MacRootView: View {
             BrandToolbar()
                 .fixedSize()
                 .nodusPalette(sidebarPalette.isDark ? .dark : .light)
-                .padding(.bottom, sidebarIsWindowed ? 4 : 0)
+                .padding(.bottom, 4)
                 .frame(maxWidth: .infinity)
-                .frame(height: headerHeight, alignment: sidebarIsWindowed ? .bottom : .center)
+                .frame(height: headerHeight, alignment: .bottom)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
                 .background(sidebarPalette.sidebar)
@@ -425,8 +434,6 @@ private struct MacSidebarWidthBounds: NSViewRepresentable {
                 // Full-screen toolbars otherwise retain an opaque native
                 // titlebar backing beside the sidebar tracking separator.
                 if !window.titlebarAppearsTransparent { window.titlebarAppearsTransparent = true }
-                if window.isOpaque { window.isOpaque = false }
-                if window.backgroundColor != .clear { window.backgroundColor = .clear }
                 let isWindowed = !window.styleMask.contains(.fullScreen)
                 if wasWindowed != isWindowed {
                     wasWindowed = isWindowed

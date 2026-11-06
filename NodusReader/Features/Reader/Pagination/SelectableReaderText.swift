@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import SwiftUI
+import DesignSystem
 #if os(macOS)
 import AppKit
 #else
@@ -17,6 +18,7 @@ struct ReaderTextScrollRequest {
 /// in lazy stacks: continuous-scroll slices and PDF Intelligent Reading blocks.
 struct SelectableReaderText {
     @Environment(\.pronunciationSelection) private var pronounce
+    @Environment(\.nodusPalette) private var palette
     @Environment(\.readerFollowState) private var followState
     var text: NSAttributedString
     var mapping: ReaderTextMapping
@@ -211,6 +213,7 @@ extension SelectableReaderText: NSViewRepresentable {
         view.textView.onHighlight = onHighlight
         view.textView.onNote = onNote
         view.textView.onPronounce = pronounce
+        view.textView.setSelectionColors(background: NSColor(palette.accent), foreground: NSColor(palette.onAccent))
         view.textView.setAccessibilityLabel(accessibilityLabel)
         if !(view.textView.textStorage?.isEqual(to: text) ?? false) {
             view.textView.textStorage?.setAttributedString(text)
