@@ -1217,7 +1217,11 @@ struct ReaderNarrationCapsule: View {
                 }
                 sleepTimer
             }
-                .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
+                // Never narrower than its 44 pt buttons: on a phone with Soundscapes on,
+                // three buttons do not fit an equal side column, and they used to spill
+                // over the forward button. Play stays centred whenever they fit.
+                .frame(minWidth: CGFloat(immersive.preferences.isEnabled ? 3 : 2) * 44,
+                       maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.horizontal, 6)
         .frame(height: 62)
@@ -1295,6 +1299,7 @@ struct ReaderNarrationCapsule: View {
                     .font(.system(size: 13))
                     .foregroundStyle(theme.text)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .padding(.horizontal, 6)
