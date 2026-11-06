@@ -32,6 +32,13 @@ enum ScenePrompt {
     academic (papers, textbooks), manual (instructions, technical), reference, poetry, drama or other.
     """
 
+    static let styleInstructions = """
+    You choose background music for a book in a reading app. From a sample of the book, pick the genre \
+    whose film music would suit it: fantasy, scienceFiction, cyberpunk, horror, noir (crime, detectives), \
+    thriller, western, historical, war, romance, comedy, adventure, fairyTale (children's stories), or \
+    neutral when no genre stands out.
+    """
+
     static func passage(_ text: String, before: String, after: String, language: String) -> String {
         """
         Language of the book: \(language).
@@ -211,6 +218,20 @@ struct DocumentTagging {
     var kind: TaggedDocumentKind
 }
 
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
+enum TaggedStyle {
+    case neutral, fantasy, scienceFiction, cyberpunk, horror, noir, thriller, western
+    case historical, war, romance, comedy, adventure, fairyTale
+}
+
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
+struct StyleTagging {
+    @Guide(description: "The genre that best fits the music this sample would have in a film; neutral if none stands out")
+    var style: TaggedStyle
+}
+
 /// Reads book passages with Apple's on-device model and answers in the
 /// normalised vocabulary. Nothing leaves the device: only
 /// `SystemLanguageModel` is used, never Private Cloud Compute. Requests go
@@ -257,6 +278,29 @@ actor SceneAnalyzer {
                 kind = nil
             }
             if let kind, let value = DocumentKind(rawValue: kind) { votes.append(value) }
+        }
+        return votes
+    }
+
+    /// The model's soundscape style for each sample; refusals give no vote.
+    func styleVotes(samples: [String], language: String) async throws -> [SoundscapeStyle] {
+        var votes: [SoundscapeStyle] = []
+        for sample in samples {
+            try Task.checkCancellation()
+            let model = tagging
+            let style: String?
+            do {
+                style = try await run {
+                    let session = LanguageModelSession(model: model, instructions: ScenePrompt.styleInstructions)
+                    let response = try await session.respond(
+                        to: "Language: \(language).\nSAMPLE: \(sample)", generating: StyleTagging.self,
+                        options: GenerationOptions(samplingMode: .greedy, maximumResponseTokens: 20))
+                    return "\(response.content.style)"
+                }
+            } catch let error where Self.isRefusal(error) {
+                style = nil
+            }
+            if let style, let value = SoundscapeStyle(rawValue: style) { votes.append(value) }
         }
         return votes
     }

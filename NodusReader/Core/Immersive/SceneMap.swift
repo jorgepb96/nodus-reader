@@ -83,6 +83,8 @@ struct DocumentProfile: Codable, Hashable, Sendable {
     /// The model's answer for each sample, in order.
     var votes: [DocumentKind]
     var signals: TextSignals
+    /// The soundscape style the samples suggest (AI soundscapes only); nil until asked.
+    var style: SoundscapeStyle? = nil
 }
 
 /// Observable properties of a sample of text. Counts and ratios, nothing

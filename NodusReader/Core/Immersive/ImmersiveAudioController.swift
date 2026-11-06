@@ -46,6 +46,11 @@ final class ImmersiveAudioController {
     private(set) var documentKind: DocumentKind?
     private(set) var analysedWindows = 0
     private(set) var totalWindows = 0
+    /// The book's soundscape style (AI soundscapes): the reader's choice, the detected
+    /// style, or neutral.
+    private(set) var bookStyle: SoundscapeStyle = .neutral
+    /// The reader chose `bookStyle` for this book.
+    private(set) var isStyleChosen = false
     /// Why the atmosphere last changed or held (shown in the debug section).
     private(set) var lastReason = ""
 
@@ -167,6 +172,7 @@ final class ImmersiveAudioController {
             policy.readerOpen = false
             policy.finished = false
             bookPreferences = store.loadPreferences(bookID: target.id) ?? ImmersiveBookPreferences()
+            refreshBookStyle()
             isLocked = bookPreferences.locked
             isChosenByReader = bookPreferences.atmosphere != nil && !isLocked
             refreshAvailability(language: target.language)
@@ -263,8 +269,51 @@ final class ImmersiveAudioController {
         #endif
     }
 
+    // MARK: Style
+
+    /// Sets this book's style; nil returns to the detected one.
+    func setBookStyle(_ style: SoundscapeStyle?) {
+        bookPreferences.styleOverride = style
+        if let bookID { store.savePreferences(bookPreferences, bookID: bookID) }
+        refreshBookStyle()
+    }
+
+    private func refreshBookStyle() {
+        bookStyle = BookStyleDetector.resolve(override: bookPreferences.styleOverride, detected: map?.profile?.style)
+        isStyleChosen = bookPreferences.styleOverride != nil
+    }
+
+    @ObservationIgnored private var styleTask: Task<Void, Never>?
+
+    /// Classifies the book's style once (three samples through the shared on-device
+    /// gate) when it has none and the model is available. Only AI soundscapes ask.
+    func detectBookStyleIfNeeded() {
+        #if canImport(FoundationModels)
+        guard #available(iOS 26.0, macOS 26.0, *), styleTask == nil, availability.allowsAutomatic,
+              let map, map.profile?.style == nil, let story, let book else { return }
+        let samples = SceneAnalysisScheduler.profileSamples(story)
+        let language = Self.languageName(book.language)
+        let bookID = book.id
+        styleTask = Task { [weak self, store] in
+            let votes = (try? await SceneAnalyzer().styleVotes(samples: samples, language: language)) ?? []
+            guard let self, !Task.isCancelled, self.bookID == bookID else { return }
+            let style = BookStyleDetector.vote(votes)
+            // Merge into the newest map: analysis may have advanced meanwhile.
+            var current = self.map ?? map
+            if current.profile == nil {
+                current.profile = DocumentProfile.resolve(votes: [], signals: TextSignals.measure(samples.joined(separator: "\n")))
+            }
+            current.profile?.style = style
+            store.saveMap(current, bookID: bookID)
+            self.publish(map: current)
+            self.styleTask = nil
+        }
+        #endif
+    }
+
     private func publish(map: SceneMap?) {
         self.map = map
+        refreshBookStyle()
         documentKind = map?.profile?.kind
         analysedWindows = map?.analysedCount ?? 0
         totalWindows = map?.windows.count ?? 0
@@ -683,6 +732,7 @@ final class ImmersiveAudioController {
     /// Clears the reader's choice and lock: the text decides again.
     func returnToAutomatic() {
         bookPreferences = ImmersiveBookPreferences()
+        refreshBookStyle()
         saveBookPreferences()
         isLocked = false
         isChosenByReader = false
