@@ -70,7 +70,7 @@ case "run":
         : "Heavy rain on windows, distant thunder, no music or voices.")
     let label = option("--label", in: arguments) ?? kind.rawValue
 
-    let engine = SA3Engine(directory: directory, residency: residency)
+    let engine = SA3Engine(directory: directory, residency: residency, cacheLimitBytes: 64 << 20)
     let tokens = (try? await engine.tokenCount(prompt)) ?? -1
     for seconds in durations {
         for run in 0 ..< repeats {
@@ -104,6 +104,31 @@ case "run":
             }
         }
     }
+
+case "inpaint":
+    // sa3-bench inpaint <models> <in.wav> <out.wav> <keepUntil> <seconds> [--prompt] [--seed] [--kind music|sfx]
+    guard arguments.count >= 7 else { fail("usage: sa3-bench inpaint <models> <in.wav> <out.wav> <keepUntil> <seconds>") }
+    let directory = SA3ModelDirectory(root: URL(fileURLWithPath: arguments[2]))
+    let file = try AVAudioFile(forReading: URL(fileURLWithPath: arguments[3]))
+    let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length))!
+    try file.read(into: buffer)
+    let channels = (0 ..< Int(buffer.format.channelCount)).map {
+        Array(UnsafeBufferPointer(start: buffer.floatChannelData![$0], count: Int(buffer.frameLength)))
+    }
+    let keepUntil = Double(arguments[5])!
+    let seconds = Float(arguments[6])!
+    let kind = SA3ModelKind(rawValue: option("--kind", in: arguments) ?? "music") ?? .music
+    let prompt = option("--prompt", in: arguments) ?? "TrackType: Music, VocalType: Instrumental. Mysterious harp and low strings, slowly evolving, gradual build."
+    let seed = UInt64(option("--seed", in: arguments) ?? "23") ?? 23
+    let engine = SA3Engine(directory: directory, residency: .staged, cacheLimitBytes: 64 << 20)
+    let output = try await engine.generate(.init(kind: kind, prompt: prompt, seconds: seconds, steps: 8, seed: seed),
+                                           inpaint: .init(channels: channels, keep: [0 ... keepUntil])) { stage in
+        FileHandle.standardError.write("stage \(stage) footprint \(ProcessMemory.footprint() / 1_000_000) MB mlx \(SA3Engine.memoryReport)\n".data(using: .utf8)!)
+    }
+    try SA3Audio.writeWAV(output.channels, sampleRate: output.sampleRate, to: URL(fileURLWithPath: arguments[4]))
+    var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(output.measurement)) as! [String: Any]
+    object["realtimeFactor"] = output.measurement.realtimeFactor
+    print(String(decoding: try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys]), as: UTF8.self))
 
 case "tokenize":
     // Reads a JSON array of strings, prints a JSON array of id arrays.

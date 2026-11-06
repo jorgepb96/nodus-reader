@@ -33,6 +33,20 @@ public actor SA3Engine {
         }
     }
 
+    /// Audio to keep while the rest is generated: continuation (keep the start, generate
+    /// the end) or seam repair (keep both ends, regenerate the middle).
+    public struct InpaintSource: Sendable {
+        /// Stereo PCM at 44.1 kHz; trimmed or zero-padded to the requested length.
+        public var channels: [[Float]]
+        /// Regions to keep, in seconds; everything else is generated.
+        public var keep: [ClosedRange<Double>]
+
+        public init(channels: [[Float]], keep: [ClosedRange<Double>]) {
+            self.channels = channels
+            self.keep = keep
+        }
+    }
+
     public struct Output: Sendable {
         /// Stereo PCM, one array per channel, at `sampleRate`.
         public let channels: [[Float]]
@@ -66,10 +80,17 @@ public actor SA3Engine {
     private var t5: T5GemmaEncoder?
     private var ditWeights: [SA3ModelKind: [String: MLXArray]] = [:]
     private var decoder: SAMESDecoder?
+    private var encoder: SAMESEncoder?
 
     /// MLX aborts the process (SIGABRT in `metal::Device::Device()`) in the iOS
     /// Simulator, so nothing may touch MLX there. Measured on 2026-11-06 (Xcode 27.1,
     /// iOS 26.5 Simulator).
+    /// MLX's own accounting, for diagnostics: active and cached megabytes.
+    public static var memoryReport: String {
+        guard isSupported else { return "unsupported" }
+        return "active \(Memory.activeMemory / 1_000_000) MB, cache \(Memory.cacheMemory / 1_000_000) MB"
+    }
+
     public static var isSupported: Bool {
         #if targetEnvironment(simulator)
         false
@@ -78,11 +99,11 @@ public actor SA3Engine {
         #endif
     }
 
-    public init(directory: SA3ModelDirectory, residency: Residency = .staged, cacheLimitBytes: Int = 64 << 20) {
+    public init(directory: SA3ModelDirectory, residency: Residency = .staged, cacheLimitBytes: Int? = nil) {
         self.directory = directory
         self.residency = residency
-        // Keep MLX's buffer cache small: freed weights should return to the system.
-        if Self.isSupported { Memory.cacheLimit = cacheLimitBytes }
+        // The app sets MLX's cache limit once (ModelManager); the bench sets its own.
+        if Self.isSupported, let cacheLimitBytes { Memory.cacheLimit = cacheLimitBytes }
     }
 
     public func setResidency(_ residency: Residency) {
@@ -97,14 +118,16 @@ public actor SA3Engine {
         t5 = nil
         ditWeights.removeAll()
         decoder = nil
+        encoder = nil
         Memory.clearCache()
     }
 
     public var isAnythingLoaded: Bool {
-        t5 != nil || decoder != nil || !ditWeights.isEmpty
+        t5 != nil || decoder != nil || encoder != nil || !ditWeights.isEmpty
     }
 
-    public func generate(_ request: Request, progress: (@Sendable (String) -> Void)? = nil) throws -> Output {
+    public func generate(_ request: Request, inpaint: InpaintSource? = nil,
+                         progress: (@Sendable (String) -> Void)? = nil) throws -> Output {
         guard Self.isSupported else { throw EngineError.unsupportedDevice }
         let seconds = min(max(request.seconds, 0.5), Self.maximumSeconds)
         let sampler = PeakFootprintSampler()
@@ -121,6 +144,22 @@ public actor SA3Engine {
             let value = try body()
             timings[keyPath: keyPath] += Date().timeIntervalSince(start)
             return value
+        }
+
+        // 0. Inpainting: encode the audio to keep (FP32) and build the local condition,
+        // as Stability's runtime does (`scripts/sa3_mlx.py`): mask 1 = keep, 0 = generate;
+        // condition = [mask, latents × mask] → [1, T_lat, 257]; kept latents are pasted
+        // back after sampling.
+        let latentLength = Self.latentLength(for: seconds)
+        var inpaintCondition: (local: MLXArray, latents: MLXArray, mask: MLXArray)?
+        if let inpaint {
+            progress?("encoding")
+            inpaintCondition = try encodeForInpainting(inpaint, latentLength: latentLength, timings: &timings)
+            if residency == .staged {
+                encoder = nil
+                Memory.clearCache()
+            }
+            try checkCancellation()
         }
 
         // 1. Text conditioning.
@@ -155,15 +194,19 @@ public actor SA3Engine {
         // 2. Diffusion.
         progress?("diffusion")
         let weights = try timed(\.ditLoad) { try loadDiTWeights(request.kind) }
-        let latentLength = Self.latentLength(for: seconds)
         let latents = try Stream.withNewDefaultStream(device: .gpu) { () throws -> MLXArray in
-            let dit = DiTSmallMusic(weights: weights, latentLength: latentLength)
+            var dit = DiTSmallMusic(weights: weights, latentLength: latentLength)
+            dit.localAddCondition = inpaintCondition?.local
             let samplingStart = Date()
             let result = try sample(dit: dit, latentLength: latentLength, steps: request.steps, seed: request.seed,
                                     crossAttention: crossAttention, globalCondition: globalCondition,
                                     timings: &timings, progress: progress)
             timings.sampling = Date().timeIntervalSince(samplingStart)
-            return result
+            guard let inpaintCondition else { return result }
+            let mask = inpaintCondition.mask.asType(result.dtype)
+            let pasted = inpaintCondition.latents.asType(result.dtype) * mask + result * (1 - mask)
+            eval(pasted)
+            return pasted
         }
         if residency == .staged {
             ditWeights.removeAll()
@@ -280,6 +323,69 @@ public actor SA3Engine {
         let weights = try load(directory.dit(kind))
         ditWeights[kind] = weights
         return weights
+    }
+
+    /// Encodes the audio to keep and builds the inpainting condition. A separate scope so
+    /// that nothing from the encoder outlives this stage.
+    private func encodeForInpainting(_ inpaint: InpaintSource, latentLength: Int, timings: inout SA3Timings)
+        throws -> (local: MLXArray, latents: MLXArray, mask: MLXArray) {
+        let loadStart = Date()
+        let encoder = try loadEncoder()
+        timings.encoderLoad += Date().timeIntervalSince(loadStart)
+        let encodeStart = Date()
+        defer { timings.encode += Date().timeIntervalSince(encodeStart) }
+        return Stream.withNewDefaultStream(device: .gpu) {
+            // The encoder attends within chunks of ~2 latents, and generated regions are
+            // masked to zero, so only the kept audio is encoded (each kept range on its
+            // own, padded to the encoder's grid with a 2-latent margin). Encoding the whole
+            // zero-padded clip, as the reference does, costs more time and memory for the
+            // same kept latents.
+            var mask = [Float](repeating: 0, count: latentLength)
+            var latents = MLXArray.zeros([1, SAMESEncoder.latentDimension, latentLength], dtype: .float32)
+            for range in inpaint.keep {
+                let start = max(0, Int((range.lowerBound * Double(Self.sampleRate) / Double(Self.samplesPerLatent)).rounded()))
+                let end = min(latentLength, Int((range.upperBound * Double(Self.sampleRate) / Double(Self.samplesPerLatent)).rounded()))
+                guard start < end else { continue }
+                for index in start ..< end { mask[index] = 1 }
+                let margin = 2
+                let windowStart = max(0, start - margin)
+                var windowEnd = min(latentLength, end + margin)
+                if (windowEnd - windowStart) % 2 != 0 { windowEnd = min(latentLength, windowEnd + 1) }
+                if (windowEnd - windowStart) % 2 != 0 { windowEnd -= 1 }
+                let count = windowEnd - windowStart
+                let samples = count * Self.samplesPerLatent
+                let audio = MLXArray(Self.fit(inpaint.channels, from: windowStart * Self.samplesPerLatent, samples: samples), [1, 2, samples])
+                let encoded = encoder(SAMESEncoder.patchAudio(audio))[0..., 0..., 0 ..< count]
+                let offset = start - windowStart
+                let piece = encoded[0..., 0..., offset ..< (offset + end - start)]
+                latents = concatenated([latents[0..., 0..., 0 ..< start], piece, latents[0..., 0..., end...]], axis: 2)
+                eval(latents)
+            }
+            let maskArray = MLXArray(mask, [1, 1, latentLength])
+            let local = concatenated([maskArray, latents * maskArray], axis: 1).transposed(0, 2, 1).asType(.float16)
+            let kept = latents.asType(.float16)
+            eval(local, kept, maskArray)
+            return (local, kept, maskArray)
+        }
+    }
+
+    private func loadEncoder() throws -> SAMESEncoder {
+        if let encoder { return encoder }
+        let loaded = SAMESEncoder(weights: try load(directory.encoder))
+        encoder = loaded
+        return loaded
+    }
+
+    /// `samples` frames from `from` of a stereo clip as `[2, samples]` row-major,
+    /// zero-padded past its end. A mono clip is duplicated.
+    static func fit(_ channels: [[Float]], from: Int = 0, samples: Int) -> [Float] {
+        var out = [Float](repeating: 0, count: 2 * samples)
+        for c in 0 ..< 2 {
+            let source = channels.indices.contains(c) ? channels[c] : (channels.first ?? [])
+            let count = max(0, min(samples, source.count - from))
+            for i in 0 ..< count { out[c * samples + i] = source[from + i] }
+        }
+        return out
     }
 
     private func loadDecoder() throws -> SAMESDecoder {

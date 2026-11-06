@@ -378,7 +378,7 @@ final class SoundscapeLab {
     private func generate(_ test: String, kind: SA3ModelKind, prompt: String, seconds: Float, steps: Int,
                           residency: SA3Engine.Residency, keepFile: Bool = true) async throws -> URL? {
         try Task.checkCancellation()
-        let engine = self.engine ?? SA3Engine(directory: directory, residency: residency)
+        let engine = self.engine ?? SA3Engine(directory: directory, residency: residency, cacheLimitBytes: 64 << 20)
         self.engine = engine
         await engine.setResidency(residency)
         let name = "\(kind.rawValue)-\(test)-\(Int(seconds))s-\(steps)st"

@@ -76,6 +76,10 @@ public enum SA3Installer {
             try NPZToSafetensors.convert(source: archive(SA3Manifest.t5), destination: directory.t5)
             finish(SA3Manifest.t5)
         }
+        if !fm.fileExists(atPath: directory.encoder.path) {
+            try NPZToSafetensors.convert(source: archive(SA3Manifest.encoder), destination: directory.encoder)
+            finish(SA3Manifest.encoder)
+        }
         if !fm.fileExists(atPath: directory.decoder.path) {
             try NPZToSafetensors.convert(source: archive(SA3Manifest.decoder), destination: directory.decoder)
             finish(SA3Manifest.decoder)

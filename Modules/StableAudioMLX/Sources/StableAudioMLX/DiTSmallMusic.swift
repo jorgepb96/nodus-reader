@@ -15,6 +15,8 @@ struct DiTSmallMusic {
 
     let weights: [String: MLXArray]
     let latentLength: Int
+    /// Inpainting condition `[B, T_lat, 257]` = (keep mask, latents × mask); zeros when nil.
+    var localAddCondition: MLXArray? = nil
 
     func callAsFunction(_ x: MLXArray, timestep: MLXArray, crossAttention: MLXArray, globalCondition: MLXArray) -> MLXArray {
         let batch = x.dim(0)
@@ -51,7 +53,8 @@ struct DiTSmallMusic {
         global = silu(global)
         global = linear(global, weight: weights["transformer.global_cond_embedder.2.weight"]!, bias: weights["transformer.global_cond_embedder.2.bias"]!)
 
-        let localZeros = MLXArray.zeros([batch, latentLength, Self.localAddConditionDimension], dtype: h.dtype)
+        let localZeros = localAddCondition?.asType(h.dtype)
+            ?? MLXArray.zeros([batch, latentLength, Self.localAddConditionDimension], dtype: h.dtype)
         for index in 0 ..< Self.layerCount {
             let prefix = "transformer.layers.\(index)"
             var local = linear(localZeros, weight: weights["\(prefix).to_local_embed.seq.0.weight"]!, bias: weights["\(prefix).to_local_embed.seq.0.bias"]!)

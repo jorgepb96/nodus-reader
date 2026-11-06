@@ -276,6 +276,14 @@ de misterio:
 | B | `TrackType: Music, VocalType: Instrumental. Mysterious harp and low strings, slowly evolving, gradual build.`, 90 s | Arranque escaso, cambio de textura a ~29 s, crecimiento a ~52 s |
 | C | 45 s prolongados hasta 120 s por continuación (*inpainting* desde 40 s, runtime oficial en Python) | Los 40 s conservados son idénticos (correlación 0,997); desarrollo y crecimiento a partir de ~75 s. 13,8 s en el Mac, pico 2,3 GB |
 
+**Continuación en Swift (fase 2, Task 1):** `SAMESEncoder` e *inpainting* portados. Con la
+misma pieza base, prompt, semilla y zona conservada (0–40 s de 120 s), la salida Swift
+frente al runtime oficial tiene correlación 0,99962/0,99973 (zona conservada 1,0; zona
+generada 0,9996). Codificar solo el audio conservado, y no el clip entero relleno de ceros
+como la referencia, baja el pico en el Mac de 2,08 GB a 1,36 GB (igual que una generación de
+120 s sin continuación) sin cambiar la salida: la atención del codificador es local y la
+zona generada se enmascara a cero. 120 s con continuación: 11,0 s en el Mac M2.
+
 Las etiquetas `TrackType`/`VocalType` vienen de la guía oficial de prompts («tienden a
 producir salidas de más calidad y más coherentes»). La continuación necesita el codificador
 SAME-S (`same_s_encoder_f32.npz`, 214.946.620 bytes, SHA-256 `a48f80d8…afdaf0c`), que aún no

@@ -76,6 +76,8 @@ public enum ThermalStateName {
 /// Timings of one generation, in seconds. Load stages are zero when the stage was
 /// already resident.
 public struct SA3Timings: Codable, Sendable {
+    public var encoderLoad: Double = 0
+    public var encode: Double = 0
     public var tokenizerLoad: Double = 0
     public var t5Load: Double = 0
     public var t5Encode: Double = 0
@@ -87,7 +89,7 @@ public struct SA3Timings: Codable, Sendable {
     public var unload: Double = 0
     public var total: Double = 0
 
-    public var loading: Double { tokenizerLoad + t5Load + ditLoad + decoderLoad }
+    public var loading: Double { encoderLoad + tokenizerLoad + t5Load + ditLoad + decoderLoad }
     public var compute: Double { t5Encode + sampling + decode }
 }
 

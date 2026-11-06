@@ -49,6 +49,10 @@ public enum SA3Manifest {
     public static let sfx = SA3RemoteFile(
         path: "MLX/dit_sm-sfx_f16.npz", bytes: 919_193_814,
         sha256: "7e702d2640699a57fe436ca975fda16832040ba568c1e092c2ae826987558118")
+    /// Only needed for continuation and seam repair (inpainting).
+    public static let encoder = SA3RemoteFile(
+        path: "MLX/same_s_encoder_f32.npz", bytes: 214_946_620,
+        sha256: "a48f80d81c30d74c45e2a3047082c4891f715e24c44645adb9c1f4f07afdaf0c")
     public static let tokenizer = SA3RemoteFile(
         path: "tokenizer.model", bytes: 4_241_003,
         sha256: "61a7b147390c64585d6c3543dd6fc636906c9af3865a5548f27f31aee1d4c8e2")
@@ -60,7 +64,7 @@ public enum SA3Manifest {
         sha256: "e77acc0d3163bb7534675045c584b4d04b387b529239fc4b3647da0a01ba4745")
 
     /// Files shared by both models.
-    public static let shared: [SA3RemoteFile] = [t5, decoder, tokenizer, licence, gemmaLicence]
+    public static let shared: [SA3RemoteFile] = [t5, decoder, encoder, tokenizer, licence, gemmaLicence]
 
     public static func dit(_ kind: SA3ModelKind) -> SA3RemoteFile {
         kind == .music ? music : sfx
@@ -86,6 +90,7 @@ public struct SA3ModelDirectory: Sendable {
     public var tokenizer: URL { root.appendingPathComponent("tokenizer.model") }
     public var t5: URL { root.appendingPathComponent("t5gemma_f16.safetensors") }
     public var decoder: URL { root.appendingPathComponent("same_s_decoder_f32.safetensors") }
+    public var encoder: URL { root.appendingPathComponent("same_s_encoder_f32.safetensors") }
 
     public func dit(_ kind: SA3ModelKind) -> URL {
         root.appendingPathComponent("\(kind.ditFileName).safetensors")
@@ -99,13 +104,13 @@ public struct SA3ModelDirectory: Sendable {
 
     public func isReady(_ kind: SA3ModelKind) -> Bool {
         let fm = FileManager.default
-        return [tokenizer, t5, decoder, dit(kind), conditioner(kind)].allSatisfy { fm.fileExists(atPath: $0.path) }
+        return [tokenizer, t5, decoder, encoder, dit(kind), conditioner(kind)].allSatisfy { fm.fileExists(atPath: $0.path) }
     }
 
     /// Bytes on disk for the converted files of the given kinds.
     public func bytesOnDisk() -> Int64 {
         let fm = FileManager.default
-        let urls = [tokenizer, t5, decoder] + SA3ModelKind.allCases.flatMap { [dit($0), conditioner($0)] }
+        let urls = [tokenizer, t5, decoder, encoder] + SA3ModelKind.allCases.flatMap { [dit($0), conditioner($0)] }
         return urls.reduce(0) { total, url in
             total + ((try? fm.attributesOfItem(atPath: url.path)[.size] as? Int64) ?? 0)
         }
