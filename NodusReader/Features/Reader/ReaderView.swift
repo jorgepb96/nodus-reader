@@ -473,7 +473,7 @@ struct ReaderView: View {
     /// reading (narration, when playing, gives its own position).
     private func updateImmersivePosition() {
         if book.format == .pdf {
-            immersive.readerPosition(chapter: pdfPageIndex, offset: 0)
+            immersive.readerPosition(book: book, chapter: pdfPageIndex, offset: 0)
             return
         }
         guard !readerPages.isEmpty, readerPages.indices.contains(pageIndex) else { return }
@@ -481,7 +481,7 @@ struct ReaderView: View {
         let last = readerPages[min(pageIndex + max(pageStep, 1) - 1, readerPages.count - 1)]
         let offset = first.chapterIndex == last.chapterIndex
             ? (first.chapterStartOffset + last.chapterEndOffset) / 2 : first.chapterStartOffset
-        immersive.readerPosition(chapter: first.chapterIndex, offset: offset)
+        immersive.readerPosition(book: book, chapter: first.chapterIndex, offset: offset)
     }
 
     // MARK: Search

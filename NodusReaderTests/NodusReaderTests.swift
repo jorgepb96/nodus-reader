@@ -2997,3 +2997,50 @@ func macReaderClicksSeekRepeatedlyWhileDragOnlySelects() async throws {
     #expect(view.selectedRange().length > 0)
 }
 #endif
+
+@Test @MainActor
+func immersiveSoundtrackStaysWithNarrationWhileAnotherReaderOpens() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let suite = "nodus.tests.immersive-owner.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let voices = VoiceCatalog(defaults: defaults)
+    let models = ModelManager(voices: voices, defaults: defaults, discoverSystemVoices: false)
+    let playback = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
+    let controller = ImmersiveAudioController(
+        preferences: ImmersiveAudioPreferences(defaults: defaults),
+        library: ImmersiveAudioLibrary(catalog: nil, fileStore: fixture.fileStore),
+        playback: playback, models: models,
+        store: SceneMapStore(root: fixture.root.appendingPathComponent("scenes")))
+    let firstURL = try SampleLibrary.makeEPUB(sampleSpec())
+    var otherSpec = sampleSpec()
+    otherSpec.title = "Another Book"
+    let otherURL = try SampleLibrary.makeEPUB(otherSpec)
+    defer {
+        playback.stopAndClose()
+        try? FileManager.default.removeItem(at: firstURL)
+        try? FileManager.default.removeItem(at: otherURL)
+    }
+    let first = try #require(await fixture.service.importFiles([firstURL]) { _ in }.imported.first)
+    let other = try #require(await fixture.service.importFiles([otherURL]) { _ in }.imported.first)
+    controller.readerOpened(book: first, chapters: [])
+    #expect(controller.bookID == first.id)
+    // Prepare a narration session without starting an audio engine/model.
+    // Even its paused/loading state must retain ownership of the soundtrack.
+    await playback.start(book: first, mode: .read)
+    playback.mode = .readAndListen
+    controller.readerClosed(book: first)
+    controller.readerOpened(book: other, chapters: [])
+    controller.readerPosition(book: other, chapter: 1, offset: 50)
+    #expect(controller.bookID == first.id, "Browsing must not replace the narrated book's soundtrack")
+    controller.readerClosed(book: other)
+    #expect(controller.bookID == first.id)
+    controller.readerOpened(book: other, chapters: [])
+    playback.stopAndClose()
+    for _ in 0..<100 where controller.bookID != other.id { await Task.yield() }
+    #expect(controller.bookID == other.id, "Closing narration returns atmosphere ownership to the open reader")
+    controller.readerOpened(book: first, chapters: [])
+    #expect(controller.bookID == first.id, "Without narration, silent reading still follows the open book")
+    controller.readerClosed(book: first)
+}
