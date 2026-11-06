@@ -32,12 +32,24 @@ struct ContinuousReaderContent: View {
     /// from it came from elsewhere (contents, bookmark, search) and scrolls.
     @State private var leadingID: Int?
     @State private var atEnd = false
+    /// Slices currently on screen. A line inside one of them is reached with
+    /// a single glide of its own text view; only others need a travel first.
+    @State private var visibleIDs: Set<Int> = []
+    /// The return request whose slice is ready to centre its line, and how.
+    @State private var armedReturn: (id: UUID, motion: ReaderScrollMotion)?
+    /// While the column travels towards a distant slice, the line-by-line
+    /// follow waits: two owners moving the offset at once made it bounce.
+    @State private var travelID: UUID?
+    /// False for a moment after the column is (re)built, so the first
+    /// positioning lands at once instead of sliding from a slice's top edge.
+    @State private var settled = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.readerFollowState) private var followState
     @Environment(\.readerManualNavigation) private var onManualNavigation
 
     private var narrationPageID: Int? {
-        guard followState?.isSuspended != true, axis == .vertical,
+        // An explicit return owns the scroll until it has landed.
+        guard followState?.isSuspended != true, axis == .vertical, narrationReturnTarget == nil,
               let narrationChapterIndex, let narrationRange else { return nil }
         return pages.first { page in
             page.chapterIndex == narrationChapterIndex &&
@@ -73,6 +85,7 @@ struct ContinuousReaderContent: View {
                 }
             }
             .onScrollTargetVisibilityChange(idType: Int.self, threshold: 0.01) { ids in
+                visibleIDs = Set(ids)
                 // The user or the narration follow scrolled: report the slice
                 // at the leading edge.
                 guard let first = ids.min() else { return }
@@ -94,40 +107,108 @@ struct ContinuousReaderContent: View {
             .scrollIndicators(axis == .vertical ? .automatic : .never)
             .background(Color(platformColor: style.background))
             .onAppear {
-                leadingID = pageIndex
-                proxy.scrollTo(pageIndex, anchor: anchor)
-            }
-            .onChange(of: narrationPageID, initial: true) { _, id in
-                // Bring distant lazy slices into existence (a seek or chapter jump).
-                // Adjacent slices are already laid out; their text views follow the
-                // narrated line without snapping back to the start of each slice.
-                if let id, abs(id - (leadingID ?? pageIndex)) > 1 {
+                // A rebuilt column (new layout, narration starting) opens on
+                // the spoken or requested line, not on the top of its slice:
+                // the line then needs no visible correction.
+                let returnPage = returnPageID
+                if axis == .vertical, let id = returnPage ?? narrationPageID {
                     leadingID = id
-                    proxy.scrollTo(id, anchor: anchor)
+                    proxy.scrollTo(id, anchor: .center)
+                } else {
+                    leadingID = pageIndex
+                    proxy.scrollTo(pageIndex, anchor: anchor)
                 }
+                if let target = narrationReturnTarget, returnPage != nil {
+                    armedReturn = (target.id, .instant)
+                }
+            }
+            .task {
+                try? await Task.sleep(for: .milliseconds(450))
+                settled = true
+            }
+            .onChange(of: narrationPageID) { _, id in
+                // The spoken line moved to another slice. On screen, its text
+                // view glides to it. A seek or chapter jump far away travels
+                // there first, and the follow waits until it has arrived.
+                guard let id, axis == .vertical, !visibleIDs.contains(id) else { return }
+                travel(proxy, to: id, returnID: nil)
             }
             .onChange(of: pageIndex) { _, index in
                 // A contents jump, bookmark or narration follow moved the reader.
                 guard index != leadingID else { return }
                 leadingID = index
-                withAnimation(reduceMotion || narrationReturnTarget != nil ? nil : .easeInOut(duration: 0.25)) {
+                // A pending return places the exact line itself; snapping
+                // the slice's top edge first was the jump before the glide.
+                if axis == .vertical, narrationReturnTarget != nil { return }
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
                     proxy.scrollTo(index, anchor: anchor)
                 }
             }
-            .onChange(of: narrationReturnTarget?.id, initial: true) { _, _ in
-                guard let target = narrationReturnTarget, let offset = target.characterOffset,
-                      let page = pages.first(where: {
-                          $0.chapterIndex == target.chapterIndex && offset >= $0.chapterStartOffset &&
-                          offset < max($0.chapterEndOffset, $0.chapterStartOffset + 1)
-                      }) else { return }
-                leadingID = page.id
-                proxy.scrollTo(page.id, anchor: anchor)
-                if axis == .horizontal { narrationReturnTarget = nil }
+            .onChange(of: narrationReturnTarget?.id) { _, _ in
+                guard let target = narrationReturnTarget, let id = returnPageID else { return }
+                if axis == .horizontal {
+                    leadingID = id
+                    proxy.scrollTo(id, anchor: anchor)
+                    narrationReturnTarget = nil
+                } else if !settled {
+                    leadingID = id
+                    proxy.scrollTo(id, anchor: .center)
+                    armedReturn = (target.id, .instant)
+                } else if visibleIDs.contains(id) {
+                    // Already on screen: one glide up or down, or nothing at
+                    // all when the line is already in the middle.
+                    armedReturn = (target.id, .smooth)
+                } else {
+                    travel(proxy, to: id, returnID: target.id)
+                }
             }
         }
     }
 
     private var anchor: UnitPoint { axis == .vertical ? .top : .leading }
+
+    /// The slice holding the pending explicit return (Return to narration,
+    /// a contents or search jump).
+    private var returnPageID: Int? {
+        guard let target = narrationReturnTarget, let offset = target.characterOffset else { return nil }
+        return pages.first(where: {
+            $0.chapterIndex == target.chapterIndex && offset >= $0.chapterStartOffset &&
+            offset < max($0.chapterEndOffset, $0.chapterStartOffset + 1)
+        })?.id
+    }
+
+    /// Brings a slice that is not on screen next to the viewport's centre,
+    /// always on the far side of it, so the line is still ahead in the
+    /// direction of travel. The text view then eases the rest of the way:
+    /// one motion, never back and forth. A distant slice is reached at once;
+    /// animating through hundreds of lazily built slices would stutter.
+    private func travel(_ proxy: ScrollViewProxy, to id: Int, returnID: UUID?) {
+        let reference = leadingID ?? pageIndex
+        let forward = id > (visibleIDs.max() ?? reference)
+        let neighbour = min(max(forward ? id - 1 : id + 1, 0), max(pages.count - 1, 0))
+        let distance = abs(id - (forward ? visibleIDs.max() ?? reference : visibleIDs.min() ?? reference))
+        let token = UUID()
+        travelID = token
+        let finish = {
+            guard travelID == token else { return }
+            travelID = nil
+            if let returnID, narrationReturnTarget?.id == returnID {
+                armedReturn = (returnID, reduceMotion ? .instant : .settle)
+            }
+        }
+        if reduceMotion || distance > 4 {
+            proxy.scrollTo(neighbour, anchor: .center)
+            // Let the lazy stack lay out the destination before it is asked
+            // to place its line.
+            DispatchQueue.main.async { finish() }
+        } else {
+            withAnimation(.easeIn(duration: 0.3)) {
+                proxy.scrollTo(neighbour, anchor: .center)
+            } completion: {
+                finish()
+            }
+        }
+    }
 
     private func report(_ id: Int) {
         // Ignore stale visibility reports while an explicit range jump is
@@ -138,10 +219,14 @@ struct ContinuousReaderContent: View {
     }
 
     private func scrollRequest(for page: ReaderPage) -> ReaderTextScrollRequest? {
-        guard axis == .vertical, let target = narrationReturnTarget,
+        // Only once the slice is ready: a request seen while the column is
+        // still travelling would start a second, competing move.
+        guard axis == .vertical, let target = narrationReturnTarget, let armedReturn,
+              armedReturn.id == target.id,
               target.chapterIndex == page.chapterIndex, let offset = target.characterOffset,
               offset >= page.chapterStartOffset, offset < page.chapterEndOffset else { return nil }
-        return ReaderTextScrollRequest(id: target.id, range: NSRange(location: offset, length: 1))
+        return ReaderTextScrollRequest(id: target.id, range: NSRange(location: offset, length: 1),
+                                       motion: armedReturn.motion)
     }
 
     @ViewBuilder
@@ -154,10 +239,16 @@ struct ContinuousReaderContent: View {
                 horizontalInset: style.margin,
                 fillsProposedHeight: axis == .horizontal,
                 accessibilityLabel: "\(page.chapterTitle), part \(page.pageIndexInChapter + 1) of \(max(page.pagesInChapter, 1))",
-                narrationFollowRange: page.id == narrationPageID ? narrationRange : nil,
+                narrationFollowRange: travelID == nil && page.id == narrationPageID ? narrationRange : nil,
                 scrollRequest: scrollRequest(for: page),
+                animatesFollow: settled,
                 onScrollRequestHandled: { id in
-                    if narrationReturnTarget?.id == id { narrationReturnTarget = nil }
+                    guard narrationReturnTarget?.id == id else { return }
+                    armedReturn = nil
+                    narrationReturnTarget = nil
+                    // The page index was moved to the line's slice without
+                    // scrolling; report the slice really at the top again.
+                    if let first = visibleIDs.min() { report(atEnd ? pages.indices.last ?? first : first) }
                 },
                 onWordTap: { offset in onWordTap(page.chapterIndex, offset) },
                 onHighlight: { range, color in onHighlight(page.chapterIndex, range, color) },

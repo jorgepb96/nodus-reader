@@ -222,6 +222,18 @@ struct PDFReflowView: View {
     @State private var showImages = true
     @State private var skipHeaders = true
     @State private var atEnd = false
+    /// Pages on screen: a line on one of them is reached with one glide.
+    @State private var visiblePages: Set<Int> = []
+    /// The explicit return whose page is ready to centre its line, and how.
+    @State private var armedReturn: (id: UUID, motion: ReaderScrollMotion)?
+    @State private var startedReturn: UUID?
+    /// While the reflow travels to a page off screen the line follow waits,
+    /// so two owners never move the offset at once.
+    @State private var travelID: UUID?
+    /// False for a moment after the reflow appears: the first positioning
+    /// lands at once instead of sliding from the top of a page.
+    @State private var settled = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// The book's own typography when it has one, the global one otherwise.
     private var typography: ReaderTypography {
@@ -280,10 +292,8 @@ struct PDFReflowView: View {
             // and made the reflow bounce until the reader scrolled by hand;
             // only a seek to a distant page needs a jump.
             let page = playback.chapters[chapter].id
-            let pages = document.pages
-            guard let narrated = pages.firstIndex(where: { $0.pageIndex == page }) else { return }
-            let visible = pages.lastIndex(where: { $0.pageIndex <= pdfPageIndex }) ?? 0
-            if abs(narrated - visible) > 1 { jumpToPage = page }
+            guard document.pages.contains(where: { $0.pageIndex == page }) else { return }
+            if !visiblePages.contains(page) { jumpToPage = page }
         }
         .sheet(isPresented: $showSourceSheet) {
             NavigationStack {
@@ -375,6 +385,7 @@ struct PDFReflowView: View {
                 // A bound top anchor reasserts itself as lazy block heights
                 // change and fights the text view's line-by-line narration follow.
                 .onScrollTargetVisibilityChange(idType: Int.self, threshold: 0.01) { ids in
+                    visiblePages = Set(ids)
                     guard narrationReturnTarget == nil else { return }
                     guard let first = ids.min() else { return }
                     pdfPageIndex = atEnd ? document.pages.last?.pageIndex ?? first : first
@@ -389,7 +400,10 @@ struct PDFReflowView: View {
                 // the reflow scrollbar when scroll bars always show.
                 .scrollIndicators(.never)
                 .onScrollPhaseChange { _, phase in
-                    if phase == .tracking || phase == .interacting || phase == .decelerating {
+                    // Only a real touch suspends the follow, as in the
+                    // continuous reader: deceleration also follows the
+                    // narration's own moves and stopped auto-scroll by itself.
+                    if phase == .tracking || phase == .interacting {
                         onManualNavigation?()
                     }
                 }
@@ -413,14 +427,33 @@ struct PDFReflowView: View {
                     // Switching from Original keeps the reading position.
                     scroll(proxy, to: pdfPageIndex, in: document)
                 }
+                .task {
+                    try? await Task.sleep(for: .milliseconds(450))
+                    settled = true
+                }
                 .onChange(of: jumpToPage, initial: true) { _, target in
                     // Explicit navigation is a one-shot jump; narration owns
                     // the offset between jumps, just as in the continuous reader.
                     guard let target else { return }
                     let forward = target > pdfPageIndex
-                    scroll(proxy, to: target, forward: forward, in: document)
-                    pdfPageIndex = reflowPage(for: target, forward: forward, in: document) ?? target
+                    let page = reflowPage(for: target, forward: forward, in: document) ?? target
                     jumpToPage = nil
+                    if let pending = narrationReturnTarget, pending.chapterIndex == page {
+                        // Return to narration, a note or a search match: the
+                        // line itself is placed, without first snapping the
+                        // top of its page into view.
+                        startReturn(proxy, pending, document: document)
+                    } else if narrationReturnTarget == nil, narratedPage == page,
+                              followState?.isSuspended != true, typography.autoScrollNarration {
+                        travel(proxy, to: page, forward: forward, returnID: nil, document: document)
+                    } else {
+                        scroll(proxy, to: target, forward: forward, in: document)
+                    }
+                    pdfPageIndex = page
+                }
+                .onChange(of: narrationReturnTarget?.id) { _, _ in
+                    guard let pending = narrationReturnTarget, jumpToPage == nil else { return }
+                    startReturn(proxy, pending, document: document)
                 }
             }
         } else {
@@ -460,13 +493,64 @@ struct PDFReflowView: View {
         playback.activeBook?.id == book.id && playback.mode != .read
     }
 
+    /// Places an explicit return's line in the middle of the reflow: one
+    /// glide when its page is on screen (nothing at all when the line is
+    /// already centred), otherwise a travel and then the same glide.
+    private func startReturn(_ proxy: ScrollViewProxy, _ target: ReaderNavigationTarget,
+                             document: PDFReflowDocument) {
+        guard startedReturn != target.id else { return }
+        startedReturn = target.id
+        let page = target.chapterIndex
+        if !settled {
+            scroll(proxy, to: page, in: document)
+            armedReturn = (target.id, .instant)
+        } else if visiblePages.contains(page) {
+            armedReturn = (target.id, .smooth)
+        } else {
+            travel(proxy, to: page, forward: page > (visiblePages.max() ?? pdfPageIndex),
+                   returnID: target.id, document: document)
+        }
+    }
+
+    /// Brings a page that is off screen into view from the side the reader
+    /// is travelling towards, so the line is still ahead and the final glide
+    /// continues in the same direction. Distant pages are reached at once.
+    private func travel(_ proxy: ScrollViewProxy, to page: Int, forward: Bool, returnID: UUID?,
+                        document: PDFReflowDocument) {
+        let order = document.pages.map(\.pageIndex)
+        let destination = order.firstIndex(of: page) ?? 0
+        let edge = forward ? (visiblePages.max() ?? pdfPageIndex) : (visiblePages.min() ?? pdfPageIndex)
+        let distance = abs(destination - (order.firstIndex(of: edge) ?? destination))
+        let token = UUID()
+        travelID = token
+        let finish = {
+            guard travelID == token else { return }
+            travelID = nil
+            if let returnID, narrationReturnTarget?.id == returnID {
+                armedReturn = (returnID, reduceMotion ? .instant : .settle)
+            }
+        }
+        let anchor: UnitPoint = forward ? .top : .bottom
+        if reduceMotion || distance > 3 {
+            proxy.scrollTo(page, anchor: anchor)
+            DispatchQueue.main.async { finish() }
+        } else {
+            withAnimation(.easeIn(duration: 0.3)) {
+                proxy.scrollTo(page, anchor: anchor)
+            } completion: {
+                finish()
+            }
+        }
+    }
+
     private var narratedPage: Int? {
         guard playback.chapters.indices.contains(playback.chapterIndex) else { return nil }
         return playback.chapters[playback.chapterIndex].id
     }
 
     private func narrationFollowRange(page: Int, text: String) -> NSRange? {
-        guard followState?.isSuspended != true, search?.isPresented != true else { return nil }
+        guard followState?.isSuspended != true, search?.isPresented != true,
+              travelID == nil, narrationReturnTarget == nil else { return nil }
         guard typography.autoScrollNarration, isNarratingHere,
               playback.isPlaying,
               narratedPage == page,
@@ -539,11 +623,19 @@ struct PDFReflowView: View {
             accessibilityLabel: nil,
             narrationFollowRange: narrationFollowRange(page: pageIndex, text: pageText),
             scrollRequest: narrationReturnTarget.flatMap { target in
-                guard target.chapterIndex == pageIndex, let offset = target.characterOffset else { return nil }
-                return ReaderTextScrollRequest(id: target.id, range: NSRange(location: offset, length: 1))
+                guard target.chapterIndex == pageIndex, let offset = target.characterOffset,
+                      let armedReturn, armedReturn.id == target.id else { return nil }
+                return ReaderTextScrollRequest(id: target.id, range: NSRange(location: offset, length: 1),
+                                               motion: armedReturn.motion)
             },
+            animatesFollow: settled,
             onScrollRequestHandled: { id in
-                if narrationReturnTarget?.id == id { narrationReturnTarget = nil }
+                guard narrationReturnTarget?.id == id else { return }
+                armedReturn = nil
+                narrationReturnTarget = nil
+                if let first = visiblePages.min() {
+                    pdfPageIndex = atEnd ? job.document?.pages.last?.pageIndex ?? first : first
+                }
             },
             onWordTap: { offset in onStartNarration(pageIndex, offset) },
             onHighlight: { range, color in
