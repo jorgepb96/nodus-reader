@@ -113,6 +113,14 @@ final class GeneratedLibrary {
         pieces.filter { $0.layer == layer && $0.style == style && $0.mood == mood && $0.bed == bed }.count
     }
 
+    /// Pieces usable for a request: its style or neutral, same mood (or bed).
+    func usableCount(for request: PromptRequest) -> Int {
+        pieces.filter {
+            $0.layer == request.layer && $0.mood == request.mood && $0.bed == request.bed
+                && ($0.style == request.style || $0.style == .neutral)
+        }.count
+    }
+
     var installedMoods: Set<MusicMood> { Set(pieces.compactMap(\.mood)) }
     var installedBeds: Set<BaseAmbience> { Set(pieces.compactMap(\.bed)) }
 

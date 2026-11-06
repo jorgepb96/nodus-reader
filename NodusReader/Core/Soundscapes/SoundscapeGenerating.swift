@@ -23,7 +23,9 @@ struct SA3Generator: SoundscapeGenerating {
     let engine: SA3Engine
 
     init(directory: SA3ModelDirectory) {
-        engine = SA3Engine(directory: directory, residency: .staged)
+        // Freed weights must return to the system: a small MLX buffer cache, set once when
+        // AI soundscapes are first used (it also applies to the other MLX users).
+        engine = SA3Engine(directory: directory, residency: .staged, cacheLimitBytes: 64 << 20)
     }
 
     func render(_ job: GenerationJob, recipe: GenerationRecipe, seed: UInt64) async throws -> RenderedPiece {

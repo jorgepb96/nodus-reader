@@ -3,6 +3,9 @@ import AVFoundation
 import Foundation
 import Observation
 #if os(iOS)
+import os
+#endif
+#if os(iOS)
 import UIKit
 #endif
 
@@ -31,6 +34,11 @@ final class ImmersiveAudioController {
 
     let preferences: ImmersiveAudioPreferences
     let library: ImmersiveAudioLibrary
+    /// AI soundscapes: the models (per device) and the generated pieces (shared by books).
+    let soundscapeModels: SoundscapeModels
+    let generated: GeneratedLibrary
+    /// What AI generation is doing.
+    private(set) var generation: GenerationStatus = .idle
     @ObservationIgnored private let playback: PlaybackController
     @ObservationIgnored private let models: ModelManager
     @ObservationIgnored private let store: SceneMapStore
@@ -55,6 +63,12 @@ final class ImmersiveAudioController {
     private(set) var lastReason = ""
 
     @ObservationIgnored private var engine: ImmersiveAudioEngine?
+    @ObservationIgnored private var worker: GenerationWorker?
+    @ObservationIgnored private let prompts = try? PromptLibrary.bundled()
+    @ObservationIgnored private var isPreparingPack = false
+    @ObservationIgnored private var packTotal = 0
+    @ObservationIgnored private var packDone = 0
+    @ObservationIgnored private var lastPlan = Date.distantPast
     @ObservationIgnored private var director = AmbienceDirector()
     @ObservationIgnored private var tracker = PositionTracker()
     @ObservationIgnored private var clock = EngagedClock()
@@ -85,9 +99,14 @@ final class ImmersiveAudioController {
     static let tickInterval: TimeInterval = 15
 
     init(preferences: ImmersiveAudioPreferences, library: ImmersiveAudioLibrary, playback: PlaybackController,
-         models: ModelManager, store: SceneMapStore = SceneMapStore()) {
+         models: ModelManager, store: SceneMapStore = SceneMapStore(),
+         soundscapeModels: SoundscapeModels? = nil, generated: GeneratedLibrary? = nil) {
         self.preferences = preferences
         self.library = library
+        let soundscapes = library.root.deletingLastPathComponent().appendingPathComponent("Soundscapes", isDirectory: true)
+        self.soundscapeModels = soundscapeModels ?? SoundscapeModels(root: soundscapes.appendingPathComponent("Models", isDirectory: true))
+        self.generated = generated ?? GeneratedLibrary(root: soundscapes.appendingPathComponent("Generated", isDirectory: true))
+        self.generated.budgetBytes = Int64(preferences.generatedBudgetMB) * 1_000_000
         self.playback = playback
         self.models = models
         self.store = store
@@ -99,6 +118,8 @@ final class ImmersiveAudioController {
         observePreferences()
         observeSystem()
         library.onInstalledChanged = { [weak self] in self?.libraryChanged() }
+        self.soundscapeModels.onChange = { [weak self] in self?.libraryChanged() }
+        self.generated.onChange = { [weak self] in self?.updateStatus() }
     }
 
     // MARK: Reader
@@ -140,7 +161,10 @@ final class ImmersiveAudioController {
         synchronizeBook()
         guard book.id == bookID else { return }
         if policy.readerOpen { apply(policy.handle(.readerClosed)) }
-        if !narrationDrivesPosition { scheduler?.stop() }
+        if !narrationDrivesPosition {
+            scheduler?.stop()
+            if !isPreparingPack { cancelGeneration() }
+        }
         // Keep the engine a little in case the reader comes straight back.
         shutdownTask?.cancel()
         shutdownTask = Task { [weak self] in
@@ -188,6 +212,7 @@ final class ImmersiveAudioController {
     }
 
     private func resetSession() {
+        cancelGeneration()
         scheduler?.stop()
         scheduler = nil
         director = AmbienceDirector()
@@ -269,6 +294,199 @@ final class ImmersiveAudioController {
         #endif
     }
 
+    // MARK: AI soundscapes
+
+    private var aiSource: Bool { preferences.source == .ai }
+
+    /// Something can play: downloaded packs, or (AI) generated pieces or models to make them.
+    var hasSounds: Bool {
+        aiSource ? (generated.hasAnything || soundscapeModels.anyInstalled || library.hasAnything) : library.hasAnything
+    }
+
+    /// Moods the director may choose: with AI and the Music model, every mood can be made.
+    private var availableMoods: Set<MusicMood> {
+        guard aiSource else { return library.installedMoods }
+        return soundscapeModels.isInstalled(.music) ? Set(MusicMood.allCases)
+            : generated.installedMoods.union(library.installedMoods)
+    }
+
+    private var availableBeds: Set<BaseAmbience> {
+        guard aiSource else { return library.installedBeds }
+        return soundscapeModels.isInstalled(.sfx) ? Set(BaseAmbience.allCases)
+            : generated.installedBeds.union(library.installedBeds)
+    }
+
+    private func url(for track: CatalogTrack) -> URL? {
+        track.semantics.origin == "generated" ? generated.url(for: track) : library.url(for: track)
+    }
+
+    /// The generated piece playing now (music first), for the favorite button.
+    var currentGeneratedPiece: GeneratedPiece? {
+        [musicTrack, ambienceTrack].compactMap { $0 }.first { $0.semantics.origin == "generated" }
+            .flatMap { generated.piece($0.id) }
+    }
+
+    func toggleFavoriteCurrent() {
+        guard let piece = currentGeneratedPiece else { return }
+        generated.setFavorite(piece.id, !piece.favorite)
+    }
+
+    /// Whether this book can be prepared now (AI source, a model installed, a book).
+    var canPrepareSoundscapes: Bool {
+        aiSource && soundscapeModels.anyInstalled && bookID != nil && prompts != nil && SoundscapeModels.isSupported
+            || (aiSource && bookID != nil && Self.usesFixtureGenerator)
+    }
+
+    /// The optional per-book pack, generated now with visible progress.
+    func prepareSoundscapes() {
+        guard canPrepareSoundscapes, let prompts, let worker = ensureWorker() else { return }
+        let music = soundscapeModels.isInstalled(.music) || Self.usesFixtureGenerator
+        let ambience = soundscapeModels.isInstalled(.sfx) || Self.usesFixtureGenerator
+        let jobs = SoundscapePlanner.starterPack(style: bookStyle, map: map, bookID: bookID, library: prompts,
+                                                 seed: UInt64.random(in: 1 ... UInt64.max / 2),
+                                                 studyOnly: preferences.mode == .study)
+            .filter { $0.request.layer == .music ? music : ambience }
+            .map { job -> GenerationJob in var job = job; job.priority += 10; return job }
+        guard !jobs.isEmpty else { return }
+        isPreparingPack = true
+        packTotal = jobs.count
+        packDone = 0
+        generation = .preparing(done: 0, total: jobs.count)
+        Task { await worker.replace(with: jobs) }
+    }
+
+    func cancelPreparation() {
+        cancelGeneration()
+    }
+
+    /// Lifts a pause after repeated failures.
+    func resumeGeneration() {
+        guard let worker else { return }
+        generation = .idle
+        Task { await worker.resume() }
+        planSoundscapes(force: true)
+    }
+
+    private func cancelGeneration(keepingPack: Bool = false) {
+        if let worker { Task { await worker.cancelAll() } }
+        if isPreparingPack, !keepingPack {
+            isPreparingPack = false
+        }
+        if !isPreparingPack, case .paused = generation {} else if !isPreparingPack { generation = .idle }
+    }
+
+    /// Plans what to generate ahead while a book's soundscape plays (at most every 15 s
+    /// unless forced). The director is untouched: this only prepares what it may choose.
+    private func planSoundscapes(force: Bool) {
+        guard aiSource, preferences.isEnabled, policy.shouldPlay, bookID != nil, !isPreparingPack, appActive,
+              let prompts else { return }
+        if case .paused = generation { return }
+        detectBookStyleIfNeeded()
+        let music = (soundscapeModels.isInstalled(.music) || Self.usesFixtureGenerator) && preferences.musicEnabled
+        let ambience = (soundscapeModels.isInstalled(.sfx) || Self.usesFixtureGenerator) && preferences.ambienceEnabled
+        guard music || ambience else { return }
+        guard force || Date().timeIntervalSince(lastPlan) >= 15 else { return }
+        lastPlan = Date()
+        guard let worker = ensureWorker() else { return }
+        let generated = generated
+        let used = Set(generated.pieces.filter { piece in bookID.map(piece.bookIDs.contains) ?? false }.map(\.promptID))
+        let input = PlannerInput(map: map, position: storyPosition, current: director.current, style: bookStyle,
+                                 intensity: preferences.intensity, inventory: { generated.usableCount(for: $0) },
+                                 used: used, studyOnly: preferences.mode == .study, bookID: bookID,
+                                 musicEnabled: music, ambienceEnabled: ambience)
+        let jobs = SoundscapePlanner.plan(input, library: prompts, seed: UInt64.random(in: 1 ... UInt64.max / 2))
+        Task { await worker.replace(with: jobs) }
+    }
+
+    static var usesFixtureGenerator: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-NodusSoundscapeFixtureGenerator")
+        #else
+        false
+        #endif
+    }
+
+    private func ensureWorker() -> GenerationWorker? {
+        if let worker { return worker }
+        let generator: SoundscapeGenerating
+        if Self.usesFixtureGenerator {
+            generator = FixtureGenerator(delay: 1)
+        } else {
+            guard SoundscapeModels.isSupported else { return nil }
+            generator = SA3Generator(directory: soundscapeModels.directory)
+        }
+        let worker = GenerationWorker(
+            generator: generator, library: generated,
+            admission: { [weak self] in
+                await self?.admissionState() ?? AdmissionState(thermal: .nominal, lowPower: false, foreground: false,
+                                                               narrationWaiting: false, analysisRunning: false,
+                                                               availableMemory: nil)
+            },
+            onEvent: { [weak self] event in Task { @MainActor in self?.handle(event) } })
+        self.worker = worker
+        return worker
+    }
+
+    private func admissionState() async -> AdmissionState {
+        let analysing = await OnDeviceModelGate.shared.isBusy
+        var memory: Int64?
+        #if os(iOS)
+        memory = Int64(os_proc_available_memory())
+        #endif
+        let info = ProcessInfo.processInfo
+        return AdmissionState(thermal: info.thermalState, lowPower: info.isLowPowerModeEnabled, foreground: appActive,
+                              narrationWaiting: playback.isPlaying && playback.isLoading, analysisRunning: analysing,
+                              availableMemory: memory)
+    }
+
+    private func handle(_ event: WorkerEvent) {
+        switch event {
+        case .started(let job):
+            if isPreparingPack {
+                generation = .preparing(done: packDone, total: packTotal)
+            } else {
+                generation = .composing(job.request.mood?.label ?? job.request.bed?.label ?? "")
+            }
+        case .finished(let piece):
+            generated.evict(activeMoods: Set([director.current?.music].compactMap { $0 }),
+                            activeBeds: Set([director.current?.base].compactMap { $0 }))
+            packProgressed()
+            // A piece for what the director wants but could not play yet starts now.
+            if let mood = piece.mood, mood == director.current?.music,
+               musicTrack?.semantics.origin != "generated" || musicTrack?.moods.contains(mood) != true {
+                startMusic(mood, crossfade: preferences.crossfade, avoidSubPool: nil)
+            }
+            if let bed = piece.bed, bed == director.current?.base,
+               ambienceTrack?.semantics.origin != "generated" || ambienceTrack?.bed != bed {
+                startAmbience(bed, crossfade: preferences.crossfade)
+            }
+            planSoundscapes(force: true)
+        case .rejected, .failed:
+            packProgressed()
+        case .waiting:
+            break
+        case .paused(let reason):
+            isPreparingPack = false
+            generation = .paused(reason)
+        }
+        updateStatus()
+    }
+
+    private func packProgressed() {
+        guard isPreparingPack else {
+            generation = .idle
+            return
+        }
+        packDone += 1
+        if packDone >= packTotal {
+            isPreparingPack = false
+            generation = .idle
+            planSoundscapes(force: true)
+        } else {
+            generation = .preparing(done: packDone, total: packTotal)
+        }
+    }
+
     // MARK: Style
 
     /// Sets this book's style; nil returns to the detected one.
@@ -276,6 +494,7 @@ final class ImmersiveAudioController {
         bookPreferences.styleOverride = style
         if let bookID { store.savePreferences(bookPreferences, bookID: bookID) }
         refreshBookStyle()
+        planSoundscapes(force: true)
     }
 
     private func refreshBookStyle() {
@@ -314,6 +533,7 @@ final class ImmersiveAudioController {
     private func publish(map: SceneMap?) {
         self.map = map
         refreshBookStyle()
+        planSoundscapes(force: false)
         documentKind = map?.profile?.kind
         analysedWindows = map?.analysedCount ?? 0
         totalWindows = map?.windows.count ?? 0
@@ -393,8 +613,8 @@ final class ImmersiveAudioController {
         }
         input.musicEnabled = preferences.musicEnabled
         input.ambienceEnabled = preferences.ambienceEnabled
-        input.installedMoods = library.installedMoods
-        input.installedBeds = library.installedBeds.union([.none])
+        input.installedMoods = availableMoods
+        input.installedBeds = availableBeds.union([.none])
         input.studyBlock = preferences.studyBlockMinutes > 0 ? TimeInterval(preferences.studyBlockMinutes * 60) : nil
         input.crossfade = preferences.crossfade
         return input
@@ -408,6 +628,7 @@ final class ImmersiveAudioController {
         applyDecision(decision)
         if let last = director.log.last { lastReason = last.reason }
         atmosphere = director.current
+        planSoundscapes(force: false)
     }
 
     private func applyDecision(_ decision: AmbienceDirector.Decision) {
@@ -429,37 +650,70 @@ final class ImmersiveAudioController {
             return
         }
         let now = clock.engaged
-        let pool = library.musicTracks(mood)
-        guard let track = TrackSelector.next(from: pool, current: musicTrack?.id, history: history, now: now,
-                                             maximumEnergy: preferences.intensity.maximumEnergy,
-                                             studyOnly: preferences.mode == .study, avoidSubPool: avoidSubPool),
-              let url = library.url(for: track) else {
+        let favorites = generated.favoriteIDs
+        let decision = SoundscapeSourcePicker.decide(
+            source: preferences.source, generated: preferences.source == .ai ? generated.musicTracks(mood, style: bookStyle) : [],
+            downloaded: library.musicTracks(mood), currentID: musicTrack?.id
+        ) { pool in
+            TrackSelector.next(from: pool, current: self.musicTrack?.id, history: self.history, now: now,
+                               maximumEnergy: self.preferences.intensity.maximumEnergy,
+                               studyOnly: self.preferences.mode == .study, avoidSubPool: avoidSubPool, favorites: favorites)
+        }
+        switch decision {
+        case .keep:
+            planSoundscapes(force: true)
+        case .stop:
             engine.stop(.music, fadeOut: crossfade)
             musicTrack = nil
-            return
+        case .play(let track):
+            guard let url = url(for: track) else {
+                engine.stop(.music, fadeOut: crossfade)
+                musicTrack = nil
+                return
+            }
+            history.played(track.id, at: now)
+            if track.semantics.origin == "generated" { generated.markPlayed(track.id) }
+            musicTrack = track
+            engine.play(.init(id: track.id, url: url, layer: .music, loop: track.audio.isLoop,
+                              tailStart: track.audio.tailStartSeconds, gain: Self.gain(for: track)),
+                        crossfade: crossfade)
         }
-        history.played(track.id, at: now)
-        musicTrack = track
-        engine.play(.init(id: track.id, url: url, layer: .music, loop: track.audio.isLoop,
-                          tailStart: track.audio.tailStartSeconds, gain: Self.gain(for: track)),
-                    crossfade: crossfade)
     }
 
     private func startAmbience(_ bed: BaseAmbience, crossfade: TimeInterval) {
         guard let engine else { return }
-        guard bed != .none,
-              let track = TrackSelector.next(from: library.ambienceTracks(bed), current: ambienceTrack?.id,
-                                             history: history, now: clock.engaged),
-              let url = library.url(for: track) else {
+        guard bed != .none else {
             engine.stop(.ambience, fadeOut: crossfade)
             ambienceTrack = nil
             return
         }
-        history.played(track.id, at: clock.engaged)
-        ambienceTrack = track
-        engine.play(.init(id: track.id, url: url, layer: .ambience, loop: true, tailStart: nil,
-                          gain: Self.gain(for: track)),
-                    crossfade: crossfade)
+        let now = clock.engaged
+        let favorites = generated.favoriteIDs
+        let decision = SoundscapeSourcePicker.decide(
+            source: preferences.source, generated: preferences.source == .ai ? generated.ambienceTracks(bed, style: bookStyle) : [],
+            downloaded: library.ambienceTracks(bed), currentID: ambienceTrack?.id
+        ) { pool in
+            TrackSelector.next(from: pool, current: self.ambienceTrack?.id, history: self.history, now: now, favorites: favorites)
+        }
+        switch decision {
+        case .keep:
+            planSoundscapes(force: true)
+        case .stop:
+            engine.stop(.ambience, fadeOut: crossfade)
+            ambienceTrack = nil
+        case .play(let track):
+            guard let url = url(for: track) else {
+                engine.stop(.ambience, fadeOut: crossfade)
+                ambienceTrack = nil
+                return
+            }
+            history.played(track.id, at: now)
+            if track.semantics.origin == "generated" { generated.markPlayed(track.id) }
+            ambienceTrack = track
+            engine.play(.init(id: track.id, url: url, layer: .ambience, loop: true, tailStart: nil,
+                              gain: Self.gain(for: track)),
+                        crossfade: crossfade)
+        }
     }
 
     /// Attenuates a file mastered louder than its layer's target.
@@ -485,7 +739,7 @@ final class ImmersiveAudioController {
         guard let transition else { return }
         switch transition {
         case .play(let fade):
-            guard library.hasAnything else {
+            guard hasSounds else {
                 updateStatus()
                 return
             }
@@ -577,7 +831,7 @@ final class ImmersiveAudioController {
     private func updateStatus() {
         if !preferences.isEnabled { status = .off; return }
         if case .unavailable = status, engineFailed { return }
-        if !library.hasAnything { status = .needsPacks; return }
+        if !hasSounds { status = .needsPacks; return }
         if bookID == nil || !policy.readerOpen && policy.narration != .playing { status = .waiting; return }
         status = policy.shouldPlay ? .playing : .paused
     }
@@ -641,6 +895,8 @@ final class ImmersiveAudioController {
             _ = preferences.ambienceEnabled
             _ = preferences.defaultAtmosphere
             _ = preferences.intensity
+            _ = preferences.source
+            _ = preferences.generatedBudgetMB
         } onChange: { [weak self] in
             Task { @MainActor in
                 self?.preferencesChanged()
@@ -650,6 +906,8 @@ final class ImmersiveAudioController {
     }
 
     private func preferencesChanged() {
+        generated.budgetBytes = Int64(preferences.generatedBudgetMB) * 1_000_000
+        if preferences.source != .ai { cancelGeneration() }
         policy.pausePolicy = preferences.pausePolicy
         if policy.enabled != preferences.isEnabled {
             apply(policy.handle(.enabled(preferences.isEnabled)))
@@ -664,6 +922,7 @@ final class ImmersiveAudioController {
         if preferences.mode == .automatic { startAnalysisIfNeeded() } else { scheduler?.stop() }
         step(reason: "settings")
         updateStatus()
+        if policy.shouldPlay, engine?.isRunning != true, hasSounds { apply(.play(fadeIn: 2)) }
     }
 
     /// Packs were installed or deleted: start playing if waiting for them.
@@ -772,7 +1031,18 @@ final class ImmersiveAudioController {
 
     private func observeSystem() {
         let center = NotificationCenter.default
+        observers.append(center.addObserver(forName: ProcessInfo.thermalStateDidChangeNotification, object: nil,
+                                            queue: .main) { [weak self] _ in
+            let state = ProcessInfo.processInfo.thermalState
+            Task { @MainActor in
+                if state == .serious || state == .critical { self?.cancelGeneration(keepingPack: true) }
+            }
+        })
         #if os(iOS)
+        observers.append(center.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil,
+                                            queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.cancelGeneration(keepingPack: true) }
+        })
         observers.append(center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil,
                                             queue: .main) { [weak self] _ in
             Task { @MainActor in self?.appActiveChanged(false) }
@@ -810,6 +1080,8 @@ final class ImmersiveAudioController {
 
     private func appActiveChanged(_ active: Bool) {
         appActive = active
+        // No GPU work in the background: a piece in progress is cancelled.
+        if !active { cancelGeneration() }
         if active {
             lastActivity = Date()
             refreshAvailability(language: book?.language)
