@@ -39,6 +39,9 @@ struct MiniPlayerBar: View {
     @Environment(PlaybackController.self) private var playback
     @Environment(\.nodusPalette) private var palette
 
+    /// The iOS 26 tab-bar accessory already draws the glass container around
+    /// this view. A second capsule inside it left an empty rim at both ends.
+    var showsBackground = true
     var onOpen: () -> Void
     @State private var readingBook: Book?
 
@@ -117,9 +120,17 @@ struct MiniPlayerBar: View {
         .padding(.leading, 9)
         .padding(.trailing, 8)
         .frame(height: 58)
-        .background(palette.panelRaised, in: Capsule())
-        .overlay(Capsule().stroke(palette.accent.opacity(0.14), lineWidth: 1))
-        .shadow(color: palette.shadow, radius: 16, y: 8)
+        .background {
+            if showsBackground {
+                Capsule().fill(palette.panelRaised)
+            }
+        }
+        .overlay {
+            if showsBackground {
+                Capsule().stroke(palette.accent.opacity(0.14), lineWidth: 1)
+            }
+        }
+        .shadow(color: showsBackground ? palette.shadow : .clear, radius: 16, y: 8)
         .readerCover(item: $readingBook)
     }
 }

@@ -29,7 +29,8 @@ enum SpeechWordAligner {
     /// Narration never waits for the speech model to download: the download
     /// is requested in the background and used once it is installed.
     static func align(text: String, samples: [Float], sampleRate: Double,
-                      language: String) async -> [NarrationWordTiming]? {
+                      language: String,
+                      timeLimit: Duration = SpeechWordAligner.timeLimit) async -> [NarrationWordTiming]? {
         guard #available(iOS 26.0, macOS 26.0, *), isEnabled, !samples.isEmpty else { return nil }
         let words = AudioWordAligner.words(in: text)
         guard words.count > 1 else { return nil }

@@ -97,6 +97,20 @@ struct ReaderView: View {
         playback.activeBook?.id == book.id && playback.mode != .read
     }
 
+    /// Read & Listen always follows the narration. A plain Listen session
+    /// follows only when Auto-scroll while listening asks for it, so opening
+    /// the reader from the player also keeps the spoken line in view.
+    private var narrationFollowIntent: Bool {
+        narrationActive && playback.isPlaying &&
+            (playback.mode == .readAndListen || typography.autoScrollNarration)
+    }
+
+    /// Auto-scroll is a continuous vertical column, whatever flow the reader
+    /// was using for silent reading.
+    private var usesNarrationScrolling: Bool {
+        narrationActive && typography.autoScrollNarration
+    }
+
     private var paginationColumns: Int {
         #if os(macOS)
         2
@@ -117,8 +131,7 @@ struct ReaderView: View {
     #if os(macOS)
     private var effectiveReadingFlow: ReadingFlow {
         if book.format == .pdf { return pdfMode == .original ? .paged : .scrollVertical }
-        return narrationActive && playback.mode == .readAndListen && typography.autoScrollNarration
-            ? .scrollVertical : typography.flow
+        return usesNarrationScrolling ? .scrollVertical : typography.flow
     }
 
     private var keyboardNavigationEnabled: Bool {
@@ -330,9 +343,9 @@ struct ReaderView: View {
                 searchRanges: search.isPresented ? search.rangesByChapter : [:],
                 currentSearchMatch: search.isPresented ? search.currentMatch : nil,
                 columns: paginationColumns,
-                followNarration: narrationActive && playback.mode == .readAndListen && playback.isPlaying &&
+                followNarration: narrationFollowIntent &&
                     !followState.isSuspended && !search.isPresented && !showContents,
-                usesNarrationScrolling: narrationActive && playback.mode == .readAndListen && typography.autoScrollNarration,
+                usesNarrationScrolling: usesNarrationScrolling,
                 onWordTap: { chapter, offset in startNarration(chapter: chapter, offset: offset) },
                 onHighlight: { chapter, range, color in
                     presentAnnotation(chapter: chapter, range: range, color: color, note: false)
@@ -494,7 +507,7 @@ struct ReaderView: View {
     }
 
     private func suspendNarrationFollow() {
-        if narrationActive && playback.mode == .readAndListen {
+        if narrationActive && (playback.mode == .readAndListen || typography.autoScrollNarration) {
             followState.suspend()
         } else {
             // Browsing before the first Listen must not disable that future
@@ -741,6 +754,9 @@ struct ReaderView: View {
         } else if playback.activeBook?.id == book.id,
                   playback.narrationFinished || readerShowsPlaybackPosition || book.locator.narrationPosition != nil {
             if playback.narrationFinished, book.format == .pdf { pdfMode = .intelligent }
+            // Play is an explicit request to follow the narration again after
+            // the reader browsed away from it.
+            followState.resume()
             playback.setMode(.readAndListen)
         } else {
             prepareReaderNarration(openPlayer: false)
@@ -776,6 +792,9 @@ struct ReaderView: View {
             offset = page.chapterStartOffset
         }
         preparingNarration = true
+        // A new explicit start always follows again, even if a previous
+        // session was left suspended by manual browsing.
+        followState.resume()
         let resumesSavedPosition = !hasTurnedPage && book.locator.narrationPosition != nil
         Task { @MainActor in
             defer { preparingNarration = false }
@@ -906,7 +925,9 @@ struct ReaderView: View {
             if book.format == .pdf {
                 pdfPageIndex = saved.chapterIndex
                 pdfJumpPage = saved.chapterIndex
-                if book.readingMode == .readAndListen { pdfMode = .intelligent }
+                if book.readingMode == .readAndListen || typography.autoScrollNarration {
+                    pdfMode = .intelligent
+                }
             } else {
                 navigationTarget = ReaderNavigationTarget(chapterIndex: saved.chapterIndex,
                                                           characterOffset: saved.characterOffset)
@@ -922,7 +943,10 @@ struct ReaderView: View {
             let page = playback.chapters[chapter].id
             pdfPageIndex = page
             pdfJumpPage = page
-            if playback.mode == .readAndListen { pdfMode = .intelligent }
+            if playback.mode == .readAndListen ||
+                (playback.mode != .read && typography.autoScrollNarration) {
+                pdfMode = .intelligent
+            }
             narrationReturnTarget = ReaderNavigationTarget(chapterIndex: page, characterOffset: offset)
         } else {
             let target = ReaderNavigationTarget(chapterIndex: chapter, characterOffset: offset)

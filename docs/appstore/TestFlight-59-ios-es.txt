@@ -1,0 +1,1 @@
+Compilación 59 privada. Incluye el desplazamiento automático centrado y en modo vertical, los controles del reproductor durante la reproducción, los filtros de voces desplegables, el reproductor inferior sin huecos laterales, listas de voces más fluidas y una narración con menos esperas entre frases. Valida en tu iPhone el lector, el reproductor y los filtros de voz.

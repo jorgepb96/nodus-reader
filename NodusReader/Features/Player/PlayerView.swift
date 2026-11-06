@@ -573,7 +573,11 @@ struct PlayerView: View {
                         bottom: String(localized: "To narration"), highlighted: false)
         }
         .buttonStyle(.plain)
-        .disabled(playback.currentChapterOffset == nil)
+        // Do not read currentChapterOffset here: it depends on currentWordRange,
+        // which changes on every narrated word and re-rendered the whole player
+        // at audio-frame rate, making these tiles ignore taps while playing.
+        // The action reads the current offset itself when the tile is tapped.
+        .disabled(playback.currentSentence.isEmpty)
         .accessibilityLabel("Return to narration")
         .accessibilityIdentifier("PlayerReturnToNarration")
     }
@@ -845,9 +849,11 @@ struct VoicePickerSheet: View {
     }
 
     private var filtered: [VoiceCatalog.Voice] {
+        // Decode the filter selection once instead of once per voice.
+        let activeFilters = filters
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return allVoices.filter { voice in
-            guard filters.matches(voice) else { return false }
+            guard activeFilters.matches(voice) else { return false }
             guard !trimmed.isEmpty else { return true }
             return voice.name.localizedCaseInsensitiveContains(trimmed)
                 || voice.languageName.localizedCaseInsensitiveContains(trimmed)
@@ -857,11 +863,6 @@ struct VoicePickerSheet: View {
 
     private var availableLanguages: [String] {
         VoiceCatalog.baseLanguages(of: allVoices)
-    }
-
-    /// One section per language; regional variants are shown on each row.
-    private var groupedLanguages: [String] {
-        VoiceCatalog.baseLanguages(of: filtered)
     }
 
     private var filterRow: some View {
@@ -908,6 +909,10 @@ struct VoicePickerSheet: View {
     }
 
     var body: some View {
+        // Filter and group once per body. Doing it inside every section
+        // decoded the saved filters for every voice again.
+        let visibleVoices = filtered
+        let visibleLanguages = VoiceCatalog.baseLanguages(of: visibleVoices)
         NavigationStack {
             List {
                 if bookVoiceIsMissing {
@@ -932,7 +937,7 @@ struct VoicePickerSheet: View {
                         .listRowBackground(palette.panel)
                     }
                 }
-                if filtered.isEmpty {
+                if visibleVoices.isEmpty {
                     Section {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("No voices match")
@@ -953,9 +958,9 @@ struct VoicePickerSheet: View {
                     }
                 }
 
-                ForEach(groupedLanguages, id: \.self) { language in
+                ForEach(visibleLanguages, id: \.self) { language in
                     Section(voices.languageName(for: language)) {
-                        ForEach(filtered.filter { VoiceCatalog.languageCode($0.language) == language }) { voice in
+                        ForEach(visibleVoices.filter { VoiceCatalog.languageCode($0.language) == language }) { voice in
                             Button {
                                 // Synthesis loads the model identified by this
                                 // voice without changing the global default.

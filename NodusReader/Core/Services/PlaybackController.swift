@@ -1179,9 +1179,11 @@ public final class PlaybackController {
     /// speech recognition where the system offers it, otherwise estimated from
     /// the pauses in the audio.
     private static func alignWords(text: String, samples: [Float], sampleRate: Double,
-                                   language: String) async -> [NarrationWordTiming] {
+                                   language: String,
+                                   timeLimit: Duration = SpeechWordAligner.timeLimit) async -> [NarrationWordTiming] {
         if let measured = await SpeechWordAligner.align(text: text, samples: samples,
-                                                        sampleRate: sampleRate, language: language) {
+                                                        sampleRate: sampleRate, language: language,
+                                                        timeLimit: timeLimit) {
             return measured
         }
         return await Task.detached(priority: .userInitiated) {
@@ -1235,6 +1237,13 @@ public final class PlaybackController {
         stopAudio(keepingEngine: true)
         let sentence = sentences[currentIndex]
         let text = sentence.text
+        // A prefetched sentence is already in memory. Do not flash
+        // "generating" during the handoff; only show it when synthesis is
+        // really needed.
+        let readyKey = pronunciationKey(text, voice: voice, book: book)
+        let prefetchedReady = prefetched[currentIndex].map {
+            $0.voiceID == voice.id && $0.key == readyKey
+        } ?? false
         let requested = max(offset, 0)
         let clamped = requested < (text as NSString).length ? requested : 0
         resetWordState()
@@ -1245,7 +1254,7 @@ public final class PlaybackController {
         narrationFinished = false
         chapterIndex = sentence.chapterIndex
         isPlaying = true
-        isLoading = true
+        isLoading = !prefetchedReady
         library.setReadingMode(book, mode: mode)
         saveProgress()
         updateNowPlaying()
@@ -1266,21 +1275,21 @@ public final class PlaybackController {
         guard let book = activeBook else { return }
         let expectedKey = pronunciationKey(text, voice: voice, book: book)
         var cached: CachedNarration?
-        if let ready = prefetched[index], ready.voiceID == voice.id, ready.key == pronunciationKey(text, voice: voice, book: book) {
+        if let ready = prefetched[index], ready.voiceID == voice.id, ready.key == expectedKey {
             cached = ready.narration
         }
         prefetched = prefetched.filter { $0.key > index && $0.value.voiceID == voice.id }
         var restoredTime = audioTime
         if cached == nil, audioTime != nil {
             let cache = models.narrationCache
-            let key = pronunciationKey(text, voice: voice, book: book)
-            cached = await cache.load(bookID: book.id, key: key)
+            cached = await cache.load(bookID: book.id, key: expectedKey)
             // Newly generated speech can have different timings (especially
             // on another device). Keep the word cursor if the original audio
             // has been evicted rather than seek into a different timeline.
             if cached == nil { restoredTime = nil }
         }
         if cached == nil {
+            isLoading = true
             Logger(subsystem: "ai.nodus.reader", category: "NarrationQueue").info("Waiting for uncached sentence index=\(index)")
             do {
                 cached = try await narration(for: text, voice: voice, book: book)
@@ -1346,12 +1355,20 @@ public final class PlaybackController {
     /// The cache is checked again once synthesis is free, so a sentence a
     /// prefetch has just made is not made twice.
     private func narration(for text: String, voice: VoiceCatalog.Voice,
-                           book: Book, background: Bool = false) async throws -> CachedNarration {
+                           book: Book, background: Bool = false,
+                           prefetch: Bool = false) async throws -> CachedNarration {
         let cache = models.narrationCache
         let revision = book.pronunciationsJSON
         let prepared = PronunciationTransformer.prepare(text, rules: book.pronunciations + (voice.engineRaw == "linnet" ? LinnetText.rules(text) : []))
         let key = pronunciationKey(text, voice: voice, book: book)
         if let cached = await cache.load(bookID: book.id, key: key) { return cached }
+        // Prefetch must not sit on the synthesis gate waiting for precise
+        // speech recognition: recognition normally takes 0.15–0.5 s, but it
+        // can take up to the full limit and that is exactly the small pause
+        // heard before a short next sentence. Fall back to the pause-based
+        // estimate after a shorter budget; the current sentence keeps the
+        // full precision budget.
+        let alignmentLimit: Duration = prefetch ? .milliseconds(700) : SpeechWordAligner.timeLimit
         return try await synthesisGate.run(background: background) {
             // A seek/stop can cancel a producer while it is queued behind
             // playback or an offline job. Don't start new synthesis afterward.
@@ -1369,7 +1386,7 @@ public final class PlaybackController {
             let aligned: [NarrationWordTiming]
             if let words = audio.words { aligned = words }
             else if audio.checkedWords { aligned = AudioWordAligner.align(text: prepared.spoken, samples: audio.samples, sampleRate: audio.sampleRate) }
-            else { aligned = await Self.alignWords(text: prepared.spoken, samples: audio.samples, sampleRate: audio.sampleRate, language: voice.language) }
+            else { aligned = await Self.alignWords(text: prepared.spoken, samples: audio.samples, sampleRate: audio.sampleRate, language: voice.language, timeLimit: alignmentLimit) }
             guard book.pronunciationsJSON == revision else { throw CancellationError() }
             let words = prepared.project(aligned)
             try Task.checkCancellation()
@@ -1408,7 +1425,7 @@ public final class PlaybackController {
             guard let self else { throw CancellationError() }
             let text = self.sentences[target].text
             let key = self.pronunciationKey(text, voice: voice, book: book)
-            let made = try await self.narration(for: text, voice: voice, book: book)
+            let made = try await self.narration(for: text, voice: voice, book: book, prefetch: true)
             try Task.checkCancellation()
             guard self.activeBook?.id == book.id, self.prefetchContext == context,
                   self.pronunciationKey(text, voice: voice, book: book) == key else { throw CancellationError() }

@@ -85,9 +85,10 @@ struct BookCoverView: View {
     var showBadges: Bool = true
 
     private var coverURL: URL? {
-        guard let url = (library?.fileStore ?? .shared).coverURL(for: book.coverFileName),
-              FileManager.default.fileExists(atPath: url.path) else { return nil }
-        return url
+        // Do not stat the file here: this property is read from the body of
+        // every library cell while scrolling. StoredCoverImage loads it off
+        // the main thread and leaves the typographic fallback when missing.
+        (library?.fileStore ?? .shared).coverURL(for: book.coverFileName)
     }
 
     private var fallback: CoverPalette.Pair {
@@ -105,7 +106,8 @@ struct BookCoverView: View {
                     author: book.displayAuthor,
                     title: book.title,
                     background: fallback.background,
-                    foreground: fallback.foreground
+                    foreground: fallback.foreground,
+                    showsShadow: false
                 )
                 if let coverURL {
                     StoredCoverImage(url: coverURL)

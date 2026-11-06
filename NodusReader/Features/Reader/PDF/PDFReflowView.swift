@@ -271,7 +271,7 @@ struct PDFReflowView: View {
         // the original page ID (blank pages may have no narration chapter).
         .onChange(of: playback.chapterIndex) { _, chapter in
             guard followState?.isSuspended != true, search?.isPresented != true,
-                  isNarratingHere, playback.mode == .readAndListen,
+                  isNarratingHere,
                   playback.isPlaying, typography.autoScrollNarration,
                   playback.chapters.indices.contains(chapter),
                   let document = job.document else { return }
@@ -367,7 +367,7 @@ struct PDFReflowView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, max(20, typography.margin))
                     .padding(.top, 20)
-                    .padding(.bottom, typography.autoScrollNarration && isNarratingHere && playback.mode == .readAndListen
+                    .padding(.bottom, typography.autoScrollNarration && isNarratingHere
                              ? max(60, viewportHeight * 0.6) : 60)
                     .scrollTargetLayout()
                 }
@@ -468,7 +468,7 @@ struct PDFReflowView: View {
     private func narrationFollowRange(page: Int, text: String) -> NSRange? {
         guard followState?.isSuspended != true, search?.isPresented != true else { return nil }
         guard typography.autoScrollNarration, isNarratingHere,
-              playback.mode == .readAndListen, playback.isPlaying,
+              playback.isPlaying,
               narratedPage == page,
               (playback.chapters[playback.chapterIndex].text as NSString).length == (text as NSString).length else { return nil }
         return playback.currentWordChapterRange ?? playback.currentSentenceChapterRange

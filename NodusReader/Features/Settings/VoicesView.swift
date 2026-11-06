@@ -166,12 +166,15 @@ struct VoicesView: View {
     }
 
     private var filteredVoices: [VoiceCatalog.Voice] {
+        // Decode the saved filters once: asking for the computed property
+        // inside the filter decoded the same JSON for every voice.
+        let filters = voiceFilters
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         // Every installed model, not only the selected one, so any voice can
         // be tried and chosen.
-        voices.allInstalledVoices.filter { voice in
-            guard voiceFilters.matches(voice) else { return false }
+        return voices.allInstalledVoices.filter { voice in
+            guard filters.matches(voice) else { return false }
             if let qualityFilter, voice.quality != qualityFilter { return false }
-            let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty {
                 return voice.name.localizedCaseInsensitiveContains(trimmed)
                     || voice.languageName.localizedCaseInsensitiveContains(trimmed)
@@ -321,9 +324,15 @@ struct VoicesView: View {
 
     @ViewBuilder
     private var voicesContent: some View {
+        // Build the filtered list once per body. Re-reading filteredVoices
+        // for every row made a long voice list filter itself N times while
+        // scrolling.
+        let filtered = filteredVoices
+        let lastID = filtered.last?.id
+
         filterRow
 
-        Text("\(filteredVoices.count) voices")
+        Text("\(filtered.count) voices")
             .font(.caption)
             .foregroundStyle(palette.muted)
 
@@ -333,17 +342,17 @@ struct VoicesView: View {
                             message: "Install a Kokoro or Phonon model in the Models tab to start listening.")
                 .frame(minHeight: 220)
         } else {
-            VStack(spacing: 0) {
-                ForEach(filteredVoices) { voice in
+            LazyVStack(spacing: 0) {
+                ForEach(filtered) { voice in
                     voiceRow(voice)
-                    if voice.id != filteredVoices.last?.id {
+                    if voice.id != lastID {
                         Divider().overlay(palette.line)
                     }
                 }
             }
             .panelCard(radius: 18)
 
-            if filteredVoices.isEmpty {
+            if filtered.isEmpty {
                 NodusEmptyState(icon: "waveform", title: "No voices match",
                                 message: "Try clearing the search or filters.")
                     .frame(minHeight: 220)
@@ -1239,52 +1248,86 @@ private struct VoiceMultiSelectionFilter: View {
         .accessibilityIdentifier(identifier)
         .accessibilityLabel(Text("Filter by \(title)"))
         .accessibilityValue(selected.isEmpty ? all : selectedNames.joined(separator: ", "))
-        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+        .popover(isPresented: $isPresented, arrowEdge: .top) {
             VStack(spacing: 0) {
                 HStack {
                     Text(title).font(.headline)
                     Spacer()
                     Button("Done") { isPresented = false }
                 }
-                .padding(12)
-                if presentedOptions.count > 10 {
-                    HStack {
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+
+                Rectangle().fill(palette.line).frame(height: 0.5)
+
+                if showsSearch {
+                    HStack(spacing: 8) {
                         Image(systemName: "magnifyingglass")
+                            .foregroundStyle(palette.muted)
                         TextField("Search", text: $query)
                             .textFieldStyle(.plain)
                     }
                     .padding(10)
                     .background(palette.panel, in: RoundedRectangle(cornerRadius: 10))
                     .padding(.horizontal, 12)
-                    .padding(.bottom, 8)
+                    .padding(.vertical, 8)
                 }
-                List {
-                    Button { selected = [] } label: {
-                        optionLabel(all, checked: selected.isEmpty)
-                    }
-                    .listRowBackground(palette.panel)
-                    ForEach(matchingOptions) { option in
-                        Button {
-                            if selected.contains(option.id) { selected.remove(option.id) }
-                            else { selected.insert(option.id) }
-                        } label: {
-                            optionLabel(option.title, checked: selected.contains(option.id))
+
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        filterRow(all, checked: selected.isEmpty) { selected = [] }
+                        Rectangle().fill(palette.line).frame(height: 0.5)
+                            .padding(.leading, 16)
+                        ForEach(matchingOptions) { option in
+                            filterRow(option.title, checked: selected.contains(option.id)) {
+                                if selected.contains(option.id) { selected.remove(option.id) }
+                                else { selected.insert(option.id) }
+                            }
+                            .accessibilityIdentifier("\(identifier)-\(option.id)")
+                            .accessibilityAddTraits(selected.contains(option.id) ? .isSelected : [])
+                            if option.id != matchingOptions.last?.id {
+                                Rectangle().fill(palette.line).frame(height: 0.5)
+                                    .padding(.leading, 16)
+                            }
                         }
-                        .accessibilityIdentifier("\(identifier)-\(option.id)")
-                        .accessibilityAddTraits(selected.contains(option.id) ? .isSelected : [])
-                        .listRowBackground(palette.panel)
+                        if matchingOptions.isEmpty {
+                            Text("No results")
+                                .font(.footnote)
+                                .foregroundStyle(palette.muted)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(16)
+                        }
                     }
                 }
-                .buttonStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .listStyle(.plain)
+                .scrollIndicators(.visible)
             }
             .foregroundStyle(palette.text)
             .background(palette.background)
             .tint(palette.accent)
-            .frame(width: 300, height: min(440, CGFloat(presentedOptions.count + 1) * 48 + 64))
+            .frame(width: 320, height: popoverHeight)
             .presentationCompactAdaptation(.popover)
         }
+    }
+
+    private var showsSearch: Bool { presentedOptions.count > 10 }
+
+    /// With the arrow on top the popover opens below the chip, where a phone
+    /// has room. Size it for the list instead of being squeezed above the
+    /// chip, and keep the list scrollable.
+    private var popoverHeight: CGFloat {
+        let rows = min(max(presentedOptions.count + 1, 3), 9)
+        let searchHeight: CGFloat = showsSearch ? 58 : 0
+        return min(400, CGFloat(rows) * 48 + 64 + searchHeight)
+    }
+
+    private func filterRow(_ label: String, checked: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            optionLabel(label, checked: checked)
+                .padding(.horizontal, 16)
+                .frame(minHeight: 48)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func optionLabel(_ label: String, checked: Bool) -> some View {

@@ -246,10 +246,15 @@ public struct CoverArtwork: View {
     public var cloudOnly: Bool
     public var downloadingProgress: Double?
     public var selected: Bool
+    /// Callers that draw their own shadow around the cover (for example a
+    /// stored cover on top of this artwork) can skip this one, which is
+    /// otherwise rasterised and clipped away on every library cell.
+    public var showsShadow: Bool
 
     public init(author: String, title: String, background: Color, foreground: Color,
                 formatBadge: String? = nil, cloudOnly: Bool = false,
-                downloadingProgress: Double? = nil, selected: Bool = false) {
+                downloadingProgress: Double? = nil, selected: Bool = false,
+                showsShadow: Bool = true) {
         self.author = author
         self.title = title
         self.background = background
@@ -258,6 +263,7 @@ public struct CoverArtwork: View {
         self.cloudOnly = cloudOnly
         self.downloadingProgress = downloadingProgress
         self.selected = selected
+        self.showsShadow = showsShadow
     }
 
     public var body: some View {
@@ -324,7 +330,9 @@ public struct CoverArtwork: View {
                 CoverShape().stroke(selected ? Color(hex: 0xC4B5FD) : Color.black.opacity(0.08),
                                     lineWidth: selected ? 3 : 0.5)
             )
-            .shadow(color: .black.opacity(0.42), radius: max(6, width * 0.08), x: 0, y: max(5, width * 0.06))
+            .modifier(CoverArtworkShadow(enabled: showsShadow,
+                                         radius: max(6, width * 0.08),
+                                         y: max(5, width * 0.06)))
         }
         .aspectRatio(2.0 / 3.0, contentMode: .fit)
         .accessibilityElement(children: .ignore)
@@ -339,6 +347,21 @@ public struct CoverShape: Shape {
         let radii = RectangleCornerRadii(topLeading: 3, bottomLeading: 3,
                                          bottomTrailing: 8, topTrailing: 8)
         return UnevenRoundedRectangle(cornerRadii: radii, style: .continuous).path(in: rect)
+    }
+}
+
+private struct CoverArtworkShadow: ViewModifier {
+    let enabled: Bool
+    let radius: CGFloat
+    let y: CGFloat
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if enabled {
+            content.shadow(color: .black.opacity(0.42), radius: radius, x: 0, y: y)
+        } else {
+            content
+        }
     }
 }
 

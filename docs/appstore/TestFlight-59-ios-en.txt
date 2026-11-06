@@ -1,0 +1,1 @@
+Private build 59. Includes centred vertical auto-scroll, working player controls during playback, usable voice filter dropdowns, a gap-free bottom player, smoother voice lists and narration with fewer waits between sentences. Please check the reader, player and voice filters on your iPhone.

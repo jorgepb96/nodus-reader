@@ -64,7 +64,11 @@ struct ContinuousReaderContent: View {
                 }
             }
             .onScrollPhaseChange { _, phase in
-                if phase == .tracking || phase == .interacting || phase == .decelerating {
+                // Only a real touch suspends the follow. Deceleration also
+                // follows the animated scrolls that keep the spoken line in
+                // place, so treating it as manual input stopped auto-scroll
+                // by itself. Every user drag already starts with tracking.
+                if phase == .tracking || phase == .interacting {
                     onManualNavigation?()
                 }
             }

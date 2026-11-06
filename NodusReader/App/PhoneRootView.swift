@@ -17,12 +17,20 @@ struct PhoneRootView: View {
                 tabView(selection: $navigation.phoneTab)
                     .tabBarMinimizeBehavior(.never)
                     .tabViewBottomAccessory(isEnabled: playback.hasActiveBook) {
-                        miniPlayer.padding(.horizontal, 12).padding(.vertical, 6)
+                        // The accessory supplies its own glass capsule; the
+                        // bar's own background and side padding would show as
+                        // empty rims at both ends.
+                        miniPlayer(showsBackground: false)
+                            .frame(maxWidth: .infinity)
                     }
             } else {
                 tabView(selection: $navigation.phoneTab)
                     .safeAreaInset(edge: .bottom, spacing: 0) {
-                        if playback.hasActiveBook { miniPlayer.padding(.horizontal, 16).padding(.vertical, 6) }
+                        if playback.hasActiveBook {
+                            miniPlayer(showsBackground: true)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 6)
+                        }
                     }
             }
         }
@@ -74,9 +82,9 @@ struct PhoneRootView: View {
     }
 
     @ViewBuilder
-    private var miniPlayer: some View {
+    private func miniPlayer(showsBackground: Bool) -> some View {
         if playback.hasActiveBook {
-            MiniPlayerBar {
+            MiniPlayerBar(showsBackground: showsBackground) {
                 showPlayer = true
             }
         }

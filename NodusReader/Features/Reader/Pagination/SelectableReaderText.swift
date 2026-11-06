@@ -132,9 +132,11 @@ extension ReaderSelectableTextView {
         let height = scroll.bounds.height - insets.top - insets.bottom
         let visibleTop = scroll.contentOffset.y + insets.top
         guard height > 0 else { return false }
-        guard rect.midY < visibleTop + height * 0.22 || rect.midY > visibleTop + height * 0.55 else { return true }
+        // Keep the spoken line inside the central fifth; when it leaves, put
+        // it back at the exact centre of the reading area.
+        guard rect.midY < visibleTop + height * 0.40 || rect.midY > visibleTop + height * 0.60 else { return true }
         let maximum = max(-insets.top, scroll.contentSize.height - scroll.bounds.height + insets.bottom)
-        let target = min(maximum, max(-insets.top, rect.midY - height * 0.35 - insets.top))
+        let target = min(maximum, max(-insets.top, rect.midY - height * 0.5 - insets.top))
         guard abs(target - scroll.contentOffset.y) > 1 else { return true }
         scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: target), animated: animated)
         return true

@@ -122,10 +122,15 @@ struct CollectionsView: View {
 
     @ViewBuilder
     private var collectionResults: some View {
+        let visible = visibleCollections
+        let lastID = visible.last?.id
+        let subcollectionCounts = collections.reduce(into: [UUID: Int]()) { counts, item in
+            if let parent = item.parentID { counts[parent, default: 0] += 1 }
+        }
         if isGrid {
             LazyVGrid(columns: LibraryView.gridColumns,
                       alignment: .leading, spacing: 20) {
-                ForEach(visibleCollections) { collection in
+                ForEach(visible) { collection in
                     NavigationLink(value: collection.id) {
                         CollectionFolderTile(collection: collection, bookCount: bookCount(for: collection))
                     }
@@ -133,17 +138,17 @@ struct CollectionsView: View {
                 }
             }
         } else {
-            VStack(spacing: 0) {
-                ForEach(visibleCollections) { collection in
+            LazyVStack(spacing: 0) {
+                ForEach(visible) { collection in
                     NavigationLink(value: collection.id) {
                         CollectionSummaryRow(
                             collection: collection,
-                            subcollectionCount: collections.filter { $0.parentID == collection.id }.count,
+                            subcollectionCount: subcollectionCounts[collection.id] ?? 0,
                             bookCount: bookCount(for: collection)
                         )
                     }
                     .buttonStyle(.plain)
-                    if collection.id != visibleCollections.last?.id {
+                    if collection.id != lastID {
                         Divider().overlay(palette.line)
                     }
                 }
