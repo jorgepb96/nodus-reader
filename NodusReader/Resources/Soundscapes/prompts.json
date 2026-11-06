@@ -1,0 +1,4793 @@
+{
+ "version": "2026-11-06",
+ "prompts": [
+  {
+   "id": "music.calm.neutral.1",
+   "layer": "music",
+   "text": "Calm ambient pads, soft piano notes, warm and spacious, slowly evolving, no vocals.",
+   "style": "neutral",
+   "mood": "calm",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.calm.neutral.2",
+   "layer": "music",
+   "text": "Gentle acoustic guitar and soft strings, peaceful morning feeling, unhurried, no vocals.",
+   "style": "neutral",
+   "mood": "calm",
+   "emotions": [
+    "serenity",
+    "hope"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.calm.neutral.3",
+   "layer": "music",
+   "text": "Quiet felt piano with distant room tone, still and restful, no vocals.",
+   "style": "neutral",
+   "mood": "calm",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.calm.fantasy.1",
+   "layer": "music",
+   "text": "Serene fantasy harp and flute over soft strings, enchanted meadow, slowly evolving, no vocals.",
+   "style": "fantasy",
+   "mood": "calm",
+   "emotions": [
+    "serenity",
+    "wonder"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.calm.scienceFiction.1",
+   "layer": "music",
+   "text": "Weightless synth pads drifting in space, slow glittering arpeggios, calm, no vocals.",
+   "style": "scienceFiction",
+   "mood": "calm",
+   "emotions": [
+    "serenity",
+    "wonder"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.calm.cyberpunk.1",
+   "layer": "music",
+   "text": "Calm lo-fi synth haze, rain-soaked neon city at rest, soft beat, no vocals.",
+   "style": "cyberpunk",
+   "mood": "calm",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "night",
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.calm.historical.1",
+   "layer": "music",
+   "text": "Peaceful baroque lute and recorder, quiet courtyard afternoon, gentle, no vocals.",
+   "style": "historical",
+   "mood": "calm",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.calm.western.1",
+   "layer": "music",
+   "text": "Slow open-prairie guitar with soft harmonica, calm dusk by the campfire, no vocals.",
+   "style": "western",
+   "mood": "calm",
+   "emotions": [
+    "serenity",
+    "nostalgia"
+   ],
+   "situations": [
+    "rest",
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.calm.romance.1",
+   "layer": "music",
+   "text": "Soft romantic piano with warm cello, tender and calm, slow tempo, no vocals.",
+   "style": "romance",
+   "mood": "calm",
+   "emotions": [
+    "tenderness",
+    "serenity"
+   ],
+   "situations": [
+    "romance"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.calm.fairyTale.1",
+   "layer": "music",
+   "text": "Gentle music box and celesta, cozy bedtime calm, soft and warm, no vocals.",
+   "style": "fairyTale",
+   "mood": "calm",
+   "emotions": [
+    "serenity",
+    "tenderness"
+   ],
+   "situations": [
+    "night",
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.calm.adventure.1",
+   "layer": "music",
+   "text": "Calm traveling strings and light woodwinds, resting after a long journey, no vocals.",
+   "style": "adventure",
+   "mood": "calm",
+   "emotions": [
+    "relief",
+    "serenity"
+   ],
+   "situations": [
+    "journey",
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.calm.horror.1",
+   "layer": "music",
+   "text": "Deceptively calm piano, faint low drone beneath, quiet unsettled stillness, no vocals.",
+   "style": "horror",
+   "mood": "calm",
+   "emotions": [
+    "unease",
+    "serenity"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.calm.noir.1",
+   "layer": "music",
+   "text": "Late-night calm jazz, brushed drums, soft muted trumpet, empty bar, no vocals.",
+   "style": "noir",
+   "mood": "calm",
+   "emotions": [
+    "serenity",
+    "nostalgia"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.calm.war.1",
+   "layer": "music",
+   "text": "Quiet solo trumpet and soft strings, calm after the battle, distant, no vocals.",
+   "style": "war",
+   "mood": "calm",
+   "emotions": [
+    "relief",
+    "grief"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.calm.comedy.1",
+   "layer": "music",
+   "text": "Light easygoing ukulele and soft whistling melody, relaxed sunny afternoon, no vocals.",
+   "style": "comedy",
+   "mood": "calm",
+   "emotions": [
+    "serenity",
+    "joy"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.neutral.1",
+   "layer": "music",
+   "text": "Contemplative piano and strings, thoughtful and introspective, slowly evolving, no vocals.",
+   "style": "neutral",
+   "mood": "contemplative",
+   "emotions": [
+    "longing",
+    "serenity"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.neutral.2",
+   "layer": "music",
+   "text": "Minimal ambient guitar textures, reflective mood, gentle reverb, unhurried, no vocals.",
+   "style": "neutral",
+   "mood": "contemplative",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.neutral.3",
+   "layer": "music",
+   "text": "Pensive cello melody over soft pads, quiet reflection by a window, no vocals.",
+   "style": "neutral",
+   "mood": "contemplative",
+   "emotions": [
+    "longing",
+    "sadness"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.fantasy.1",
+   "layer": "music",
+   "text": "Reflective elven strings and soft choir pads, ancient forest wisdom, no vocals.",
+   "style": "fantasy",
+   "mood": "contemplative",
+   "emotions": [
+    "awe",
+    "longing"
+   ],
+   "situations": [
+    "ritual"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.scienceFiction.1",
+   "layer": "music",
+   "text": "Introspective synth drones and slow pulses, staring at distant stars, no vocals.",
+   "style": "scienceFiction",
+   "mood": "contemplative",
+   "emotions": [
+    "wonder",
+    "longing"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.cyberpunk.1",
+   "layer": "music",
+   "text": "Moody downtempo synths, contemplative city lights from a high window, no vocals.",
+   "style": "cyberpunk",
+   "mood": "contemplative",
+   "emotions": [
+    "longing",
+    "irony"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.historical.1",
+   "layer": "music",
+   "text": "Thoughtful classical string quartet, candlelit study, measured and calm, no vocals.",
+   "style": "historical",
+   "mood": "contemplative",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.western.1",
+   "layer": "music",
+   "text": "Lonesome slide guitar, wide empty desert, reflective and slow, no vocals.",
+   "style": "western",
+   "mood": "contemplative",
+   "emotions": [
+    "longing",
+    "nostalgia"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.horror.1",
+   "layer": "music",
+   "text": "Brooding piano with long silences and faint strings, uneasy thoughts, no vocals.",
+   "style": "horror",
+   "mood": "contemplative",
+   "emotions": [
+    "unease",
+    "longing"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.contemplative.noir.1",
+   "layer": "music",
+   "text": "Reflective saxophone over soft rain-like brushes, detective thinking alone, no vocals.",
+   "style": "noir",
+   "mood": "contemplative",
+   "emotions": [
+    "longing"
+   ],
+   "situations": [
+    "investigation",
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.romance.1",
+   "layer": "music",
+   "text": "Wistful piano and violin, remembering someone dear, gentle and slow, no vocals.",
+   "style": "romance",
+   "mood": "contemplative",
+   "emotions": [
+    "longing",
+    "nostalgia"
+   ],
+   "situations": [
+    "romance"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.war.1",
+   "layer": "music",
+   "text": "Somber reflective strings, letters from the front, quiet and restrained, no vocals.",
+   "style": "war",
+   "mood": "contemplative",
+   "emotions": [
+    "grief",
+    "longing"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.contemplative.adventure.1",
+   "layer": "music",
+   "text": "Pensive woodwinds and light strings, map spread by lantern light, no vocals.",
+   "style": "adventure",
+   "mood": "contemplative",
+   "emotions": [
+    "wonder",
+    "determination"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.fairyTale.1",
+   "layer": "music",
+   "text": "Dreamy celesta and harp, a child wondering at the stars, no vocals.",
+   "style": "fairyTale",
+   "mood": "contemplative",
+   "emotions": [
+    "wonder"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.contemplative.thriller.1",
+   "layer": "music",
+   "text": "Cool restrained electronic pulse with soft piano, thinking through clues, no vocals.",
+   "style": "thriller",
+   "mood": "contemplative",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.melancholic.neutral.1",
+   "layer": "music",
+   "text": "Melancholic instrumental piano, soft cello, slow tempo, no vocals.",
+   "style": "neutral",
+   "mood": "melancholic",
+   "emotions": [
+    "sadness"
+   ],
+   "situations": [
+    "farewell"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.melancholic.neutral.2",
+   "layer": "music",
+   "text": "Sad slow strings and lonely piano, quiet heartbreak, gently evolving, no vocals.",
+   "style": "neutral",
+   "mood": "melancholic",
+   "emotions": [
+    "sadness",
+    "grief"
+   ],
+   "situations": [
+    "farewell",
+    "mourning"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.melancholic.neutral.3",
+   "layer": "music",
+   "text": "Nostalgic acoustic guitar and warm strings, bittersweet memories, slow, no vocals.",
+   "style": "neutral",
+   "mood": "melancholic",
+   "emotions": [
+    "nostalgia",
+    "sadness"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.melancholic.fantasy.1",
+   "layer": "music",
+   "text": "Elegiac fantasy strings and solo flute, a fading kingdom, sorrowful, no vocals.",
+   "style": "fantasy",
+   "mood": "melancholic",
+   "emotions": [
+    "grief",
+    "nostalgia"
+   ],
+   "situations": [
+    "farewell"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.melancholic.scienceFiction.1",
+   "layer": "music",
+   "text": "Melancholic synth pads and slow piano, lost signal from home, no vocals.",
+   "style": "scienceFiction",
+   "mood": "melancholic",
+   "emotions": [
+    "longing",
+    "sadness"
+   ],
+   "situations": [
+    "farewell"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.melancholic.cyberpunk.1",
+   "layer": "music",
+   "text": "Sad synthwave ballad, slow arpeggios and rain, lonely neon streets, no vocals.",
+   "style": "cyberpunk",
+   "mood": "melancholic",
+   "emotions": [
+    "sadness",
+    "longing"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.melancholic.historical.1",
+   "layer": "music",
+   "text": "Mournful period strings and harpsichord, a quiet loss in old times, no vocals.",
+   "style": "historical",
+   "mood": "melancholic",
+   "emotions": [
+    "grief"
+   ],
+   "situations": [
+    "mourning"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.melancholic.western.1",
+   "layer": "music",
+   "text": "Slow sorrowful fiddle and guitar, a grave on the open plain, no vocals.",
+   "style": "western",
+   "mood": "melancholic",
+   "emotions": [
+    "grief"
+   ],
+   "situations": [
+    "mourning",
+    "farewell"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.melancholic.horror.1",
+   "layer": "music",
+   "text": "Melancholic music box slightly out of tune, faded nursery memories, no vocals.",
+   "style": "horror",
+   "mood": "melancholic",
+   "emotions": [
+    "sadness",
+    "unease"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.melancholic.noir.1",
+   "layer": "music",
+   "text": "Blue jazz piano and lonely saxophone, regret at closing time, no vocals.",
+   "style": "noir",
+   "mood": "melancholic",
+   "emotions": [
+    "sadness",
+    "nostalgia"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.melancholic.romance.1",
+   "layer": "music",
+   "text": "Heartbroken piano and violin duet, slow and aching, a goodbye, no vocals.",
+   "style": "romance",
+   "mood": "melancholic",
+   "emotions": [
+    "sadness",
+    "longing"
+   ],
+   "situations": [
+    "farewell",
+    "romance"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.melancholic.war.1",
+   "layer": "music",
+   "text": "Grieving solo cello and muted strings, the fallen remembered, slow, no vocals.",
+   "style": "war",
+   "mood": "melancholic",
+   "emotions": [
+    "grief"
+   ],
+   "situations": [
+    "mourning"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.melancholic.comedy.1",
+   "layer": "music",
+   "text": "Gently sad clarinet and piano, sweet clumsy disappointment, light touch, no vocals.",
+   "style": "comedy",
+   "mood": "melancholic",
+   "emotions": [
+    "sadness",
+    "irony"
+   ],
+   "situations": [
+    "farewell"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.melancholic.fairyTale.1",
+   "layer": "music",
+   "text": "Tender sad harp and strings, a lost friend in a storybook, no vocals.",
+   "style": "fairyTale",
+   "mood": "melancholic",
+   "emotions": [
+    "sadness",
+    "tenderness"
+   ],
+   "situations": [
+    "farewell"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.melancholic.adventure.1",
+   "layer": "music",
+   "text": "Bittersweet strings and horn, leaving home at dawn, slow, no vocals.",
+   "style": "adventure",
+   "mood": "melancholic",
+   "emotions": [
+    "nostalgia",
+    "hope"
+   ],
+   "situations": [
+    "farewell",
+    "journey"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.romantic.neutral.1",
+   "layer": "music",
+   "text": "Romantic piano and strings, warm and tender, slow waltz feeling, no vocals.",
+   "style": "neutral",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness"
+   ],
+   "situations": [
+    "romance"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.romantic.neutral.2",
+   "layer": "music",
+   "text": "Soft acoustic guitar and cello, intimate and warm, gently evolving, no vocals.",
+   "style": "neutral",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness"
+   ],
+   "situations": [
+    "romance"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.romantic.neutral.3",
+   "layer": "music",
+   "text": "Lush romantic orchestra, swelling strings, heartfelt and glowing, no vocals.",
+   "style": "neutral",
+   "mood": "romantic",
+   "emotions": [
+    "joy",
+    "tenderness"
+   ],
+   "situations": [
+    "romance",
+    "reunion"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.romantic.fantasy.1",
+   "layer": "music",
+   "text": "Romantic fantasy harp and violin, moonlit castle garden, dreamy, no vocals.",
+   "style": "fantasy",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness",
+    "wonder"
+   ],
+   "situations": [
+    "romance",
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.romantic.scienceFiction.1",
+   "layer": "music",
+   "text": "Tender synth pads and warm piano, two hearts under alien skies, no vocals.",
+   "style": "scienceFiction",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness",
+    "wonder"
+   ],
+   "situations": [
+    "romance"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.romantic.cyberpunk.1",
+   "layer": "music",
+   "text": "Slow romantic synthwave, soft bass and shimmering keys, neon kiss, no vocals.",
+   "style": "cyberpunk",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness"
+   ],
+   "situations": [
+    "romance",
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.romantic.historical.1",
+   "layer": "music",
+   "text": "Elegant period waltz, strings and piano, candlelit ballroom romance, no vocals.",
+   "style": "historical",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness",
+    "joy"
+   ],
+   "situations": [
+    "romance",
+    "celebration"
+   ],
+   "intensity": 1,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.romantic.western.1",
+   "layer": "music",
+   "text": "Warm romantic guitar and harmonica, sunset ride together, gentle, no vocals.",
+   "style": "western",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness",
+    "hope"
+   ],
+   "situations": [
+    "romance",
+    "journey"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.romantic.noir.1",
+   "layer": "music",
+   "text": "Smoky romantic jazz ballad, saxophone and brushed drums, dangerous attraction, no vocals.",
+   "style": "noir",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness",
+    "suspense"
+   ],
+   "situations": [
+    "romance",
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.romantic.comedy.1",
+   "layer": "music",
+   "text": "Playful romantic pizzicato and clarinet, awkward first date charm, no vocals.",
+   "style": "comedy",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness",
+    "irony"
+   ],
+   "situations": [
+    "romance"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.romantic.war.1",
+   "layer": "music",
+   "text": "Tender wartime romance, warm strings and piano, stolen moments, no vocals.",
+   "style": "war",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness",
+    "longing"
+   ],
+   "situations": [
+    "romance",
+    "reunion"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.romantic.fairyTale.1",
+   "layer": "music",
+   "text": "Sweet romantic celesta and strings, prince and princess dance, no vocals.",
+   "style": "fairyTale",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness",
+    "joy"
+   ],
+   "situations": [
+    "romance",
+    "celebration"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.romantic.adventure.1",
+   "layer": "music",
+   "text": "Sweeping romantic strings and horn, reunion on the docks, hopeful, no vocals.",
+   "style": "adventure",
+   "mood": "romantic",
+   "emotions": [
+    "joy",
+    "hope"
+   ],
+   "situations": [
+    "reunion",
+    "romance"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.romantic.horror.1",
+   "layer": "music",
+   "text": "Haunting romantic waltz, distant piano and eerie strings, love beyond death, no vocals.",
+   "style": "horror",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness",
+    "unease"
+   ],
+   "situations": [
+    "romance"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.romantic.romance.1",
+   "layer": "music",
+   "text": "Intimate romantic solo piano, soft and close, late night confession, no vocals.",
+   "style": "romance",
+   "mood": "romantic",
+   "emotions": [
+    "tenderness",
+    "longing"
+   ],
+   "situations": [
+    "romance",
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.mysterious.neutral.1",
+   "layer": "music",
+   "text": "Mysterious instrumental, soft harp, low strings, slow tempo, no vocals.",
+   "style": "neutral",
+   "mood": "mysterious",
+   "emotions": [
+    "wonder",
+    "suspense"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.neutral.2",
+   "layer": "music",
+   "text": "Mysterious ambient textures, low piano notes and soft pulses, slowly evolving, no vocals.",
+   "style": "neutral",
+   "mood": "mysterious",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.neutral.3",
+   "layer": "music",
+   "text": "Enigmatic celesta and pizzicato strings, secrets in the shadows, no vocals.",
+   "style": "neutral",
+   "mood": "mysterious",
+   "emotions": [
+    "wonder",
+    "suspense"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.fantasy.1",
+   "layer": "music",
+   "text": "Mystical fantasy music, ethereal choir pads and harp, ancient magic, no vocals.",
+   "style": "fantasy",
+   "mood": "mysterious",
+   "emotions": [
+    "wonder",
+    "awe"
+   ],
+   "situations": [
+    "discovery",
+    "ritual"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.scienceFiction.1",
+   "layer": "music",
+   "text": "Mysterious sci-fi synths, alien signals and deep drones, unknown planet, no vocals.",
+   "style": "scienceFiction",
+   "mood": "mysterious",
+   "emotions": [
+    "wonder",
+    "unease"
+   ],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.cyberpunk.1",
+   "layer": "music",
+   "text": "Dark mysterious synth bass, glitch textures, hidden data in the net, no vocals.",
+   "style": "cyberpunk",
+   "mood": "mysterious",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.historical.1",
+   "layer": "music",
+   "text": "Mysterious medieval drone and hurdy-gurdy, monastery secrets by candlelight, no vocals.",
+   "style": "historical",
+   "mood": "mysterious",
+   "emotions": [
+    "suspense",
+    "wonder"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.western.1",
+   "layer": "music",
+   "text": "Mysterious desert guitar with reverb, distant whistles, strangers in town, no vocals.",
+   "style": "western",
+   "mood": "mysterious",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.horror.1",
+   "layer": "music",
+   "text": "Mysterious dark ambient, creaking textures and low strings, something hidden, no vocals.",
+   "style": "horror",
+   "mood": "mysterious",
+   "emotions": [
+    "unease",
+    "suspense"
+   ],
+   "situations": [
+    "investigation",
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.noir.1",
+   "layer": "music",
+   "text": "Mysterious noir jazz, muted trumpet and walking bass, a missing person, no vocals.",
+   "style": "noir",
+   "mood": "mysterious",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "investigation",
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.thriller.1",
+   "layer": "music",
+   "text": "Mysterious thriller underscore, ticking pulse and cold strings, hidden motives, no vocals.",
+   "style": "thriller",
+   "mood": "mysterious",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.adventure.1",
+   "layer": "music",
+   "text": "Mysterious jungle percussion and flutes, ancient ruins discovered, no vocals.",
+   "style": "adventure",
+   "mood": "mysterious",
+   "emotions": [
+    "wonder",
+    "suspense"
+   ],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.fairyTale.1",
+   "layer": "music",
+   "text": "Mysterious enchanted forest music, twinkling bells and soft woodwinds, no vocals.",
+   "style": "fairyTale",
+   "mood": "mysterious",
+   "emotions": [
+    "wonder"
+   ],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.war.1",
+   "layer": "music",
+   "text": "Mysterious tense underscore, low strings and faint morse-like pulses, coded messages, no vocals.",
+   "style": "war",
+   "mood": "mysterious",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.mysterious.comedy.1",
+   "layer": "music",
+   "text": "Sneaky mysterious pizzicato and bassoon, tiptoeing comic detective, no vocals.",
+   "style": "comedy",
+   "mood": "mysterious",
+   "emotions": [
+    "irony",
+    "suspense"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.neutral.1",
+   "layer": "music",
+   "text": "Eerie ambient drones, dissonant high strings, unsettling and slow, no vocals.",
+   "style": "neutral",
+   "mood": "eerie",
+   "emotions": [
+    "unease",
+    "dread"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.neutral.2",
+   "layer": "music",
+   "text": "Creepy music box and low drones, haunting stillness, slowly evolving, no vocals.",
+   "style": "neutral",
+   "mood": "eerie",
+   "emotions": [
+    "unease"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.horror.1",
+   "layer": "music",
+   "text": "Dark horror instrumental, ominous drones, dissonant strings, no vocals.",
+   "style": "horror",
+   "mood": "eerie",
+   "emotions": [
+    "dread",
+    "fear"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 3,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.horror.2",
+   "layer": "music",
+   "text": "Haunted house ambience music, whispering textures and detuned piano, no vocals.",
+   "style": "horror",
+   "mood": "eerie",
+   "emotions": [
+    "unease",
+    "dread"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.fantasy.1",
+   "layer": "music",
+   "text": "Eerie dark fantasy choir pads and low horns, cursed forest, no vocals.",
+   "style": "fantasy",
+   "mood": "eerie",
+   "emotions": [
+    "dread"
+   ],
+   "situations": [
+    "night",
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.scienceFiction.1",
+   "layer": "music",
+   "text": "Eerie sci-fi drones, metallic echoes, abandoned space station, no vocals.",
+   "style": "scienceFiction",
+   "mood": "eerie",
+   "emotions": [
+    "unease",
+    "dread"
+   ],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.cyberpunk.1",
+   "layer": "music",
+   "text": "Eerie glitching synths, corrupted signals, empty server room, cold, no vocals.",
+   "style": "cyberpunk",
+   "mood": "eerie",
+   "emotions": [
+    "unease"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.historical.1",
+   "layer": "music",
+   "text": "Eerie gothic organ and strings, fog over an old graveyard, no vocals.",
+   "style": "historical",
+   "mood": "eerie",
+   "emotions": [
+    "dread"
+   ],
+   "situations": [
+    "mourning",
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.western.1",
+   "layer": "music",
+   "text": "Eerie ghost-town music, slow bowed saw and wind-like strings, no vocals.",
+   "style": "western",
+   "mood": "eerie",
+   "emotions": [
+    "unease"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.noir.1",
+   "layer": "music",
+   "text": "Eerie noir underscore, slow vibraphone and low bass, body in the alley, no vocals.",
+   "style": "noir",
+   "mood": "eerie",
+   "emotions": [
+    "dread",
+    "suspense"
+   ],
+   "situations": [
+    "investigation",
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.thriller.1",
+   "layer": "music",
+   "text": "Unsettling thriller drones, heartbeat pulse, someone is watching, no vocals.",
+   "style": "thriller",
+   "mood": "eerie",
+   "emotions": [
+    "unease",
+    "fear"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.fairyTale.1",
+   "layer": "music",
+   "text": "Eerie dark fairy tale music, crooked celesta and low woodwinds, witch's hut, no vocals.",
+   "style": "fairyTale",
+   "mood": "eerie",
+   "emotions": [
+    "unease"
+   ],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.war.1",
+   "layer": "music",
+   "text": "Eerie wartime night, distant low drones and sparse strings, no man's land, no vocals.",
+   "style": "war",
+   "mood": "eerie",
+   "emotions": [
+    "dread"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.comedy.1",
+   "layer": "music",
+   "text": "Spooky comic music, wobbly theremin and pizzicato, harmless ghosts, no vocals.",
+   "style": "comedy",
+   "mood": "eerie",
+   "emotions": [
+    "absurd",
+    "unease"
+   ],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.eerie.adventure.1",
+   "layer": "music",
+   "text": "Eerie cave exploration music, dripping textures and deep drones, no vocals.",
+   "style": "adventure",
+   "mood": "eerie",
+   "emotions": [
+    "unease",
+    "wonder"
+   ],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.neutral.1",
+   "layer": "music",
+   "text": "Tense suspense instrumental, pulsing low strings, ticking percussion, slow build, no vocals.",
+   "style": "neutral",
+   "mood": "tense",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.neutral.2",
+   "layer": "music",
+   "text": "Anxious pulsing synth and staccato strings, rising tension, gradual build, no vocals.",
+   "style": "neutral",
+   "mood": "tense",
+   "emotions": [
+    "suspense",
+    "fear"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.thriller.1",
+   "layer": "music",
+   "text": "Fast tense thriller music, driving pulse and urgent strings, chase through streets, no vocals.",
+   "style": "thriller",
+   "mood": "tense",
+   "emotions": [
+    "fear",
+    "suspense"
+   ],
+   "situations": [
+    "chase"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.thriller.2",
+   "layer": "music",
+   "text": "Cold tense underscore, sparse piano hits over low drone, a ticking clock, no vocals.",
+   "style": "thriller",
+   "mood": "tense",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.fantasy.1",
+   "layer": "music",
+   "text": "Tense fantasy war drums and low brass, enemies approaching, no vocals.",
+   "style": "fantasy",
+   "mood": "tense",
+   "emotions": [
+    "fear",
+    "determination"
+   ],
+   "situations": [
+    "battle"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.scienceFiction.1",
+   "layer": "music",
+   "text": "Tense sci-fi pulses and alarm-like synths, hull breach countdown, no vocals.",
+   "style": "scienceFiction",
+   "mood": "tense",
+   "emotions": [
+    "fear",
+    "suspense"
+   ],
+   "situations": [
+    "escape"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.cyberpunk.1",
+   "layer": "music",
+   "text": "Tense cyberpunk bass pulse and glitchy drums, hacking against the clock, no vocals.",
+   "style": "cyberpunk",
+   "mood": "tense",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "escape",
+    "investigation"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.horror.1",
+   "layer": "music",
+   "text": "Tense horror strings rising, heartbeat drums, something behind the door, no vocals.",
+   "style": "horror",
+   "mood": "tense",
+   "emotions": [
+    "fear",
+    "dread"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.noir.1",
+   "layer": "music",
+   "text": "Tense noir jazz, fast walking bass and stabbing brass, a tail on the street, no vocals.",
+   "style": "noir",
+   "mood": "tense",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "chase",
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.western.1",
+   "layer": "music",
+   "text": "Tense western standoff, slow guitar twang and distant drums, high noon, no vocals.",
+   "style": "western",
+   "mood": "tense",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.historical.1",
+   "layer": "music",
+   "text": "Tense period strings and timpani, conspirators meet in secret, no vocals.",
+   "style": "historical",
+   "mood": "tense",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.war.1",
+   "layer": "music",
+   "text": "Tense military snare and low strings, patrol behind enemy lines, no vocals.",
+   "style": "war",
+   "mood": "tense",
+   "emotions": [
+    "fear",
+    "suspense"
+   ],
+   "situations": [
+    "escape"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.adventure.1",
+   "layer": "music",
+   "text": "Tense adventure music, racing percussion and brass stabs, collapsing bridge, no vocals.",
+   "style": "adventure",
+   "mood": "tense",
+   "emotions": [
+    "fear",
+    "determination"
+   ],
+   "situations": [
+    "escape",
+    "chase"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.comedy.1",
+   "layer": "music",
+   "text": "Comically tense pizzicato and bassoon, sneaking past a sleeping guard, no vocals.",
+   "style": "comedy",
+   "mood": "tense",
+   "emotions": [
+    "irony",
+    "suspense"
+   ],
+   "situations": [
+    "escape"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.tense.romance.1",
+   "layer": "music",
+   "text": "Tense emotional strings and piano, a secret about to be revealed, no vocals.",
+   "style": "romance",
+   "mood": "tense",
+   "emotions": [
+    "suspense",
+    "fear"
+   ],
+   "situations": [
+    "revelation"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.neutral.1",
+   "layer": "music",
+   "text": "Epic orchestral instrumental, powerful strings and brass, choir pads, triumphant, no vocals.",
+   "style": "neutral",
+   "mood": "epic",
+   "emotions": [
+    "triumph",
+    "awe"
+   ],
+   "situations": [
+    "battle"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.neutral.2",
+   "layer": "music",
+   "text": "Grand cinematic orchestra, slowly building to a heroic climax, gradual build, no vocals.",
+   "style": "neutral",
+   "mood": "epic",
+   "emotions": [
+    "awe",
+    "determination"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.fantasy.1",
+   "layer": "music",
+   "text": "Epic fantasy battle music, thundering drums, heroic horns and choir, no vocals.",
+   "style": "fantasy",
+   "mood": "epic",
+   "emotions": [
+    "triumph",
+    "determination"
+   ],
+   "situations": [
+    "battle"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.fantasy.2",
+   "layer": "music",
+   "text": "Majestic fantasy orchestra, dragons over mountains, soaring strings, no vocals.",
+   "style": "fantasy",
+   "mood": "epic",
+   "emotions": [
+    "awe",
+    "wonder"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.scienceFiction.1",
+   "layer": "music",
+   "text": "Epic sci-fi orchestra with synths, starships clashing, massive drums, no vocals.",
+   "style": "scienceFiction",
+   "mood": "epic",
+   "emotions": [
+    "triumph",
+    "fear"
+   ],
+   "situations": [
+    "battle"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.cyberpunk.1",
+   "layer": "music",
+   "text": "Epic dark synth anthem, heavy bass and driving drums, uprising, no vocals.",
+   "style": "cyberpunk",
+   "mood": "epic",
+   "emotions": [
+    "anger",
+    "determination"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.historical.1",
+   "layer": "music",
+   "text": "Epic historical orchestra, marching drums and brass, a kingdom's last stand, no vocals.",
+   "style": "historical",
+   "mood": "epic",
+   "emotions": [
+    "determination",
+    "triumph"
+   ],
+   "situations": [
+    "battle"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.war.1",
+   "layer": "music",
+   "text": "Epic war orchestra, pounding drums and urgent strings, the charge begins, no vocals.",
+   "style": "war",
+   "mood": "epic",
+   "emotions": [
+    "determination",
+    "fear"
+   ],
+   "situations": [
+    "battle"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.western.1",
+   "layer": "music",
+   "text": "Epic western orchestra, galloping rhythm and bold brass, frontier showdown, no vocals.",
+   "style": "western",
+   "mood": "epic",
+   "emotions": [
+    "determination",
+    "triumph"
+   ],
+   "situations": [
+    "confrontation",
+    "chase"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.adventure.1",
+   "layer": "music",
+   "text": "Epic adventure finale, sweeping strings and horns, victory at last, no vocals.",
+   "style": "adventure",
+   "mood": "epic",
+   "emotions": [
+    "triumph",
+    "joy"
+   ],
+   "situations": [
+    "celebration"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.horror.1",
+   "layer": "music",
+   "text": "Epic dark choir and orchestra, apocalyptic dread, overwhelming power, no vocals.",
+   "style": "horror",
+   "mood": "epic",
+   "emotions": [
+    "dread",
+    "awe"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.thriller.1",
+   "layer": "music",
+   "text": "Epic thriller climax, relentless percussion and soaring strings, final showdown, no vocals.",
+   "style": "thriller",
+   "mood": "epic",
+   "emotions": [
+    "determination",
+    "fear"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.noir.1",
+   "layer": "music",
+   "text": "Epic noir orchestral swell, brass and strings, the truth finally revealed, no vocals.",
+   "style": "noir",
+   "mood": "epic",
+   "emotions": [
+    "awe",
+    "suspense"
+   ],
+   "situations": [
+    "revelation"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.fairyTale.1",
+   "layer": "music",
+   "text": "Epic fairy tale orchestra, bright brass and strings, the hero triumphs, no vocals.",
+   "style": "fairyTale",
+   "mood": "epic",
+   "emotions": [
+    "triumph",
+    "joy"
+   ],
+   "situations": [
+    "battle"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.epic.romance.1",
+   "layer": "music",
+   "text": "Epic romantic orchestra, soaring strings and horns, love conquers all, no vocals.",
+   "style": "romance",
+   "mood": "epic",
+   "emotions": [
+    "joy",
+    "triumph"
+   ],
+   "situations": [
+    "reunion"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.neutral.1",
+   "layer": "music",
+   "text": "Adventurous orchestral music, bright strings and horns, journey begins, energetic, no vocals.",
+   "style": "neutral",
+   "mood": "adventure",
+   "emotions": [
+    "hope",
+    "determination"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.neutral.2",
+   "layer": "music",
+   "text": "Lively adventure theme, galloping strings and percussion, open roads ahead, no vocals.",
+   "style": "neutral",
+   "mood": "adventure",
+   "emotions": [
+    "joy",
+    "determination"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.adventure.1",
+   "layer": "music",
+   "text": "Swashbuckling pirate adventure, accordion and fiddle with bold brass, no vocals.",
+   "style": "adventure",
+   "mood": "adventure",
+   "emotions": [
+    "joy",
+    "determination"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.adventure.2",
+   "layer": "music",
+   "text": "Jungle expedition music, tribal percussion and flutes, bold discovery, no vocals.",
+   "style": "adventure",
+   "mood": "adventure",
+   "emotions": [
+    "wonder",
+    "determination"
+   ],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.fantasy.1",
+   "layer": "music",
+   "text": "Fantasy quest music, light celtic fiddle and flute, travelers on the road, no vocals.",
+   "style": "fantasy",
+   "mood": "adventure",
+   "emotions": [
+    "hope",
+    "joy"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.scienceFiction.1",
+   "layer": "music",
+   "text": "Upbeat sci-fi adventure, pulsing synths and orchestra, launching into space, no vocals.",
+   "style": "scienceFiction",
+   "mood": "adventure",
+   "emotions": [
+    "wonder",
+    "hope"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.cyberpunk.1",
+   "layer": "music",
+   "text": "Driving cyberpunk ride, fast synth arpeggios, speeding through neon highways, no vocals.",
+   "style": "cyberpunk",
+   "mood": "adventure",
+   "emotions": [
+    "determination"
+   ],
+   "situations": [
+    "chase",
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.historical.1",
+   "layer": "music",
+   "text": "Renaissance adventure music, lute, drums and recorders, sailing to new lands, no vocals.",
+   "style": "historical",
+   "mood": "adventure",
+   "emotions": [
+    "hope",
+    "wonder"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.western.1",
+   "layer": "music",
+   "text": "Western adventure theme, galloping guitar and harmonica, riding across the plains, no vocals.",
+   "style": "western",
+   "mood": "adventure",
+   "emotions": [
+    "hope",
+    "determination"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.war.1",
+   "layer": "music",
+   "text": "Determined military march, snare and brass, crossing hostile territory, no vocals.",
+   "style": "war",
+   "mood": "adventure",
+   "emotions": [
+    "determination"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.fairyTale.1",
+   "layer": "music",
+   "text": "Whimsical fairy tale journey, bouncy woodwinds and strings, into the woods, no vocals.",
+   "style": "fairyTale",
+   "mood": "adventure",
+   "emotions": [
+    "joy",
+    "wonder"
+   ],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.comedy.1",
+   "layer": "music",
+   "text": "Comic chase music, frantic pizzicato and slide whistle, silly pursuit, no vocals.",
+   "style": "comedy",
+   "mood": "adventure",
+   "emotions": [
+    "absurd",
+    "joy"
+   ],
+   "situations": [
+    "chase"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.thriller.1",
+   "layer": "music",
+   "text": "Fast spy adventure music, surf guitar and brass, rooftop escape, no vocals.",
+   "style": "thriller",
+   "mood": "adventure",
+   "emotions": [
+    "determination",
+    "suspense"
+   ],
+   "situations": [
+    "escape",
+    "chase"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.noir.1",
+   "layer": "music",
+   "text": "Hard-boiled chase music, fast walking bass and brass hits, night pursuit, no vocals.",
+   "style": "noir",
+   "mood": "adventure",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "chase",
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.adventure.horror.1",
+   "layer": "music",
+   "text": "Frantic escape music, pounding drums and screeching strings, running for life, no vocals.",
+   "style": "horror",
+   "mood": "adventure",
+   "emotions": [
+    "fear"
+   ],
+   "situations": [
+    "escape",
+    "chase"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.neutral.1",
+   "layer": "music",
+   "text": "Joyful upbeat instrumental, bright acoustic guitar and claps, sunny and warm, no vocals.",
+   "style": "neutral",
+   "mood": "joyful",
+   "emotions": [
+    "joy"
+   ],
+   "situations": [
+    "celebration"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.neutral.2",
+   "layer": "music",
+   "text": "Happy orchestral music, light strings and woodwinds, hopeful morning, no vocals.",
+   "style": "neutral",
+   "mood": "joyful",
+   "emotions": [
+    "joy",
+    "hope"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.joyful.neutral.3",
+   "layer": "music",
+   "text": "Uplifting piano and strings, warm hope rising, gradual build, no vocals.",
+   "style": "neutral",
+   "mood": "joyful",
+   "emotions": [
+    "hope",
+    "relief"
+   ],
+   "situations": [
+    "reunion"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.joyful.fantasy.1",
+   "layer": "music",
+   "text": "Joyful fantasy village festival, fiddle, flute and drums, dancing, no vocals.",
+   "style": "fantasy",
+   "mood": "joyful",
+   "emotions": [
+    "joy"
+   ],
+   "situations": [
+    "celebration"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.scienceFiction.1",
+   "layer": "music",
+   "text": "Bright joyful synth melody, sparkling arpeggios, a new world welcomes us, no vocals.",
+   "style": "scienceFiction",
+   "mood": "joyful",
+   "emotions": [
+    "joy",
+    "wonder"
+   ],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.cyberpunk.1",
+   "layer": "music",
+   "text": "Upbeat neon synthpop instrumental, bouncy bass and bright leads, night out, no vocals.",
+   "style": "cyberpunk",
+   "mood": "joyful",
+   "emotions": [
+    "joy"
+   ],
+   "situations": [
+    "celebration",
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.historical.1",
+   "layer": "music",
+   "text": "Joyful baroque dance, harpsichord and strings, festive royal court, no vocals.",
+   "style": "historical",
+   "mood": "joyful",
+   "emotions": [
+    "joy"
+   ],
+   "situations": [
+    "celebration"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.western.1",
+   "layer": "music",
+   "text": "Cheerful hoedown fiddle and banjo, barn dance celebration, no vocals.",
+   "style": "western",
+   "mood": "joyful",
+   "emotions": [
+    "joy"
+   ],
+   "situations": [
+    "celebration"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.comedy.1",
+   "layer": "music",
+   "text": "Playful comedy instrumental, pizzicato strings, clarinet, no vocals.",
+   "style": "comedy",
+   "mood": "joyful",
+   "emotions": [
+    "joy",
+    "irony"
+   ],
+   "situations": [
+    "celebration"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.comedy.2",
+   "layer": "music",
+   "text": "Bouncy cartoon-like comedy music, tuba and xylophone, cheerful mischief, no vocals.",
+   "style": "comedy",
+   "mood": "joyful",
+   "emotions": [
+    "absurd",
+    "joy"
+   ],
+   "situations": [
+    "celebration"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.fairyTale.1",
+   "layer": "music",
+   "text": "Joyful fairy tale music, twinkling bells and woodwinds, happily ever after, no vocals.",
+   "style": "fairyTale",
+   "mood": "joyful",
+   "emotions": [
+    "joy",
+    "relief"
+   ],
+   "situations": [
+    "celebration"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.romance.1",
+   "layer": "music",
+   "text": "Joyful romantic strings and piano, wedding day happiness, bright, no vocals.",
+   "style": "romance",
+   "mood": "joyful",
+   "emotions": [
+    "joy",
+    "tenderness"
+   ],
+   "situations": [
+    "celebration",
+    "romance"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.adventure.1",
+   "layer": "music",
+   "text": "Triumphant joyful brass and strings, homecoming parade, hopeful, no vocals.",
+   "style": "adventure",
+   "mood": "joyful",
+   "emotions": [
+    "joy",
+    "triumph"
+   ],
+   "situations": [
+    "reunion",
+    "celebration"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.war.1",
+   "layer": "music",
+   "text": "Joyful victory march, bright brass and cheering drums, the war is over, no vocals.",
+   "style": "war",
+   "mood": "joyful",
+   "emotions": [
+    "relief",
+    "joy"
+   ],
+   "situations": [
+    "celebration"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.joyful.noir.1",
+   "layer": "music",
+   "text": "Lively swing jazz, upbeat trumpet and piano, a rare happy night, no vocals.",
+   "style": "noir",
+   "mood": "joyful",
+   "emotions": [
+    "joy"
+   ],
+   "situations": [
+    "celebration",
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.solemn.neutral.1",
+   "layer": "music",
+   "text": "Solemn orchestral hymn, slow strings and soft brass, dignified and reverent, no vocals.",
+   "style": "neutral",
+   "mood": "solemn",
+   "emotions": [
+    "awe",
+    "grief"
+   ],
+   "situations": [
+    "ritual",
+    "mourning"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.solemn.neutral.2",
+   "layer": "music",
+   "text": "Slow solemn organ chords and strings, quiet ceremony, reverent, no vocals.",
+   "style": "neutral",
+   "mood": "solemn",
+   "emotions": [
+    "awe"
+   ],
+   "situations": [
+    "ritual"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.solemn.neutral.3",
+   "layer": "music",
+   "text": "Grave slow piano chords and low strings, a moment of silence, no vocals.",
+   "style": "neutral",
+   "mood": "solemn",
+   "emotions": [
+    "grief"
+   ],
+   "situations": [
+    "mourning"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.solemn.fantasy.1",
+   "layer": "music",
+   "text": "Solemn fantasy choir pads and low horns, ancient rite in a temple, no vocals.",
+   "style": "fantasy",
+   "mood": "solemn",
+   "emotions": [
+    "awe"
+   ],
+   "situations": [
+    "ritual"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.solemn.scienceFiction.1",
+   "layer": "music",
+   "text": "Solemn sci-fi pads and slow brass, honoring the lost crew, no vocals.",
+   "style": "scienceFiction",
+   "mood": "solemn",
+   "emotions": [
+    "grief",
+    "awe"
+   ],
+   "situations": [
+    "mourning"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.solemn.historical.1",
+   "layer": "music",
+   "text": "Solemn medieval strings over an organ drone, cathedral procession, no vocals.",
+   "style": "historical",
+   "mood": "solemn",
+   "emotions": [
+    "awe"
+   ],
+   "situations": [
+    "ritual"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.solemn.war.1",
+   "layer": "music",
+   "text": "Solemn military funeral, slow snare and brass, honoring the fallen, no vocals.",
+   "style": "war",
+   "mood": "solemn",
+   "emotions": [
+    "grief"
+   ],
+   "situations": [
+    "mourning"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.solemn.western.1",
+   "layer": "music",
+   "text": "Solemn frontier hymn on harmonica and guitar, burial at sunset, no vocals.",
+   "style": "western",
+   "mood": "solemn",
+   "emotions": [
+    "grief"
+   ],
+   "situations": [
+    "mourning"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.solemn.horror.1",
+   "layer": "music",
+   "text": "Solemn dark organ and low choir pads, a funeral in the rain, no vocals.",
+   "style": "horror",
+   "mood": "solemn",
+   "emotions": [
+    "dread",
+    "grief"
+   ],
+   "situations": [
+    "mourning"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.solemn.noir.1",
+   "layer": "music",
+   "text": "Solemn slow jazz dirge, muted trumpet and bass, a detective's funeral, no vocals.",
+   "style": "noir",
+   "mood": "solemn",
+   "emotions": [
+    "grief"
+   ],
+   "situations": [
+    "mourning"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.solemn.cyberpunk.1",
+   "layer": "music",
+   "text": "Solemn cold synth chorale, slow and vast, mourning in a megacity, no vocals.",
+   "style": "cyberpunk",
+   "mood": "solemn",
+   "emotions": [
+    "grief",
+    "awe"
+   ],
+   "situations": [
+    "mourning"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.solemn.fairyTale.1",
+   "layer": "music",
+   "text": "Solemn storybook strings and harp, the old king's farewell, gentle, no vocals.",
+   "style": "fairyTale",
+   "mood": "solemn",
+   "emotions": [
+    "grief",
+    "tenderness"
+   ],
+   "situations": [
+    "farewell"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.solemn.adventure.1",
+   "layer": "music",
+   "text": "Solemn wide strings and horn, standing before a great ancient monument, no vocals.",
+   "style": "adventure",
+   "mood": "solemn",
+   "emotions": [
+    "awe",
+    "wonder"
+   ],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.solemn.romance.1",
+   "layer": "music",
+   "text": "Solemn tender strings and piano, a vow spoken quietly, reverent, no vocals.",
+   "style": "romance",
+   "mood": "solemn",
+   "emotions": [
+    "tenderness",
+    "awe"
+   ],
+   "situations": [
+    "ritual",
+    "romance"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.solemn.thriller.1",
+   "layer": "music",
+   "text": "Solemn slow strings with distant piano, quiet aftermath of tragedy, no vocals.",
+   "style": "thriller",
+   "mood": "solemn",
+   "emotions": [
+    "grief"
+   ],
+   "situations": [
+    "mourning"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.neutral.1",
+   "layer": "music",
+   "text": "Playful comedy instrumental, pizzicato strings and bassoon, light and quirky, no vocals.",
+   "style": "neutral",
+   "mood": "comic",
+   "emotions": [
+    "irony",
+    "joy"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.neutral.2",
+   "layer": "music",
+   "text": "Whimsical comic music, xylophone, clarinet and plucked strings, mischievous, no vocals.",
+   "style": "neutral",
+   "mood": "comic",
+   "emotions": [
+    "absurd",
+    "joy"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.comedy.1",
+   "layer": "music",
+   "text": "Absurd slapstick music, honking brass, slide whistle and bouncy tuba, no vocals.",
+   "style": "comedy",
+   "mood": "comic",
+   "emotions": [
+    "absurd"
+   ],
+   "situations": [
+    "chase"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.comedy.2",
+   "layer": "music",
+   "text": "Dry ironic comedy jazz, sly piano and muted trumpet, deadpan humor, no vocals.",
+   "style": "comedy",
+   "mood": "comic",
+   "emotions": [
+    "irony"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.horror.1",
+   "layer": "music",
+   "text": "Dark comedy music, spooky harpsichord and wonky waltz, macabre humor, no vocals.",
+   "style": "horror",
+   "mood": "comic",
+   "emotions": [
+    "irony",
+    "unease"
+   ],
+   "situations": [
+    "ritual"
+   ],
+   "intensity": 1,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.fantasy.1",
+   "layer": "music",
+   "text": "Comic fantasy jig, silly fiddle and tin whistle, mischievous goblins, no vocals.",
+   "style": "fantasy",
+   "mood": "comic",
+   "emotions": [
+    "absurd",
+    "joy"
+   ],
+   "situations": [
+    "celebration"
+   ],
+   "intensity": 2,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.scienceFiction.1",
+   "layer": "music",
+   "text": "Quirky retro sci-fi comedy, bleepy synths and theremin, bumbling robots, no vocals.",
+   "style": "scienceFiction",
+   "mood": "comic",
+   "emotions": [
+    "absurd"
+   ],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 1,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.cyberpunk.1",
+   "layer": "music",
+   "text": "Glitchy comic electro, chiptune bleeps and goofy bass, malfunctioning gadget, no vocals.",
+   "style": "cyberpunk",
+   "mood": "comic",
+   "emotions": [
+    "absurd",
+    "irony"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.historical.1",
+   "layer": "music",
+   "text": "Comic baroque romp, hurried harpsichord and bassoon, courtly blunders, no vocals.",
+   "style": "historical",
+   "mood": "comic",
+   "emotions": [
+    "irony",
+    "absurd"
+   ],
+   "situations": [
+    "celebration"
+   ],
+   "intensity": 1,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.western.1",
+   "layer": "music",
+   "text": "Comic western saloon piano and jaw harp, bumbling outlaws, no vocals.",
+   "style": "western",
+   "mood": "comic",
+   "emotions": [
+    "absurd",
+    "irony"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 1,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.noir.1",
+   "layer": "music",
+   "text": "Comic noir parody, exaggerated sax and bass, clumsy detective, no vocals.",
+   "style": "noir",
+   "mood": "comic",
+   "emotions": [
+    "irony"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.war.1",
+   "layer": "music",
+   "text": "Satirical military march, pompous brass and off-beat drums, absurd orders, no vocals.",
+   "style": "war",
+   "mood": "comic",
+   "emotions": [
+    "irony",
+    "absurd"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 1,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.fairyTale.1",
+   "layer": "music",
+   "text": "Silly fairy tale music, bouncing bassoon and bells, talking animals, no vocals.",
+   "style": "fairyTale",
+   "mood": "comic",
+   "emotions": [
+    "joy",
+    "absurd"
+   ],
+   "situations": [
+    "celebration"
+   ],
+   "intensity": 1,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.romance.1",
+   "layer": "music",
+   "text": "Romantic comedy music, cheeky pizzicato and clarinet, flirting gone wrong, no vocals.",
+   "style": "romance",
+   "mood": "comic",
+   "emotions": [
+    "irony",
+    "tenderness"
+   ],
+   "situations": [
+    "romance"
+   ],
+   "intensity": 1,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.comic.adventure.1",
+   "layer": "music",
+   "text": "Comic adventure caper, sneaky brass and strings, heist goes sideways, no vocals.",
+   "style": "adventure",
+   "mood": "comic",
+   "emotions": [
+    "irony",
+    "suspense"
+   ],
+   "situations": [
+    "escape"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.neutral.1",
+   "layer": "music",
+   "text": "Dramatic orchestral music, intense strings and timpani, emotional climax, no vocals.",
+   "style": "neutral",
+   "mood": "dramatic",
+   "emotions": [
+    "determination",
+    "grief"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.neutral.2",
+   "layer": "music",
+   "text": "Emotional dramatic piano and strings, a painful revelation, building intensity, no vocals.",
+   "style": "neutral",
+   "mood": "dramatic",
+   "emotions": [
+    "sadness",
+    "fear"
+   ],
+   "situations": [
+    "revelation"
+   ],
+   "intensity": 3,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.thriller.1",
+   "layer": "music",
+   "text": "Dramatic thriller hits, deep booms and racing strings, the twist revealed, no vocals.",
+   "style": "thriller",
+   "mood": "dramatic",
+   "emotions": [
+    "fear",
+    "suspense"
+   ],
+   "situations": [
+    "revelation"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.fantasy.1",
+   "layer": "music",
+   "text": "Dramatic fantasy orchestra, choir pads and brass, betrayal in the throne room, no vocals.",
+   "style": "fantasy",
+   "mood": "dramatic",
+   "emotions": [
+    "anger",
+    "grief"
+   ],
+   "situations": [
+    "confrontation",
+    "revelation"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.scienceFiction.1",
+   "layer": "music",
+   "text": "Dramatic sci-fi orchestra and synths, desperate sacrifice, rising intensity, no vocals.",
+   "style": "scienceFiction",
+   "mood": "dramatic",
+   "emotions": [
+    "grief",
+    "determination"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.cyberpunk.1",
+   "layer": "music",
+   "text": "Dramatic dark synth and strings, the system turns against us, no vocals.",
+   "style": "cyberpunk",
+   "mood": "dramatic",
+   "emotions": [
+    "anger",
+    "fear"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.historical.1",
+   "layer": "music",
+   "text": "Dramatic period orchestra, stormy strings, a dynasty falls, no vocals.",
+   "style": "historical",
+   "mood": "dramatic",
+   "emotions": [
+    "grief",
+    "anger"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.war.1",
+   "layer": "music",
+   "text": "Dramatic war requiem, aching strings and distant drums, heavy losses, no vocals.",
+   "style": "war",
+   "mood": "dramatic",
+   "emotions": [
+    "grief"
+   ],
+   "situations": [
+    "mourning",
+    "battle"
+   ],
+   "intensity": 3,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.western.1",
+   "layer": "music",
+   "text": "Dramatic western duel music, tense guitar and swelling orchestra, revenge, no vocals.",
+   "style": "western",
+   "mood": "dramatic",
+   "emotions": [
+    "anger",
+    "determination"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.horror.1",
+   "layer": "music",
+   "text": "Dramatic horror crescendo, screaming strings and pounding drums, the monster revealed, no vocals.",
+   "style": "horror",
+   "mood": "dramatic",
+   "emotions": [
+    "fear",
+    "dread"
+   ],
+   "situations": [
+    "revelation"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.noir.1",
+   "layer": "music",
+   "text": "Dramatic noir orchestra, brooding brass and strings, betrayal by a partner, no vocals.",
+   "style": "noir",
+   "mood": "dramatic",
+   "emotions": [
+    "anger",
+    "sadness"
+   ],
+   "situations": [
+    "revelation"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.romance.1",
+   "layer": "music",
+   "text": "Dramatic romantic strings and piano, a heartbreaking argument, intense, no vocals.",
+   "style": "romance",
+   "mood": "dramatic",
+   "emotions": [
+    "anger",
+    "sadness"
+   ],
+   "situations": [
+    "confrontation",
+    "farewell"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.adventure.1",
+   "layer": "music",
+   "text": "Dramatic adventure orchestra, perilous storm at sea, heroic struggle, no vocals.",
+   "style": "adventure",
+   "mood": "dramatic",
+   "emotions": [
+    "fear",
+    "determination"
+   ],
+   "situations": [
+    "escape"
+   ],
+   "intensity": 3,
+   "energy": 3,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.fairyTale.1",
+   "layer": "music",
+   "text": "Dramatic fairy tale orchestra, dark strings, the curse takes hold, no vocals.",
+   "style": "fairyTale",
+   "mood": "dramatic",
+   "emotions": [
+    "fear",
+    "grief"
+   ],
+   "situations": [
+    "revelation"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.dramatic.comedy.1",
+   "layer": "music",
+   "text": "Mock-dramatic orchestra, overblown timpani and brass, tiny problem made huge, no vocals.",
+   "style": "comedy",
+   "mood": "dramatic",
+   "emotions": [
+    "absurd",
+    "irony"
+   ],
+   "situations": [
+    "confrontation"
+   ],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false
+  },
+  {
+   "id": "music.focus.neutral.1",
+   "layer": "music",
+   "text": "Focus music, steady soft piano and warm pads, calm and minimal, no vocals.",
+   "style": "neutral",
+   "mood": "focus",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.neutral.2",
+   "layer": "music",
+   "text": "Minimal ambient electronic pulses, gentle and steady, for deep concentration, no vocals.",
+   "style": "neutral",
+   "mood": "focus",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.neutral.3",
+   "layer": "music",
+   "text": "Soft lo-fi beat, mellow keys and vinyl warmth, steady and calm, no vocals.",
+   "style": "neutral",
+   "mood": "focus",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.scienceFiction.1",
+   "layer": "music",
+   "text": "Steady ambient synth arpeggios, quiet starship bridge, focused calm, no vocals.",
+   "style": "scienceFiction",
+   "mood": "focus",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.cyberpunk.1",
+   "layer": "music",
+   "text": "Calm cyberpunk lo-fi, soft synth bass and rain-like hats, steady flow, no vocals.",
+   "style": "cyberpunk",
+   "mood": "focus",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "investigation",
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.historical.1",
+   "layer": "music",
+   "text": "Gentle baroque harpsichord study piece, steady and orderly, quiet library, no vocals.",
+   "style": "historical",
+   "mood": "focus",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.fantasy.1",
+   "layer": "music",
+   "text": "Soft fantasy ambient, gentle harp patterns and pads, steady, no vocals.",
+   "style": "fantasy",
+   "mood": "focus",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.noir.1",
+   "layer": "music",
+   "text": "Mellow late-night jazz trio, steady brushes and soft piano, focused, no vocals.",
+   "style": "noir",
+   "mood": "focus",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "investigation",
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.thriller.1",
+   "layer": "music",
+   "text": "Steady cool electronic pulse with soft pads, analytical focus, minimal, no vocals.",
+   "style": "thriller",
+   "mood": "focus",
+   "emotions": [
+    "suspense"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.western.1",
+   "layer": "music",
+   "text": "Steady gentle fingerpicked guitar, quiet workday on the ranch, no vocals.",
+   "style": "western",
+   "mood": "focus",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.romance.1",
+   "layer": "music",
+   "text": "Warm steady piano and soft strings, calm and comforting, minimal, no vocals.",
+   "style": "romance",
+   "mood": "focus",
+   "emotions": [
+    "serenity",
+    "tenderness"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.adventure.1",
+   "layer": "music",
+   "text": "Steady light percussion and soft strings, planning the route, focused, no vocals.",
+   "style": "adventure",
+   "mood": "focus",
+   "emotions": [
+    "determination"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.fairyTale.1",
+   "layer": "music",
+   "text": "Soft steady music box patterns with warm pads, quiet focus, no vocals.",
+   "style": "fairyTale",
+   "mood": "focus",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.comedy.1",
+   "layer": "music",
+   "text": "Light steady jazz guitar and soft bass, easygoing focus, no vocals.",
+   "style": "comedy",
+   "mood": "focus",
+   "emotions": [
+    "serenity"
+   ],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.war.1",
+   "layer": "music",
+   "text": "Steady quiet strings and soft drum pulse, waiting at headquarters, focused, no vocals.",
+   "style": "war",
+   "mood": "focus",
+   "emotions": [
+    "determination"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true
+  },
+  {
+   "id": "music.focus.horror.1",
+   "layer": "music",
+   "text": "Low steady drone with sparse soft piano, quiet tension for focus, no vocals.",
+   "style": "horror",
+   "mood": "focus",
+   "emotions": [
+    "unease"
+   ],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true
+  },
+  {
+   "id": "sfx.rain.1",
+   "layer": "ambience",
+   "text": "Steady rain on a window, soft and continuous, no music or voices.",
+   "bed": "rain",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "home"
+  },
+  {
+   "id": "sfx.rain.2",
+   "layer": "ambience",
+   "text": "Gentle rain on leaves and soil, steady and calm, no music or voices.",
+   "bed": "rain",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.rain.3",
+   "layer": "ambience",
+   "text": "Heavy rain on a tin roof, constant drumming, no music or voices.",
+   "bed": "rain",
+   "emotions": [],
+   "situations": [],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": true,
+   "setting": "countryside"
+  },
+  {
+   "id": "sfx.rain.4",
+   "layer": "ambience",
+   "text": "Rain on city streets, cars passing on wet asphalt, no music or voices.",
+   "bed": "rain",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "setting": "city"
+  },
+  {
+   "id": "sfx.rain.5",
+   "layer": "ambience",
+   "text": "Steady rain hitting neon signs and puddles, distant traffic hum, no music or voices.",
+   "bed": "rain",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "cyberpunk",
+   "setting": "city"
+  },
+  {
+   "id": "sfx.rain.6",
+   "layer": "ambience",
+   "text": "Rain on a canvas tent, steady patter, quiet camp, no music or voices.",
+   "bed": "rain",
+   "emotions": [],
+   "situations": [
+    "rest",
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "style": "adventure",
+   "setting": "countryside"
+  },
+  {
+   "id": "sfx.rain.7",
+   "layer": "ambience",
+   "text": "Rain on castle stone walls and courtyard, steady downpour, no music or voices.",
+   "bed": "rain",
+   "emotions": [],
+   "situations": [],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false,
+   "style": "fantasy",
+   "setting": "castle"
+  },
+  {
+   "id": "sfx.rain.8",
+   "layer": "ambience",
+   "text": "Light rain on a ship deck, creaking wood and dripping ropes, no music or voices.",
+   "bed": "rain",
+   "emotions": [],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "setting": "ship"
+  },
+  {
+   "id": "sfx.storm.1",
+   "layer": "ambience",
+   "text": "Heavy rain on windows, distant thunder, no music or voices.",
+   "bed": "storm",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false,
+   "setting": "home"
+  },
+  {
+   "id": "sfx.storm.2",
+   "layer": "ambience",
+   "text": "Steady thunderstorm, heavy rain and rolling distant thunder, no music or voices.",
+   "bed": "storm",
+   "emotions": [],
+   "situations": [],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false
+  },
+  {
+   "id": "sfx.storm.3",
+   "layer": "ambience",
+   "text": "Storm at sea, howling wind, crashing waves and heavy rain, no music or voices.",
+   "bed": "storm",
+   "emotions": [],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false,
+   "setting": "sea"
+  },
+  {
+   "id": "sfx.storm.4",
+   "layer": "ambience",
+   "text": "Thunderstorm over a forest, rain through trees and wind gusts, no music or voices.",
+   "bed": "storm",
+   "emotions": [],
+   "situations": [],
+   "intensity": 2,
+   "energy": 2,
+   "studySafe": false,
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.storm.5",
+   "layer": "ambience",
+   "text": "Distant thunder over an open prairie, wind and steady rain, no music or voices.",
+   "bed": "storm",
+   "emotions": [],
+   "situations": [],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false,
+   "style": "western",
+   "setting": "countryside"
+  },
+  {
+   "id": "sfx.storm.6",
+   "layer": "ambience",
+   "text": "Acid rain storm on a megacity, steady downpour and electric hum, no music or voices.",
+   "bed": "storm",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false,
+   "style": "cyberpunk",
+   "setting": "city"
+  },
+  {
+   "id": "sfx.storm.7",
+   "layer": "ambience",
+   "text": "Storm against castle towers, wind howling through stone, steady rain, no music or voices.",
+   "bed": "storm",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 3,
+   "energy": 2,
+   "studySafe": false,
+   "setting": "castle"
+  },
+  {
+   "id": "sfx.forestDay.1",
+   "layer": "ambience",
+   "text": "Forest by day, birdsong, gentle breeze in leaves, no music or voices.",
+   "bed": "forestDay",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.forestDay.2",
+   "layer": "ambience",
+   "text": "Sunny woodland, distant woodpecker, rustling leaves, soft insects, no music or voices.",
+   "bed": "forestDay",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.forestDay.3",
+   "layer": "ambience",
+   "text": "Dense jungle daytime, humid air, exotic birds and insects, no music or voices.",
+   "bed": "forestDay",
+   "emotions": [],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "adventure",
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.forestDay.4",
+   "layer": "ambience",
+   "text": "Pine forest in the mountains, wind through needles, sparse birds, no music or voices.",
+   "bed": "forestDay",
+   "emotions": [],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "mountain"
+  },
+  {
+   "id": "sfx.forestDay.5",
+   "layer": "ambience",
+   "text": "Enchanted forest daytime, soft wind chimes in branches and birdsong, no music or voices.",
+   "bed": "forestDay",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "style": "fantasy",
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.forestDay.6",
+   "layer": "ambience",
+   "text": "Meadow by a forest edge, crickets, bees and light wind, no music or voices.",
+   "bed": "forestDay",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "countryside"
+  },
+  {
+   "id": "sfx.forestDay.7",
+   "layer": "ambience",
+   "text": "Quiet autumn woods, crunching leaves in wind, distant crows, no music or voices.",
+   "bed": "forestDay",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.forestDay.8",
+   "layer": "ambience",
+   "text": "Alien forest daytime, strange chirps and soft buzzing, humid air, no music or voices.",
+   "bed": "forestDay",
+   "emotions": [],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "scienceFiction",
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.forestNight.1",
+   "layer": "ambience",
+   "text": "Night forest, gentle wind, distant owls, no music or voices.",
+   "bed": "forestNight",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.forestNight.2",
+   "layer": "ambience",
+   "text": "Summer night in the woods, crickets and frogs, calm breeze, no music or voices.",
+   "bed": "forestNight",
+   "emotions": [],
+   "situations": [
+    "night",
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.forestNight.3",
+   "layer": "ambience",
+   "text": "Dark forest at night, creaking branches and wind, distant animal calls, no music or voices.",
+   "bed": "forestNight",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false,
+   "style": "horror",
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.forestNight.4",
+   "layer": "ambience",
+   "text": "Jungle at night, dense insects, frogs and distant calls, no music or voices.",
+   "bed": "forestNight",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "adventure",
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.forestNight.5",
+   "layer": "ambience",
+   "text": "Night campsite in the forest, soft crackling distant fire and crickets, no music or voices.",
+   "bed": "forestNight",
+   "emotions": [],
+   "situations": [
+    "night",
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.forestNight.6",
+   "layer": "ambience",
+   "text": "Moonlit enchanted woods, soft wind, faint chimes and owls, no music or voices.",
+   "bed": "forestNight",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "style": "fantasy",
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.forestNight.7",
+   "layer": "ambience",
+   "text": "Swamp at night, croaking frogs, buzzing insects, slow water, no music or voices.",
+   "bed": "forestNight",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false,
+   "setting": "river"
+  },
+  {
+   "id": "sfx.sea.1",
+   "layer": "ambience",
+   "text": "Ocean waves on a sandy beach, steady and calm, no music or voices.",
+   "bed": "sea",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "sea"
+  },
+  {
+   "id": "sfx.sea.2",
+   "layer": "ambience",
+   "text": "Waves crashing on rocky cliffs, seagulls and wind, no music or voices.",
+   "bed": "sea",
+   "emotions": [],
+   "situations": [],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false,
+   "setting": "sea"
+  },
+  {
+   "id": "sfx.sea.3",
+   "layer": "ambience",
+   "text": "Open sea from a sailing ship, creaking hull, waves and rigging, no music or voices.",
+   "bed": "sea",
+   "emotions": [],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "historical",
+   "setting": "ship"
+  },
+  {
+   "id": "sfx.sea.4",
+   "layer": "ambience",
+   "text": "Calm harbor, lapping water, distant bells and gulls, no music or voices.",
+   "bed": "sea",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "village"
+  },
+  {
+   "id": "sfx.sea.5",
+   "layer": "ambience",
+   "text": "Underwater ambience, muffled waves and gentle bubbles, deep and calm, no music or voices.",
+   "bed": "sea",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "sea"
+  },
+  {
+   "id": "sfx.sea.6",
+   "layer": "ambience",
+   "text": "Night beach, gentle waves and soft wind, calm and dark, no music or voices.",
+   "bed": "sea",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "sea"
+  },
+  {
+   "id": "sfx.sea.7",
+   "layer": "ambience",
+   "text": "Stormy grey sea, heavy swell and cold wind, no music or voices.",
+   "bed": "sea",
+   "emotions": [],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false,
+   "setting": "sea"
+  },
+  {
+   "id": "sfx.stream.1",
+   "layer": "ambience",
+   "text": "Gentle forest stream, water over stones, birds in the distance, no music or voices.",
+   "bed": "stream",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.stream.2",
+   "layer": "ambience",
+   "text": "Mountain brook, clear rushing water and light wind, no music or voices.",
+   "bed": "stream",
+   "emotions": [],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true,
+   "setting": "mountain"
+  },
+  {
+   "id": "sfx.stream.3",
+   "layer": "ambience",
+   "text": "Small waterfall in a quiet glade, steady splashing, no music or voices.",
+   "bed": "stream",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "forest"
+  },
+  {
+   "id": "sfx.stream.4",
+   "layer": "ambience",
+   "text": "Slow river by a meadow, soft water and insects, no music or voices.",
+   "bed": "stream",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "river"
+  },
+  {
+   "id": "sfx.stream.5",
+   "layer": "ambience",
+   "text": "Babbling brook at night, crickets and soft water, no music or voices.",
+   "bed": "stream",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "river"
+  },
+  {
+   "id": "sfx.stream.6",
+   "layer": "ambience",
+   "text": "Fountain in a stone courtyard, steady trickling water, no music or voices.",
+   "bed": "stream",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "style": "historical",
+   "setting": "castle"
+  },
+  {
+   "id": "sfx.stream.7",
+   "layer": "ambience",
+   "text": "Wide river current, steady flow, distant birds, no music or voices.",
+   "bed": "stream",
+   "emotions": [],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": true,
+   "setting": "river"
+  },
+  {
+   "id": "sfx.wind.1",
+   "layer": "ambience",
+   "text": "Steady wind across open plains, soft and continuous, no music or voices.",
+   "bed": "wind",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "countryside"
+  },
+  {
+   "id": "sfx.wind.2",
+   "layer": "ambience",
+   "text": "Cold mountain wind, howling gusts over rocks, no music or voices.",
+   "bed": "wind",
+   "emotions": [],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false,
+   "setting": "mountain"
+  },
+  {
+   "id": "sfx.wind.3",
+   "layer": "ambience",
+   "text": "Desert wind, blowing sand and dry gusts, empty and vast, no music or voices.",
+   "bed": "wind",
+   "emotions": [],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "western",
+   "setting": "desert"
+  },
+  {
+   "id": "sfx.wind.4",
+   "layer": "ambience",
+   "text": "Snowy wind on a frozen field, soft whistling gusts, no music or voices.",
+   "bed": "wind",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "snowfield"
+  },
+  {
+   "id": "sfx.wind.5",
+   "layer": "ambience",
+   "text": "Desert night, cool wind, crickets and a distant coyote, no music or voices.",
+   "bed": "wind",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "style": "western",
+   "setting": "desert"
+  },
+  {
+   "id": "sfx.wind.6",
+   "layer": "ambience",
+   "text": "Wind through ruined stone halls, hollow and lonely, no music or voices.",
+   "bed": "wind",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false,
+   "style": "horror",
+   "setting": "castle"
+  },
+  {
+   "id": "sfx.wind.7",
+   "layer": "ambience",
+   "text": "Wind on an alien planet, low hollow gusts and fine dust, no music or voices.",
+   "bed": "wind",
+   "emotions": [],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false,
+   "style": "scienceFiction",
+   "setting": "space"
+  },
+  {
+   "id": "sfx.wind.8",
+   "layer": "ambience",
+   "text": "Wind whistling through a deserted western town, creaking signs, no music or voices.",
+   "bed": "wind",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false,
+   "style": "western",
+   "setting": "village"
+  },
+  {
+   "id": "sfx.fireplace.1",
+   "layer": "ambience",
+   "text": "Crackling fireplace, warm and steady, quiet room, no music or voices.",
+   "bed": "fireplace",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "home"
+  },
+  {
+   "id": "sfx.fireplace.2",
+   "layer": "ambience",
+   "text": "Campfire crackling at night, crickets nearby, calm, no music or voices.",
+   "bed": "fireplace",
+   "emotions": [],
+   "situations": [
+    "night",
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "countryside"
+  },
+  {
+   "id": "sfx.fireplace.3",
+   "layer": "ambience",
+   "text": "Large hearth fire in a stone hall, deep crackling and pops, no music or voices.",
+   "bed": "fireplace",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "style": "fantasy",
+   "setting": "castle"
+  },
+  {
+   "id": "sfx.fireplace.4",
+   "layer": "ambience",
+   "text": "Wood stove crackling in a cabin, soft wind outside, no music or voices.",
+   "bed": "fireplace",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "home"
+  },
+  {
+   "id": "sfx.fireplace.5",
+   "layer": "ambience",
+   "text": "Campfire on the prairie, crackling wood and distant coyotes, no music or voices.",
+   "bed": "fireplace",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "style": "western",
+   "setting": "desert"
+  },
+  {
+   "id": "sfx.fireplace.6",
+   "layer": "ambience",
+   "text": "Fireplace on a rainy evening, soft crackle and light rain outside, no music or voices.",
+   "bed": "fireplace",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "home"
+  },
+  {
+   "id": "sfx.fireplace.7",
+   "layer": "ambience",
+   "text": "Blacksmith forge fire, roaring bellows and glowing coals, no music or voices.",
+   "bed": "fireplace",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "historical",
+   "setting": "village"
+  },
+  {
+   "id": "sfx.tavern.1",
+   "layer": "ambience",
+   "text": "Quiet tavern, clinking glasses, creaking chairs and crackling fire, no music or voices.",
+   "bed": "tavern",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "setting": "tavern"
+  },
+  {
+   "id": "sfx.tavern.2",
+   "layer": "ambience",
+   "text": "Old western saloon, clinking bottles, swinging doors and creaking floor, no music or voices.",
+   "bed": "tavern",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "western",
+   "setting": "tavern"
+  },
+  {
+   "id": "sfx.tavern.3",
+   "layer": "ambience",
+   "text": "Medieval inn hall, wooden mugs clinking, fire and footsteps, no music or voices.",
+   "bed": "tavern",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "historical",
+   "setting": "tavern"
+  },
+  {
+   "id": "sfx.tavern.4",
+   "layer": "ambience",
+   "text": "Busy cafe ambience, cups and saucers, espresso machine hiss, no music or voices.",
+   "bed": "tavern",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "setting": "city"
+  },
+  {
+   "id": "sfx.tavern.5",
+   "layer": "ambience",
+   "text": "Futuristic bar ambience, low electronic hum, glasses clinking, no music or voices.",
+   "bed": "tavern",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "cyberpunk",
+   "setting": "tavern"
+  },
+  {
+   "id": "sfx.tavern.6",
+   "layer": "ambience",
+   "text": "Ship galley at sea, clattering plates and creaking hull, no music or voices.",
+   "bed": "tavern",
+   "emotions": [],
+   "situations": [
+    "journey"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "setting": "ship"
+  },
+  {
+   "id": "sfx.tavern.7",
+   "layer": "ambience",
+   "text": "Jazz club before opening, glasses, ice and a ceiling fan, no music or voices.",
+   "bed": "tavern",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false,
+   "style": "noir",
+   "setting": "tavern"
+  },
+  {
+   "id": "sfx.city.1",
+   "layer": "ambience",
+   "text": "Busy city street, steady traffic and distant horns, no music or voices.",
+   "bed": "city",
+   "emotions": [],
+   "situations": [],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false,
+   "setting": "city"
+  },
+  {
+   "id": "sfx.city.2",
+   "layer": "ambience",
+   "text": "Quiet city at night, distant traffic hum and light wind, no music or voices.",
+   "bed": "city",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "city"
+  },
+  {
+   "id": "sfx.city.3",
+   "layer": "ambience",
+   "text": "Cyberpunk megacity at night, humming neon, flying traffic and rain, no music or voices.",
+   "bed": "city",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false,
+   "style": "cyberpunk",
+   "setting": "city"
+  },
+  {
+   "id": "sfx.city.4",
+   "layer": "ambience",
+   "text": "Old town square, horse carriages on cobblestones and church bells, no music or voices.",
+   "bed": "city",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "historical",
+   "setting": "village"
+  },
+  {
+   "id": "sfx.city.5",
+   "layer": "ambience",
+   "text": "1940s city street, old cars passing, distant trolley bell, no music or voices.",
+   "bed": "city",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "noir",
+   "setting": "city"
+  },
+  {
+   "id": "sfx.city.6",
+   "layer": "ambience",
+   "text": "Market street at morning, carts rolling, footsteps and distant bells, no music or voices.",
+   "bed": "city",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "historical",
+   "setting": "city"
+  },
+  {
+   "id": "sfx.city.7",
+   "layer": "ambience",
+   "text": "Space station corridor, steady air vents and machinery hum, no music or voices.",
+   "bed": "city",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "style": "scienceFiction",
+   "setting": "space"
+  },
+  {
+   "id": "sfx.city.8",
+   "layer": "ambience",
+   "text": "Rooftop above the city, wind, distant sirens and traffic hum, no music or voices.",
+   "bed": "city",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 1,
+   "energy": 1,
+   "studySafe": false,
+   "style": "thriller",
+   "setting": "city"
+  },
+  {
+   "id": "sfx.library.1",
+   "layer": "ambience",
+   "text": "Quiet library room tone, soft page turns and a ticking clock, no music or voices.",
+   "bed": "library",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "library"
+  },
+  {
+   "id": "sfx.library.2",
+   "layer": "ambience",
+   "text": "Old study with a ticking clock and crackling fire, quiet, no music or voices.",
+   "bed": "library",
+   "emotions": [],
+   "situations": [
+    "rest"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "home"
+  },
+  {
+   "id": "sfx.library.3",
+   "layer": "ambience",
+   "text": "Large reading hall, distant footsteps and soft air, hushed, no music or voices.",
+   "bed": "library",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "library"
+  },
+  {
+   "id": "sfx.library.4",
+   "layer": "ambience",
+   "text": "Monastery scriptorium, quill scratching and soft wind, quiet stone room, no music or voices.",
+   "bed": "library",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "style": "historical",
+   "setting": "sacred"
+  },
+  {
+   "id": "sfx.library.5",
+   "layer": "ambience",
+   "text": "Wizard's tower study, soft bubbling potions and crackling candles, no music or voices.",
+   "bed": "library",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "style": "fantasy",
+   "setting": "castle"
+  },
+  {
+   "id": "sfx.library.6",
+   "layer": "ambience",
+   "text": "Quiet office at night, humming lights and distant rain, no music or voices.",
+   "bed": "library",
+   "emotions": [],
+   "situations": [
+    "night",
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "style": "noir",
+   "setting": "city"
+  },
+  {
+   "id": "sfx.library.7",
+   "layer": "ambience",
+   "text": "Computer lab hum, soft fans and keyboard taps, quiet, no music or voices.",
+   "bed": "library",
+   "emotions": [],
+   "situations": [
+    "investigation"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "style": "scienceFiction",
+   "setting": "space"
+  },
+  {
+   "id": "sfx.cave.1",
+   "layer": "ambience",
+   "text": "Deep cave ambience, slow water drips and low echoing air, no music or voices.",
+   "bed": "cave",
+   "emotions": [],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "cave"
+  },
+  {
+   "id": "sfx.cave.2",
+   "layer": "ambience",
+   "text": "Underground cavern, distant dripping and soft wind, cold and vast, no music or voices.",
+   "bed": "cave",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "cave"
+  },
+  {
+   "id": "sfx.cave.3",
+   "layer": "ambience",
+   "text": "Mine tunnel, creaking timbers and dripping water, no music or voices.",
+   "bed": "cave",
+   "emotions": [],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false,
+   "style": "western",
+   "setting": "cave"
+  },
+  {
+   "id": "sfx.cave.4",
+   "layer": "ambience",
+   "text": "Ice cave, soft crackling ice and cold wind, echoing, no music or voices.",
+   "bed": "cave",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false,
+   "setting": "snowfield"
+  },
+  {
+   "id": "sfx.cave.5",
+   "layer": "ambience",
+   "text": "Dungeon cell, dripping water and distant chains, damp stone, no music or voices.",
+   "bed": "cave",
+   "emotions": [],
+   "situations": [
+    "night"
+   ],
+   "intensity": 2,
+   "energy": 0,
+   "studySafe": false,
+   "style": "horror",
+   "setting": "castle"
+  },
+  {
+   "id": "sfx.cave.6",
+   "layer": "ambience",
+   "text": "Lava cave, low rumbling and bubbling heat, deep echoes, no music or voices.",
+   "bed": "cave",
+   "emotions": [],
+   "situations": [
+    "discovery"
+   ],
+   "intensity": 2,
+   "energy": 1,
+   "studySafe": false,
+   "style": "fantasy",
+   "setting": "cave"
+  },
+  {
+   "id": "sfx.cave.7",
+   "layer": "ambience",
+   "text": "Sea cave, waves echoing inside rock and dripping water, no music or voices.",
+   "bed": "cave",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": true,
+   "setting": "sea"
+  },
+  {
+   "id": "sfx.cave.8",
+   "layer": "ambience",
+   "text": "Abandoned bunker, humming ventilation and dripping pipes, no music or voices.",
+   "bed": "cave",
+   "emotions": [],
+   "situations": [],
+   "intensity": 1,
+   "energy": 0,
+   "studySafe": false,
+   "style": "war",
+   "setting": "cave"
+  }
+ ]
+}
