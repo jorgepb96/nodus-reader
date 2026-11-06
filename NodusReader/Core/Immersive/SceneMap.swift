@@ -29,6 +29,18 @@ struct SceneReading: Codable, Hashable, Sendable {
     /// Whether `evidence` really occurs in the passage (checked, not trusted).
     var evidenceVerified: Bool
     var source: Source
+    /// Finer feeling and situation (analyser version 2). They only choose which piece
+    /// plays inside the mood the director decided; nil in older readings.
+    var emotion: SceneEmotion? = nil
+    var situation: SceneSituation? = nil
+
+    var effectiveEmotion: SceneEmotion? {
+        emotion ?? SoundscapeVocabulary.derive(tone: tone, action: action, intensity: intensity).0
+    }
+
+    var effectiveSituation: SceneSituation? {
+        situation ?? SoundscapeVocabulary.derive(tone: tone, action: action, intensity: intensity).1
+    }
 }
 
 /// A stretch of the book analysed as one unit: a few paragraphs, never
@@ -248,7 +260,7 @@ enum SceneSegmenter {
 /// the device, never synced.
 struct SceneMap: Codable, Sendable {
     /// Bump when prompts, windows or parsing change meaning.
-    static let analyzerVersion = 1
+    static let analyzerVersion = 2
 
     var analyzerVersion = SceneMap.analyzerVersion
     var vocabularyVersion = SceneVocabulary.version

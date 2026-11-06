@@ -49,7 +49,10 @@ enum ScenePrompt {
     weather=\(SceneWeather.allCases.map(\.rawValue).joined(separator: "|")); \
     tone=\(SceneTone.allCases.map(\.rawValue).joined(separator: "|")); \
     action=\(SceneAction.allCases.map(\.rawValue).joined(separator: "|")); intensity=0-3; \
-    change=none|minor|clear; evidence=<at most 12 words copied from the passage>
+    change=none|minor|clear; \
+    emotion=\(SceneEmotion.allCases.map(\.rawValue).joined(separator: "|"))|none; \
+    situation=\(SceneSituation.allCases.map(\.rawValue).joined(separator: "|"))|none; \
+    evidence=<at most 12 words copied from the passage>
     """
 }
 
@@ -71,11 +74,22 @@ enum SceneLineParser {
               let action = fields["action"].flatMap(SceneAction.init(rawValue:)),
               let intensity = fields["intensity"].flatMap(Int.init), (0...3).contains(intensity),
               let change = fields["change"].flatMap(SceneChange.init(rawValue:)) else { return nil }
+        // Optional (version 2): absent or "none" is nil; any other unknown word rejects the line.
+        var emotion: SceneEmotion?
+        if let raw = fields["emotion"], raw != "none" {
+            guard let value = SceneEmotion(rawValue: raw) else { return nil }
+            emotion = value
+        }
+        var situation: SceneSituation?
+        if let raw = fields["situation"], raw != "none" {
+            guard let value = SceneSituation(rawValue: raw) else { return nil }
+            situation = value
+        }
         let evidence = (fields["evidence"] ?? "").trimmingCharacters(in: CharacterSet(charactersIn: "\"“”«» "))
         return SceneReading(passageKind: kind, setting: setting, settingClarity: clarity, weather: weather,
                             tone: tone, action: action, intensity: intensity, sceneChange: change,
                             evidence: evidence, evidenceVerified: SceneEvidence.verify(evidence, in: passage),
-                            source: .generalFallback)
+                            source: .generalFallback, emotion: emotion, situation: situation)
     }
 }
 
@@ -148,6 +162,20 @@ enum TaggedChange { case none, minor, clear }
 
 @available(iOS 26.0, macOS 26.0, *)
 @Generable
+enum TaggedEmotion {
+    case sadness, nostalgia, hope, fear, unease, dread, irony, absurd, joy, tenderness
+    case awe, wonder, anger, triumph, relief, determination, longing, serenity, grief, suspense, none
+}
+
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
+enum TaggedSituation {
+    case chase, escape, discovery, revelation, farewell, reunion, battle, journey
+    case investigation, celebration, ritual, mourning, confrontation, rest, romance, night, none
+}
+
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
 enum TaggedDocumentKind {
     case fiction, narrativeNonfiction, essay, academic, manual, reference, poetry, drama, other
 }
@@ -169,6 +197,10 @@ struct SceneTagging {
     var intensity: Int
     @Guide(description: "Whether the passage begins a different scene (place, time or characters) from the text before")
     var sceneChange: TaggedChange
+    @Guide(description: "The main feeling the passage conveys; none if unclear")
+    var emotion: TaggedEmotion
+    @Guide(description: "What is happening in the passage; none if nothing in the list")
+    var situation: TaggedSituation
     @Guide(description: "At most 12 words copied exactly from the passage that show the setting or the mood")
     var evidence: String
 }
@@ -314,7 +346,7 @@ actor SceneAnalyzer {
 /// The generated values as plain strings (Sendable, outside the session).
 @available(iOS 26.0, macOS 26.0, *)
 private struct TaggedValues: Sendable {
-    let kind, setting, weather, tone, action, change, evidence: String
+    let kind, setting, weather, tone, action, change, evidence, emotion, situation: String
     let clarity, intensity: Int
 
     init(_ tagging: SceneTagging) {
@@ -324,6 +356,8 @@ private struct TaggedValues: Sendable {
         tone = "\(tagging.tone)"
         action = "\(tagging.action)"
         change = "\(tagging.sceneChange)"
+        emotion = "\(tagging.emotion)"
+        situation = "\(tagging.situation)"
         evidence = tagging.evidence
         clarity = tagging.settingClarity
         intensity = tagging.intensity
@@ -336,7 +370,8 @@ private struct TaggedValues: Sendable {
         return SceneReading(passageKind: kind, setting: setting, settingClarity: min(max(clarity, 0), 3),
                             weather: weather, tone: tone, action: action, intensity: min(max(intensity, 0), 3),
                             sceneChange: change, evidence: evidence,
-                            evidenceVerified: SceneEvidence.verify(evidence, in: passage), source: .contentTagging)
+                            evidenceVerified: SceneEvidence.verify(evidence, in: passage), source: .contentTagging,
+                            emotion: SceneEmotion(rawValue: emotion), situation: SceneSituation(rawValue: situation))
     }
 }
 #endif

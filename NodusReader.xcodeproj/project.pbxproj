@@ -52,6 +52,7 @@
 		3F5DA30572C36D7C92597579 /* ReaderPageHighlights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FDAA50A89AEF418EF4F223 /* ReaderPageHighlights.swift */; };
 		3F7E2D52B7534B32B0C50916 /* KokoroTTS in Frameworks */ = {isa = PBXBuildFile; productRef = 42019C581B56EBFC1C0EA303 /* KokoroTTS */; };
 		4260A80A710BB17DB2861272 /* ImmersiveAudioController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB374DC646AC948280093FE /* ImmersiveAudioController.swift */; };
+		428E9FDFD57CCF5346575B4B /* SceneEmotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B92ACA8FB08BD4057B37EE49 /* SceneEmotionTests.swift */; };
 		434F7E8EE478C97BF613BBF1 /* CollectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09B5BF31B62E405F87474BFF /* CollectionDetailView.swift */; };
 		435808C4B06CDA38CF39C4D7 /* NodusReaderShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4850038DA7CFCCE5A5054726 /* NodusReaderShare.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4412BA092D7B5B51CA1FB90D /* NodusReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D2FEAF26A6FAC1835AD1D28 /* NodusReaderTests.swift */; };
@@ -357,6 +358,7 @@
 		B7566082E0D91905F11E43B6 /* VoicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicesView.swift; sourceTree = "<group>"; };
 		B77664F53036C39CBCF5CAA1 /* SyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTests.swift; sourceTree = "<group>"; };
 		B8F210889CB9BA7F90F3091A /* SyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCoordinator.swift; sourceTree = "<group>"; };
+		B92ACA8FB08BD4057B37EE49 /* SceneEmotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneEmotionTests.swift; sourceTree = "<group>"; };
 		B941272380069A2F6FB186B3 /* LinnetModelManifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = LinnetModelManifest.json; sourceTree = "<group>"; };
 		BDA91162B04CADBF6E04CA22 /* ImmersiveAudioPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveAudioPreferences.swift; sourceTree = "<group>"; };
 		BE2978B146AAED77C4B24049 /* MacPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPageView.swift; sourceTree = "<group>"; };
@@ -709,6 +711,7 @@
 				330F9948E0EDA9776B1F1176 /* OfflineNarrationTests.swift */,
 				A4734069D9B5F20D96F81983 /* PromptLibraryTests.swift */,
 				CB6BAF195006BB6ECF58E3C4 /* PromptSelectorTests.swift */,
+				B92ACA8FB08BD4057B37EE49 /* SceneEmotionTests.swift */,
 				3D1C3CFF9FF3261F6D0174B1 /* SoundscapeAudioTests.swift */,
 				B77664F53036C39CBCF5CAA1 /* SyncTests.swift */,
 				EFD5EBF13ACCE8B1B700EC00 /* SynthesisCancellationTests.swift */,
@@ -1240,6 +1243,7 @@
 				D8722CDF21C9C4F61285113B /* OfflineNarrationTests.swift in Sources */,
 				44176FC582F2D4C122DC4369 /* PromptLibraryTests.swift in Sources */,
 				447883E3C97EE2530670FCE6 /* PromptSelectorTests.swift in Sources */,
+				428E9FDFD57CCF5346575B4B /* SceneEmotionTests.swift in Sources */,
 				6A845BCAD7D709C4A51AFED9 /* SoundscapeAudioTests.swift in Sources */,
 				D558825DFD17434164BEB8D2 /* SyncTests.swift in Sources */,
 				39B09E3B8B1E61EF03A23E2B /* SynthesisCancellationTests.swift in Sources */,
