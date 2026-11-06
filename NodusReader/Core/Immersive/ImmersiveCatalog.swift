@@ -168,6 +168,12 @@ struct CatalogTrack: Codable, Sendable, Equatable, Identifiable {
         var studySafe: Bool
         /// A texture family inside a mood ("piano", "strings", "pads").
         var subPool: String?
+        /// AI soundscapes: the book style, emotions and situations the piece was
+        /// generated for, and `origin == "generated"`. Absent in the downloaded catalog.
+        var style: String? = nil
+        var emotions: [String]? = nil
+        var situations: [String]? = nil
+        var origin: String? = nil
     }
 
     var id: String
@@ -203,9 +209,15 @@ struct PlayHistory: Sendable, Equatable {
 enum TrackSelector {
     static let repeatWindow: TimeInterval = 2_700
 
+    /// A favorite counts as heard half as long ago as it was, so it comes back twice as
+    /// often.
     static func next(from pool: [CatalogTrack], current: String?, history: PlayHistory, now: TimeInterval,
                      maximumEnergy: Int = 3, studyOnly: Bool = false,
-                     preferSubPool: String? = nil, avoidSubPool: String? = nil) -> CatalogTrack? {
+                     preferSubPool: String? = nil, avoidSubPool: String? = nil,
+                     favorites: Set<String> = []) -> CatalogTrack? {
+        func lastPlayed(_ track: CatalogTrack) -> TimeInterval? {
+            history.lastPlayed[track.id].map { favorites.contains(track.id) ? $0 - repeatWindow / 2 : $0 }
+        }
         var candidates = pool
         if studyOnly {
             let safe = candidates.filter(\.semantics.studySafe)
@@ -215,7 +227,7 @@ enum TrackSelector {
         if !gentle.isEmpty { candidates = gentle }
         if candidates.count > 1, let current { candidates.removeAll { $0.id == current } }
         let fresh = candidates.filter { track in
-            history.lastPlayed[track.id].map { now - $0 >= repeatWindow } ?? true
+            lastPlayed(track).map { now - $0 >= repeatWindow } ?? true
         }
         if !fresh.isEmpty { candidates = fresh }
         if let avoidSubPool {
@@ -227,8 +239,8 @@ enum TrackSelector {
             if !preferred.isEmpty { candidates = preferred }
         }
         return candidates.min { a, b in
-            let la = history.lastPlayed[a.id] ?? -.infinity
-            let lb = history.lastPlayed[b.id] ?? -.infinity
+            let la = lastPlayed(a) ?? -.infinity
+            let lb = lastPlayed(b) ?? -.infinity
             return la != lb ? la < lb : a.id < b.id
         }
     }

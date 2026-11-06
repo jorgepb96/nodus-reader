@@ -27,6 +27,7 @@
 		17EBDBD0B3A6038A921C7424 /* AtmosphereMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0BF9CDEED3AA8637E2C6DB3 /* AtmosphereMapper.swift */; };
 		184BDCEA2326221E8EA771AF /* PasteTextImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F6A090E1EB629FC7CA451C4 /* PasteTextImportView.swift */; };
 		1A2A158A99767B8175B41AAD /* PromptLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F8C109DE4105E94D475DC38 /* PromptLibrary.swift */; };
+		1A5B083F2C3ECB7B6BE2A8CB /* GeneratedLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD49F80EF91B5095C88851FC /* GeneratedLibraryTests.swift */; };
 		1B08F42EED4D914256217EF2 /* MiniPlayerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0012A1A328E18FC1540EBC /* MiniPlayerBar.swift */; };
 		1DB208E774AF5B61CA6F7C19 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411AF1A170335684302EFFE6 /* LibraryView.swift */; };
 		1F753960E78BEEBD39D6F076 /* catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = 6EDBA2F8CD410489D3FD9508 /* catalog.json */; };
@@ -103,6 +104,7 @@
 		830AB7CAC37287CDE02E3BBC /* ReaderPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65C9336485C3D5CAD0206176 /* ReaderPage.swift */; };
 		87EAA28456139ACFEE6E8639 /* SynthesisGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50552416984787788CAA43BD /* SynthesisGate.swift */; };
 		880AF3E584C79F92A35BB671 /* SelectableReaderText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2FA94F52B8C7B9E71224107 /* SelectableReaderText.swift */; };
+		88AB6ACAD4186BD1CD7418DC /* GeneratedLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2C4C405E7873290B965CA3D /* GeneratedLibrary.swift */; };
 		8A33B3F197619F9853B71F8E /* NarrationPrefetchWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1079F7208299EDBC4F0D91 /* NarrationPrefetchWorker.swift */; };
 		8A6BA044CAB2ACC8E3874003 /* LinnetTTS in Frameworks */ = {isa = PBXBuildFile; productRef = 32A577CAFEC4DE4FCE956556 /* LinnetTTS */; };
 		8D79A2696D81A2712D6D0DE5 /* SceneMapStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C607248AE33A8E957EC6335 /* SceneMapStore.swift */; };
@@ -383,10 +385,12 @@
 		D593BBC908B5D057F4618106 /* PaginatedReaderContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginatedReaderContent.swift; sourceTree = "<group>"; };
 		DACE001CC6CC610471B8904E /* ImmersiveAudioSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveAudioSettingsView.swift; sourceTree = "<group>"; };
 		DC340F77AE4EF567395A7AAF /* Pronunciation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pronunciation.swift; sourceTree = "<group>"; };
+		DD49F80EF91B5095C88851FC /* GeneratedLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedLibraryTests.swift; sourceTree = "<group>"; };
 		DE36EC19E2D87BCF092916A9 /* DocumentExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExtractor.swift; sourceTree = "<group>"; };
 		DF27C98D03CA7B77D5353E99 /* DocumentExtraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExtraction.swift; sourceTree = "<group>"; };
 		DF973736607426E8F65FD4D8 /* HuggingFaceGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HuggingFaceGuideView.swift; sourceTree = "<group>"; };
 		E1FCA4689FD81FCF3C0A3D93 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		E2C4C405E7873290B965CA3D /* GeneratedLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedLibrary.swift; sourceTree = "<group>"; };
 		E2E20562AA22E60E323BDE92 /* BookTextLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookTextLoader.swift; sourceTree = "<group>"; };
 		E2FA94F52B8C7B9E71224107 /* SelectableReaderText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableReaderText.swift; sourceTree = "<group>"; };
 		E483BD1220C8FB1C4804D5A9 /* CoverGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverGenerator.swift; sourceTree = "<group>"; };
@@ -491,6 +495,7 @@
 			isa = PBXGroup;
 			children = (
 				03F66DF2BBDE884DA13EE1AC /* BookStyleDetector.swift */,
+				E2C4C405E7873290B965CA3D /* GeneratedLibrary.swift */,
 				844302C5730DFC2E5D5D1697 /* GenerationRecipe.swift */,
 				7F8C109DE4105E94D475DC38 /* PromptLibrary.swift */,
 				490FA45ABAB4800209B0C5E7 /* PromptSelector.swift */,
@@ -709,6 +714,7 @@
 			children = (
 				06505155BEDE0D4C5B99E3F1 /* AudioSessionTests.swift */,
 				615B234B48E1D96011BAADA0 /* DocumentParserTests.swift */,
+				DD49F80EF91B5095C88851FC /* GeneratedLibraryTests.swift */,
 				F1751C48BB4E4953E0FDC724 /* ImmersiveAudioTests.swift */,
 				6EA7D9099837F99FB64DB0E3 /* ModelQualityTests.swift */,
 				24000ED95D315E35FEDA727E /* NarrationPrefetchTests.swift */,
@@ -1112,6 +1118,7 @@
 				610DE11A27D5B824C82CDFED /* EPUBParser.swift in Sources */,
 				F289F4BEDF7BAF4126608B69 /* FileStore.swift in Sources */,
 				1688B1BEB6AB60CD6799CB5C /* GainCurve.swift in Sources */,
+				88AB6ACAD4186BD1CD7418DC /* GeneratedLibrary.swift in Sources */,
 				076DDC0D387C7E9AA9548D61 /* GenerationRecipe.swift in Sources */,
 				67F386AD47DD382F646DF469 /* HTMLText.swift in Sources */,
 				E26147E7713A3800E8D13589 /* HomeView.swift in Sources */,
@@ -1243,6 +1250,7 @@
 			files = (
 				CF8B139A9AA514F316837004 /* AudioSessionTests.swift in Sources */,
 				D0E873D730D51FDB14F1F4A7 /* DocumentParserTests.swift in Sources */,
+				1A5B083F2C3ECB7B6BE2A8CB /* GeneratedLibraryTests.swift in Sources */,
 				D6F8B8E6339B1D764E96C866 /* ImmersiveAudioTests.swift in Sources */,
 				93E3AEF69F7B910E6290E287 /* ModelQualityTests.swift in Sources */,
 				979C5FB0BAA4D0E8ED31EDCB /* NarrationPrefetchTests.swift in Sources */,
