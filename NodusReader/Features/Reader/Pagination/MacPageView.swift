@@ -63,34 +63,65 @@ final class ReaderMacTextView: NSTextView {
 
     private var pendingNarrationClick: DispatchWorkItem?
 
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func resetCursorRects() {
+        // NSTextView normally advertises selection everywhere. Narration is
+        // the reader's primary click action; dragging still uses native text
+        // selection below. Own these rects so AppKit cannot restore the I-beam.
+        guard mapping != nil, onWordTap != nil else {
+            super.resetCursorRects()
+            return
+        }
+        addCursorRect(visibleRect, cursor: .pointingHand)
+    }
+
     override func mouseDown(with event: NSEvent) {
         pendingNarrationClick?.cancel()
         pendingNarrationClick = nil
         let point = convert(event.locationInWindow, from: nil)
         let isPlainClick = event.clickCount == 1 &&
             event.modifierFlags.intersection([.shift, .control, .option, .command]).isEmpty
-
-        // NSTextView tracks selection and dragging inside mouseDown. A click
-        // recognizer competes with that tracking and can miss the release.
-        super.mouseDown(with: event)
-
-        guard isPlainClick, selectedRange().length == 0, let window else { return }
-        let end = convert(window.mouseLocationOutsideOfEventStream, from: nil)
-        let dx = end.x - point.x
-        let dy = end.y - point.y
-        guard dx * dx + dy * dy <= 16,
-              let offset = narrationOffset(at: point) else { return }
-        let clickedText = string
-
-        // Let a second click select a word, or a third select a paragraph,
-        // without starting narration from the first click of that sequence.
-        let action = DispatchWorkItem { [weak self] in
-            guard let self, self.window != nil, self.selectedRange().length == 0,
-                  self.string == clickedText else { return }
-            self.onWordTap?(offset)
+        guard isPlainClick, onWordTap != nil, let window,
+              let offset = narrationOffset(at: point) else {
+            super.mouseDown(with: event)
+            return
         }
-        pendingNarrationClick = action
-        DispatchQueue.main.asyncAfter(deadline: .now() + NSEvent.doubleClickInterval, execute: action)
+        let clickedText = string
+        window.makeFirstResponder(self)
+
+        // Resolve the gesture before handing it to NSTextView, whose own
+        // mouseDown runs a selection-tracking loop and may consume mouseUp.
+        // Use the release event itself, never the pointer's later position.
+        while let next = window.nextEvent(matching: [.leftMouseDragged, .leftMouseUp],
+                                          until: .distantFuture, inMode: .eventTracking,
+                                          dequeue: true) {
+            let dx = next.locationInWindow.x - event.locationInWindow.x
+            let dy = next.locationInWindow.y - event.locationInWindow.y
+            if dx * dx + dy * dy > 16 {
+                // Replay the first drag/release so native selection receives
+                // the complete gesture, starting at the original mouseDown.
+                NSApp.postEvent(next, atStart: true)
+                NSCursor.iBeam.push()
+                super.mouseDown(with: event)
+                NSCursor.pop()
+                return
+            }
+            guard next.type == .leftMouseUp else { continue }
+            setSelectedRange(NSRange(location: characterIndexForInsertion(at: point), length: 0))
+
+            // A second/third click cancels this pending action and retains
+            // native word/paragraph selection, without starting narration.
+            let action = DispatchWorkItem { [weak self] in
+                guard let self, self.window != nil, self.selectedRange().length == 0,
+                      self.string == clickedText else { return }
+                self.pendingNarrationClick = nil
+                self.onWordTap?(offset)
+            }
+            pendingNarrationClick = action
+            DispatchQueue.main.asyncAfter(deadline: .now() + NSEvent.doubleClickInterval, execute: action)
+            return
+        }
     }
 
     override func rightMouseDown(with event: NSEvent) {
