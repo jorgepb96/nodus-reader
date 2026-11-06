@@ -18,6 +18,7 @@ struct MacRootView: View {
     @State private var searchText = ""
     @State private var detailPath = NavigationPath()
     @State private var showNewCollection = false
+    @State private var showPlayer = false
     @State private var newCollectionParent: UUID?
     @State private var newCollectionName = ""
     @State private var renameTarget: LibraryCollection?
@@ -140,7 +141,7 @@ struct MacRootView: View {
                     // height, including on pushed navigation destinations
                     // and native Table/inspector content.
                     if playback.hasActiveBook {
-                        MacPlayerBar()
+                        MacPlayerBar(onOpenPlayer: { showPlayer = true })
                             .padding(.top, 8)
                     }
                 }
@@ -172,6 +173,13 @@ struct MacRootView: View {
         // An opaque window-wide toolbar otherwise covers the sidebar brand.
         .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
         .tint(palette.accent)
+        .macPlayerPresentation(isPresented: $showPlayer) { book in
+            showPlayer = false
+            navigation.macReaderBookID = book.id
+        }
+        .onChange(of: playback.hasActiveBook) { _, active in
+            if !active { showPlayer = false }
+        }
         .onChange(of: navigation.macReaderBookID != nil, initial: true) { _, reading in
             if reading {
                 visibilityBeforeReader = navigation.columnVisibility

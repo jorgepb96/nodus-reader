@@ -11,6 +11,7 @@ struct MacPlayerBar: View {
     @Environment(ImmersiveAudioController.self) private var immersive
     @Environment(\.nodusPalette) private var palette
     @State private var showAtmosphere = false
+    var onOpenPlayer: () -> Void
 
     var body: some View {
         HStack(spacing: 20) {
@@ -68,6 +69,9 @@ struct MacPlayerBar: View {
                     playerButton("stop.fill", label: "Stop narration") {
                         playback.stopAndClose()
                     }
+                    playerButton("chevron.up", label: "Open player", action: onOpenPlayer)
+                        .help("Read & Listen")
+                        .accessibilityIdentifier("MacPlayerExpand")
                 }
                 NodusProgressBar(value: playback.overallProgress, height: 3)
                     .frame(width: 280)
