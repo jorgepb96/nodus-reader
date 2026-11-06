@@ -502,7 +502,9 @@ struct PDFReflowView: View {
         startedReturn = target.id
         let page = target.chapterIndex
         if !settled {
-            scroll(proxy, to: page, in: document)
+            // A page already on screen is not scrolled to: SwiftUI reapplies a
+            // `scrollTo` at the next layout and would undo the line's placement.
+            if !visiblePages.contains(page) { scroll(proxy, to: page, in: document) }
             armedReturn = (target.id, .instant)
         } else if visiblePages.contains(page) {
             armedReturn = (target.id, .smooth)
