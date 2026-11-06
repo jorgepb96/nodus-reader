@@ -132,6 +132,7 @@ struct PDFReaderContainer: View {
     private func runOriginalSearch() async {
         guard mode == .original, let search, search.isPresented else { return }
         let query = search.query
+        let revision = search.navigationRevision
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             search.setMatches([], startingAt: nil)
             search.isSearching = false
@@ -158,14 +159,14 @@ struct PDFReaderContainer: View {
                     work.cancel()
                 }
             } catch {
-                if !Task.isCancelled {
+                if !Task.isCancelled, search.isPresented, search.navigationRevision == revision {
                     search.setMatches([], startingAt: nil)
                     search.isSearching = false
                 }
                 return
             }
         }
-        guard !Task.isCancelled, let document else { return }
+        guard !Task.isCancelled, search.canApplyResults(query: query, revision: revision), let document else { return }
         searchDocument = document
         let matches = reflowSearchMatches(for: query, in: document)
         let start = ReaderSearch.firstIndex(in: matches, fromChapter: pdfPageIndex, offset: 0)
@@ -196,6 +197,8 @@ struct PDFReflowView: View {
     @Environment(LibraryService.self) private var library
     @Environment(ReaderPreferences.self) private var preferences
     @Environment(PlaybackController.self) private var playback
+    @Environment(\.readerFollowState) private var followState
+    @Environment(\.readerManualNavigation) private var onManualNavigation
     @Environment(\.windowFitsPadLayout) private var windowFitsPadLayout
 
     let book: Book
@@ -247,7 +250,7 @@ struct PDFReflowView: View {
                         pageIndex: pdfPageIndex,
                         showImages: $showImages,
                         skipHeaders: $skipHeaders,
-                        onGoToPage: { jumpToPage = $0 }
+                        onGoToPage: { onManualNavigation?(); jumpToPage = $0 }
                     )
                     .frame(width: 300)
                 }
@@ -257,14 +260,18 @@ struct PDFReflowView: View {
         .task { await loadReflow() }
         .onChange(of: job.document != nil, initial: true) { _, loaded in sourceAvailable = loaded }
         .task(id: reflowSearchKey) { await runReflowSearch() }
-        .onChange(of: search?.current) { _, _ in
-            guard let page = search?.currentMatch?.chapterIndex else { return }
-            if page != pdfPageIndex { jumpToPage = page }
+        .onChange(of: search?.resultNavigationID) { _, _ in
+            guard search?.isPresented == true, search?.permitsResultNavigation == true,
+                  let match = search?.currentMatch else { return }
+            narrationReturnTarget = ReaderNavigationTarget(chapterIndex: match.chapterIndex,
+                                                          characterOffset: match.range.location)
+            jumpToPage = match.chapterIndex
         }
         // Playback uses an index into readable chapters; PDF navigation uses
         // the original page ID (blank pages may have no narration chapter).
         .onChange(of: playback.chapterIndex) { _, chapter in
-            guard isNarratingHere, playback.mode == .readAndListen,
+            guard followState?.isSuspended != true, search?.isPresented != true,
+                  isNarratingHere, playback.mode == .readAndListen,
                   playback.isPlaying, typography.autoScrollNarration,
                   playback.chapters.indices.contains(chapter),
                   let document = job.document else { return }
@@ -285,7 +292,7 @@ struct PDFReflowView: View {
                                    pageIndex: pdfPageIndex,
                                    showImages: $showImages,
                                    skipHeaders: $skipHeaders,
-                                   onGoToPage: { jumpToPage = $0 })
+                                   onGoToPage: { onManualNavigation?(); jumpToPage = $0 })
                         .navigationTitle("Original page")
                         .inlineNavigationTitle()
                         .toolbar {
@@ -368,6 +375,7 @@ struct PDFReflowView: View {
                 // A bound top anchor reasserts itself as lazy block heights
                 // change and fights the text view's line-by-line narration follow.
                 .onScrollTargetVisibilityChange(idType: Int.self, threshold: 0.01) { ids in
+                    guard narrationReturnTarget == nil else { return }
                     guard let first = ids.min() else { return }
                     pdfPageIndex = atEnd ? document.pages.last?.pageIndex ?? first : first
                 }
@@ -380,6 +388,11 @@ struct PDFReflowView: View {
                 // `.never`: with `.hidden` the Mac adds its scroller beside
                 // the reflow scrollbar when scroll bars always show.
                 .scrollIndicators(.never)
+                .onScrollPhaseChange { _, phase in
+                    if phase == .tracking || phase == .interacting || phase == .decelerating {
+                        onManualNavigation?()
+                    }
+                }
                 .overlay(alignment: .trailing) {
                     if !job.isWorking, document.pages.count > 1 {
                         PDFReflowScrollbar(
@@ -387,6 +400,7 @@ struct PDFReflowView: View {
                             current: pdfPageIndex,
                             theme: theme
                         ) { page in
+                            onManualNavigation?()
                             pdfPageIndex = page
                             jumpToPage = nil
                             scroll(proxy, to: page, in: document)
@@ -452,6 +466,7 @@ struct PDFReflowView: View {
     }
 
     private func narrationFollowRange(page: Int, text: String) -> NSRange? {
+        guard followState?.isSuspended != true, search?.isPresented != true else { return nil }
         guard typography.autoScrollNarration, isNarratingHere,
               playback.mode == .readAndListen, playback.isPlaying,
               narratedPage == page,
@@ -649,6 +664,7 @@ struct PDFReflowView: View {
     private func runReflowSearch() async {
         guard let search, search.isPresented, let document = job.document else { return }
         let query = search.query
+        let revision = search.navigationRevision
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             search.setMatches([], startingAt: nil)
             search.isSearching = false
@@ -656,15 +672,12 @@ struct PDFReflowView: View {
         }
         search.isSearching = true
         try? await Task.sleep(for: .milliseconds(250))
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, search.canApplyResults(query: query, revision: revision) else { return }
         let matches = reflowSearchMatches(for: query, in: document)
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, search.canApplyResults(query: query, revision: revision) else { return }
         let start = ReaderSearch.firstIndex(in: matches, fromChapter: pdfPageIndex, offset: 0)
         search.setMatches(matches, startingAt: start)
         search.isSearching = false
-        if let page = search.currentMatch?.chapterIndex, page != pdfPageIndex {
-            jumpToPage = page
-        }
     }
 
     private func loadReflow(force: Bool = false) async {

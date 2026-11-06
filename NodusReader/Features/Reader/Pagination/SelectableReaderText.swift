@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import SwiftUI
+import DesignSystem
 #if os(macOS)
 import AppKit
 #else
@@ -17,6 +18,9 @@ struct ReaderTextScrollRequest {
 /// in lazy stacks: continuous-scroll slices and PDF Intelligent Reading blocks.
 struct SelectableReaderText {
     @Environment(\.pronunciationSelection) private var pronounce
+    @Environment(\.nodusPalette) private var palette
+    @Environment(\.readerFollowState) private var followState
+    @Environment(\.readerManualNavigation) private var onManualNavigation
     var text: NSAttributedString
     var mapping: ReaderTextMapping
     var highlights: ReaderPageHighlights = ReaderPageHighlights()
@@ -38,6 +42,7 @@ struct SelectableReaderText {
 
     final class Coordinator {
         var handledScrollRequest: UUID?
+        var updateID = UUID()
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -47,8 +52,8 @@ struct SelectableReaderText {
         return ReaderTextScrollRequest(id: scrollRequest.id, range: range)
     }
 
-    private var localNarrationRange: NSRange? {
-        guard let narrationFollowRange else { return nil }
+    @MainActor private var localNarrationRange: NSRange? {
+        guard followState?.isSuspended != true, let narrationFollowRange else { return nil }
         // Only the block containing the word's start may move the viewport.
         return mapping.localRange(NSRange(location: narrationFollowRange.location, length: 1))
     }
@@ -76,14 +81,19 @@ extension SelectableReaderText: UIViewRepresentable {
         let range = localNarrationRange
         let request = localScrollRequest
         let coordinator = context.coordinator
+        let updateID = UUID()
+        coordinator.updateID = updateID
+        let intent = followState
+        let revision = intent?.revision
         let animated = !reduceMotion
         DispatchQueue.main.async { [weak view] in
-            guard let view else { return }
+            guard let view, coordinator.updateID == updateID, intent?.revision == revision else { return }
             if let request, coordinator.handledScrollRequest != request.id {
-                coordinator.handledScrollRequest = request.id
-                view.followNarration(request.range, animated: false)
-                onScrollRequestHandled(request.id)
-            } else if let range, view.narrationFollowRange == range {
+                if view.followNarration(request.range, animated: false, explicit: true) {
+                    coordinator.handledScrollRequest = request.id
+                    onScrollRequestHandled(request.id)
+                }
+            } else if intent?.isSuspended != true, let range, view.narrationFollowRange == range {
                 view.followNarration(range, animated: animated)
             }
         }
@@ -102,30 +112,32 @@ extension SelectableReaderText: UIViewRepresentable {
 extension ReaderSelectableTextView {
     /// The outer SwiftUI scroll view owns scrolling; the UITextView itself
     /// stays non-scrolling so selections and highlights share one text layout.
-    func followNarration(_ range: NSRange, animated: Bool) {
-        guard window != nil, textView.selectedRange.length == 0 else { return }
+    @discardableResult
+    func followNarration(_ range: NSRange, animated: Bool, explicit: Bool = false) -> Bool {
+        guard window != nil, (explicit || textView.selectedRange.length == 0) else { return false }
         var ancestor = superview
         while let view = ancestor, !(view is UIScrollView) { ancestor = view.superview }
         guard let scroll = ancestor as? UIScrollView,
-              !scroll.isDragging, !scroll.isDecelerating, !scroll.isTracking,
-              NSMaxRange(range) <= textView.attributedText.length else { return }
+              !scroll.isDragging, (explicit || !scroll.isDecelerating), !scroll.isTracking,
+              NSMaxRange(range) <= textView.attributedText.length else { return false }
         layoutIfNeeded()
         let layout = textView.layoutManager
         layout.ensureLayout(for: textView.textContainer)
         let glyphs = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
-        guard glyphs.length > 0 else { return }
+        guard glyphs.length > 0 else { return false }
         let line = layout.lineFragmentRect(forGlyphAt: glyphs.location, effectiveRange: nil)
             .offsetBy(dx: textView.textContainerInset.left, dy: textView.textContainerInset.top)
         let rect = textView.convert(line, to: scroll)
         let insets = scroll.adjustedContentInset
         let height = scroll.bounds.height - insets.top - insets.bottom
         let visibleTop = scroll.contentOffset.y + insets.top
-        guard height > 0,
-              rect.midY < visibleTop + height * 0.22 || rect.midY > visibleTop + height * 0.55 else { return }
+        guard height > 0 else { return false }
+        guard rect.midY < visibleTop + height * 0.22 || rect.midY > visibleTop + height * 0.55 else { return true }
         let maximum = max(-insets.top, scroll.contentSize.height - scroll.bounds.height + insets.bottom)
         let target = min(maximum, max(-insets.top, rect.midY - height * 0.35 - insets.top))
-        guard abs(target - scroll.contentOffset.y) > 1 else { return }
+        guard abs(target - scroll.contentOffset.y) > 1 else { return true }
         scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: target), animated: animated)
+        return true
     }
 }
 #else
@@ -199,9 +211,11 @@ extension SelectableReaderText: NSViewRepresentable {
         view.horizontalInset = horizontalInset
         view.textView.mapping = mapping
         view.textView.onWordTap = onWordTap
+        view.textView.onInteractionBegan = onManualNavigation
         view.textView.onHighlight = onHighlight
         view.textView.onNote = onNote
         view.textView.onPronounce = pronounce
+        view.textView.setSelectionColors(background: NSColor(palette.accent), foreground: NSColor(palette.onAccent))
         view.textView.setAccessibilityLabel(accessibilityLabel)
         if !(view.textView.textStorage?.isEqual(to: text) ?? false) {
             view.textView.textStorage?.setAttributedString(text)
@@ -216,14 +230,19 @@ extension SelectableReaderText: NSViewRepresentable {
         let range = localNarrationRange
         let request = localScrollRequest
         let coordinator = context.coordinator
-        let animated = !reduceMotion
+        let updateID = UUID()
+        coordinator.updateID = updateID
+        let intent = followState
+        let revision = intent?.revision
+        let animated = false
         DispatchQueue.main.async { [weak view] in
-            guard let view else { return }
+            guard let view, coordinator.updateID == updateID, intent?.revision == revision else { return }
             if let request, coordinator.handledScrollRequest != request.id {
-                coordinator.handledScrollRequest = request.id
-                view.followNarration(request.range, animated: false)
-                onScrollRequestHandled(request.id)
-            } else if let range, view.narrationFollowRange == range {
+                if view.followNarration(request.range, animated: false, explicit: true) {
+                    coordinator.handledScrollRequest = request.id
+                    onScrollRequestHandled(request.id)
+                }
+            } else if intent?.isSuspended != true, let range, view.narrationFollowRange == range {
                 view.followNarration(range, animated: animated)
             }
         }
@@ -240,25 +259,26 @@ extension SelectableReaderText: NSViewRepresentable {
 }
 
 extension ReaderMacSelectableView {
-    func followNarration(_ range: NSRange, animated: Bool) {
-        guard window != nil, textView.selectedRange().length == 0,
+    @discardableResult
+    func followNarration(_ range: NSRange, animated: Bool, explicit: Bool = false) -> Bool {
+        guard window != nil, (explicit || textView.selectedRange().length == 0),
               let scroll = enclosingScrollView, let document = scroll.documentView,
               let layout = textView.layoutManager, let container = textView.textContainer,
               NSMaxRange(range) <= (textView.textStorage?.length ?? 0),
-              NSEvent.pressedMouseButtons == 0 else { return }
+              (explicit || NSEvent.pressedMouseButtons == 0) else { return false }
         layoutSubtreeIfNeeded()
         layout.ensureLayout(for: container)
         let glyphs = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
-        guard glyphs.length > 0 else { return }
+        guard glyphs.length > 0 else { return false }
         let line = layout.lineFragmentRect(forGlyphAt: glyphs.location, effectiveRange: nil)
             .offsetBy(dx: textView.textContainerOrigin.x, dy: textView.textContainerOrigin.y)
         let rect = textView.convert(line, to: document)
         let visible = scroll.contentView.documentVisibleRect
-        guard visible.height > 0,
-              rect.midY < visible.minY + visible.height * 0.22 || rect.midY > visible.minY + visible.height * 0.55 else { return }
+        guard visible.height > 0 else { return false }
+        guard rect.midY < visible.minY + visible.height * 0.22 || rect.midY > visible.minY + visible.height * 0.55 else { return true }
         let maximum = max(0, document.bounds.height - visible.height)
         let target = min(maximum, max(0, rect.midY - visible.height * 0.35))
-        guard abs(target - visible.minY) > 1 else { return }
+        guard abs(target - visible.minY) > 1 else { return true }
         let origin = NSPoint(x: visible.minX, y: target)
         if animated {
             NSAnimationContext.runAnimationGroup { context in
@@ -269,6 +289,7 @@ extension ReaderMacSelectableView {
             scroll.contentView.scroll(to: origin)
         }
         scroll.reflectScrolledClipView(scroll.contentView)
+        return true
     }
 }
 #endif

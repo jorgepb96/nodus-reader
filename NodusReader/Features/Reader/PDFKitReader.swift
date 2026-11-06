@@ -21,6 +21,7 @@ struct PDFKitReader: View {
         // Read here so a new query or match updates the page view.
         let query = search?.isPresented == true ? search?.query ?? "" : ""
         let current = search?.current
+        let _ = search?.resultNavigationID
         #if os(macOS)
         MacPDFReader(url: url, pageIndex: $pageIndex, pageCount: $pageCount,
                      jumpToPage: $jumpToPage, background: NSColor(background),
@@ -44,6 +45,7 @@ final class PDFSearchDriver {
     private var selections: [PDFSelection] = []
     private var shown: Int?
     private var shownMatch: ReaderSearchMatch?
+    private var shownNavigationID: UUID?
     private var wasExternal = false
     private var pending: Task<Void, Never>?
 
@@ -53,12 +55,14 @@ final class PDFSearchDriver {
                 current: Int?, externalSearch: Bool) {
         if externalSearch {
             wasExternal = true
-            guard let match = search?.currentMatch else {
+            guard search?.isPresented == true, search?.permitsResultNavigation == true,
+                  let match = search?.currentMatch else {
                 shownMatch = nil
                 return
             }
-            guard match != shownMatch else { return }
+            guard match != shownMatch || shownNavigationID != search?.resultNavigationID else { return }
             shownMatch = match
+            shownNavigationID = search?.resultNavigationID
             guard let page = view.document?.page(at: min(max(0, match.chapterIndex), max(0, (view.document?.pageCount ?? 1) - 1))) else { return }
             view.go(to: page)
             return

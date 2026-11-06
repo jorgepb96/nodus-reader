@@ -18,6 +18,7 @@ struct MacRootView: View {
     @State private var searchText = ""
     @State private var detailPath = NavigationPath()
     @State private var showNewCollection = false
+    @State private var showPlayer = false
     @State private var newCollectionParent: UUID?
     @State private var newCollectionName = ""
     @State private var renameTarget: LibraryCollection?
@@ -27,7 +28,7 @@ struct MacRootView: View {
     @State private var showDelete = false
     /// The sidebar as it was before a book opened, restored when it closes.
     @State private var visibilityBeforeReader: NavigationSplitViewVisibility?
-    @State private var sidebarChromeInset: CGFloat = 0
+    @State private var sidebarIsWindowed = true
     #if DEBUG
     /// `-NodusShowVoices YES`: Voices & Models in the window, for screen captures.
     @State private var showsDebugVoices = false
@@ -119,14 +120,14 @@ struct MacRootView: View {
                 // Both library and reader put the toggle in the detail
                 // header, leaving the sidebar header for the brand.
                 .toolbar(removing: .sidebarToggle)
+                .toolbarBackground(palette.background, for: .windowToolbar)
+                .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
         } detail: {
             if let bookID = navigation.macReaderBookID {
                 MacReaderHost(bookID: bookID) { navigation.macReaderBookID = nil }
                     .environment(\.librarySidebarVisible, navigation.columnVisibility != .detailOnly)
                     .environment(\.toggleLibrarySidebar) {
-                        withAnimation {
-                            navigation.columnVisibility = navigation.columnVisibility == .detailOnly ? .all : .detailOnly
-                        }
+                        toggleSidebar()
                     }
             } else {
                 VStack(spacing: 0) {
@@ -140,16 +141,14 @@ struct MacRootView: View {
                     // height, including on pushed navigation destinations
                     // and native Table/inspector content.
                     if playback.hasActiveBook {
-                        MacPlayerBar()
+                        MacPlayerBar(onOpenPlayer: { showPlayer = true })
                             .padding(.top, 8)
                     }
                 }
                 .toolbar {
                     ToolbarItem(placement: .navigation) {
                         Button {
-                            withAnimation {
-                                navigation.columnVisibility = navigation.columnVisibility == .detailOnly ? .all : .detailOnly
-                            }
+                            toggleSidebar()
                         } label: {
                             Image(systemName: "sidebar.left")
                         }
@@ -165,11 +164,22 @@ struct MacRootView: View {
         // the inspector's toolbar area otherwise fall back to the system white
         // or grey when the window is resized or moves into full screen.
         .containerBackground(palette.background, for: .window)
+        .background { palette.background.ignoresSafeArea() }
         // Give the native toolbar an explicit colour, including its separate
         // full-screen host, instead of exposing the system grey material.
         .toolbarBackground(palette.background, for: .windowToolbar)
-        .toolbarBackgroundVisibility(navigation.macReaderBookID == nil ? .visible : .hidden, for: .windowToolbar)
+        .toolbarColorScheme(palette.isDark ? .dark : .light, for: .windowToolbar)
+        // Keep the native controls, but let each column paint behind them.
+        // An opaque window-wide toolbar otherwise covers the sidebar brand.
+        .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
         .tint(palette.accent)
+        .macPlayerPresentation(isPresented: $showPlayer) { book in
+            showPlayer = false
+            navigation.macReaderBookID = book.id
+        }
+        .onChange(of: playback.hasActiveBook) { _, active in
+            if !active { showPlayer = false }
+        }
         .onChange(of: navigation.macReaderBookID != nil, initial: true) { _, reading in
             if reading {
                 visibilityBeforeReader = navigation.columnVisibility
@@ -189,32 +199,51 @@ struct MacRootView: View {
         }
     }
 
+    /// Use the app palette inherited from RootView. Resolving System again
+    /// through AppKit can disagree with SwiftUI's window appearance during a
+    /// reader/theme transition. A book's palette is scoped to the detail view.
+    private var sidebarPalette: NodusPalette {
+        var unified = palette
+        unified.sidebar = palette.background
+        return unified
+    }
+
+    /// Avoid animating every intermediate table/reader width during a toggle.
+    private func toggleSidebar() {
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            navigation.columnVisibility = navigation.columnVisibility == .detailOnly ? .all : .detailOnly
+        }
+    }
+
     private var sidebar: some View {
         GeometryReader { geometry in
-            sidebarContent(headerHeight: max(44, geometry.safeAreaInsets.top))
+            sidebarContent(headerHeight: max(64, geometry.safeAreaInsets.top + 40))
                 .ignoresSafeArea(.container, edges: .top)
         }
-        .background {
-            MacSidebarChromeInset { sidebarChromeInset = $0 }
-        }
+            .nodusPalette(sidebarPalette)
+            .environment(\.colorScheme, sidebarPalette.isDark ? .dark : .light)
+            .background {
+                MacSidebarWidthBounds { sidebarIsWindowed = $0 }
+            }
     }
 
     private func sidebarContent(headerHeight: CGFloat) -> some View {
         VStack(spacing: 0) {
-            HStack {
-                ViewThatFits(in: .horizontal) {
-                    BrandToolbar()
-                    BrandToolbar()
-                        .fixedSize()
-                        .scaleEffect(0.8, anchor: .leading)
-                        .frame(width: 144, height: 21, alignment: .leading)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.leading, max(14, sidebarChromeInset))
-            .padding(.trailing, 14)
-            .frame(height: headerHeight)
-            .padding(.bottom, 16)
+            // Share the native toolbar's row instead of leaving an empty
+            // strip above a second header. In a window, keep the mark below
+            // the traffic lights while preserving horizontal centering.
+            BrandToolbar()
+                .fixedSize()
+                .nodusPalette(sidebarPalette.isDark ? .dark : .light)
+                .padding(.bottom, 4)
+                .frame(maxWidth: .infinity)
+                .frame(height: headerHeight, alignment: .bottom)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+                .background(sidebarPalette.sidebar)
+                .accessibilityIdentifier("MacSidebarBrand")
 
             List(selection: selectionBinding) {
                 Section {
@@ -223,7 +252,7 @@ struct MacRootView: View {
                     }
                 } header: {
                     Text("Library")
-                        .foregroundStyle(palette.muted)
+                        .foregroundStyle(sidebarPalette.muted)
                 }
 
                 Section {
@@ -246,7 +275,7 @@ struct MacRootView: View {
                 } header: {
                     HStack {
                         Text("Collections")
-                            .foregroundStyle(palette.muted)
+                            .foregroundStyle(sidebarPalette.muted)
                         Spacer()
                         Button {
                             newCollectionParent = nil
@@ -255,7 +284,7 @@ struct MacRootView: View {
                         } label: {
                             Image(systemName: "plus")
                                 .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(palette.muted)
+                                .foregroundStyle(sidebarPalette.muted)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("New collection")
@@ -284,7 +313,7 @@ struct MacRootView: View {
         }
         // Up to the top of the window, behind the window buttons and the
         // sidebar toggle, not only below the toolbar.
-        .background { palette.sidebar.ignoresSafeArea() }
+        .background { sidebarPalette.sidebar.ignoresSafeArea() }
         .alert("New Collection", isPresented: $showNewCollection) {
             TextField("Name", text: $newCollectionName)
             Button("Create") {
@@ -360,52 +389,88 @@ struct MacRootView: View {
     }
 }
 
-/// Reserve space for the window buttons when the sidebar header extends
-/// into the titlebar. Full-screen headers keep their normal leading margin.
-private struct MacSidebarChromeInset: NSViewRepresentable {
-    var onChange: (CGFloat) -> Void
+/// SwiftUI's column-width hint alone can be overridden by restored split
+/// positions. Set the native item's constraints as well, including after a
+/// reader/library transition creates a new split-view controller.
+private struct MacSidebarWidthBounds: NSViewRepresentable {
+    var onWindowedChange: (Bool) -> Void
     func makeNSView(context: Context) -> Probe {
         let view = Probe()
-        view.onChange = onChange
+        view.onWindowedChange = onWindowedChange
         return view
     }
     func updateNSView(_ view: Probe, context: Context) {
-        view.onChange = onChange
-        view.refresh()
+        view.onWindowedChange = onWindowedChange
+        view.scheduleUpdate()
     }
-    static func dismantleNSView(_ view: Probe, coordinator: ()) { view.removeObservers() }
 
     final class Probe: NSView {
-        var onChange: ((CGFloat) -> Void)?
-        private var observers: [NSObjectProtocol] = []
-        private var lastInset: CGFloat?
-
+        private var updateScheduled = false
+        private var wasWindowed: Bool?
+        var onWindowedChange: ((Bool) -> Void)?
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            removeObservers()
+            scheduleUpdate()
+        }
+        override func viewDidMoveToSuperview() {
+            super.viewDidMoveToSuperview()
+            scheduleUpdate()
+        }
+        override func layout() {
+            super.layout()
+            scheduleUpdate()
+        }
+        func scheduleUpdate() {
+            guard !updateScheduled else { return }
+            updateScheduled = true
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.updateScheduled = false
+                self.constrainSidebar()
+            }
+        }
+        private func controller(for split: NSSplitView, in root: NSViewController?) -> NSSplitViewController? {
+            guard let root else { return nil }
+            if let candidate = root as? NSSplitViewController, candidate.splitView === split { return candidate }
+            for child in root.children {
+                if let found = controller(for: split, in: child) { return found }
+            }
+            return nil
+        }
+        private func constrainSidebar() {
             if let window {
-                for name in [NSWindow.didEnterFullScreenNotification, NSWindow.didExitFullScreenNotification,
-                             NSWindow.didResizeNotification] {
-                    observers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
-                        MainActor.assumeIsolated { self?.refresh() }
-                    })
+                // Full-screen toolbars otherwise retain an opaque native
+                // titlebar backing beside the sidebar tracking separator.
+                if !window.titlebarAppearsTransparent { window.titlebarAppearsTransparent = true }
+                let isWindowed = !window.styleMask.contains(.fullScreen)
+                if wasWindowed != isWindowed {
+                    wasWindowed = isWindowed
+                    onWindowedChange?(isWindowed)
                 }
             }
-            refresh()
-        }
-        func refresh() {
-            guard let window else { return }
-            let inset: CGFloat
-            if !window.styleMask.contains(.fullScreen), let button = window.standardWindowButton(.zoomButton) {
-                inset = button.convert(button.bounds, to: nil).maxX + 12
-            } else { inset = 14 }
-            guard inset != lastInset else { return }
-            lastInset = inset
-            DispatchQueue.main.async { [weak self] in self?.onChange?(inset) }
-        }
-        func removeObservers() {
-            for observer in observers { NotificationCenter.default.removeObserver(observer) }
-            observers.removeAll()
+            var ancestor = superview
+            while let view = ancestor {
+                if let split = view as? NSSplitView, split.isVertical,
+                   let index = split.subviews.firstIndex(where: { isDescendant(of: $0) }) {
+                    let pane = split.subviews[index]
+                    if let controller = (split.delegate as? NSSplitViewController)
+                        ?? self.controller(for: split, in: window?.contentViewController),
+                       let item = controller.splitViewItems.first(where: { isDescendant(of: $0.viewController.view) }) {
+                        if item.minimumThickness != 244 { item.minimumThickness = 244 }
+                        if item.maximumThickness != 320 { item.maximumThickness = 320 }
+                        guard !item.isCollapsed else { return }
+                    }
+                    guard !split.isSubviewCollapsed(pane) else { return }
+                    let width = pane.frame.width
+                    // Also clamp restored/dragged widths if SwiftUI uses a
+                    // private delegate instead of NSSplitViewController.
+                    if width > 321, index < split.subviews.count - 1 {
+                        split.setPosition(pane.frame.minX + 320, ofDividerAt: index)
+                    }
+                    return
+                }
+                ancestor = view.superview
+            }
         }
     }
 }

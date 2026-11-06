@@ -19,3 +19,22 @@ keeps the Mac awake only while the authorized worker is alive, refreshes the PR
 body after a verified completion, and records an explicit failure if the worker
 exits early. It does not retry uploads, merge unverified changes, or change sleep
 preferences permanently. Requires the existing `gh` login.
+
+## Detached beta delivery
+
+`python3 tools/appstore/start-beta-delivery.py --build 58` starts an authorized
+one-shot user LaunchAgent (`ai.nodus.reader.beta58`). It runs independently of
+Codex with `caffeinate`, tests and signs an immutable Git snapshot, uploads iOS
+and macOS separately, and assigns iOS to Internal/Public Beta and Mac to Internal
+only. Public beta invitations are automatic after Apple's beta review.
+
+Requires the existing local App Store Connect signing key, provisioned signing
+identity, pinned package cache, generated checksum-verified Linnet framework,
+bootable iOS Simulator, and GitHub CLI login. It never submits production review.
+
+Live log: `build/beta58/worker.log`. Per-step logs and test results are beside it.
+Status: `docs/appstore/BUILD58_AUTOMATION_STATUS.json`. Final receipts and status
+are committed/pushed to the current delivery branch and the existing PR is updated.
+A failure on one platform does not prevent attempting the other. Uploads are not
+blindly retried; if Apple processing or upload is uncertain, inspect Apple before
+attempting any recovery. No recurring Codex task or model usage is needed.

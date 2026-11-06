@@ -1,0 +1,7 @@
+{
+  "build": "57",
+  "passed": true,
+  "tests": 239,
+  "physicalValidation": "Explicitly deferred by user",
+  "resultBundle": "build/build57-unit-ios.xcresult"
+}

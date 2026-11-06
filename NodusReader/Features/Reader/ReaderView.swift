@@ -55,6 +55,7 @@ struct ReaderView: View {
     @State private var preparingNarration = false
     @State private var annotationDraft: ReaderAnnotationDraft?
     @State private var search = ReaderSearchModel()
+    @State private var followState = ReaderFollowState()
     @State private var story = ReaderStoryModel()
     @State private var showStory = false
     @State private var storyTab: ReaderStoryTab = .recap
@@ -154,7 +155,8 @@ struct ReaderView: View {
             MacReaderKeyboardNavigation(isEnabled: keyboardNavigationEnabled,
                                         flow: effectiveReadingFlow,
                                         canGoPrevious: canGoPreviousPage, canGoNext: canGoNextPage,
-                                        onPrevious: { turnPage(by: -1) }, onNext: { turnPage(by: 1) })
+                                        onPrevious: { turnPage(by: -1) }, onNext: { turnPage(by: 1) },
+                                        onManualNavigation: suspendNarrationFollow)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
@@ -182,11 +184,6 @@ struct ReaderView: View {
                 }
             }
         }
-        #if os(macOS)
-        // The Reading window hides its title bar: the reader bar takes that
-        // strip beside the window buttons instead of leaving it empty.
-        .ignoresSafeArea(.container, edges: .top)
-        #endif
         .preferredColorScheme(theme.isDark ? .dark : .light)
         // Sheets and popovers presented from the reader use its colour scheme,
         // so they take the matching palette: never dark labels on a dark
@@ -207,6 +204,13 @@ struct ReaderView: View {
         .task(id: search.isPresented ? search.query : "") {
             await runSearch()
         }
+        .onChange(of: search.resultNavigationID) { _, _ in
+            guard search.isPresented, search.permitsResultNavigation,
+                  let match = search.currentMatch, book.format != .pdf else { return }
+            let target = ReaderNavigationTarget(chapterIndex: match.chapterIndex, characterOffset: match.range.location)
+            narrationReturnTarget = target
+            navigationTarget = target
+        }
         .onDisappear {
             progressSaveTask?.cancel()
             saveProgress()
@@ -225,18 +229,8 @@ struct ReaderView: View {
             // repagination after a font, theme or window change.
             if old.pageCount > 0, old.pageCount == new.pageCount, old.pageIndex != new.pageIndex {
                 hasTurnedPage = true
-                // A manual page turn into another chapter also moves the
-                // read-along audio. Narration-driven turns already agree
-                // with playback.chapterIndex and must not seek a second time.
-                if !old.isProvisional, !new.isProvisional,
-                   !(narrationActive && playback.isPlaying && typography.autoScrollNarration),
-                   old.chapterIndex != new.chapterIndex,
-                   playback.activeBook?.id == book.id, playback.mode == .readAndListen,
-                   playback.chapterIndex != new.chapterIndex,
-                   readerPages.indices.contains(new.pageIndex) {
-                    seekReaderNarration(chapter: new.chapterIndex,
-                                        offset: readerPages[new.pageIndex].chapterStartOffset)
-                }
+                // Visibility and pagination are not playback commands. Only
+                // an explicit chapter choice or word tap may seek the audio.
             }
             updateStoryPosition()
             updateImmersivePosition()
@@ -260,6 +254,8 @@ struct ReaderView: View {
                 pageIndex: book.format == .pdf ? pdfPageIndex : pageIndex,
                 pdfURL: pdfURL,
                 onNavigate: { target in
+                    suspendNarrationFollow()
+                    search.dismiss()
                     if book.format == .pdf {
                         if let offset = target.characterOffset {
                             // Notes live in Intelligent Reading; scroll to the
@@ -298,6 +294,8 @@ struct ReaderView: View {
                 .readerPresentation(readerTheme)
         }
         #endif
+        .environment(\.readerFollowState, followState)
+        .environment(\.readerManualNavigation, suspendNarrationFollow)
         .pronunciationHost(book: book)
         .sheet(item: $annotationDraft) { draft in
             AnnotationEditorSheet(book: book, draft: draft)
@@ -332,7 +330,8 @@ struct ReaderView: View {
                 searchRanges: search.isPresented ? search.rangesByChapter : [:],
                 currentSearchMatch: search.isPresented ? search.currentMatch : nil,
                 columns: paginationColumns,
-                followNarration: playback.mode == .readAndListen && playback.isPlaying,
+                followNarration: narrationActive && playback.mode == .readAndListen && playback.isPlaying &&
+                    !followState.isSuspended && !search.isPresented && !showContents,
                 usesNarrationScrolling: narrationActive && playback.mode == .readAndListen && typography.autoScrollNarration,
                 onWordTap: { chapter, offset in startNarration(chapter: chapter, offset: offset) },
                 onHighlight: { chapter, range, color in
@@ -474,7 +473,7 @@ struct ReaderView: View {
     /// reading (narration, when playing, gives its own position).
     private func updateImmersivePosition() {
         if book.format == .pdf {
-            immersive.readerPosition(chapter: pdfPageIndex, offset: 0)
+            immersive.readerPosition(book: book, chapter: pdfPageIndex, offset: 0)
             return
         }
         guard !readerPages.isEmpty, readerPages.indices.contains(pageIndex) else { return }
@@ -482,7 +481,7 @@ struct ReaderView: View {
         let last = readerPages[min(pageIndex + max(pageStep, 1) - 1, readerPages.count - 1)]
         let offset = first.chapterIndex == last.chapterIndex
             ? (first.chapterStartOffset + last.chapterEndOffset) / 2 : first.chapterStartOffset
-        immersive.readerPosition(chapter: first.chapterIndex, offset: offset)
+        immersive.readerPosition(book: book, chapter: first.chapterIndex, offset: offset)
     }
 
     // MARK: Search
@@ -490,7 +489,22 @@ struct ReaderView: View {
     private func openSearch() {
         // PDFKit searches the original pages; the reflow view runs the same
         // query over its page text, so the current PDF mode is preserved.
+        suspendNarrationFollow()
         search.isPresented = true
+    }
+
+    private func suspendNarrationFollow() {
+        if narrationActive && playback.mode == .readAndListen {
+            followState.suspend()
+        } else {
+            // Browsing before the first Listen must not disable that future
+            // session, but still cancels any pending visual navigation.
+            followState.invalidateScrolls()
+        }
+        search.cancelPendingNavigation()
+        navigationTarget = nil
+        narrationReturnTarget = nil
+        pdfJumpPage = nil
     }
 
     /// Finds the query in the chapters, off the main thread and a moment after
@@ -498,6 +512,7 @@ struct ReaderView: View {
     private func runSearch() async {
         guard search.isPresented, book.format != .pdf else { return }
         let query = search.query
+        let revision = search.navigationRevision
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             search.setMatches([], startingAt: nil)
             search.isSearching = false
@@ -505,12 +520,12 @@ struct ReaderView: View {
         }
         search.isSearching = true
         try? await Task.sleep(for: .milliseconds(250))
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, search.canApplyResults(query: query, revision: revision) else { return }
         let texts = chapters.map(\.text)
         let matches = await Task.detached(priority: .userInitiated) {
             ReaderSearch.matches(for: query, in: texts)
         }.value
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, search.canApplyResults(query: query, revision: revision) else { return }
         let offset = readerPages.indices.contains(pageIndex) ? readerPages[pageIndex].chapterStartOffset : 0
         search.setMatches(matches, startingAt: ReaderSearch.firstIndex(in: matches,
                                                                         fromChapter: pageInfo.chapterIndex,
@@ -591,6 +606,8 @@ struct ReaderView: View {
             }
 
             Button {
+                suspendNarrationFollow()
+                search.dismiss()
                 showContents = true
             } label: {
                 Image(systemName: "list.bullet")
@@ -639,10 +656,6 @@ struct ReaderView: View {
             }
         }
         .padding(.horizontal, 6)
-        #if os(macOS)
-        // The window buttons sit over the library sidebar when it is shown.
-        .padding(.leading, librarySidebarVisible ? 0 : Self.windowButtonsWidth)
-        #endif
         .frame(height: 44)
         .background(theme.background)
         .overlay(alignment: .bottom) {
@@ -651,9 +664,6 @@ struct ReaderView: View {
     }
 
     #if os(macOS)
-    /// Room for the close, minimise and zoom buttons of the window.
-    private static let windowButtonsWidth: CGFloat = 70
-
     private func pageNavigationButton(previous: Bool, theme: ReaderTheme) -> some View {
         let enabled = previous ? canGoPreviousPage : canGoNextPage
         let title: LocalizedStringKey = previous ? "Previous page" : "Next page"
@@ -803,7 +813,7 @@ struct ReaderView: View {
             let pageCount = await Task.detached(priority: .userInitiated) {
                 PDFDocument(url: localURL)?.pageCount ?? 0
             }.value
-            showPlaybackPosition()
+            restorePlaybackPosition()
             if pageCount > 0 {
                 pdfPageIndex = min(pdfPageIndex, pageCount - 1)
                 pdfPageCount = pageCount
@@ -821,7 +831,7 @@ struct ReaderView: View {
                 return
             }
             library.refreshChapterTitlesIfNeeded(book, chapters: loaded)
-            showPlaybackPosition()
+            restorePlaybackPosition()
             content = .chapters(loaded)
             immersive.readerOpened(book: book, chapters: loaded)
             await prepareStory(chapters: loaded)
@@ -882,6 +892,14 @@ struct ReaderView: View {
     // MARK: Page helpers
 
     private func showPlaybackPosition() {
+        search.dismiss()
+        followState.resume()
+        navigationTarget = nil
+        narrationReturnTarget = nil
+        restorePlaybackPosition()
+    }
+
+    private func restorePlaybackPosition() {
         let requested = playback.consumeReaderResume(for: book)
         if playback.activeBook?.id != book.id,
            book.readingMode != .read, let saved = book.locator.narrationPosition {
@@ -925,6 +943,7 @@ struct ReaderView: View {
     /// The capsule's page buttons. A PDF page is reported back by the view
     /// that shows it: Intelligent Reading may skip pages it did not analyse.
     private func turnPage(by delta: Int) {
+        suspendNarrationFollow()
         if book.format == .pdf {
             guard pdfPageCount > 0 else { return }
             pdfJumpPage = min(max(pdfPageIndex + delta, 0), pdfPageCount - 1)
@@ -1030,10 +1049,19 @@ struct ReaderView: View {
     }
 
     private func startNarration(chapter: Int, offset chapterOffset: Int) {
+        search.dismiss()
+        followState.suspend()
+        let intent = followState.revision
+        navigationTarget = nil
+        narrationReturnTarget = nil
         Task {
             await playback.start(book: book, mode: .readAndListen,
                                  startingChapterIndex: chapter,
                                  startingChapterOffset: chapterOffset)
+            // Do not follow the previous cursor during an asynchronous voice
+            // load, or undo a manual scroll made while that load was pending.
+            guard followState.revision == intent else { return }
+            followState.resume()
         }
     }
 
@@ -1139,8 +1167,10 @@ struct ReaderNarrationCapsule: View {
                         .font(.system(size: 17))
                         .foregroundStyle(theme.text)
                         .frame(width: 44, height: 44)
+                        .contentShape(.interaction, Circle())
                 }
                 .buttonStyle(.plain)
+                .clipShape(Circle())
                 .disabled(!hasNarration || isPreparing)
                 .accessibilityLabel("Return to narration")
                 .accessibilityIdentifier("ReturnToNarration")
@@ -1173,8 +1203,10 @@ struct ReaderNarrationCapsule: View {
                     .font(.system(size: 18))
                     .foregroundStyle(theme.text)
                     .frame(width: 44, height: 44)
+                    .contentShape(.interaction, Circle())
             }
             .buttonStyle(.plain)
+            .clipShape(Circle())
             .disabled(isLoading || (hasNarration ? playback.currentIndex == 0 : !canGoPreviousPage))
             .accessibilityLabel(hasNarration ? "Previous sentence" : "Previous page")
 
@@ -1192,6 +1224,7 @@ struct ReaderNarrationCapsule: View {
                     }
             }
             .buttonStyle(.plain)
+            .clipShape(Circle())
             .disabled(isPreparing || (!isReady && !isPlaying) || (isLoading && !isPlaying))
             .accessibilityLabel(showsReplay ? "Replay from beginning" : isPlaying ? "Pause narration" : "Play narration")
 
@@ -1202,8 +1235,10 @@ struct ReaderNarrationCapsule: View {
                     .font(.system(size: 18))
                     .foregroundStyle(theme.text)
                     .frame(width: 44, height: 44)
+                    .contentShape(.interaction, Circle())
             }
             .buttonStyle(.plain)
+            .clipShape(Circle())
             .disabled(isLoading || (hasNarration ? playback.currentIndex + 1 >= playback.sentenceCount : !canGoNextPage))
             .accessibilityLabel(hasNarration ? "Next sentence" : "Next page")
         }
@@ -1241,8 +1276,10 @@ struct ReaderNarrationCapsule: View {
                 .font(.system(size: 17))
                 .foregroundStyle(immersive.status == .playing ? theme.accent : theme.text)
                 .frame(width: 44, height: 44)
+                .contentShape(.interaction, Circle())
         }
         .buttonStyle(.plain)
+        .clipShape(Circle())
         .accessibilityLabel("Atmosphere")
         .accessibilityValue(Text(immersive.status == .playing ? "Playing" : "Paused"))
         .accessibilityIdentifier("ImmersiveAtmosphereButton")
@@ -1269,8 +1306,14 @@ struct ReaderNarrationCapsule: View {
                 .font(.system(size: 17))
                 .foregroundStyle(playback.sleepTimer == .off ? theme.text : theme.accent)
                 .frame(width: 44, height: 44)
+                .contentShape(.interaction, Circle())
+                #if os(iOS)
+                .contentShape(.contextMenuPreview, Circle())
+                #endif
         }
         .nodusMenuLabelStyle()
+        .buttonStyle(.plain)
+        .clipShape(Circle())
         .disabled(!isActiveBook || isPreparing)
         .accessibilityLabel("Sleep timer")
     }
@@ -1297,6 +1340,7 @@ private struct MacReaderKeyboardNavigation: NSViewRepresentable {
     var canGoNext: Bool
     var onPrevious: () -> Void
     var onNext: () -> Void
+    var onManualNavigation: () -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(configuration: self) }
 
@@ -1327,7 +1371,7 @@ private struct MacReaderKeyboardNavigation: NSViewRepresentable {
 
         func install() {
             guard monitor == nil else { return }
-            monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .scrollWheel, .leftMouseDown]) { [weak self] event in
                 let handled = MainActor.assumeIsolated { self?.handle(event) ?? false }
                 return handled ? nil : event
             }
@@ -1341,10 +1385,24 @@ private struct MacReaderKeyboardNavigation: NSViewRepresentable {
         private func handle(_ event: NSEvent) -> Bool {
             guard configuration.isEnabled, let probe, let window = probe.window,
                   window.isKeyWindow, event.window === window, window.attachedSheet == nil,
-                  !probe.isHiddenOrHasHiddenAncestor,
-                  event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
-                  [123, 124, 125, 126].contains(event.keyCode) else { return false }
+                  !probe.isHiddenOrHasHiddenAncestor else { return false }
             let readerFrame = probe.convert(probe.bounds, to: nil)
+            if event.type != .keyDown {
+                guard readerFrame.contains(event.locationInWindow) else { return false }
+                if event.type == .scrollWheel {
+                    configuration.onManualNavigation()
+                } else if let content = window.contentView,
+                          let hit = content.hitTest(content.convert(event.locationInWindow, from: nil)), hit is NSScroller {
+                    configuration.onManualNavigation()
+                }
+                return false
+            }
+            if [115, 116, 119, 121].contains(event.keyCode) {
+                configuration.onManualNavigation()
+                return false
+            }
+            guard event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
+                  [123, 124, 125, 126].contains(event.keyCode) else { return false }
             if let text = window.firstResponder as? NSTextView {
                 guard text is ReaderMacTextView, !text.isEditable, !text.isFieldEditor,
                       text.selectedRange().length == 0,
@@ -1362,6 +1420,7 @@ private struct MacReaderKeyboardNavigation: NSViewRepresentable {
             }
 
             let previous = event.keyCode == 123 || event.keyCode == 126
+            configuration.onManualNavigation()
             if event.keyCode == 125 || event.keyCode == 126 {
                 guard configuration.flow != .scrollHorizontal else { return false }
                 if configuration.flow == .scrollVertical {

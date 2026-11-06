@@ -2305,6 +2305,58 @@ func readerSearchStepsWrapAround() {
     #expect(!model.isPresented && model.count == 0 && model.currentMatch == nil)
 }
 
+@Test @MainActor
+func manualReaderExplorationInvalidatesScrollsUntilExplicitResume() {
+    let follow = ReaderFollowState()
+    let original = follow.revision
+    #expect(!follow.isSuspended)
+    follow.suspend()
+    #expect(follow.isSuspended && follow.revision != original)
+    let searchJump = follow.revision
+    // A second manual scroll must cancel even a newer explicit jump while
+    // automatic following was already suspended by the search bar.
+    follow.suspend()
+    #expect(follow.isSuspended && follow.revision != searchJump)
+    let cancelled = follow.revision
+    follow.resume()
+    #expect(!follow.isSuspended && follow.revision != cancelled)
+}
+
+@Test @MainActor
+func delayedSearchCannotNavigateAfterManualExplorationOrReopening() {
+    let search = ReaderSearchModel()
+    search.isPresented = true
+    search.query = "whale"
+    let firstRun = search.navigationRevision
+    #expect(search.canApplyResults(query: "whale", revision: firstRun))
+    search.setMatches([ReaderSearchMatch(chapterIndex: 2, range: NSRange(location: 10, length: 5))], startingAt: 0)
+    search.cancelPendingNavigation()
+    #expect(!search.canApplyResults(query: "whale", revision: firstRun))
+    #expect(search.currentMatch?.chapterIndex == 2) // Existing results stay usable.
+    let secondRun = search.navigationRevision
+    search.query = "Ishmael"
+    #expect(!search.canApplyResults(query: "whale", revision: secondRun))
+    search.dismiss()
+    search.isPresented = true
+    search.query = "whale"
+    #expect(!search.canApplyResults(query: "whale", revision: secondRun))
+    #expect(search.canApplyResults(query: "whale", revision: search.navigationRevision))
+}
+
+@Test @MainActor
+func searchCanRevisitItsOnlyResultAfterManualScrolling() {
+    let search = ReaderSearchModel()
+    search.isPresented = true
+    search.query = "whale"
+    search.setMatches([ReaderSearchMatch(chapterIndex: 2, range: NSRange(location: 10, length: 5))], startingAt: 0)
+    let request = search.resultNavigationID
+    search.cancelPendingNavigation()
+    #expect(!search.permitsResultNavigation)
+    search.next()
+    #expect(search.permitsResultNavigation && search.current == 0)
+    #expect(search.resultNavigationID != request)
+}
+
 @Test
 func sheetsOverTheReaderUseTheReaderThemeColours() {
     let dark = ReaderTheme.resolve(.dark, colorScheme: .dark)
@@ -2866,3 +2918,159 @@ func pronunciationSynthesizesWithInstalledEngines() async throws {
         _ = manager.releaseEnginesIfIdle()
     }
 }
+
+#if os(macOS)
+@Test @MainActor
+func macReaderResolvesSuccessiveWordTargetsWithAnExistingSelection() throws {
+    let view = ReaderMacTextView(frame: NSRect(x: 0, y: 0, width: 600, height: 300))
+    view.isEditable = false
+    view.isSelectable = true
+    view.textContainerInset = NSSize(width: 12, height: 8)
+    let string = "📖 Call me Ishmael. Some years ago—never mind how long precisely—having little. The watery part of the world."
+    let text = NSAttributedString(string: string, attributes: [.font: NSFont.systemFont(ofSize: 24)])
+    view.textStorage?.setAttributedString(text)
+    view.mapping = .block(base: 400, length: text.length)
+    let layout = try #require(view.layoutManager)
+    let container = try #require(view.textContainer)
+    container.containerSize = NSSize(width: 580, height: 300)
+    layout.ensureLayout(for: container)
+
+    // Later clicks must resolve independently of a previous native selection,
+    // across line wrapping, punctuation and UTF-16 surrogate pairs.
+    for word in ["Ishmael", "precisely", "watery"] {
+        view.setSelectedRange(NSRange(location: 0, length: text.length))
+        let range = (string as NSString).range(of: word)
+        let glyph = layout.glyphIndexForCharacter(at: range.location + 1)
+        let bounds = layout.boundingRect(forGlyphRange: NSRange(location: glyph, length: 1), in: container)
+        let point = NSPoint(x: bounds.midX + view.textContainerOrigin.x,
+                            y: bounds.midY + view.textContainerOrigin.y)
+        #expect(view.narrationOffset(at: point) == 400 + range.location)
+    }
+    #expect(view.narrationOffset(at: NSPoint(x: 590, y: 290)) == nil)
+}
+#endif
+
+#if os(macOS)
+@Test @MainActor
+func macReaderClicksSeekRepeatedlyWhileDragOnlySelects() async throws {
+    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 300),
+                          styleMask: [.borderless], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    defer { window.close() }
+    let view = ReaderMacTextView(frame: NSRect(x: 0, y: 0, width: 600, height: 300))
+    window.contentView = view // Hidden test window; never ordered on screen.
+    view.isEditable = false
+    view.isSelectable = true
+    let text = NSAttributedString(string: "First second third.", attributes: [.font: NSFont.systemFont(ofSize: 24)])
+    view.textStorage?.setAttributedString(text)
+    view.mapping = .block(base: 0, length: text.length)
+    let layout = try #require(view.layoutManager)
+    let container = try #require(view.textContainer)
+    container.containerSize = NSSize(width: 600, height: 300)
+    layout.ensureLayout(for: container)
+    var seeks: [Int] = []
+    view.onWordTap = { seeks.append($0) }
+    func point(_ index: Int) -> NSPoint {
+        let glyph = layout.glyphIndexForCharacter(at: index)
+        let rect = layout.boundingRect(forGlyphRange: NSRange(location: glyph, length: 1), in: container)
+        return view.convert(NSPoint(x: rect.midX + view.textContainerOrigin.x,
+                                    y: rect.midY + view.textContainerOrigin.y), to: nil)
+    }
+    func event(_ type: NSEvent.EventType, _ point: NSPoint) throws -> NSEvent {
+        try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                                       timestamp: ProcessInfo.processInfo.systemUptime,
+                                       windowNumber: window.windowNumber, context: nil,
+                                       eventNumber: 1, clickCount: 1, pressure: 1))
+    }
+    for index in [1, 7] {
+        let location = point(index)
+        view.mouseDown(with: try event(.leftMouseDown, location))
+        view.mouseUp(with: try event(.leftMouseUp, location))
+        try await Task.sleep(for: .seconds(NSEvent.doubleClickInterval + 0.1))
+    }
+    #expect(seeks == [0, 6], "A second click must seek again in the same text view")
+    view.mouseDown(with: try event(.leftMouseDown, point(1)))
+    view.mouseDragged(with: try event(.leftMouseDragged, point(14)))
+    view.mouseUp(with: try event(.leftMouseUp, point(14)))
+    try await Task.sleep(for: .seconds(NSEvent.doubleClickInterval + 0.1))
+    #expect(seeks == [0, 6], "Dragging must not trigger another seek")
+    #expect(view.selectedRange().length > 0)
+}
+#endif
+
+@Test @MainActor
+func immersiveSoundtrackStaysWithNarrationWhileAnotherReaderOpens() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let suite = "nodus.tests.immersive-owner.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let voices = VoiceCatalog(defaults: defaults)
+    let models = ModelManager(voices: voices, defaults: defaults, discoverSystemVoices: false)
+    let playback = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
+    let controller = ImmersiveAudioController(
+        preferences: ImmersiveAudioPreferences(defaults: defaults),
+        library: ImmersiveAudioLibrary(catalog: nil, fileStore: fixture.fileStore),
+        playback: playback, models: models,
+        store: SceneMapStore(root: fixture.root.appendingPathComponent("scenes")))
+    let firstURL = try SampleLibrary.makeEPUB(sampleSpec())
+    var otherSpec = sampleSpec()
+    otherSpec.title = "Another Book"
+    let otherURL = try SampleLibrary.makeEPUB(otherSpec)
+    defer {
+        playback.stopAndClose()
+        try? FileManager.default.removeItem(at: firstURL)
+        try? FileManager.default.removeItem(at: otherURL)
+    }
+    let first = try #require(await fixture.service.importFiles([firstURL]) { _ in }.imported.first)
+    let other = try #require(await fixture.service.importFiles([otherURL]) { _ in }.imported.first)
+    controller.readerOpened(book: first, chapters: [])
+    #expect(controller.bookID == first.id)
+    // Prepare a narration session without starting an audio engine/model.
+    // Even its paused/loading state must retain ownership of the soundtrack.
+    await playback.start(book: first, mode: .read)
+    playback.mode = .readAndListen
+    controller.readerClosed(book: first)
+    controller.readerOpened(book: other, chapters: [])
+    controller.readerPosition(book: other, chapter: 1, offset: 50)
+    #expect(controller.bookID == first.id, "Browsing must not replace the narrated book's soundtrack")
+    controller.readerClosed(book: other)
+    #expect(controller.bookID == first.id)
+    controller.readerOpened(book: other, chapters: [])
+    playback.stopAndClose()
+    for _ in 0..<100 where controller.bookID != other.id { await Task.yield() }
+    #expect(controller.bookID == other.id, "Closing narration returns atmosphere ownership to the open reader")
+    controller.readerOpened(book: first, chapters: [])
+    #expect(controller.bookID == first.id, "Without narration, silent reading still follows the open book")
+    controller.readerClosed(book: first)
+}
+
+#if os(macOS)
+@Test @MainActor
+func macPlayerOpensTheNarratedBookAtItsExactCursorWithoutChangingTransport() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let suite = "nodus.tests.mac-player-open.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let voices = VoiceCatalog(defaults: defaults)
+    let models = ModelManager(voices: voices, defaults: defaults, discoverSystemVoices: false)
+    let playback = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
+    let url = try SampleLibrary.makeEPUB(sampleSpec())
+    defer { try? FileManager.default.removeItem(at: url) }
+    let book = try #require(await fixture.service.importFiles([url]) { _ in }.imported.first)
+    await playback.start(book: book, mode: .read)
+    defer { playback.stopAndClose() }
+    #expect(playback.seek(toChapter: 1, offset: 10))
+    let navigation = NavigationModel()
+    navigation.macReaderBookID = UUID() // Another document was open previously.
+    let index = playback.currentIndex
+    let mode = playback.mode
+    navigation.openNarratedBook(using: playback)
+    #expect(navigation.macReaderBookID == book.id)
+    let cursor = try #require(playback.consumeReaderResume(for: book))
+    #expect(cursor.chapterIndex == 1 && cursor.offset == 10)
+    #expect(playback.currentIndex == index && playback.mode == mode && !playback.isPlaying)
+    #expect(playback.consumeReaderResume(for: book) == nil, "The reader consumes the transfer only once")
+}
+#endif

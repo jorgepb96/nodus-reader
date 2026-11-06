@@ -198,9 +198,6 @@ struct PaginatedReaderContent: View {
         .onChange(of: followNarration) { _, _ in
             followNarrationIfNeeded()
         }
-        .onChange(of: currentSearchMatch) { _, match in
-            showSearchMatch(match)
-        }
         .onAppear {
             pageStep = visibleColumns
             updatePageInfo()
@@ -387,6 +384,10 @@ struct PaginatedReaderContent: View {
         }
         pageIndex = destination
         updatePageInfo()
+        if flow.isContinuous, narrationReturnTarget == nil {
+            narrationReturnTarget = ReaderNavigationTarget(chapterIndex: target.chapterIndex,
+                                                          characterOffset: target.characterOffset ?? pages[destination].chapterStartOffset)
+        }
         if flow == .paged { narrationReturnTarget = nil }
         appliedNavigationID = target.id
         if shownComplete { navigationTarget = nil }
@@ -409,18 +410,6 @@ struct PaginatedReaderContent: View {
             narrationSentenceRange.location >= page.chapterStartOffset &&
             narrationSentenceRange.location < max(page.chapterEndOffset, page.chapterStartOffset + 1)
         }) {
-            pageIndex = index
-        }
-    }
-
-    /// Turns to the page that holds the current find result.
-    private func showSearchMatch(_ match: ReaderSearchMatch?) {
-        guard let match, !pages.isEmpty else { return }
-        if let index = pages.firstIndex(where: { page in
-            page.chapterIndex == match.chapterIndex &&
-            match.range.location >= page.chapterStartOffset &&
-            match.range.location < max(page.chapterEndOffset, page.chapterStartOffset + 1)
-        }), index != pageIndex {
             pageIndex = index
         }
     }

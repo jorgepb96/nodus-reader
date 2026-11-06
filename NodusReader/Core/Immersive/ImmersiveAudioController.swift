@@ -56,7 +56,10 @@ final class ImmersiveAudioController {
     @ObservationIgnored private var policy = ImmersivePlaybackPolicy()
     @ObservationIgnored private var history = PlayHistory()
     @ObservationIgnored private var scheduler: SceneAnalysisScheduler?
-    @ObservationIgnored private var bookID: UUID?
+    @ObservationIgnored private(set) var bookID: UUID?
+    @ObservationIgnored private var openReader: (book: Book, chapters: [ExtractedChapter]?)?
+    @ObservationIgnored private var openReaderChapter = 0
+    @ObservationIgnored private var openReaderOffset = 0
     @ObservationIgnored private var book: Book?
     @ObservationIgnored private var story: StoryText?
     @ObservationIgnored private var map: SceneMap?
@@ -98,19 +101,13 @@ final class ImmersiveAudioController {
     /// A book opened in the reader. `chapters` are the reader's chapters
     /// (nil for a PDF: its text is loaded only if automatic mode needs it).
     func readerOpened(book: Book, chapters: [ExtractedChapter]?) {
-        shutdownTask?.cancel()
-        if bookID != book.id {
-            resetSession()
-            bookID = book.id
-            self.book = book
-            bookPreferences = store.loadPreferences(bookID: book.id) ?? ImmersiveBookPreferences()
-            isLocked = bookPreferences.locked
-            isChosenByReader = bookPreferences.atmosphere != nil && !isLocked
-            refreshAvailability(language: book.language)
-            prepareText(book: book, chapters: chapters)
+        if openReader?.book.id != book.id {
+            openReaderChapter = 0
+            openReaderOffset = 0
         }
+        openReader = (book, chapters)
+        playbackChanged()
         lastActivity = Date()
-        apply(policy.handle(.readerOpened))
         updateStatus()
         // New sounds are looked for only while the feature is in use (at
         // most once a day): the reader sees them in Settings › Sound packs.
@@ -119,8 +116,13 @@ final class ImmersiveAudioController {
         }
     }
 
-    /// The page on screen moved (silent reading position).
-    func readerPosition(chapter: Int, offset: Int) {
+    /// The page on screen moved. A different book being browsed must not
+    /// move or wake the atmosphere belonging to the narration session.
+    func readerPosition(book: Book, chapter: Int, offset: Int) {
+        guard openReader?.book.id == book.id else { return }
+        openReaderChapter = chapter
+        openReaderOffset = offset
+        guard bookID == book.id else { return }
         readerChapter = chapter
         readerOffset = offset
         lastActivity = Date()
@@ -129,9 +131,11 @@ final class ImmersiveAudioController {
     }
 
     func readerClosed(book: Book) {
+        if openReader?.book.id == book.id { openReader = nil }
+        synchronizeBook()
         guard book.id == bookID else { return }
-        apply(policy.handle(.readerClosed))
-        scheduler?.stop()
+        if policy.readerOpen { apply(policy.handle(.readerClosed)) }
+        if !narrationDrivesPosition { scheduler?.stop() }
         // Keep the engine a little in case the reader comes straight back.
         shutdownTask?.cancel()
         shutdownTask = Task { [weak self] in
@@ -140,6 +144,41 @@ final class ImmersiveAudioController {
             self.shutdownEngine()
         }
         updateStatus()
+    }
+
+    /// Narration (including its loading/paused session) owns the soundtrack.
+    /// Browsing another reader only becomes audible after that session closes,
+    /// or when the user explicitly starts narrating the other book.
+    private func synchronizeBook() {
+        let narrationBook = playback.mode != .read ? playback.activeBook : nil
+        let target = narrationBook ?? openReader?.book
+        guard let target else {
+            if policy.readerOpen { apply(policy.handle(.readerClosed)) }
+            return
+        }
+        shutdownTask?.cancel()
+        if bookID != target.id {
+            resetSession()
+            bookID = target.id
+            book = target
+            lastNarrationPlaying = false
+            narrationHadBook = narrationBook != nil
+            policy.narration = narrationBook != nil && !playback.isPlaying ? .paused : .none
+            policy.readerOpen = false
+            policy.finished = false
+            bookPreferences = store.loadPreferences(bookID: target.id) ?? ImmersiveBookPreferences()
+            isLocked = bookPreferences.locked
+            isChosenByReader = bookPreferences.atmosphere != nil && !isLocked
+            refreshAvailability(language: target.language)
+            let isOpen = openReader?.book.id == target.id
+            readerChapter = isOpen ? openReaderChapter : 0
+            readerOffset = isOpen ? openReaderOffset : 0
+            prepareText(book: target, chapters: isOpen ? openReader?.chapters : nil)
+        }
+        let isOpen = openReader?.book.id == target.id
+        if policy.readerOpen != isOpen {
+            apply(policy.handle(isOpen ? .readerOpened : .readerClosed))
+        }
     }
 
     private func resetSession() {
@@ -156,8 +195,10 @@ final class ImmersiveAudioController {
         atmosphere = nil
         musicTrack = nil
         ambienceTrack = nil
-        engine?.stop(.music, fadeOut: 2)
-        engine?.stop(.ambience, fadeOut: 2)
+        // Crossfades are for tracks within one book. Switching books must
+        // stop both old layers before scheduling the new book's soundtrack.
+        engine?.stop(.music, fadeOut: 0)
+        engine?.stop(.ambience, fadeOut: 0)
     }
 
     private func prepareText(book: Book, chapters: [ExtractedChapter]?) {
@@ -501,6 +542,7 @@ final class ImmersiveAudioController {
             _ = playback.narrationPeak
             _ = playback.currentIndex
             _ = playback.activeBook?.id
+            _ = playback.mode
         } onChange: { [weak self] in
             Task { @MainActor in
                 self?.playbackChanged()
@@ -510,7 +552,8 @@ final class ImmersiveAudioController {
     }
 
     private func playbackChanged() {
-        let ours = bookID != nil && playback.activeBook?.id == bookID
+        synchronizeBook()
+        let ours = bookID != nil && playback.activeBook?.id == bookID && playback.mode != .read
         let playing = ours && playback.isPlaying
         if playing != lastNarrationPlaying {
             lastNarrationPlaying = playing
@@ -530,7 +573,7 @@ final class ImmersiveAudioController {
     }
 
     private func updateNarrationLevels() {
-        let ours = bookID != nil && playback.activeBook?.id == bookID
+        let ours = bookID != nil && playback.activeBook?.id == bookID && playback.mode != .read
         let audible = ours && playback.isPlaying && !playback.isLoading
         engine?.setNarrationAudible(audible)
         engine?.setNarrationPeak(ours && playback.isPlaying ? playback.narrationPeak : nil)

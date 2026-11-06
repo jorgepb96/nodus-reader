@@ -33,9 +33,12 @@ struct ContinuousReaderContent: View {
     @State private var leadingID: Int?
     @State private var atEnd = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.readerFollowState) private var followState
+    @Environment(\.readerManualNavigation) private var onManualNavigation
 
     private var narrationPageID: Int? {
-        guard axis == .vertical, let narrationChapterIndex, let narrationRange else { return nil }
+        guard followState?.isSuspended != true, axis == .vertical,
+              let narrationChapterIndex, let narrationRange else { return nil }
         return pages.first { page in
             page.chapterIndex == narrationChapterIndex &&
             narrationRange.location >= page.chapterStartOffset &&
@@ -58,6 +61,11 @@ struct ContinuousReaderContent: View {
                 } else {
                     LazyHStack(spacing: 0) { slices }
                         .scrollTargetLayout()
+                }
+            }
+            .onScrollPhaseChange { _, phase in
+                if phase == .tracking || phase == .interacting || phase == .decelerating {
+                    onManualNavigation?()
                 }
             }
             .onScrollTargetVisibilityChange(idType: Int.self, threshold: 0.01) { ids in
@@ -102,12 +110,25 @@ struct ContinuousReaderContent: View {
                     proxy.scrollTo(index, anchor: anchor)
                 }
             }
+            .onChange(of: narrationReturnTarget?.id, initial: true) { _, _ in
+                guard let target = narrationReturnTarget, let offset = target.characterOffset,
+                      let page = pages.first(where: {
+                          $0.chapterIndex == target.chapterIndex && offset >= $0.chapterStartOffset &&
+                          offset < max($0.chapterEndOffset, $0.chapterStartOffset + 1)
+                      }) else { return }
+                leadingID = page.id
+                proxy.scrollTo(page.id, anchor: anchor)
+                if axis == .horizontal { narrationReturnTarget = nil }
+            }
         }
     }
 
     private var anchor: UnitPoint { axis == .vertical ? .top : .leading }
 
     private func report(_ id: Int) {
+        // Ignore stale visibility reports while an explicit range jump is
+        // materializing its lazy text view. The one-shot request owns it.
+        guard axis != .vertical || narrationReturnTarget == nil else { return }
         leadingID = id
         if pageIndex != id { pageIndex = id }
     }

@@ -5,30 +5,39 @@ import SwiftUI
 
 struct MacPlayerBar: View {
     @Environment(PlaybackController.self) private var playback
-    @Environment(VoiceCatalog.self) private var voices
-    @Environment(LibraryService.self) private var library
+    @Environment(NavigationModel.self) private var navigation
     @Environment(ImmersiveAudioController.self) private var immersive
     @Environment(\.nodusPalette) private var palette
     @State private var showAtmosphere = false
+    @State private var showVoicePicker = false
+    var onOpenPlayer: () -> Void
 
     var body: some View {
         HStack(spacing: 20) {
-            HStack(spacing: 10) {
-                if let book = playback.activeBook {
-                    SquareCoverThumb(book: book, size: 36, cornerRadius: 5)
+            Button {
+                navigation.openNarratedBook(using: playback)
+            } label: {
+                HStack(spacing: 10) {
+                    if let book = playback.activeBook {
+                        SquareCoverThumb(book: book, size: 36, cornerRadius: 5)
+                    }
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(playback.activeBook?.title ?? "")
+                            .font(.callout.weight(.medium))
+                            .lineLimit(1)
+                        Text("Chapter \(playback.chapterNumber) · \(playback.chapterTitle)")
+                            .font(.caption2)
+                            .foregroundStyle(palette.muted)
+                            .lineLimit(1)
+                    }
+                    .frame(minWidth: 0)
                 }
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(playback.activeBook?.title ?? "")
-                        .font(.callout.weight(.medium))
-                        .lineLimit(1)
-                    Text("Chapter \(playback.chapterNumber) · \(playback.chapterTitle)")
-                        .font(.caption2)
-                        .foregroundStyle(palette.muted)
-                        .lineLimit(1)
-                }
-                .frame(minWidth: 0)
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
+            .accessibilityLabel("Return to narration")
+            .accessibilityIdentifier("MacPlayerOpenReader")
 
             VStack(spacing: 4) {
                 HStack(spacing: 6) {
@@ -59,6 +68,9 @@ struct MacPlayerBar: View {
                     playerButton("stop.fill", label: "Stop narration") {
                         playback.stopAndClose()
                     }
+                    playerButton("chevron.up", label: "Open player", action: onOpenPlayer)
+                        .help("Read & Listen")
+                        .accessibilityIdentifier("MacPlayerExpand")
                 }
                 NodusProgressBar(value: playback.overallProgress, height: 3)
                     .frame(width: 280)
@@ -75,22 +87,21 @@ struct MacPlayerBar: View {
                 }
                 .nodusMenuLabelStyle()
 
-                Menu {
-                    Button("Book default") {
-                        if let book = playback.activeBook {
-                            library.setPreferredVoice(book, voiceID: nil)
-                        }
-                    }
-                    Divider()
-                    ForEach(voices.allInstalledVoices, id: \.id) { voice in
-                        Button("\(voice.name) · \(voice.engineLabel) · \(voice.languageName)") {
-                            playback.setVoice(voice)
-                        }
-                    }
+                Button {
+                    showVoicePicker = true
                 } label: {
                     chip("\(playback.voiceLabel) · \(playback.engineLabel)")
                 }
-                .nodusMenuLabelStyle()
+                .buttonStyle(.plain)
+                .accessibilityLabel("Voice for this book")
+                .accessibilityIdentifier("MacPlayerVoice")
+                .sheet(isPresented: $showVoicePicker) {
+                    VoicePickerSheet()
+                        .nodusPalette(palette)
+                        .tint(palette.accent)
+                        .environment(\.colorScheme, palette.isDark ? .dark : .light)
+                        .preferredColorScheme(palette.isDark ? .dark : .light)
+                }
 
                 if immersive.preferences.isEnabled {
                     Button {
@@ -123,6 +134,17 @@ struct MacPlayerBar: View {
         }
         .padding(.horizontal, 14)
         .frame(height: 64)
+        .background {
+            // Only unoccupied bar space falls through to this button; the
+            // transport and menus keep their own independent actions.
+            Button {
+                navigation.openNarratedBook(using: playback)
+            } label: {
+                Rectangle().fill(Color.clear).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHidden(true)
+        }
         .background(palette.panelRaised, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)

@@ -1,0 +1,17 @@
+{
+  "phase": "COMPLETE",
+  "at": "2026-11-05T23:13:05.559283+01:00",
+  "build": "57",
+  "source": "/tmp/nodus-reader-ios57-source",
+  "buildId": "7ff98cdb-64c7-4eb9-965b-6323cddcdd36",
+  "groups": [
+    "6fca3f0a-fada-4405-a6a0-9357bab03698",
+    "b2c18bee-362c-4fc0-804a-6869fb3ee638"
+  ],
+  "beta": {
+    "autoNotifyEnabled": true,
+    "internalBuildState": "IN_BETA_TESTING",
+    "externalBuildState": "IN_BETA_TESTING"
+  },
+  "physicalValidation": "Deferred; beta only"
+}

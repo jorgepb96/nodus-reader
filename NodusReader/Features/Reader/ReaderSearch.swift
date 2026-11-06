@@ -13,6 +13,33 @@ struct ReaderSearchMatch: Hashable, Sendable {
     let range: NSRange
 }
 
+/// Per-reader intent, never a synced preference. A manual action invalidates
+/// queued scrolls immediately, before SwiftUI updates the native text views.
+@MainActor @Observable
+final class ReaderFollowState {
+    private(set) var isSuspended = false
+    private(set) var revision = UUID()
+
+    func suspend() {
+        isSuspended = true
+        invalidateScrolls()
+    }
+
+    func invalidateScrolls() {
+        revision = UUID()
+    }
+
+    func resume() {
+        isSuspended = false
+        revision = UUID()
+    }
+}
+
+extension EnvironmentValues {
+    @Entry var readerFollowState: ReaderFollowState? = nil
+    @Entry var readerManualNavigation: (() -> Void)? = nil
+}
+
 enum ReaderSearch {
     /// Enough for any real search; a one-letter query in a long book stops here.
     static let maximumMatches = 5_000
@@ -56,13 +83,33 @@ enum ReaderSearch {
 @Observable
 final class ReaderSearchModel {
     var isPresented = false
-    var query = ""
+    var query = "" {
+        didSet {
+            guard query != oldValue else { return }
+            navigationRevision = UUID()
+            permitsResultNavigation = true
+            setMatches([], startingAt: nil)
+        }
+    }
     /// Matches in chapter text (EPUB and documents). PDFs report only their
     /// count, from PDFKit.
     private(set) var matches: [ReaderSearchMatch] = []
     var count = 0
     var current: Int?
     var isSearching = false
+    private(set) var navigationRevision = UUID()
+    private(set) var resultNavigationID = UUID()
+    private(set) var permitsResultNavigation = true
+
+    func cancelPendingNavigation() {
+        navigationRevision = UUID()
+        permitsResultNavigation = false
+        isSearching = false
+    }
+
+    func canApplyResults(query: String, revision: UUID) -> Bool {
+        isPresented && permitsResultNavigation && self.query == query && navigationRevision == revision
+    }
 
     var currentMatch: ReaderSearchMatch? {
         guard let current, matches.indices.contains(current) else { return nil }
@@ -77,25 +124,32 @@ final class ReaderSearchModel {
         rangesByChapter = Dictionary(grouping: matches, by: \.chapterIndex).mapValues { $0.map(\.range) }
         count = matches.count
         current = index
+        resultNavigationID = UUID()
     }
 
     /// The result count of a search run elsewhere (PDFKit).
     func setCount(_ count: Int, startingAt index: Int?) {
         self.count = count
         current = count == 0 ? nil : min(max(index ?? 0, 0), count - 1)
+        resultNavigationID = UUID()
     }
 
     func next() {
         guard count > 0 else { return }
+        permitsResultNavigation = true
         current = ((current ?? -1) + 1) % count
+        resultNavigationID = UUID()
     }
 
     func previous() {
         guard count > 0 else { return }
+        permitsResultNavigation = true
         current = ((current ?? count) - 1 + count) % count
+        resultNavigationID = UUID()
     }
 
     func dismiss() {
+        cancelPendingNavigation()
         isPresented = false
         query = ""
         setMatches([], startingAt: nil)

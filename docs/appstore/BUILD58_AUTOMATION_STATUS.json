@@ -1,0 +1,15 @@
+{
+  "phase": "QUEUED",
+  "build": "58",
+  "requestedDistribution": {
+    "IOS": [
+      "Internal",
+      "Public Beta"
+    ],
+    "MAC_OS": [
+      "Internal"
+    ]
+  },
+  "productionReviewSubmitted": false,
+  "physicalValidation": "Deferred by user"
+}
