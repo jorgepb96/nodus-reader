@@ -1,6 +1,9 @@
-# Immersive Audio
+# Soundscapes (Immersive Audio)
 
-Quiet instrumental music and recorded ambiences under silent reading, narration and study. Local and opt-in: nothing plays until the reader turns it on in Settings › Immersive Audio. There are no accounts and no remote processing. The sounds are downloaded once and then play offline.
+Quiet instrumental music and ambiences under silent reading, narration and study. Local and opt-in: nothing plays until the reader turns it on in Settings › Soundscapes (called Immersive Audio in the code). There are no accounts and no remote processing. The sounds come from one of two sources:
+
+- **Downloaded**: recorded CC0/CC-BY sound packs, downloaded once and played offline (the catalog below).
+- **AI**: music and ambience composed on the device with Stable Audio 3 Small and kept to play again offline (see [AI soundscapes](#ai-soundscapes)).
 
 ## What it does
 
@@ -194,6 +197,36 @@ The provenance record for every file is `docs/immersive-audio/PROVENANCE.md`.
 - no clipping, and a smooth seam on every loop;
 - bitrate in range;
 - no duplicates.
+
+## AI soundscapes
+
+Design: [`docs/superpowers/specs/2026-11-06-soundscapes-design.md`](superpowers/specs/2026-11-06-soundscapes-design.md); measurements: [`docs/SOUNDSCAPES_FEASIBILITY.md`](SOUNDSCAPES_FEASIBILITY.md).
+
+**What stays the same.** The scene analysis, the map and the `AmbienceDirector` decide *when* the atmosphere changes, with the same dwell times, streaks, hysteresis and hourly caps. AI soundscapes only change *what* plays: generated pieces are `CatalogTrack`s (`semantics.origin == "generated"`) with the book style, emotions and situations they were made for, chosen by the same rotation.
+
+| Piece | File | Role |
+|---|---|---|
+| Runtime | `Modules/StableAudioMLX` | Stable Audio 3 Small on MLX: T5Gemma, DiT (Music, SFX), SAME-S encoder and decoder, staged loading, inpainting, loudness, loops, AAC |
+| Models | `Core/Soundscapes/SoundscapeModels.swift` | Pinned download, size and SHA-256, on-device conversion; Music and Ambience separately |
+| Vocabulary and prompts | `SoundscapeVocabulary.swift`, `PromptLibrary.swift`, `Resources/Soundscapes/prompts.json` (`tools/soundscapes/build_prompts.py`) | 14 styles, 20 emotions, 16 situations; 300 prompts (211 music, 89 ambience) |
+| Selector | `PromptSelector.swift` | Deterministic prompt choice: mood or bed, style, emotion, situation, intensity |
+| Book style | `BookStyleDetector.swift` | Three samples through the on-device model; per-book override |
+| Planner | `SoundscapePlanner.swift` | What to compose ahead; the optional per-book pack |
+| Worker | `GenerationWorker.swift`, `GenerationAdmission.swift`, `SoundscapeGenerating.swift` | One piece at a time, admission, pacing, quality gate, levelling, AAC |
+| Cache | `GeneratedLibrary.swift` | Pieces shared by every book, favorites, eviction |
+| Source | `SoundscapeSourcePicker.swift` | Generated first, then downloaded, never silence while waiting |
+
+**Recipes.** Music: 60 s, then continued by inpainting to 120 s keeping 0–55 s (the base piece's composed ending is replaced); it rotates, never loops. Ambience: 60 s, trimmed and looped with a 3 s equal-power seam; a seam that fails is regenerated in place by inpainting.
+
+**When it composes.** Only with AI selected, the feature on and a book's soundscape playing, in the foreground: two pieces of the current mood and one bed first, then one piece for the strongest moods and bed ahead (about 30 minutes), then variety up to four. The optional *Prepare soundscapes for this book* composes six music pieces and three beds with visible progress. Admission waits in the background, in Low Power Mode, when *serious* or *critical*, while narration waits for a sentence, during scene analysis and without the memory for the largest stage (a shorter recipe first). 20 s between pieces (60 s when *fair*), at most 12 an hour. A memory warning, heat, leaving the foreground or closing the book cancels the piece between diffusion steps; nothing half-made is stored. Two app exits during a generation switch the device to short recipes.
+
+**Quality gate.** Finite samples; no more than +15 dB needed to reach the target; ambience 1 s level spread ≤ 10 dB; music ≥ 90 s useful; no speech or singing (Apple's sound classifier, calibrated on 19 generated pieces). Then one fixed gain to −20 LUFS / −1.5 dBTP (music) or −28 LUFS / −3 dBTP (ambience), as the catalog.
+
+**Storage.** `<storage>/Soundscapes/Models` and `<storage>/Soundscapes/Generated` (`index.json` + `.m4a`), excluded from backup, never synced. 500 MB by default (1 or 2 GB in More options); the least recently heard pieces go first, never favorites or the two newest of what plays. Deleting a model keeps the pieces.
+
+**Simulator.** MLX aborts the process there, so nothing touches it; Settings says AI soundscapes are not available. UI tests use `-NodusSoundscapeFixtureGenerator` (DEBUG), a deterministic stand-in generator.
+
+**Licences.** Stability AI Community License (Stable Audio 3 Small, SAME-S) and Gemma Terms of Use (T5Gemma); downloaded per device, never bundled; «Powered by Stability AI» and the licences in Settings › Soundscapes › Models. See `MODEL_LICENSES.md`.
 
 ## Differentiation and App Review
 
