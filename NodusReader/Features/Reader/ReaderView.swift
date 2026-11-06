@@ -1179,8 +1179,10 @@ struct ReaderNarrationCapsule: View {
                         .font(.system(size: 17))
                         .foregroundStyle(theme.text)
                         .frame(width: 44, height: 44)
+                        .contentShape(.interaction, Circle())
                 }
                 .buttonStyle(.plain)
+                .clipShape(Circle())
                 .disabled(!hasNarration || isPreparing)
                 .accessibilityLabel("Return to narration")
                 .accessibilityIdentifier("ReturnToNarration")
@@ -1213,8 +1215,10 @@ struct ReaderNarrationCapsule: View {
                     .font(.system(size: 18))
                     .foregroundStyle(theme.text)
                     .frame(width: 44, height: 44)
+                    .contentShape(.interaction, Circle())
             }
             .buttonStyle(.plain)
+            .clipShape(Circle())
             .disabled(isLoading || (hasNarration ? playback.currentIndex == 0 : !canGoPreviousPage))
             .accessibilityLabel(hasNarration ? "Previous sentence" : "Previous page")
 
@@ -1232,6 +1236,7 @@ struct ReaderNarrationCapsule: View {
                     }
             }
             .buttonStyle(.plain)
+            .clipShape(Circle())
             .disabled(isPreparing || (!isReady && !isPlaying) || (isLoading && !isPlaying))
             .accessibilityLabel(showsReplay ? "Replay from beginning" : isPlaying ? "Pause narration" : "Play narration")
 
@@ -1242,8 +1247,10 @@ struct ReaderNarrationCapsule: View {
                     .font(.system(size: 18))
                     .foregroundStyle(theme.text)
                     .frame(width: 44, height: 44)
+                    .contentShape(.interaction, Circle())
             }
             .buttonStyle(.plain)
+            .clipShape(Circle())
             .disabled(isLoading || (hasNarration ? playback.currentIndex + 1 >= playback.sentenceCount : !canGoNextPage))
             .accessibilityLabel(hasNarration ? "Next sentence" : "Next page")
         }
@@ -1281,8 +1288,10 @@ struct ReaderNarrationCapsule: View {
                 .font(.system(size: 17))
                 .foregroundStyle(immersive.status == .playing ? theme.accent : theme.text)
                 .frame(width: 44, height: 44)
+                .contentShape(.interaction, Circle())
         }
         .buttonStyle(.plain)
+        .clipShape(Circle())
         .accessibilityLabel("Atmosphere")
         .accessibilityValue(Text(immersive.status == .playing ? "Playing" : "Paused"))
         .accessibilityIdentifier("ImmersiveAtmosphereButton")
@@ -1309,8 +1318,14 @@ struct ReaderNarrationCapsule: View {
                 .font(.system(size: 17))
                 .foregroundStyle(playback.sleepTimer == .off ? theme.text : theme.accent)
                 .frame(width: 44, height: 44)
+                .contentShape(.interaction, Circle())
+                #if os(iOS)
+                .contentShape(.contextMenuPreview, Circle())
+                #endif
         }
         .nodusMenuLabelStyle()
+        .buttonStyle(.plain)
+        .clipShape(Circle())
         .disabled(!isActiveBook || isPreparing)
         .accessibilityLabel("Sleep timer")
     }
