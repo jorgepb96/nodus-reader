@@ -110,6 +110,12 @@ public final class PlaybackController {
     @ObservationIgnored private var neuralWords: [NarrationWordTiming] = []
     @ObservationIgnored private var neuralBufferDuration: TimeInterval = 0
     @ObservationIgnored private var neuralStartTime: TimeInterval = 0
+    /// Gapless narration: the next sentence queued behind the one playing, the player
+    /// clock offset of the sentence playing, and the voice and book they were made for.
+    @ObservationIgnored private var chained: (index: Int, voiceID: String, key: String, narration: CachedNarration,
+                                              duration: TimeInterval, silence: TimeInterval)?
+    @ObservationIgnored private var timeline = NarrationTimeline()
+    @ObservationIgnored private var scheduledVoice: VoiceCatalog.Voice?
     /// Absolute time in the full sentence, without the highlight's visual lead.
     @ObservationIgnored private var neuralPositionTime: TimeInterval?
     @ObservationIgnored private var neuralPositionVoiceID: String?
@@ -1332,6 +1338,9 @@ public final class PlaybackController {
             return
         }
         audioPlayer.stop()
+        chained = nil
+        timeline.reset()
+        scheduledVoice = voice
         // Wait until the output has played, rather than just been consumed by
         // the render thread; stopping earlier truncates the tail and can click.
         audioPlayer.scheduleBuffer(buffer, at: nil, options: [], completionCallbackType: .dataPlayedBack) { [weak self] _ in
@@ -1349,6 +1358,41 @@ public final class PlaybackController {
         startNeuralProgress()
         updateNowPlaying()
         schedulePrefetch(after: index, voice: voice)
+        chainNext(after: index, voice: voice, book: book, token: token)
+    }
+
+    /// Queues the next sentence behind the one playing when it is already made (same
+    /// voice and pronunciation, same chapter), so the player never stops between them.
+    /// A new paragraph gets a short pause.
+    private func chainNext(after index: Int, voice: VoiceCatalog.Voice, book: Book, token: UUID) {
+        guard chained == nil, index == currentIndex, isPlaying, !neuralPaused, token == neuralPlaybackToken,
+              scheduledVoice?.id == voice.id, activeBook?.id == book.id, audioEngine.isRunning,
+              sentences.indices.contains(index + 1) else { return }
+        let next = index + 1
+        let key = pronunciationKey(sentences[next].text, voice: voice, book: book)
+        guard let ready = prefetched[next], ready.voiceID == voice.id, ready.key == key,
+              ready.narration.buffer.frameLength > 0 else { return }
+        let chapterIndex = sentences[index].chapterIndex
+        let chapterText = chapters.indices.contains(chapterIndex) ? chapters[chapterIndex].text : ""
+        guard case .chain(let silence) = NarrationChain.plan(current: sentences[index], next: sentences[next],
+                                                             chapterText: chapterText, nextReady: true,
+                                                             stopsAtChapterEnd: sleepTimer == .endOfChapter) else { return }
+        let buffer = neuralFormat.flatMap { Self.converted(ready.narration.buffer, to: $0) } ?? ready.narration.buffer
+        if silence > 0, let pause = AVAudioPCMBuffer(pcmFormat: buffer.format,
+                                                       frameCapacity: AVAudioFrameCount(silence * buffer.format.sampleRate)) {
+            pause.frameLength = pause.frameCapacity
+            for channel in 0 ..< Int(buffer.format.channelCount) {
+                pause.floatChannelData?[channel].update(repeating: 0, count: Int(pause.frameLength))
+            }
+            audioPlayer.scheduleBuffer(pause, completionHandler: nil)
+        }
+        audioPlayer.scheduleBuffer(buffer, at: nil, options: [], completionCallbackType: .dataPlayedBack) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.neuralSentenceFinished(token: token)
+            }
+        }
+        chained = (next, voice.id, key, ready.narration,
+                   Double(buffer.frameLength) / buffer.format.sampleRate, silence)
     }
 
     /// The sentence's audio: from the cache, or synthesized now and cached.
@@ -1433,6 +1477,9 @@ public final class PlaybackController {
             // finishing. Its disk cache remains useful; don't retain old PCM.
             if target > self.currentIndex {
                 self.prefetched[target] = (voice.id, key, made)
+                if target == self.currentIndex + 1 {
+                    self.chainNext(after: self.currentIndex, voice: voice, book: book, token: self.neuralPlaybackToken)
+                }
             }
         })
     }
@@ -1577,8 +1624,9 @@ public final class PlaybackController {
         // The player's clock counts audio handed to the hardware, which is
         // heard `outputLatency` later (a few ms on the speaker, ~0.2 s over
         // Bluetooth). The highlight itself reaches the screen a couple of
-        // frames after it is set, so it is set that much ahead.
-        let heard = rendered - outputLatency()
+        // frames after it is set, so it is set that much ahead. With gapless
+        // narration the clock keeps running across queued sentences.
+        let heard = timeline.heard(rendered: rendered, latency: outputLatency())
         neuralPositionTime = max(neuralStartTime, min(neuralStartTime + neuralBufferDuration,
                                                      neuralStartTime + heard))
         let absolute = neuralStartTime + heard + Self.highlightDisplayLead
@@ -1593,7 +1641,8 @@ public final class PlaybackController {
         guard isPlaying, !neuralPaused, audioPlayer.isPlaying,
               let nodeTime = audioPlayer.lastRenderTime,
               let playerTime = audioPlayer.playerTime(forNodeTime: nodeTime) else { return }
-        let heard = Double(playerTime.sampleTime) / max(playerTime.sampleRate, 1) - outputLatency()
+        let heard = timeline.heard(rendered: Double(playerTime.sampleTime) / max(playerTime.sampleRate, 1),
+                                   latency: outputLatency())
         let time = max(neuralStartTime, min(neuralStartTime + neuralBufferDuration, neuralStartTime + heard))
         neuralPositionTime = time
         if let word = neuralWords.last(where: { $0.start <= time }) { setNeuralWord(word) }
@@ -1644,6 +1693,29 @@ public final class PlaybackController {
             sleepTimer = .off
             return
         }
+        if let chain = chained, chain.index == nextIndex, let voice = scheduledVoice, let book = activeBook {
+            // Already playing: move the state along without touching the player.
+            chained = nil
+            timeline.advance(past: neuralBufferDuration, silence: chain.silence)
+            currentIndex = nextIndex
+            chapterIndex = nextChapter
+            prefetched[nextIndex] = nil
+            resetWordState()
+            neuralStartOffset = 0
+            neuralStartTime = 0
+            neuralPositionTime = 0
+            neuralPositionVoiceID = chain.voiceID
+            neuralPositionAudioKey = chain.key
+            neuralWords = chain.narration.words
+            neuralBufferDuration = chain.duration
+            narrationPeak = Self.peak(of: chain.narration.buffer)
+            saveProgress()
+            updateNowPlaying()
+            startNeuralProgress()
+            schedulePrefetch(after: nextIndex, voice: voice)
+            chainNext(after: nextIndex, voice: voice, book: book, token: neuralPlaybackToken)
+            return
+        }
         currentIndex = nextIndex
         chapterIndex = nextChapter
         neuralPositionTime = nil
@@ -1660,6 +1732,8 @@ public final class PlaybackController {
         neuralProgressTask?.cancel()
         neuralProgressTask = nil
         audioPlayer.stop()
+        chained = nil
+        timeline.reset()
         if !keepingEngine, audioEngine.isRunning { audioEngine.pause() }
         neuralPaused = false
         neuralWords = []
