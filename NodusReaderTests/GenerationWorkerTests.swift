@@ -198,4 +198,45 @@ struct GenerationWorkerTests {
         #expect(generator.rendered.last == .music)
         #expect(Set(library.pieces.compactMap(\.mood)) == [.tense, .calm])
     }
+
+    /// The on-device language model can stay busy for a long book: the worker waits for
+    /// it a minute at most, then composes anyway.
+    @Test @MainActor func analysisWaitIsCapped() async {
+        var busy = calm
+        busy.analysisRunning = true
+        let sleeps = Sleeps()
+        let (worker, _, events) = makeWorker(generator: FixtureGenerator(), admission: busy, sleeps: sleeps)
+        await worker.enqueue([job()])
+        await events.wait { finished($0) == 1 }
+        #expect(finished(events.all) == 1)
+        let waits = events.all.filter { if case .waiting("analysis") = $0 { return true } else { return false } }.count
+        #expect(waits == GenerationWorker.maximumAnalysisWaits)
+    }
+
+    /// A whole starter pack (nine pieces) stays queued: a pack cut to the queue's limit
+    /// could never finish.
+    @Test @MainActor func fullPackStaysQueued() async {
+        let (worker, _, events) = makeWorker(generator: FixtureGenerator(delay: 30))
+        let moods: [MusicMood] = [.calm, .tense, .epic, .joyful, .eerie, .solemn, .mysterious, .romantic, .dramatic]
+        await worker.enqueue(moods.map { job($0, priority: 13) })
+        await events.wait { $0.contains { if case .started = $0 { return true } else { return false } } }
+        #expect(await worker.pending.count == 8)
+        await worker.cancelAll()
+    }
+
+    /// Asking again for a piece already asked for now does not queue a second one.
+    @Test @MainActor func immediateRequestsAreNotDuplicated() async {
+        let (worker, _, events) = makeWorker(generator: FixtureGenerator(delay: 30))
+        await worker.enqueue([job(.calm, priority: 1)])
+        await events.wait { $0.contains { if case .started = $0 { return true } else { return false } } }
+        var first = job(.tense, priority: GenerationWorker.immediatePriority)
+        var second = first
+        second.prompt.id = "another.prompt"
+        first.prompt.id = "a.prompt"
+        await worker.enqueue([first])
+        await worker.enqueue([second])
+        #expect(await worker.pending.filter { $0.request.mood == .tense }.count == 1)
+        await worker.cancelAll()
+    }
 }
+

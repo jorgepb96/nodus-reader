@@ -19,7 +19,7 @@ struct GenerationJob: Hashable, Sendable {
 
 enum WorkerEvent: Sendable {
     case started(GenerationJob)
-    case finished(GeneratedPiece)
+    case finished(GeneratedPiece, GenerationJob)
     case rejected(GenerationJob, String)
     case failed(GenerationJob, String)
     case waiting(String)
@@ -32,9 +32,14 @@ enum WorkerEvent: Sendable {
 actor GenerationWorker {
     static let crashCountKey = "nodus.soundscapes.generationCrashCount"
     static let inProgressKey = "nodus.soundscapes.generationInProgress"
-    static let maximumQueue = 6
+    /// Room for a whole starter pack (nine) and a few pieces asked for now.
+    static let maximumQueue = 12
+    /// A piece the reader (or the director) wants now, ahead of a pack.
+    static let immediatePriority = 30
     static let hourlyLimit = 12
     static let admissionRetry: Double = 15
+    /// Waits for the on-device language model before composing anyway (a minute).
+    static let maximumAnalysisWaits = 4
 
     /// Seconds between pieces: longer when the device is already warm.
     static func pause(for thermal: ProcessInfo.ThermalState) -> Double {
@@ -97,13 +102,24 @@ actor GenerationWorker {
 
     /// Adds jobs (without duplicates), keeps the highest priorities and starts working.
     func enqueue(_ jobs: [GenerationJob]) {
-        for job in jobs where !queue.contains(where: { $0.key == job.key }) {
+        for job in jobs where !queue.contains(where: { $0.key == job.key }) && !isAlreadyAskedFor(job) {
             queue.append(job)
         }
         queue = Array(queue.enumerated().sorted {
             $0.element.priority != $1.element.priority ? $0.element.priority > $1.element.priority : $0.offset < $1.offset
         }.map(\.element).prefix(Self.maximumQueue))
         startIfNeeded()
+    }
+
+    /// A piece asked for now is not queued twice for the same mood or ambience, even
+    /// with another prompt.
+    private func isAlreadyAskedFor(_ job: GenerationJob) -> Bool {
+        guard job.priority >= Self.immediatePriority else { return false }
+        func same(_ other: GenerationJob) -> Bool {
+            other.priority >= Self.immediatePriority && other.request.layer == job.request.layer
+                && other.request.mood == job.request.mood && other.request.bed == job.request.bed
+        }
+        return queue.contains(where: same) || inFlight.map(same) == true
     }
 
     /// Replaces the queue (a new plan); the piece in progress continues.
@@ -179,12 +195,17 @@ actor GenerationWorker {
 
     /// Waits until the device admits a piece; returns the recipe to use.
     private func admit(_ job: GenerationJob) async throws -> GenerationRecipe {
+        var analysisWaits = 0
         while true {
             try Task.checkCancellation()
             let wanted = forceShort || shortNext ? GenerationRecipe.short(for: job.recipe.layer) : job.recipe
-            switch GenerationAdmission.decide(await admission(), recipe: wanted) {
+            var state = await admission()
+            // Scene analysis and recaps can keep the model busy for a whole long book.
+            if analysisWaits >= Self.maximumAnalysisWaits { state.analysisRunning = false }
+            switch GenerationAdmission.decide(state, recipe: wanted) {
             case .run(let recipe): return recipe
             case .wait(let reason):
+                if reason == "analysis" { analysisWaits += 1 }
                 onEvent(.waiting(reason))
                 try await sleep(Self.admissionRetry * pacing)
             }
@@ -205,7 +226,7 @@ actor GenerationWorker {
                 try Task.checkCancellation()
                 try await MainActor.run { try library.add(piece, file: file) }
                 consecutiveFailures = 0
-                onEvent(.finished(piece))
+                onEvent(.finished(piece, job))
             case .rejected(let reason):
                 consecutiveFailures = 0
                 onEvent(.rejected(job, reason))

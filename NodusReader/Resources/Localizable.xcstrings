@@ -863,6 +863,17 @@
         }
       }
     },
+    "AI music follows this style for the book.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La música con IA sigue este estilo en este libro."
+          }
+        }
+      }
+    },
     "AI soundscapes": {
       "localizations": {
         "es": {
@@ -2388,6 +2399,17 @@
         }
       }
     },
+    "Composes a few pieces for this book now, so they are ready to play.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compone ahora unas pocas piezas para este libro, para que estén listas."
+          }
+        }
+      }
+    },
     "Composing %@…": {
       "localizations": {
         "es": {
@@ -3306,6 +3328,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Descargando de Hugging Face"
+          }
+        }
+      }
+    },
+    "Downloading…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando…"
           }
         }
       }
@@ -4594,6 +4627,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Instalado"
+          }
+        }
+      }
+    },
+    "Installing…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalando…"
           }
         }
       }
@@ -7133,6 +7177,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Premium"
+          }
+        }
+      }
+    },
+    "Prepare": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparar"
           }
         }
       }
@@ -11255,6 +11310,17 @@
         }
       }
     },
+    "hourly limit reached": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "límite por hora alcanzado"
+          }
+        }
+      }
+    },
     "iCloud": {
       "localizations": {
         "es": {
@@ -11306,6 +11372,28 @@
         }
       }
     },
+    "paused in Low Power Mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "en pausa por bajo consumo"
+          }
+        }
+      }
+    },
+    "paused in the background": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "en pausa en segundo plano"
+          }
+        }
+      }
+    },
     "play": {
       "localizations": {
         "es": {
@@ -11322,6 +11410,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "esta voz"
+          }
+        }
+      }
+    },
+    "waiting for free memory": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "esperando memoria libre"
+          }
+        }
+      }
+    },
+    "waiting for scene analysis": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "esperando al análisis de escenas"
+          }
+        }
+      }
+    },
+    "waiting for the device to cool": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "esperando a que se enfríe el dispositivo"
+          }
+        }
+      }
+    },
+    "waiting for the narration": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "esperando a la narración"
           }
         }
       }

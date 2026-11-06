@@ -62,16 +62,16 @@ struct SoundscapeModelsView: View {
         .navigationTitle("Models")
         .inlineNavigationTitle()
         .onAppear { models.refresh() }
-        .confirmationDialog("Delete Model?", isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
-                            titleVisibility: .visible) {
-            Button("Delete", role: .destructive) {
-                if let pendingDelete { models.remove(pendingDelete) }
-                pendingDelete = nil
-            }
-            Button("Cancel", role: .cancel) { pendingDelete = nil }
-        } message: {
-            Text("The pieces already composed stay and keep playing. You can download the model again later.")
+    }
+
+    private func progressLine(_ title: LocalizedStringKey) -> some View {
+        HStack(spacing: 6) {
+            ProgressView().controlSize(.mini)
+            Text(title)
         }
+        .font(.caption2)
+        .foregroundStyle(palette.muted)
+        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder
@@ -80,12 +80,14 @@ struct SoundscapeModelsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.subheadline.weight(.medium)).foregroundStyle(palette.text)
                 switch models.state[component] ?? .notInstalled {
-                case .downloading(let progress):
-                    ProgressView(value: progress)
-                        .tint(palette.accent)
-                        .accessibilityLabel(Text("Downloading"))
+                case .downloading:
+                    progressLine("Downloading…")
                 case .converting:
-                    Text("Preparing on this device…").font(.caption2).foregroundStyle(palette.muted)
+                    progressLine("Installing…")
+                case .installed:
+                    Label("Installed", systemImage: "checkmark.circle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(palette.muted)
                 case .failed(let message):
                     Text(message).font(.caption2).foregroundStyle(palette.muted).fixedSize(horizontal: false, vertical: true)
                 default:
@@ -99,6 +101,18 @@ struct SoundscapeModelsView: View {
                     .font(.subheadline.weight(.medium))
                     .nodusTextButtonStyle()
                     .frame(minHeight: 44)
+                    // Anchored to the button, so it opens beside it, not at the screen's edge.
+                    .confirmationDialog("Delete Model?", isPresented: Binding(get: { pendingDelete == component },
+                                                                              set: { if !$0 { pendingDelete = nil } }),
+                                        titleVisibility: .visible) {
+                        Button("Delete", role: .destructive) {
+                            models.remove(component)
+                            pendingDelete = nil
+                        }
+                        Button("Cancel", role: .cancel) { pendingDelete = nil }
+                    } message: {
+                        Text("The pieces already composed stay and keep playing. You can download the model again later.")
+                    }
             case .downloading, .converting:
                 Button("Cancel") { models.cancelInstall() }
                     .font(.subheadline.weight(.medium))

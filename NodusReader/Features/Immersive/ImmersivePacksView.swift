@@ -48,6 +48,12 @@ struct ImmersivePacksView: View {
                         .font(.subheadline.weight(.medium))
                         .nodusTextButtonStyle()
                         .disabled(library.bytesOnDisk == 0 || library.isDevelopmentPack)
+                        .confirmationDialog("Delete All Sounds?", isPresented: $confirmDeleteAll, titleVisibility: .visible) {
+                            Button("Delete All Sounds", role: .destructive) { library.deleteAll() }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("Immersive Audio stays silent until a pack is downloaded again.")
+                        }
                 }
                 .padding(.horizontal, 14)
                 .frame(minHeight: 56)
@@ -70,22 +76,6 @@ struct ImmersivePacksView: View {
         }
         .onAppear { library.refresh() }
         .task { await library.checkForNewSounds() }
-        .confirmationDialog("Delete Sound Pack?", isPresented: Binding(
-            get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }), titleVisibility: .visible) {
-            Button("Delete", role: .destructive) {
-                if let pendingDelete { library.delete(pendingDelete) }
-                pendingDelete = nil
-            }
-            Button("Cancel", role: .cancel) { pendingDelete = nil }
-        } message: {
-            Text("You can download it again at any time.")
-        }
-        .confirmationDialog("Delete All Sounds?", isPresented: $confirmDeleteAll, titleVisibility: .visible) {
-            Button("Delete All Sounds", role: .destructive) { library.deleteAll() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Immersive Audio stays silent until a pack is downloaded again.")
-        }
     }
 
     private func packCard(_ pack: ImmersiveCatalog.Pack) -> some View {
@@ -113,6 +103,18 @@ struct ImmersivePacksView: View {
                 .font(.caption)
                 .foregroundStyle(palette.muted)
             state(pack)
+                // Beside the pack's own Delete button, not at the screen's edge.
+                .confirmationDialog("Delete Sound Pack?", isPresented: Binding(
+                    get: { pendingDelete?.id == pack.id }, set: { if !$0 { pendingDelete = nil } }),
+                                    titleVisibility: .visible) {
+                    Button("Delete", role: .destructive) {
+                        library.delete(pack)
+                        pendingDelete = nil
+                    }
+                    Button("Cancel", role: .cancel) { pendingDelete = nil }
+                } message: {
+                    Text("You can download it again at any time.")
+                }
         }
         .padding(14)
         .panelCard(radius: 20)

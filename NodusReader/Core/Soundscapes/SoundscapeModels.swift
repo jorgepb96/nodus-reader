@@ -128,13 +128,17 @@ final class SoundscapeModels {
                     }
                     done += Double(file.bytes)
                 }
+                try Task.checkCancellation()
                 for c in wanted { self?.state[c] = .converting }
                 // Off the main actor and cancellable between files.
                 try await Self.convert(kinds: Set(wanted.map(\.kind)), downloads: downloads, directory: directory)
                 Self.excludeFromBackup(directory.root)
+                try Task.checkCancellation()
                 self?.task = nil
                 self?.refresh()
             } catch {
+                // Cancel already reset the rows, and a new install may own `task` now.
+                if Task.isCancelled { return }
                 for c in wanted {
                     self?.state[c] = error is CancellationError || Task.isCancelled ? .notInstalled : .failed(error.localizedDescription)
                 }

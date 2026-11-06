@@ -85,4 +85,22 @@ struct SoundscapePlannerTests {
         #expect(jobs.contains { $0.request.mood == .calm })
         #expect(Set(jobs.map(\.key)).count == jobs.count)
     }
+
+    /// A three-page document does not need nine pieces: the pack follows the listening time.
+    @Test func starterPackScalesWithLength() {
+        func count(_ characters: Int?, _ layer: CatalogTrack.Layer) -> Int {
+            SoundscapePlanner.starterPack(style: .western, map: nil, bookID: nil, library: library, seed: 1,
+                                          textLength: characters).filter { $0.request.layer == layer }.count
+        }
+        #expect(count(6_000, .music) == 2 && count(6_000, .ambience) == 1)
+        #expect(count(40_000, .music) == 6 && count(40_000, .ambience) == 2)
+        #expect(count(2_000_000, .music) == 6 && count(2_000_000, .ambience) == 3)
+        #expect(count(300, .music) == 1)
+    }
+
+    @Test func singleJobForAChosenBed() throws {
+        let job = try #require(SoundscapePlanner.job(layer: .ambience, mood: nil, bed: .fireplace, style: .noir,
+                                                     bookID: nil, library: library, seed: 3, priority: 30))
+        #expect(job.request.bed == .fireplace && job.priority == 30 && job.recipe.layer == .ambience)
+    }
 }

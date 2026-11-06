@@ -69,6 +69,15 @@ struct StoryCompanionSettingsView: View {
                         .font(.subheadline.weight(.medium))
                         .nodusTextButtonStyle()
                         .disabled(savedBytes == 0)
+                        .confirmationDialog("Delete Saved Recaps?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                            Button("Delete Saved Recaps", role: .destructive) {
+                                StoryCompanionStore().removeAll()
+                                Task { await measure() }
+                            }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("They are written again the next time you ask for a recap.")
+                        }
                 }
                 .padding(.horizontal, 14)
                 .frame(minHeight: 56)
@@ -88,15 +97,6 @@ struct StoryCompanionSettingsView: View {
             ToolbarItem(placement: .principal) { BrandToolbar() }.nodusPlainBackground()
         }
         .task { await measure() }
-        .confirmationDialog("Delete Saved Recaps?", isPresented: $confirmDelete, titleVisibility: .visible) {
-            Button("Delete Saved Recaps", role: .destructive) {
-                StoryCompanionStore().removeAll()
-                Task { await measure() }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("They are written again the next time you ask for a recap.")
-        }
     }
 
     private var notice: some View {

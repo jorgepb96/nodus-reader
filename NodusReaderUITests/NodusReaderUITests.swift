@@ -1348,7 +1348,28 @@ final class NodusReaderUITests: XCTestCase {
         let atmosphere = app.buttons["ImmersiveAtmosphereButton"].firstMatch
         XCTAssertTrue(atmosphere.waitForExistence(timeout: 20))
         atmosphere.tap()
-        XCTAssertTrue(app.buttons["soundscapes.style"].firstMatch.waitForExistence(timeout: 10))
+        // The style list scrolls and picks (a long menu in the popover could not scroll).
+        let style = app.buttons["soundscapes.style"].firstMatch
+        XCTAssertTrue(style.waitForExistence(timeout: 10))
+        style.tap()
+        XCTAssertTrue(app.navigationBars["Book style"].waitForExistence(timeout: 5))
+        app.swipeUp()
+        let neutral = app.buttons["Neutral"].firstMatch
+        XCTAssertTrue(neutral.waitForExistence(timeout: 5))
+        neutral.tap()
+        XCTAssertFalse(app.navigationBars["Book style"].waitForExistence(timeout: 2))
+        XCTAssertEqual(style.value as? String, "Neutral")
+        // A chosen ambience with nothing composed yet is composed first and then plays.
+        app.buttons["immersive.chooseAmbience"].firstMatch.tap()
+        let fireplace = app.buttons["Fireplace"].firstMatch
+        XCTAssertTrue(fireplace.waitForExistence(timeout: 5))
+        fireplace.tap()
+        let nowPlaying = app.staticTexts["immersive.nowPlaying"].firstMatch
+        XCTAssertTrue(nowPlaying.waitForExistence(timeout: 5))
+        XCTAssertTrue((nowPlaying.label).contains("Fireplace"))
+        XCTAssertTrue(app.buttons["soundscapes.favorite"].firstMatch.waitForExistence(timeout: 60),
+                      "The chosen ambience should be composed and play")
+        snap("iPhone-Soundscapes-ChosenAmbience")
         let prepare = app.buttons["soundscapes.prepare"].firstMatch
         XCTAssertTrue(prepare.waitForExistence(timeout: 10))
         prepare.tap()
@@ -1358,7 +1379,9 @@ final class NodusReaderUITests: XCTestCase {
         let favorite = app.buttons["soundscapes.favorite"].firstMatch
         XCTAssertTrue(favorite.waitForExistence(timeout: 180), "A composed piece should play once the pack is ready")
         favorite.tap()
-        XCTAssertEqual(favorite.value as? String, "Favorite")
+        // The heart follows the piece playing (music first); a new piece may start meanwhile.
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier == 'soundscapes.favorite' AND value == 'Favorite'"))
+            .firstMatch.waitForExistence(timeout: 3))
         snap("iPhone-Soundscapes-Reader")
     }
 
@@ -1394,7 +1417,9 @@ final class NodusReaderUITests: XCTestCase {
             app.launchArguments.append("-NodusResetReadingState")
         }
         if longContents { app.launchArguments.append("-NodusLongContentsSample") }
-        if immersive { app.launchArguments += ["-NodusImmersiveTestPack", "-NodusResetImmersive"] }
+        // Every test starts with Soundscapes off: the simulator keeps preferences between tests.
+        app.launchArguments.append("-NodusResetImmersive")
+        if immersive { app.launchArguments.append("-NodusImmersiveTestPack") }
         app.launchArguments += extra
         app.launch()
         return app

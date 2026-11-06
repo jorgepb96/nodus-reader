@@ -82,7 +82,11 @@ enum SoundscapePlanner {
     /// The optional per-book pack: six music moods (the analysed book's strongest, then the
     /// style's usual ones, always calm) and three beds for the style.
     static func starterPack(style: SoundscapeStyle, map: SceneMap?, bookID: UUID?, library: PromptLibrary,
-                            seed: UInt64, studyOnly: Bool = false) -> [GenerationJob] {
+                            seed: UInt64, studyOnly: Bool = false, textLength: Int? = nil) -> [GenerationJob] {
+        // Read aloud, ~900 characters a minute; a music piece rotates about every 6 min.
+        let minutes = textLength.map { Double($0) / 900 }
+        let musicCount = minutes.map { min(6, max(1, Int(($0 / 6).rounded(.up)))) } ?? 6
+        let bedCount = minutes.map { $0 < 20 ? 1 : $0 < 60 ? 2 : 3 } ?? 3
         var moods: [MusicMood] = [.calm]
         if let map {
             var scores: [MusicMood: Double] = [:]
@@ -97,16 +101,27 @@ enum SoundscapePlanner {
             }
         }
         for mood in defaultMoods(style) where !moods.contains(mood) { moods.append(mood) }
-        var builder = Builder(library: library, seed: seed, used: [], bookID: bookID, limit: 9)
-        for mood in moods.prefix(6) {
+        var builder = Builder(library: library, seed: seed, used: [], bookID: bookID, limit: musicCount + bedCount)
+        for mood in moods.prefix(musicCount) {
             builder.add(PromptRequest(layer: .music, style: style, mood: mood, bed: nil, emotion: nil, situation: nil,
                                       intensity: 2, setting: nil, studyOnly: studyOnly), priority: 3, count: 1)
         }
-        for bed in defaultBeds(style) {
+        for bed in defaultBeds(style).prefix(bedCount) {
             builder.add(PromptRequest(layer: .ambience, style: style, mood: nil, bed: bed, emotion: nil, situation: nil,
                                       intensity: 1, setting: nil, studyOnly: studyOnly), priority: 2, count: 1)
         }
         return builder.finished()
+    }
+
+    /// One piece for what the reader chose (or the director wants) and nothing has yet.
+    static func job(layer: CatalogTrack.Layer, mood: MusicMood?, bed: BaseAmbience?, style: SoundscapeStyle,
+                    bookID: UUID?, library: PromptLibrary, seed: UInt64, priority: Int,
+                    studyOnly: Bool = false) -> GenerationJob? {
+        var builder = Builder(library: library, seed: seed, used: [], bookID: bookID, limit: 1)
+        builder.add(PromptRequest(layer: layer, style: style, mood: layer == .music ? mood : nil,
+                                  bed: layer == .ambience ? bed : nil, emotion: nil, situation: nil,
+                                  intensity: 2, setting: nil, studyOnly: studyOnly), priority: priority, count: 1)
+        return builder.finished().first
     }
 
     static func defaultMoods(_ style: SoundscapeStyle) -> [MusicMood] {

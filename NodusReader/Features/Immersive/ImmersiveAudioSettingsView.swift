@@ -332,21 +332,6 @@ struct SoundscapeMoreOptionsView: View {
         .inlineNavigationTitle()
         .navigationBarBackground(palette.background)
         .task { mapsBytes = immersive.sceneMapsSize }
-        .confirmationDialog("Delete Scene Analysis?", isPresented: $confirmDeleteMaps, titleVisibility: .visible) {
-            Button("Delete Scene Analysis", role: .destructive) {
-                immersive.deleteSceneMaps()
-                mapsBytes = immersive.sceneMapsSize
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Books are analysed again, a little at a time, the next time they are open in Automatic mode.")
-        }
-        .confirmationDialog("Delete Composed Soundscapes?", isPresented: $confirmDeleteGenerated, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) { immersive.generated.deleteAll() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Every piece composed on this device is deleted, favorites included. New ones are composed while you read.")
-        }
     }
 
     private func character(preferences: ImmersiveAudioPreferences) -> some View {
@@ -430,6 +415,12 @@ struct SoundscapeMoreOptionsView: View {
                     .nodusTextButtonStyle()
                     .frame(minHeight: 44)
                     .disabled(!immersive.generated.hasAnything)
+                    .confirmationDialog("Delete Composed Soundscapes?", isPresented: $confirmDeleteGenerated, titleVisibility: .visible) {
+                        Button("Delete", role: .destructive) { immersive.generated.deleteAll() }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("Every piece composed on this device is deleted, favorites included. New ones are composed while you read.")
+                    }
             }
             .padding(14)
             .panelCard(radius: 20)
@@ -566,6 +557,15 @@ struct SoundscapeMoreOptionsView: View {
                 .font(.subheadline.weight(.medium))
                 .nodusTextButtonStyle()
                 .disabled(mapsBytes == 0)
+                .confirmationDialog("Delete Scene Analysis?", isPresented: $confirmDeleteMaps, titleVisibility: .visible) {
+                    Button("Delete Scene Analysis", role: .destructive) {
+                        immersive.deleteSceneMaps()
+                        mapsBytes = immersive.sceneMapsSize
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Books are analysed again, a little at a time, the next time they are open in Automatic mode.")
+                }
         }
         .padding(.horizontal, 14)
         .frame(minHeight: 56)

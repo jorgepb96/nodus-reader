@@ -66,6 +66,11 @@ final class ImmersiveAudioController {
     @ObservationIgnored private var worker: GenerationWorker?
     @ObservationIgnored private let prompts = try? PromptLibrary.bundled()
     @ObservationIgnored private var isPreparingPack = false
+    /// Why the next piece is not being composed yet ("narration", "memory"…), shown
+    /// beside the pack's progress; nil while a piece is composed.
+    private(set) var generationWaiting: String?
+    /// Priority of a piece asked for because the reader (or the director) wants it now.
+    static let immediatePriority = GenerationWorker.immediatePriority
     @ObservationIgnored private var packTotal = 0
     @ObservationIgnored private var packDone = 0
     @ObservationIgnored private var lastPlan = Date.distantPast
@@ -104,6 +109,12 @@ final class ImmersiveAudioController {
         self.preferences = preferences
         self.library = library
         let soundscapes = library.root.deletingLastPathComponent().appendingPathComponent("Soundscapes", isDirectory: true)
+        #if DEBUG
+        // UI tests share one simulator: each fixture run starts with nothing composed.
+        if ProcessInfo.processInfo.arguments.contains("-NodusResetReadingState") {
+            try? FileManager.default.removeItem(at: soundscapes.appendingPathComponent("Generated", isDirectory: true))
+        }
+        #endif
         self.soundscapeModels = soundscapeModels ?? SoundscapeModels(root: soundscapes.appendingPathComponent("Models", isDirectory: true))
         self.generated = generated ?? GeneratedLibrary(root: soundscapes.appendingPathComponent("Generated", isDirectory: true))
         self.generated.budgetBytes = Int64(preferences.generatedBudgetMB) * 1_000_000
@@ -306,13 +317,13 @@ final class ImmersiveAudioController {
     /// Moods the director may choose: with AI and the Music model, every mood can be made.
     var availableMoods: Set<MusicMood> {
         guard aiSource else { return library.installedMoods }
-        return soundscapeModels.isInstalled(.music) ? Set(MusicMood.allCases)
+        return soundscapeModels.isInstalled(.music) || Self.usesFixtureGenerator ? Set(MusicMood.allCases)
             : generated.installedMoods.union(library.installedMoods)
     }
 
     var availableBeds: Set<BaseAmbience> {
         guard aiSource else { return library.installedBeds }
-        return soundscapeModels.isInstalled(.sfx) ? Set(BaseAmbience.allCases)
+        return soundscapeModels.isInstalled(.sfx) || Self.usesFixtureGenerator ? Set(BaseAmbience.allCases)
             : generated.installedBeds.union(library.installedBeds)
     }
 
@@ -342,9 +353,11 @@ final class ImmersiveAudioController {
         guard canPrepareSoundscapes, let prompts, let worker = ensureWorker() else { return }
         let music = soundscapeModels.isInstalled(.music) || Self.usesFixtureGenerator
         let ambience = soundscapeModels.isInstalled(.sfx) || Self.usesFixtureGenerator
+        let length = map?.windows.last?.end
+            ?? (playback.activeBook?.id == bookID ? playback.chapters.reduce(0) { $0 + ($1.text as NSString).length } : nil)
         let jobs = SoundscapePlanner.starterPack(style: bookStyle, map: map, bookID: bookID, library: prompts,
                                                  seed: UInt64.random(in: 1 ... UInt64.max / 2),
-                                                 studyOnly: preferences.mode == .study)
+                                                 studyOnly: preferences.mode == .study, textLength: length)
             .filter { $0.request.layer == .music ? music : ambience }
             .map { job -> GenerationJob in var job = job; job.priority += 10; return job }
         guard !jobs.isEmpty else { return }
@@ -451,15 +464,21 @@ final class ImmersiveAudioController {
     private func handle(_ event: WorkerEvent) {
         switch event {
         case .started(let job):
-            if isPreparingPack {
+            generationWaiting = nil
+            if isPreparingPack, job.priority < Self.immediatePriority {
                 generation = .preparing(done: packDone, total: packTotal)
             } else {
                 generation = .composing(job.request.mood?.label ?? job.request.bed?.label ?? "")
             }
-        case .finished(let piece):
+        case .finished(let piece, let job):
+            generationWaiting = nil
             generated.evict(activeMoods: Set([director.current?.music].compactMap { $0 }),
                             activeBeds: Set([director.current?.base].compactMap { $0 }))
-            packProgressed()
+            if job.priority < Self.immediatePriority {
+                packProgressed()
+            } else {
+                generation = isPreparingPack ? .preparing(done: packDone, total: packTotal) : .idle
+            }
             // A piece for what the director wants but could not play yet starts now.
             if let mood = piece.mood, mood == director.current?.music,
                musicTrack?.semantics.origin != "generated" || musicTrack?.moods.contains(mood) != true {
@@ -470,10 +489,15 @@ final class ImmersiveAudioController {
                 startAmbience(bed, crossfade: preferences.crossfade)
             }
             planSoundscapes(force: true)
-        case .rejected, .failed:
-            packProgressed()
-        case .waiting:
-            break
+        case .rejected(let job, _), .failed(let job, _):
+            generationWaiting = nil
+            if job.priority < Self.immediatePriority {
+                packProgressed()
+            } else {
+                generation = isPreparingPack ? .preparing(done: packDone, total: packTotal) : .idle
+            }
+        case .waiting(let reason):
+            generationWaiting = reason
         case .paused(let reason):
             isPreparingPack = false
             generation = .paused(reason)
@@ -669,11 +693,14 @@ final class ImmersiveAudioController {
                                studyOnly: self.preferences.mode == .study, avoidSubPool: avoidSubPool, favorites: favorites)
         }
         switch decision {
-        case .keep:
+        case .keep where musicTrack?.moods.contains(mood) == true:
             planSoundscapes(force: true)
-        case .stop:
+        case .keep, .stop:
+            // Nothing made for this mood yet: never leave another mood playing under its
+            // name. With AI, compose it before anything else.
             engine.stop(.music, fadeOut: crossfade)
             musicTrack = nil
+            composeNow(layer: .music, mood: mood, bed: nil)
         case .play(let track):
             guard let url = url(for: track) else {
                 engine.stop(.music, fadeOut: crossfade)
@@ -682,6 +709,10 @@ final class ImmersiveAudioController {
             }
             history.played(track.id, at: now)
             if track.semantics.origin == "generated" { generated.markPlayed(track.id) }
+            // A downloaded piece only stands in until one is composed for this mood.
+            else if aiSource, generated.musicTracks(mood, style: bookStyle).isEmpty {
+                composeNow(layer: .music, mood: mood, bed: nil)
+            }
             musicTrack = track
             engine.play(.init(id: track.id, url: url, layer: .music, loop: track.audio.isLoop,
                               tailStart: track.audio.tailStartSeconds, gain: Self.gain(for: track)),
@@ -705,11 +736,12 @@ final class ImmersiveAudioController {
             TrackSelector.next(from: pool, current: self.ambienceTrack?.id, history: self.history, now: now, favorites: favorites)
         }
         switch decision {
-        case .keep:
+        case .keep where ambienceTrack?.bed == bed:
             planSoundscapes(force: true)
-        case .stop:
+        case .keep, .stop:
             engine.stop(.ambience, fadeOut: crossfade)
             ambienceTrack = nil
+            composeNow(layer: .ambience, mood: nil, bed: bed)
         case .play(let track):
             guard let url = url(for: track) else {
                 engine.stop(.ambience, fadeOut: crossfade)
@@ -718,11 +750,26 @@ final class ImmersiveAudioController {
             }
             history.played(track.id, at: now)
             if track.semantics.origin == "generated" { generated.markPlayed(track.id) }
+            else if aiSource, generated.ambienceTracks(bed, style: bookStyle).isEmpty {
+                composeNow(layer: .ambience, mood: nil, bed: bed)
+            }
             ambienceTrack = track
             engine.play(.init(id: track.id, url: url, layer: .ambience, loop: true, tailStart: nil,
                               gain: Self.gain(for: track)),
                         crossfade: crossfade)
         }
+    }
+
+    /// Asks for one piece ahead of everything queued (a pack included).
+    private func composeNow(layer: CatalogTrack.Layer, mood: MusicMood?, bed: BaseAmbience?) {
+        guard aiSource, appActive, let prompts else { return }
+        let component: SoundscapeModels.Component = layer == .music ? .music : .sfx
+        guard soundscapeModels.isInstalled(component) || Self.usesFixtureGenerator, let worker = ensureWorker(),
+              let job = SoundscapePlanner.job(layer: layer, mood: mood, bed: bed, style: bookStyle, bookID: bookID,
+                                              library: prompts, seed: UInt64.random(in: 1 ... UInt64.max / 2),
+                                              priority: Self.immediatePriority, studyOnly: preferences.mode == .study)
+        else { return }
+        Task { await worker.enqueue([job]) }
     }
 
     /// Attenuates a file mastered louder than its layer's target.
