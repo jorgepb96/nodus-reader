@@ -77,6 +77,7 @@
 		610DE11A27D5B824C82CDFED /* EPUBParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3252C65DAC3AB8067A57173E /* EPUBParser.swift */; };
 		621DA7A58FDEEB39375C8653 /* AmbienceDirector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DC472FC7D7AE7DC38AB4330 /* AmbienceDirector.swift */; };
 		6265779C51DF08D7A26B12CE /* ImmersiveQuickControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E384E1F9E352EFB6396F98A /* ImmersiveQuickControls.swift */; };
+		63CC680575B8053D8D49F84F /* SoundscapeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1358CCB0146AFCC0D57E452 /* SoundscapeModels.swift */; };
 		648061CC4A17889CB5ADBBDC /* SpeechWordAligner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1079D52B6E17772F269D44B /* SpeechWordAligner.swift */; };
 		65AA4F18D40C7D764BBEF98D /* MacPlayerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1EB4C689D1D5603D9AB919 /* MacPlayerBar.swift */; };
 		67F386AD47DD382F646DF469 /* HTMLText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC3CCAB5516F1CC4ED19C9F /* HTMLText.swift */; };
@@ -121,6 +122,7 @@
 		9ACF1884B8FADD608B8AAB3C /* BookTextLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E20562AA22E60E323BDE92 /* BookTextLoader.swift */; };
 		9D72B6DB18718AEC79D7B994 /* ModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF11796AFA1C10FDA90101D /* ModelManager.swift */; };
 		9E2B9E5CFFC051B62F738CE3 /* ICloudDocumentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84215C3B2D70610707C931B2 /* ICloudDocumentStore.swift */; };
+		A092EFC735DD67ADFB62E475 /* SoundscapeModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33127B06728E76B827062E8F /* SoundscapeModelsTests.swift */; };
 		A0C30295B9FF7BB89EB37C52 /* SceneAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17CBE4A3951E5C773210DE67 /* SceneAnalyzer.swift */; };
 		A1E0C1B33DEA8097C0739041 /* HuggingFaceOAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20AC74A66B19756F7ED348EF /* HuggingFaceOAuth.swift */; };
 		A2D34F99F30BB7CC47579E5D /* MLXAudioCore in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = DB2A8C495A803A84619BD2F4 /* MLXAudioCore */; };
@@ -281,6 +283,7 @@
 		3252C65DAC3AB8067A57173E /* EPUBParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBParser.swift; sourceTree = "<group>"; };
 		32ADFEED8FB79E3E5B5E6303 /* ThemePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePicker.swift; sourceTree = "<group>"; };
 		330F9948E0EDA9776B1F1176 /* OfflineNarrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineNarrationTests.swift; sourceTree = "<group>"; };
+		33127B06728E76B827062E8F /* SoundscapeModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapeModelsTests.swift; sourceTree = "<group>"; };
 		34206E976FB2D22B2D96E08F /* SoundscapeGenerating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapeGenerating.swift; sourceTree = "<group>"; };
 		37325B6D9A44E069A4701E43 /* SoundscapePlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapePlannerTests.swift; sourceTree = "<group>"; };
 		390305E758451EF6E06B5D1A /* ReaderContentsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderContentsSheet.swift; sourceTree = "<group>"; };
@@ -366,6 +369,7 @@
 		A99991FD328CA453166E76A7 /* StoryCompanionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryCompanionSettingsView.swift; sourceTree = "<group>"; };
 		AB1574B6E1804BC5FCBD38B5 /* SystemSpeech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSpeech.swift; sourceTree = "<group>"; };
 		ACBFFB317D2132D98EFDA315 /* ReaderAppearanceControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderAppearanceControls.swift; sourceTree = "<group>"; };
+		B1358CCB0146AFCC0D57E452 /* SoundscapeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapeModels.swift; sourceTree = "<group>"; };
 		B201867985D495B5C0CED08B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B2A8F93563EA3D8A11EFB29B /* TextPaginator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextPaginator.swift; sourceTree = "<group>"; };
 		B59B6977FE1E3E11D55CD470 /* ReaderAppearanceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderAppearanceSheet.swift; sourceTree = "<group>"; };
@@ -515,6 +519,7 @@
 				490FA45ABAB4800209B0C5E7 /* PromptSelector.swift */,
 				0DD8AE1B0EA2D70AACA1173C /* QualityGate.swift */,
 				34206E976FB2D22B2D96E08F /* SoundscapeGenerating.swift */,
+				B1358CCB0146AFCC0D57E452 /* SoundscapeModels.swift */,
 				7E65CB81750AA2BC7EEF3A91 /* SoundscapePlanner.swift */,
 				22AD444ADABC9BE10A4C1971 /* SoundscapeVocabulary.swift */,
 			);
@@ -741,6 +746,7 @@
 				CB6BAF195006BB6ECF58E3C4 /* PromptSelectorTests.swift */,
 				B92ACA8FB08BD4057B37EE49 /* SceneEmotionTests.swift */,
 				3D1C3CFF9FF3261F6D0174B1 /* SoundscapeAudioTests.swift */,
+				33127B06728E76B827062E8F /* SoundscapeModelsTests.swift */,
 				37325B6D9A44E069A4701E43 /* SoundscapePlannerTests.swift */,
 				FE523E6ADE493A0F9C68AF12 /* SoundscapeStyleTests.swift */,
 				B77664F53036C39CBCF5CAA1 /* SyncTests.swift */,
@@ -1238,6 +1244,7 @@
 				CA56D684C18CADE7BA587EDD /* SoundscapeGenerating.swift in Sources */,
 				6E0E970BC716B7CBB069E064 /* SoundscapeLab.swift in Sources */,
 				0723DD9D001390EFBF96B608 /* SoundscapeLabView.swift in Sources */,
+				63CC680575B8053D8D49F84F /* SoundscapeModels.swift in Sources */,
 				5DD085EFD2FACD372D53FDCA /* SoundscapePlanner.swift in Sources */,
 				ABD956A85A2F785D0D0443A9 /* SoundscapeVocabulary.swift in Sources */,
 				81DB4B80C39C5EAD80A08D48 /* SpanishPhonemizer.swift in Sources */,
@@ -1283,6 +1290,7 @@
 				447883E3C97EE2530670FCE6 /* PromptSelectorTests.swift in Sources */,
 				428E9FDFD57CCF5346575B4B /* SceneEmotionTests.swift in Sources */,
 				6A845BCAD7D709C4A51AFED9 /* SoundscapeAudioTests.swift in Sources */,
+				A092EFC735DD67ADFB62E475 /* SoundscapeModelsTests.swift in Sources */,
 				D4AFD9A38D04A7C318029B08 /* SoundscapePlannerTests.swift in Sources */,
 				0E413820A691FD8F8497D43B /* SoundscapeStyleTests.swift in Sources */,
 				D558825DFD17434164BEB8D2 /* SyncTests.swift in Sources */,
