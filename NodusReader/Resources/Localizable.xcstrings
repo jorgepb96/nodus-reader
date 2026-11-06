@@ -562,7 +562,16 @@
         }
       }
     },
-    "%lld/5": {},
+    "%lld/5": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld/5"
+          }
+        }
+      }
+    },
     "1 GB": {
       "localizations": {
         "es": {
@@ -974,7 +983,16 @@
         }
       }
     },
-    "About 83 MB download": {},
+    "About 83 MB download": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga de unos 83 MB"
+          }
+        }
+      }
+    },
     "About Nodus Reader": {
       "localizations": {
         "es": {
@@ -1545,7 +1563,16 @@
         }
       }
     },
-    "Available models": {},
+    "Available models": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelos disponibles"
+          }
+        }
+      }
+    },
     "BOOK DEFAULT": {
       "localizations": {
         "es": {
@@ -2126,7 +2153,16 @@
         }
       }
     },
-    "Choose another voice": {},
+    "Choose another voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir otra voz"
+          }
+        }
+      }
+    },
     "Choose custom cover…": {
       "localizations": {
         "es": {
@@ -2267,8 +2303,26 @@
         }
       }
     },
-    "Code: %@": {},
-    "Collapsed": {},
+    "Code: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código: %@"
+          }
+        }
+      }
+    },
+    "Collapsed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contraído"
+          }
+        }
+      }
+    },
     "Collection": {
       "localizations": {
         "es": {
@@ -3050,7 +3104,16 @@
         }
       }
     },
-    "Delete unavailable Qwen model": {},
+    "Delete unavailable Qwen model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar el modelo Qwen no disponible"
+          }
+        }
+      }
+    },
     "Delete…": {
       "localizations": {
         "es": {
@@ -3161,7 +3224,16 @@
         }
       }
     },
-    "Download a model": {},
+    "Download a model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar un modelo"
+          }
+        }
+      }
+    },
     "Download a model in Settings › Soundscapes.": {
       "localizations": {
         "es": {
@@ -3523,7 +3595,16 @@
         }
       }
     },
-    "Estimated on this device": {},
+    "Estimated on this device": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimado en este dispositivo"
+          }
+        }
+      }
+    },
     "Every piece composed on this device is deleted, favorites included. New ones are composed while you read.": {
       "localizations": {
         "es": {
@@ -3584,7 +3665,16 @@
         }
       }
     },
-    "Expanded": {},
+    "Expanded": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expandido"
+          }
+        }
+      }
+    },
     "Experimental narration in ten languages, with voices you create from a short recording.": {
       "localizations": {
         "es": {
@@ -3655,8 +3745,26 @@
         }
       }
     },
-    "Fast": {},
-    "Fastest": {},
+    "Fast": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rápida"
+          }
+        }
+      }
+    },
+    "Fastest": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La más rápida"
+          }
+        }
+      }
+    },
     "Favorite": {
       "localizations": {
         "es": {
@@ -3737,7 +3845,16 @@
         }
       }
     },
-    "Filter models by language": {},
+    "Filter models by language": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtrar modelos por idioma"
+          }
+        }
+      }
+    },
     "Find a title, an author or a passage across your library.": {
       "localizations": {
         "es": {
@@ -3848,7 +3965,16 @@
         }
       }
     },
-    "For non-commercial use only": {},
+    "For non-commercial use only": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo para uso no comercial"
+          }
+        }
+      }
+    },
     "Forest at night": {
       "localizations": {
         "es": {
@@ -3979,7 +4105,16 @@
         }
       }
     },
-    "Generating the next sentence…": {},
+    "Generating the next sentence…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generando la siguiente frase…"
+          }
+        }
+      }
+    },
     "Go to page %lld": {
       "localizations": {
         "es": {
@@ -4560,7 +4695,16 @@
         }
       }
     },
-    "Indicative rating": {},
+    "Indicative rating": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valoración orientativa"
+          }
+        }
+      }
+    },
     "Install Qwen3-TTS in Models to record or add a voice. Ming also supports Studio voices on Mac.": {
       "localizations": {
         "es": {
@@ -4732,7 +4876,16 @@
         }
       }
     },
-    "Just read": {},
+    "Just read": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo leer"
+          }
+        }
+      }
+    },
     "Justify text": {
       "localizations": {
         "es": {
@@ -4823,7 +4976,16 @@
         }
       }
     },
-    "Languages": {},
+    "Languages": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idiomas"
+          }
+        }
+      }
+    },
     "Larger text": {
       "localizations": {
         "es": {
@@ -4924,7 +5086,16 @@
         }
       }
     },
-    "Lightweight English narration with two built-in voices.": {},
+    "Lightweight English narration with two built-in voices.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Narración ligera en inglés con dos voces incluidas."
+          }
+        }
+      }
+    },
     "Line spacing": {
       "localizations": {
         "es": {
@@ -4935,10 +5106,46 @@
         }
       }
     },
-    "Linnet could not download or verify %@. Try again.": {},
-    "Linnet licences": {},
-    "Linnet model weights by VoxRT, licensed under the Linnet Weights License 1.0\nPowered by Linnet (VoxRT)": {},
-    "Linnet's download manifest is missing. Reinstall Nodus Reader.": {},
+    "Linnet could not download or verify %@. Try again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linnet no pudo descargar o verificar %@. Inténtalo de nuevo."
+          }
+        }
+      }
+    },
+    "Linnet licences": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licencias de Linnet"
+          }
+        }
+      }
+    },
+    "Linnet model weights by VoxRT, licensed under the Linnet Weights License 1.0\nPowered by Linnet (VoxRT)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesos del modelo Linnet de VoxRT, con la licencia Linnet Weights License 1.0\nPowered by Linnet (VoxRT)"
+          }
+        }
+      }
+    },
+    "Linnet's download manifest is missing. Reinstall Nodus Reader.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falta el manifiesto de descarga de Linnet. Reinstala Nodus Reader."
+          }
+        }
+      }
+    },
     "List view": {
       "localizations": {
         "es": {
@@ -5179,7 +5386,16 @@
         }
       }
     },
-    "Measured on this device": {},
+    "Measured on this device": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medido en este dispositivo"
+          }
+        }
+      }
+    },
     "Medium": {
       "localizations": {
         "es": {
@@ -5330,7 +5546,16 @@
         }
       }
     },
-    "Moderate": {},
+    "Moderate": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moderada"
+          }
+        }
+      }
+    },
     "More moods for stories: melancholy, romance, comedy, adventure, fantasy, tension, horror, epic and solemn moments.": {
       "localizations": {
         "es": {
@@ -5341,7 +5566,16 @@
         }
       }
     },
-    "More natural voices. Speed depends on the model and device.": {},
+    "More natural voices. Speed depends on the model and device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voces más naturales. La velocidad depende del modelo y del dispositivo."
+          }
+        }
+      }
+    },
     "More options": {
       "localizations": {
         "es": {
@@ -5362,7 +5596,16 @@
         }
       }
     },
-    "More playback options": {},
+    "More playback options": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más opciones de reproducción"
+          }
+        }
+      }
+    },
     "More settings…": {
       "localizations": {
         "es": {
@@ -5613,7 +5856,16 @@
         }
       }
     },
-    "Naturalness": {},
+    "Naturalness": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naturalidad"
+          }
+        }
+      }
+    },
     "Nature": {
       "localizations": {
         "es": {
@@ -5924,8 +6176,26 @@
         }
       }
     },
-    "No download required": {},
-    "No downloads. Very fast, with less natural voices.": {},
+    "No download required": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin descargas"
+          }
+        }
+      }
+    },
+    "No downloads. Very fast, with less natural voices.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin descargas. Muy rápidas, con voces menos naturales."
+          }
+        }
+      }
+    },
     "No highlights or notes": {
       "localizations": {
         "es": {
@@ -5966,7 +6236,16 @@
         }
       }
     },
-    "No models match these languages.": {},
+    "No models match these languages.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ningún modelo coincide con estos idiomas."
+          }
+        }
+      }
+    },
     "No music": {
       "localizations": {
         "es": {
@@ -6137,7 +6416,16 @@
         }
       }
     },
-    "No voice model is installed. Download a model below to enable narration.": {},
+    "No voice model is installed. Download a model below to enable narration.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay ningún modelo de voz instalado. Descarga uno abajo para activar la narración."
+          }
+        }
+      }
+    },
     "No voices match": {
       "localizations": {
         "es": {
@@ -6338,8 +6626,26 @@
         }
       }
     },
-    "Not selected": {},
-    "Not specified": {},
+    "Not selected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No seleccionado"
+          }
+        }
+      }
+    },
+    "Not specified": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin especificar"
+          }
+        }
+      }
+    },
     "Not yet synced": {
       "localizations": {
         "es": {
@@ -6520,7 +6826,16 @@
         }
       }
     },
-    "On-device voice creation": {},
+    "On-device voice creation": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creación de voces en el dispositivo"
+          }
+        }
+      }
+    },
     "Once you have read further, the story so far will appear here.": {
       "localizations": {
         "es": {
@@ -7422,7 +7737,16 @@
         }
       }
     },
-    "Provided by Apple with iOS": {},
+    "Provided by Apple with iOS": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluidas por Apple con iOS"
+          }
+        }
+      }
+    },
     "Published": {
       "localizations": {
         "es": {
@@ -7653,7 +7977,16 @@
         }
       }
     },
-    "Read and listen on your device. Choose how you want to get started.": {},
+    "Read and listen on your device. Choose how you want to get started.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lee y escucha en tu dispositivo. Elige cómo quieres empezar."
+          }
+        }
+      }
+    },
     "Read and listen to your books on iPhone, iPad and Mac. Narration runs on your device, with optional library sync through your iCloud account.": {
       "localizations": {
         "es": {
@@ -7694,7 +8027,16 @@
         }
       }
     },
-    "Read without narration. You can choose a voice later.": {},
+    "Read without narration. You can choose a voice later.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lee sin narración. Puedes elegir una voz más tarde."
+          }
+        }
+      }
+    },
     "Read, %@": {
       "localizations": {
         "es": {
@@ -7765,7 +8107,16 @@
         }
       }
     },
-    "Reading mode is unavailable while Auto-scroll while listening is enabled. Turn it off in Read & Listen to choose pages or a scrolling direction.": {},
+    "Reading mode is unavailable while Auto-scroll while listening is enabled. Turn it off in Read & Listen to choose pages or a scrolling direction.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El modo de lectura no está disponible mientras el desplazamiento automático al escuchar está activado. Desactívalo en Leer y escuchar para elegir páginas o una dirección de desplazamiento."
+          }
+        }
+      }
+    },
     "Reading now": {
       "localizations": {
         "es": {
@@ -8126,7 +8477,16 @@
         }
       }
     },
-    "Replacement voice": {},
+    "Replacement voice": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voz de sustitución"
+          }
+        }
+      }
+    },
     "Replay from beginning": {
       "localizations": {
         "es": {
@@ -8517,7 +8877,16 @@
         }
       }
     },
-    "Search languages": {},
+    "Search languages": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar idiomas"
+          }
+        }
+      }
+    },
     "Search library": {
       "localizations": {
         "es": {
@@ -8808,8 +9177,26 @@
         }
       }
     },
-    "Show less": {},
-    "Show more (+%lld)": {},
+    "Show less": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar menos"
+          }
+        }
+      }
+    },
+    "Show more (+%lld)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar más (+%lld)"
+          }
+        }
+      }
+    },
     "Show or hide the inspector": {
       "localizations": {
         "es": {
@@ -9030,7 +9417,16 @@
         }
       }
     },
-    "Slow": {},
+    "Slow": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lenta"
+          }
+        }
+      }
+    },
     "Smaller text": {
       "localizations": {
         "es": {
@@ -9291,7 +9687,16 @@
         }
       }
     },
-    "Start listening without downloading anything. Very fast, with less natural voices.": {},
+    "Start listening without downloading anything. Very fast, with less natural voices.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empieza a escuchar sin descargar nada. Muy rápidas, con voces menos naturales."
+          }
+        }
+      }
+    },
     "Start: %@ s": {
       "localizations": {
         "es": {
@@ -10112,7 +10517,16 @@
         }
       }
     },
-    "The voice could not generate usable audio. Try again or choose another voice.": {},
+    "The voice could not generate usable audio. Try again or choose another voice.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La voz no pudo generar audio utilizable. Inténtalo de nuevo o elige otra voz."
+          }
+        }
+      }
+    },
     "The words could not be recognized automatically. Type them, exactly as spoken.": {
       "localizations": {
         "es": {
@@ -10383,7 +10797,16 @@
         }
       }
     },
-    "This voice engine is unavailable on this device. Choose another voice to generate new audio.": {},
+    "This voice engine is unavailable on this device. Choose another voice to generate new audio.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este motor de voz no está disponible en este dispositivo. Elige otra voz para generar audio nuevo."
+          }
+        }
+      }
+    },
     "Those documents are already in your library": {
       "localizations": {
         "es": {
@@ -10614,7 +11037,16 @@
         }
       }
     },
-    "Unavailable model": {},
+    "Unavailable model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo no disponible"
+          }
+        }
+      }
+    },
     "Unknown author": {
       "localizations": {
         "es": {
@@ -10715,7 +11147,16 @@
         }
       }
     },
-    "Use iOS voices": {},
+    "Use iOS voices": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usar las voces de iOS"
+          }
+        }
+      }
+    },
     "Use this model": {
       "localizations": {
         "es": {
@@ -10766,8 +11207,26 @@
         }
       }
     },
-    "Very fast": {},
-    "Very fast · Indicative rating": {},
+    "Very fast": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muy rápida"
+          }
+        }
+      }
+    },
+    "Very fast · Indicative rating": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muy rápida · Valoración orientativa"
+          }
+        }
+      }
+    },
     "View": {
       "localizations": {
         "es": {
@@ -10888,7 +11347,16 @@
         }
       }
     },
-    "Voices of every model on this %@. Play any of them to try it; choosing one from another model makes that model the voice engine. Voice models stay on this device. Manual voice choices can sync with iCloud.": {},
+    "Voices of every model on this %@. Play any of them to try it; choosing one from another model makes that model the voice engine. Voice models stay on this device. Manual voice choices can sync with iCloud.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voces de todos los modelos de este %@. Reproduce cualquiera para probarla; elegir una de otro modelo convierte ese modelo en el motor de voz. Los modelos de voz se quedan en este dispositivo. Las voces elegidas a mano pueden sincronizarse con iCloud."
+          }
+        }
+      }
+    },
     "Waiting for a connection": {
       "localizations": {
         "es": {
@@ -10939,7 +11407,16 @@
         }
       }
     },
-    "Weights and voices: %@": {},
+    "Weights and voices: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesos y voces: %@"
+          }
+        }
+      }
+    },
     "Welcome back": {
       "localizations": {
         "es": {
@@ -11361,7 +11838,16 @@
         }
       }
     },
-    "iOS voices": {},
+    "iOS voices": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voces de iOS"
+          }
+        }
+      }
+    },
     "in iCloud, not downloaded": {
       "localizations": {
         "es": {

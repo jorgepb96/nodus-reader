@@ -78,6 +78,8 @@ struct NodusReaderApp: App {
             defaults.removeObject(forKey: "nodus.reader.flow")
             defaults.removeObject(forKey: "nodus.reader.pageTurn")
             defaults.removeObject(forKey: "nodus.reader.fontScale")
+            // Voice filters chosen in one test must not narrow the next one's picker.
+            defaults.removeObject(forKey: VoiceFilterSelection.storageKey)
         }
         #endif
         let preferences = ReaderPreferences(defaults: defaults)

@@ -41,3 +41,16 @@ tanda, no causados por ella):
   `testStudioImportedClipSelectionOnPhone` (Studio solo existe en Mac), `testVoiceSetupThreePaths`
   (busca el texto «iOS voices», que ya no existe), y `testNeuralVoiceNarration` y
   `testVoicePickerStartsWithBookLanguage` (necesitan Phonon instalado en el simulador).
+
+## Build 63 (7 nov 2026)
+
+Resueltos: Volver a la narración en PDF (el indicador de página se quedaba en la última
+página o en la primera visible por encima de la línea centrada; ahora muestra la página
+narrada hasta que el lector desplaza a mano), el selector de voz que arrancaba en el idioma
+de la última voz en lugar del libro, 54 textos sin traducir al español, y el aislamiento de
+los tests de UI (Audio inmersivo, piezas compuestas y filtros de voz se reinician). Los
+tests de Studio en iPhone se saltan (Studio es solo de Mac) y los de Phonon se saltan si
+el simulador no tiene Phonon instalado.
+
+Sigue pendiente solo lo que exige un iPhone real: composición con el modelo, memoria, calor
+y batería.
