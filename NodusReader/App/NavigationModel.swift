@@ -79,6 +79,16 @@ public final class NavigationModel {
         }
     }
 
+    #if os(macOS)
+    /// Opening the transport bar follows its current audio cursor without
+    /// starting, pausing or seeking narration itself.
+    func openNarratedBook(using playback: PlaybackController) {
+        guard let book = playback.activeBook else { return }
+        playback.requestReaderResume()
+        macReaderBookID = book.id
+    }
+    #endif
+
     public func showAllBooks() {
         phoneTab = .library
         sidebarSelection = .allBooks

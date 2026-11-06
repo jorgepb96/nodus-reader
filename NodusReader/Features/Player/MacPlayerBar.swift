@@ -5,6 +5,7 @@ import SwiftUI
 
 struct MacPlayerBar: View {
     @Environment(PlaybackController.self) private var playback
+    @Environment(NavigationModel.self) private var navigation
     @Environment(VoiceCatalog.self) private var voices
     @Environment(LibraryService.self) private var library
     @Environment(ImmersiveAudioController.self) private var immersive
@@ -13,22 +14,30 @@ struct MacPlayerBar: View {
 
     var body: some View {
         HStack(spacing: 20) {
-            HStack(spacing: 10) {
-                if let book = playback.activeBook {
-                    SquareCoverThumb(book: book, size: 36, cornerRadius: 5)
+            Button {
+                navigation.openNarratedBook(using: playback)
+            } label: {
+                HStack(spacing: 10) {
+                    if let book = playback.activeBook {
+                        SquareCoverThumb(book: book, size: 36, cornerRadius: 5)
+                    }
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(playback.activeBook?.title ?? "")
+                            .font(.callout.weight(.medium))
+                            .lineLimit(1)
+                        Text("Chapter \(playback.chapterNumber) · \(playback.chapterTitle)")
+                            .font(.caption2)
+                            .foregroundStyle(palette.muted)
+                            .lineLimit(1)
+                    }
+                    .frame(minWidth: 0)
                 }
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(playback.activeBook?.title ?? "")
-                        .font(.callout.weight(.medium))
-                        .lineLimit(1)
-                    Text("Chapter \(playback.chapterNumber) · \(playback.chapterTitle)")
-                        .font(.caption2)
-                        .foregroundStyle(palette.muted)
-                        .lineLimit(1)
-                }
-                .frame(minWidth: 0)
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
+            .accessibilityLabel("Return to narration")
+            .accessibilityIdentifier("MacPlayerOpenReader")
 
             VStack(spacing: 4) {
                 HStack(spacing: 6) {
@@ -123,6 +132,17 @@ struct MacPlayerBar: View {
         }
         .padding(.horizontal, 14)
         .frame(height: 64)
+        .background {
+            // Only unoccupied bar space falls through to this button; the
+            // transport and menus keep their own independent actions.
+            Button {
+                navigation.openNarratedBook(using: playback)
+            } label: {
+                Rectangle().fill(Color.clear).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHidden(true)
+        }
         .background(palette.panelRaised, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)

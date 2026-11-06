@@ -48,7 +48,9 @@ struct MacReaderHost: View {
         .tint(palette.accent)
         // Keep native window controls above the reader's own header.
         .toolbar(removing: .title)
-        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        // Keep native window controls present across full-screen/windowed
+        // transitions. MacRootView supplies the toolbar's themed background.
+        .toolbarVisibility(.visible, for: .windowToolbar)
         .navigationTitle(books.first?.title ?? "")
     }
 }

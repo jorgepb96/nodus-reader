@@ -3044,3 +3044,33 @@ func immersiveSoundtrackStaysWithNarrationWhileAnotherReaderOpens() async throws
     #expect(controller.bookID == first.id, "Without narration, silent reading still follows the open book")
     controller.readerClosed(book: first)
 }
+
+#if os(macOS)
+@Test @MainActor
+func macPlayerOpensTheNarratedBookAtItsExactCursorWithoutChangingTransport() async throws {
+    let fixture = try Fixture()
+    defer { fixture.cleanUp() }
+    let suite = "nodus.tests.mac-player-open.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let voices = VoiceCatalog(defaults: defaults)
+    let models = ModelManager(voices: voices, defaults: defaults, discoverSystemVoices: false)
+    let playback = PlaybackController(library: fixture.service, voices: voices, models: models, defaults: defaults)
+    let url = try SampleLibrary.makeEPUB(sampleSpec())
+    defer { try? FileManager.default.removeItem(at: url) }
+    let book = try #require(await fixture.service.importFiles([url]) { _ in }.imported.first)
+    await playback.start(book: book, mode: .read)
+    defer { playback.stopAndClose() }
+    #expect(playback.seek(toChapter: 1, offset: 10))
+    let navigation = NavigationModel()
+    navigation.macReaderBookID = UUID() // Another document was open previously.
+    let index = playback.currentIndex
+    let mode = playback.mode
+    navigation.openNarratedBook(using: playback)
+    #expect(navigation.macReaderBookID == book.id)
+    let cursor = try #require(playback.consumeReaderResume(for: book))
+    #expect(cursor.chapterIndex == 1 && cursor.offset == 10)
+    #expect(playback.currentIndex == index && playback.mode == mode && !playback.isPlaying)
+    #expect(playback.consumeReaderResume(for: book) == nil, "The reader consumes the transfer only once")
+}
+#endif
