@@ -124,6 +124,7 @@ struct NodusReaderApp: App {
                 .task {
                     SoundscapeLab.shared.playback = playback
                     SoundscapeLab.shared.library = library
+                    SoundscapeLab.shared.immersive = immersive
                     SoundscapeLab.shared.autorunIfRequested()
                 }
                 #endif

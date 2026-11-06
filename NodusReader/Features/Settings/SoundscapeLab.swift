@@ -66,6 +66,7 @@ final class SoundscapeLab {
     @ObservationIgnored private var monitor: Task<Void, Never>?
     @ObservationIgnored weak var playback: PlaybackController?
     @ObservationIgnored weak var library: LibraryService?
+    @ObservationIgnored weak var immersive: ImmersiveAudioController?
 
     let directory: SA3ModelDirectory
     let downloads: URL
@@ -288,6 +289,76 @@ final class SoundscapeLab {
         }
     }
 
+    /// The shipping AI soundscape path, end to end on a device: Settings choices, model
+    /// download and conversion through `SoundscapeModels`, narration, the book's pack
+    /// through the controller (SA3Generator with continuation, quality gate, AAC) and
+    /// playback. Logs every piece, the generation status, memory and heat.
+    private func aiEndToEnd() async throws {
+        guard let immersive else {
+            append(Entry(test: "ai-e2e-skipped", note: "no controller"))
+            return
+        }
+        immersive.preferences.source = .ai
+        if !immersive.preferences.isEnabled { immersive.setEnabled(true) }
+        let models = immersive.soundscapeModels
+        let installStart = Date()
+        if !(models.isInstalled(.music) && models.isInstalled(.sfx)) {
+            models.install([.music, .sfx])
+            var last = ""
+            while Date().timeIntervalSince(installStart) < 1_800 {
+                try await Task.sleep(for: .seconds(2))
+                let state = "\(models.state[.music].map { "\($0)" } ?? "-") / \(models.state[.sfx].map { "\($0)" } ?? "-")"
+                if state != last, !state.contains("downloading") || Int(Date().timeIntervalSince(installStart)) % 20 == 0 {
+                    event("models: \(state)")
+                    last = state
+                }
+                if models.isInstalled(.music) && models.isInstalled(.sfx) { break }
+                if case .failed = models.state[.music] { break }
+            }
+        }
+        append(Entry(test: "ai-e2e-install", note: String(format: "music %@, sfx %@, %.0f s, on disk %@",
+                                                         models.isInstalled(.music) ? "installed" : "missing",
+                                                         models.isInstalled(.sfx) ? "installed" : "missing",
+                                                         Date().timeIntervalSince(installStart), Self.bytes(models.bytesOnDisk))))
+        guard models.isInstalled(.music) else { return }
+        try await startNarration()
+        try await Task.sleep(for: .seconds(5))
+        let before = immersive.generated.pieces.count
+        let start = Date()
+        immersive.prepareSoundscapes()
+        append(Entry(test: "ai-e2e-prepare", note: "status \(immersive.generation), style \(immersive.bookStyle.rawValue)"))
+        var seen = Set(immersive.generated.pieces.map(\.id))
+        var lastStatus = ""
+        while Date().timeIntervalSince(start) < 1_800 {
+            try await Task.sleep(for: .seconds(1))
+            let status = "\(immersive.generation)"
+            if status != lastStatus {
+                event("generation: \(status)")
+                lastStatus = status
+            }
+            for piece in immersive.generated.pieces where !seen.contains(piece.id) {
+                seen.insert(piece.id)
+                append(Entry(test: "ai-e2e-piece", note: String(format: "%@ %@ %@, %.1f s, %.1f LUFS, %.1f dBTP, tail %@, after %.0f s, footprint %@, %@",
+                                                              piece.layer.rawValue, piece.mood?.rawValue ?? piece.bed?.rawValue ?? "-",
+                                                              piece.style.rawValue, Double(piece.frames) / Double(piece.sampleRate),
+                                                              piece.lufs, piece.truePeak, piece.tailStart.map { String(format: "%.0f", $0) } ?? "-",
+                                                              Date().timeIntervalSince(start), Self.bytes(ProcessMemory.footprint()),
+                                                              ThermalStateName.current)))
+                if let url = immersive.generated.url(for: piece.track) {
+                    try? FileManager.default.copyItem(at: url, to: output.appendingPathComponent("ai-\(piece.mood?.rawValue ?? piece.bed?.rawValue ?? "x")-\(piece.id.prefix(6)).m4a"))
+                }
+            }
+            if case .idle = immersive.generation, Date().timeIntervalSince(start) > 10 { break }
+            if case .paused = immersive.generation { break }
+        }
+        let playing = [immersive.musicTrack, immersive.ambienceTrack].compactMap { $0 }
+            .map { "\($0.layer.rawValue): \($0.semantics.origin ?? "catalog") \($0.id.prefix(8))" }.joined(separator: ", ")
+        append(Entry(test: "ai-e2e-done", note: String(format: "%d new pieces in %.0f s; now playing %@; status %@; stalls %d / %.1f s",
+                                                      immersive.generated.pieces.count - before, Date().timeIntervalSince(start),
+                                                      playing.isEmpty ? "nothing" : playing, "\(immersive.generation)",
+                                                      narrationStallCount, narrationStallSeconds)))
+    }
+
     /// Resumes the most recently opened book with narration and waits until it plays.
     private func startNarration() async throws {
         guard let playback, let book = library?.continueBook() else {
@@ -327,6 +398,7 @@ final class SoundscapeLab {
                 case "coexist-music": try await lab.coexistenceBody(kind: .music, long: true)
                 case "coexist-sfx": try await lab.coexistenceBody(kind: .sfx, long: true)
                 case "stop-narration": lab.playback?.pause(); lab.stopPlayback()
+                case "ai-e2e": try await lab.aiEndToEnd()
                 default: lab.append(Entry(test: "autorun", note: "unknown step \(step)"))
                 }
             }
