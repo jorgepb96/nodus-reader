@@ -55,13 +55,55 @@ final class ReaderMacTextView: NSTextView {
         selectedTextAttributes = [.backgroundColor: background, .foregroundColor: foreground]
     }
     /// Local index ↔ anchor space (chapter offsets, or PDF page offsets).
-    var mapping: ReaderTextMapping?
+    var mapping: ReaderTextMapping? {
+        didSet {
+            if oldValue == nil || mapping == nil { window?.invalidateCursorRects(for: self) }
+        }
+    }
     var onWordTap: ((Int) -> Void)?
+    var onInteractionBegan: (() -> Void)?
     var onHighlight: ((NSRange, AnnotationColor) -> Void)?
     var onNote: ((NSRange) -> Void)?
     var onPronounce: ((String) -> Void)?
 
     private var pendingNarrationClick: DispatchWorkItem?
+    private var readerTrackingArea: NSTrackingArea?
+    private var selectingText = false
+    private struct WordPress {
+        let location: NSPoint
+        let insertionIndex: Int
+        let offset: Int
+        let text: String
+        var dragged = false
+    }
+    private var wordPress: WordPress?
+
+    override func updateTrackingAreas() {
+        if let readerTrackingArea { removeTrackingArea(readerTrackingArea) }
+        super.updateTrackingAreas()
+        let area = NSTrackingArea(rect: .zero,
+                                  options: [.cursorUpdate, .mouseMoved, .mouseEnteredAndExited,
+                                            .activeInKeyWindow, .inVisibleRect],
+                                  owner: self)
+        addTrackingArea(area)
+        readerTrackingArea = area
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        window?.acceptsMouseMovedEvents = true
+        window?.invalidateCursorRects(for: self)
+    }
+
+    private func updateReaderCursor(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        let clickable = !selectingText && onWordTap != nil && narrationOffset(at: point) != nil
+        (clickable ? NSCursor.pointingHand : NSCursor.iBeam).set()
+    }
+
+    override func cursorUpdate(with event: NSEvent) { updateReaderCursor(with: event) }
+    override func mouseMoved(with event: NSEvent) { updateReaderCursor(with: event) }
+    override func mouseEntered(with event: NSEvent) { updateReaderCursor(with: event) }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
@@ -79,52 +121,73 @@ final class ReaderMacTextView: NSTextView {
     override func mouseDown(with event: NSEvent) {
         pendingNarrationClick?.cancel()
         pendingNarrationClick = nil
+        wordPress = nil
+        selectingText = false
         let point = convert(event.locationInWindow, from: nil)
         let isPlainClick = event.clickCount == 1 &&
             event.modifierFlags.intersection([.shift, .control, .option, .command]).isEmpty
-        guard isPlainClick, onWordTap != nil, let window,
-              let offset = narrationOffset(at: point) else {
+        let offset = narrationOffset(at: point)
+        // Freeze narration following before the viewport can move under the
+        // pointer, including when the user starts selecting instead of seeking.
+        onInteractionBegan?()
+        guard isPlainClick, onWordTap != nil, let window, let offset else {
             super.mouseDown(with: event)
             return
         }
-        let clickedText = string
         window.makeFirstResponder(self)
+        let insertion = characterIndexForInsertion(at: point)
+        setSelectedRange(NSRange(location: insertion, length: 0))
+        wordPress = WordPress(location: event.locationInWindow, insertionIndex: insertion,
+                              offset: offset, text: string)
+        // Return to AppKit immediately. It delivers drag/up to this view;
+        // no nested event loop can swallow a later click or block the header.
+    }
 
-        // Resolve the gesture before handing it to NSTextView, whose own
-        // mouseDown runs a selection-tracking loop and may consume mouseUp.
-        // Use the release event itself, never the pointer's later position.
-        while let next = window.nextEvent(matching: [.leftMouseDragged, .leftMouseUp],
-                                          until: .distantFuture, inMode: .eventTracking,
-                                          dequeue: true) {
-            let dx = next.locationInWindow.x - event.locationInWindow.x
-            let dy = next.locationInWindow.y - event.locationInWindow.y
-            if dx * dx + dy * dy > 16 {
-                // Replay the first drag/release so native selection receives
-                // the complete gesture, starting at the original mouseDown.
-                NSApp.postEvent(next, atStart: true)
-                NSCursor.iBeam.push()
-                super.mouseDown(with: event)
-                NSCursor.pop()
-                return
-            }
-            guard next.type == .leftMouseUp else { continue }
-            setSelectedRange(NSRange(location: characterIndexForInsertion(at: point), length: 0))
-
-            // A second/third click cancels this pending action and retains
-            // native word/paragraph selection, without starting narration.
-            let action = DispatchWorkItem { [weak self] in
-                guard let self, self.window != nil, self.selectedRange().length == 0,
-                      self.string == clickedText else { return }
-                self.pendingNarrationClick = nil
-                self.onWordTap?(offset)
-            }
-            pendingNarrationClick = action
-            DispatchQueue.main.asyncAfter(deadline: .now() + NSEvent.doubleClickInterval, execute: action)
+    override func mouseDragged(with event: NSEvent) {
+        guard var press = wordPress else {
+            super.mouseDragged(with: event)
             return
         }
+        let dx = event.locationInWindow.x - press.location.x
+        let dy = event.locationInWindow.y - press.location.y
+        press.dragged = press.dragged || dx * dx + dy * dy > 16
+        wordPress = press
+        guard press.dragged else { return }
+        selectingText = true
+        NSCursor.iBeam.set()
+        let point = convert(event.locationInWindow, from: nil)
+        let end = characterIndexForInsertion(at: point)
+        setSelectedRange(NSRange(location: min(press.insertionIndex, end),
+                                 length: abs(end - press.insertionIndex)))
+        _ = autoscroll(with: event)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard let press = wordPress else {
+            super.mouseUp(with: event)
+            return
+        }
+        wordPress = nil
+        selectingText = false
+        updateReaderCursor(with: event)
+        let dx = event.locationInWindow.x - press.location.x
+        let dy = event.locationInWindow.y - press.location.y
+        guard !press.dragged, dx * dx + dy * dy <= 16, string == press.text else { return }
+        // A second/third click cancels this action and delegates word/paragraph
+        // selection to NSTextView. A new single click always starts a new seek.
+        let action = DispatchWorkItem { [weak self] in
+            guard let self, self.window != nil, self.selectedRange().length == 0,
+                  self.string == press.text else { return }
+            self.pendingNarrationClick = nil
+            self.onWordTap?(press.offset)
+        }
+        pendingNarrationClick = action
+        DispatchQueue.main.asyncAfter(deadline: .now() + NSEvent.doubleClickInterval, execute: action)
     }
 
     override func rightMouseDown(with event: NSEvent) {
+        wordPress = nil
+        selectingText = false
         pendingNarrationClick?.cancel()
         pendingNarrationClick = nil
         super.rightMouseDown(with: event)
@@ -176,7 +239,7 @@ final class ReaderMacTextView: NSTextView {
         onNote?(range)
     }
 
-    private func narrationOffset(at point: NSPoint) -> Int? {
+    func narrationOffset(at point: NSPoint) -> Int? {
         guard let mapping, let container = textContainer, let layoutManager,
               let text = textStorage, text.readerVisibleLength > 0 else { return nil }
         let containerPoint = CGPoint(x: point.x - textContainerOrigin.x,
@@ -184,11 +247,16 @@ final class ReaderMacTextView: NSTextView {
         layoutManager.ensureLayout(for: container)
         let glyph = layoutManager.glyphIndex(for: containerPoint, in: container)
         guard glyph < layoutManager.numberOfGlyphs else { return nil }
-        let bounds = layoutManager.boundingRect(forGlyphRange: NSRange(location: glyph, length: 1), in: container)
-        guard bounds.insetBy(dx: -1, dy: -1).contains(containerPoint) else { return nil }
+        // Accept the full laid-out line, including the space above/below
+        // glyph ink; a click between letters still belongs to that word.
+        let line = layoutManager.lineFragmentUsedRect(forGlyphAt: glyph, effectiveRange: nil)
+        guard line.contains(containerPoint) else { return nil }
         let index = layoutManager.characterIndexForGlyph(at: glyph)
         guard index < text.readerVisibleLength else { return nil }
-        let word = selectionRange(forProposedRange: NSRange(location: index, length: 0), granularity: .selectByWord)
+        // NSTextView's selectionRange depends on its current selection
+        // granularity. Resolve each word from the text itself, including
+        // clicks made while narration/another selection is already active.
+        let word = text.doubleClick(at: index)
         guard word.location != NSNotFound, word.location < text.readerVisibleLength,
               word.length > 0, NSMaxRange(word) <= text.length,
               (text.string as NSString).substring(with: word).rangeOfCharacter(from: .alphanumerics) != nil else { return nil }
@@ -272,6 +340,7 @@ final class MacHighlightOverlayView: NSView {
 struct MacPageView: NSViewRepresentable {
     @Environment(\.pronunciationSelection) private var pronounce
     @Environment(\.nodusPalette) private var palette
+    @Environment(\.readerManualNavigation) private var onManualNavigation
     var page: ReaderPage
     var style: ReaderPageStyle
     var highlights: ReaderPageHighlights
@@ -289,6 +358,7 @@ struct MacPageView: NSViewRepresentable {
         container.layer?.backgroundColor = style.background.cgColor
         container.textView.mapping = .page(page)
         container.textView.onWordTap = onWordTap
+        container.textView.onInteractionBegan = onManualNavigation
         container.textView.onHighlight = onHighlight
         container.textView.onNote = onNote
         container.textView.onPronounce = pronounce

@@ -2918,3 +2918,82 @@ func pronunciationSynthesizesWithInstalledEngines() async throws {
         _ = manager.releaseEnginesIfIdle()
     }
 }
+
+#if os(macOS)
+@Test @MainActor
+func macReaderResolvesSuccessiveWordTargetsWithAnExistingSelection() throws {
+    let view = ReaderMacTextView(frame: NSRect(x: 0, y: 0, width: 600, height: 300))
+    view.isEditable = false
+    view.isSelectable = true
+    view.textContainerInset = NSSize(width: 12, height: 8)
+    let string = "📖 Call me Ishmael. Some years ago—never mind how long precisely—having little. The watery part of the world."
+    let text = NSAttributedString(string: string, attributes: [.font: NSFont.systemFont(ofSize: 24)])
+    view.textStorage?.setAttributedString(text)
+    view.mapping = .block(base: 400, length: text.length)
+    let layout = try #require(view.layoutManager)
+    let container = try #require(view.textContainer)
+    container.containerSize = NSSize(width: 580, height: 300)
+    layout.ensureLayout(for: container)
+
+    // Later clicks must resolve independently of a previous native selection,
+    // across line wrapping, punctuation and UTF-16 surrogate pairs.
+    for word in ["Ishmael", "precisely", "watery"] {
+        view.setSelectedRange(NSRange(location: 0, length: text.length))
+        let range = (string as NSString).range(of: word)
+        let glyph = layout.glyphIndexForCharacter(at: range.location + 1)
+        let bounds = layout.boundingRect(forGlyphRange: NSRange(location: glyph, length: 1), in: container)
+        let point = NSPoint(x: bounds.midX + view.textContainerOrigin.x,
+                            y: bounds.midY + view.textContainerOrigin.y)
+        #expect(view.narrationOffset(at: point) == 400 + range.location)
+    }
+    #expect(view.narrationOffset(at: NSPoint(x: 590, y: 290)) == nil)
+}
+#endif
+
+#if os(macOS)
+@Test @MainActor
+func macReaderClicksSeekRepeatedlyWhileDragOnlySelects() async throws {
+    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 300),
+                          styleMask: [.borderless], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    defer { window.close() }
+    let view = ReaderMacTextView(frame: NSRect(x: 0, y: 0, width: 600, height: 300))
+    window.contentView = view // Hidden test window; never ordered on screen.
+    view.isEditable = false
+    view.isSelectable = true
+    let text = NSAttributedString(string: "First second third.", attributes: [.font: NSFont.systemFont(ofSize: 24)])
+    view.textStorage?.setAttributedString(text)
+    view.mapping = .block(base: 0, length: text.length)
+    let layout = try #require(view.layoutManager)
+    let container = try #require(view.textContainer)
+    container.containerSize = NSSize(width: 600, height: 300)
+    layout.ensureLayout(for: container)
+    var seeks: [Int] = []
+    view.onWordTap = { seeks.append($0) }
+    func point(_ index: Int) -> NSPoint {
+        let glyph = layout.glyphIndexForCharacter(at: index)
+        let rect = layout.boundingRect(forGlyphRange: NSRange(location: glyph, length: 1), in: container)
+        return view.convert(NSPoint(x: rect.midX + view.textContainerOrigin.x,
+                                    y: rect.midY + view.textContainerOrigin.y), to: nil)
+    }
+    func event(_ type: NSEvent.EventType, _ point: NSPoint) throws -> NSEvent {
+        try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                                       timestamp: ProcessInfo.processInfo.systemUptime,
+                                       windowNumber: window.windowNumber, context: nil,
+                                       eventNumber: 1, clickCount: 1, pressure: 1))
+    }
+    for index in [1, 7] {
+        let location = point(index)
+        view.mouseDown(with: try event(.leftMouseDown, location))
+        view.mouseUp(with: try event(.leftMouseUp, location))
+        try await Task.sleep(for: .seconds(NSEvent.doubleClickInterval + 0.1))
+    }
+    #expect(seeks == [0, 6], "A second click must seek again in the same text view")
+    view.mouseDown(with: try event(.leftMouseDown, point(1)))
+    view.mouseDragged(with: try event(.leftMouseDragged, point(14)))
+    view.mouseUp(with: try event(.leftMouseUp, point(14)))
+    try await Task.sleep(for: .seconds(NSEvent.doubleClickInterval + 0.1))
+    #expect(seeks == [0, 6], "Dragging must not trigger another seek")
+    #expect(view.selectedRange().length > 0)
+}
+#endif

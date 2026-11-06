@@ -184,11 +184,6 @@ struct ReaderView: View {
                 }
             }
         }
-        #if os(macOS)
-        // The Reading window hides its title bar: the reader bar takes that
-        // strip beside the window buttons instead of leaving it empty.
-        .ignoresSafeArea(.container, edges: .top)
-        #endif
         .preferredColorScheme(theme.isDark ? .dark : .light)
         // Sheets and popovers presented from the reader use its colour scheme,
         // so they take the matching palette: never dark labels on a dark
@@ -661,10 +656,6 @@ struct ReaderView: View {
             }
         }
         .padding(.horizontal, 6)
-        #if os(macOS)
-        // The window buttons sit over the library sidebar when it is shown.
-        .padding(.leading, librarySidebarVisible ? 0 : Self.windowButtonsWidth)
-        #endif
         .frame(height: 44)
         .background(theme.background)
         .overlay(alignment: .bottom) {
@@ -673,9 +664,6 @@ struct ReaderView: View {
     }
 
     #if os(macOS)
-    /// Room for the close, minimise and zoom buttons of the window.
-    private static let windowButtonsWidth: CGFloat = 70
-
     private func pageNavigationButton(previous: Bool, theme: ReaderTheme) -> some View {
         let enabled = previous ? canGoPreviousPage : canGoNextPage
         let title: LocalizedStringKey = previous ? "Previous page" : "Next page"

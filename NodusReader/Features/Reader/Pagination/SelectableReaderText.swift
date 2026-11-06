@@ -20,6 +20,7 @@ struct SelectableReaderText {
     @Environment(\.pronunciationSelection) private var pronounce
     @Environment(\.nodusPalette) private var palette
     @Environment(\.readerFollowState) private var followState
+    @Environment(\.readerManualNavigation) private var onManualNavigation
     var text: NSAttributedString
     var mapping: ReaderTextMapping
     var highlights: ReaderPageHighlights = ReaderPageHighlights()
@@ -210,6 +211,7 @@ extension SelectableReaderText: NSViewRepresentable {
         view.horizontalInset = horizontalInset
         view.textView.mapping = mapping
         view.textView.onWordTap = onWordTap
+        view.textView.onInteractionBegan = onManualNavigation
         view.textView.onHighlight = onHighlight
         view.textView.onNote = onNote
         view.textView.onPronounce = pronounce
