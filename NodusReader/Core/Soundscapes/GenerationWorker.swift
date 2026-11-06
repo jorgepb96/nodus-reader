@@ -54,6 +54,8 @@ actor GenerationWorker {
     private let sleep: @Sendable (Double) async throws -> Void
     private let defaults: UserDefaults
     private let onEvent: @Sendable (WorkerEvent) -> Void
+    /// Multiplies every pause (pacing and admission retries); below 1 only for UI tests.
+    private let pacing: Double
 
     private var queue: [GenerationJob] = []
     private var loop: Task<Void, Never>?
@@ -66,8 +68,9 @@ actor GenerationWorker {
     init(generator: SoundscapeGenerating, library: GeneratedLibrary,
          admission: @escaping @Sendable () async -> AdmissionState,
          sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) },
-         defaults: UserDefaults = .standard,
+         defaults: UserDefaults = .standard, pacing: Double = 1,
          onEvent: @escaping @Sendable (WorkerEvent) -> Void) {
+        self.pacing = pacing
         self.generator = generator
         self.library = library
         self.admission = admission
@@ -137,7 +140,7 @@ actor GenerationWorker {
                 queue.removeFirst()
                 await generate(current, recipe: recipe)
                 if isPaused || Task.isCancelled { break }
-                try await sleep(Self.pause(for: await admission().thermal))
+                try await sleep(Self.pause(for: await admission().thermal) * pacing)
             } catch {
                 break
             }
@@ -153,7 +156,7 @@ actor GenerationWorker {
             case .run(let recipe): return recipe
             case .wait(let reason):
                 onEvent(.waiting(reason))
-                try await sleep(Self.admissionRetry)
+                try await sleep(Self.admissionRetry * pacing)
             }
         }
     }

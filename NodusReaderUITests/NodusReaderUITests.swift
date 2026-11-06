@@ -1260,13 +1260,19 @@ final class NodusReaderUITests: XCTestCase {
         XCTAssertEqual(toggle.value as? String, "0", "Immersive Audio must be off until the reader turns it on")
         toggle.tap()
         XCTAssertEqual(toggle.value as? String, "1")
+        snap(pad ? "iPad-ImmersiveAudio-Settings" : "iPhone-ImmersiveAudio-Settings")
+        // Profiles and credits live in More options.
+        let more = app.buttons["soundscapes.moreOptions"].firstMatch
+        if !more.waitForExistence(timeout: 5) { app.swipeUp() }
+        more.tap()
         let rain = app.buttons["Rain"].firstMatch
         XCTAssertTrue(rain.waitForExistence(timeout: 5))
         rain.tap()
-        XCTAssertTrue(app.staticTexts["Manual"].firstMatch.exists || app.buttons["Manual"].firstMatch.exists)
-        snap(pad ? "iPad-ImmersiveAudio-Settings" : "iPhone-ImmersiveAudio-Settings")
         let credits = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Credits and licences")).firstMatch
+        if !credits.waitForExistence(timeout: 3) { app.swipeUp() }
         XCTAssertTrue(credits.waitForExistence(timeout: 5))
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.buttons["Manual"].firstMatch.waitForExistence(timeout: 5))
 
         // In the reader: the atmosphere button appears and shows the choice.
         if pad {
@@ -1292,6 +1298,68 @@ final class NodusReaderUITests: XCTestCase {
         snap(pad ? "iPad-ImmersiveAudio-Reader" : "iPhone-ImmersiveAudio-Reader")
         lock.tap()
         XCTAssertEqual(lock.value as? String, "Unlocked")
+    }
+
+    func testSoundscapesSettings() throws {
+        let app = launch(resetReadingState: true, immersive: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        try XCTSkipIf(app.windows.firstMatch.frame.width >= 700, "This test runs on iPhone")
+        tapTab("Settings", in: app)
+        let row = app.buttons["ImmersiveAudioSettingsRow"].firstMatch
+        if !row.waitForExistence(timeout: 10) { app.swipeUp() }
+        XCTAssertTrue(row.label.contains("Soundscapes"))
+        row.tap()
+        app.switches["immersive.enable"].firstMatch.tap()
+        // Choosing AI the first time explains it; the Simulator cannot run the models.
+        let ai = app.buttons["AI"].firstMatch
+        XCTAssertTrue(ai.waitForExistence(timeout: 5))
+        ai.tap()
+        XCTAssertTrue(app.staticTexts["soundscapes.unavailable"].firstMatch.waitForExistence(timeout: 5)
+                      || app.otherElements["soundscapes.unavailable"].firstMatch.exists)
+        snap("iPhone-Soundscapes-AIIntro")
+        app.buttons["soundscapes.notNow"].firstMatch.tap()
+        let models = app.buttons["soundscapes.models"].firstMatch
+        XCTAssertTrue(models.waitForExistence(timeout: 5))
+        snap("iPhone-Soundscapes-Settings")
+        models.tap()
+        XCTAssertTrue(app.staticTexts["Powered by Stability AI"].firstMatch.waitForExistence(timeout: 5))
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.buttons["Downloaded"].firstMatch.tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Sound packs")).firstMatch.waitForExistence(timeout: 5))
+    }
+
+    /// The whole AI path in the Simulator with the fixture generator (MLX cannot run
+    /// there): prepare a book's pack from the reader, then a composed piece plays and can
+    /// be kept as a favorite.
+    func testSoundscapesPrepareAndPlayWithFixtureGenerator() throws {
+        let app = launch(resetReadingState: true, immersive: true, extra: ["-NodusSoundscapeFixtureGenerator"])
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        try XCTSkipIf(app.windows.firstMatch.frame.width >= 700, "This test runs on iPhone")
+        tapTab("Settings", in: app)
+        let row = app.buttons["ImmersiveAudioSettingsRow"].firstMatch
+        if !row.waitForExistence(timeout: 10) { app.swipeUp() }
+        row.tap()
+        app.switches["immersive.enable"].firstMatch.tap()
+        app.buttons["AI"].firstMatch.tap()
+        let notNow = app.buttons["soundscapes.notNow"].firstMatch
+        if notNow.waitForExistence(timeout: 5) { notNow.tap() }
+        tapTab("Home", in: app)
+        app.buttons["Read"].firstMatch.tap()
+        let atmosphere = app.buttons["ImmersiveAtmosphereButton"].firstMatch
+        XCTAssertTrue(atmosphere.waitForExistence(timeout: 20))
+        atmosphere.tap()
+        XCTAssertTrue(app.buttons["soundscapes.style"].firstMatch.waitForExistence(timeout: 10))
+        let prepare = app.buttons["soundscapes.prepare"].firstMatch
+        XCTAssertTrue(prepare.waitForExistence(timeout: 10))
+        prepare.tap()
+        let preparing = app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Preparing soundscapes")).firstMatch
+        XCTAssertTrue(preparing.waitForExistence(timeout: 20))
+        snap("iPhone-Soundscapes-Preparing")
+        let favorite = app.buttons["soundscapes.favorite"].firstMatch
+        XCTAssertTrue(favorite.waitForExistence(timeout: 180), "A composed piece should play once the pack is ready")
+        favorite.tap()
+        XCTAssertEqual(favorite.value as? String, "Favorite")
+        snap("iPhone-Soundscapes-Reader")
     }
 
     func testImmersiveAudioManualWithoutAppleIntelligence() throws {

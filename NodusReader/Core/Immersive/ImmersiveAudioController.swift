@@ -304,13 +304,13 @@ final class ImmersiveAudioController {
     }
 
     /// Moods the director may choose: with AI and the Music model, every mood can be made.
-    private var availableMoods: Set<MusicMood> {
+    var availableMoods: Set<MusicMood> {
         guard aiSource else { return library.installedMoods }
         return soundscapeModels.isInstalled(.music) ? Set(MusicMood.allCases)
             : generated.installedMoods.union(library.installedMoods)
     }
 
-    private var availableBeds: Set<BaseAmbience> {
+    var availableBeds: Set<BaseAmbience> {
         guard aiSource else { return library.installedBeds }
         return soundscapeModels.isInstalled(.sfx) ? Set(BaseAmbience.allCases)
             : generated.installedBeds.union(library.installedBeds)
@@ -422,6 +422,7 @@ final class ImmersiveAudioController {
                                                                narrationWaiting: false, analysisRunning: false,
                                                                availableMemory: nil)
             },
+            pacing: Self.usesFixtureGenerator ? 0.05 : 1,
             onEvent: { [weak self] event in Task { @MainActor in self?.handle(event) } })
         self.worker = worker
         return worker
@@ -431,7 +432,9 @@ final class ImmersiveAudioController {
         let analysing = await OnDeviceModelGate.shared.isBusy
         var memory: Int64?
         #if os(iOS)
-        memory = Int64(os_proc_available_memory())
+        // The Simulator (and some unlimited hosts) report 0: unknown, not "no memory".
+        let available = Int64(os_proc_available_memory())
+        memory = available > 0 ? available : nil
         #endif
         let info = ProcessInfo.processInfo
         return AdmissionState(thermal: info.thermalState, lowPower: info.isLowPowerModeEnabled, foreground: appActive,

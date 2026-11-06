@@ -130,6 +130,7 @@
 		A32ADEB982FF5998C469EED7 /* LinnetCodeLicense.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6F5851D5B30C862C7C0890CF /* LinnetCodeLicense.txt */; };
 		A514A81C247F06B6FCFDEA4B /* StudioVoicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 091FB9063EDC95D83433A5D8 /* StudioVoicesView.swift */; };
 		A618A81499D2E596D7C8AE8F /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1FCA4689FD81FCF3C0A3D93 /* SearchView.swift */; };
+		AB9FCD9FF993C5E399587F67 /* SoundscapeModelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00EF8E70E37E8C89F6F9996C /* SoundscapeModelsView.swift */; };
 		ABD956A85A2F785D0D0443A9 /* SoundscapeVocabulary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22AD444ADABC9BE10A4C1971 /* SoundscapeVocabulary.swift */; };
 		AC028630AC5C983D000F7C76 /* GenerationWorkerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C92D37114C9DA876DEEB80F /* GenerationWorkerTests.swift */; };
 		AEF7B8FFD4BD9DDA067FAF20 /* NOTICE.md in Resources */ = {isa = PBXBuildFile; fileRef = 4A9B61F4F3F5F72D87930DFD /* NOTICE.md */; };
@@ -142,6 +143,7 @@
 		BB4314423E68948DDF1B8D99 /* SyncJournal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC6390B2B754114ECA06791 /* SyncJournal.swift */; };
 		BD5C5B097F6B05DC5B56CD5F /* StableAudioMLX in Frameworks */ = {isa = PBXBuildFile; productRef = FF0298AB488B9269BD4AAFDF /* StableAudioMLX */; };
 		BD7B72A7877D316142B33386 /* ImportError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6D690834C5BF2B92AEAD2E /* ImportError.swift */; };
+		BF53F536AF76548FF9CDEE86 /* SoundscapeFavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B5ECDDE4B342B23802ED02 /* SoundscapeFavoritesView.swift */; };
 		C13569691FA7A02D86024424 /* ImagePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CD993B1E77129C04C4EB63 /* ImagePipeline.swift */; };
 		C4785DD0D1E3C312DDDE10CE /* ImmersiveAudioSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DACE001CC6CC610471B8904E /* ImmersiveAudioSettingsView.swift */; };
 		C6AE3EF01BF6C2203D01DE43 /* ReaderContentsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390305E758451EF6E06B5D1A /* ReaderContentsSheet.swift */; };
@@ -190,6 +192,7 @@
 		F2385B3E6098B2265F0F7868 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96C2916DCF1FCAA262923B78 /* ReaderView.swift */; };
 		F289F4BEDF7BAF4126608B69 /* FileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54A1DAC5355DA2195645F962 /* FileStore.swift */; };
 		F353A14E936234EB4BD02D5D /* ImmersiveAudioPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA91162B04CADBF6E04CA22 /* ImmersiveAudioPreferences.swift */; };
+		F390F38E72FBB876F03BF6A1 /* SoundscapeAIIntroSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6543D48F32A373ABC9F22CBB /* SoundscapeAIIntroSheet.swift */; };
 		F3A691E5719B03583B05E0D8 /* NodusReaderUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3AFA22A66FD5602FA6E23C9 /* NodusReaderUITests.swift */; };
 		F3C26CAA17426EDAA40430F1 /* OnDeviceModelGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A555DFD85F387971CD9CF0E1 /* OnDeviceModelGate.swift */; };
 		F4D3008382E0BAB90EE21BD8 /* MacLibraryContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EBEA7473BC0766073097847 /* MacLibraryContentView.swift */; };
@@ -245,6 +248,7 @@
 
 /* Begin PBXFileReference section */
 		0005C78195DEDA225A96E2ED /* es-dave.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "es-dave.wav"; sourceTree = "<group>"; };
+		00EF8E70E37E8C89F6F9996C /* SoundscapeModelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapeModelsView.swift; sourceTree = "<group>"; };
 		01715E0E5DA3F1333A3EA37B /* ImmersiveAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveAudioEngine.swift; sourceTree = "<group>"; };
 		01B45E8C0902ECC08A8EC670 /* SceneMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneMap.swift; sourceTree = "<group>"; };
 		0299B9EB01C2108D51F868EC /* SharedImportInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedImportInbox.swift; sourceTree = "<group>"; };
@@ -326,6 +330,7 @@
 		5FC7158911830A319D83B1AE /* IOSReaderPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSReaderPageView.swift; sourceTree = "<group>"; };
 		615B234B48E1D96011BAADA0 /* DocumentParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentParserTests.swift; sourceTree = "<group>"; };
 		638DEE4E57C7085D36B92FB0 /* MacRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacRootView.swift; sourceTree = "<group>"; };
+		6543D48F32A373ABC9F22CBB /* SoundscapeAIIntroSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapeAIIntroSheet.swift; sourceTree = "<group>"; };
 		656FC1AC67F05FB48653DA27 /* ImportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportCoordinator.swift; sourceTree = "<group>"; };
 		65C9336485C3D5CAD0206176 /* ReaderPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPage.swift; sourceTree = "<group>"; };
 		68582B720237CF7F2DB84C1A /* StoryCompanion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryCompanion.swift; sourceTree = "<group>"; };
@@ -349,6 +354,7 @@
 		8374C8CF82EADFE4C61847B6 /* ReaderNavigationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderNavigationSheet.swift; sourceTree = "<group>"; };
 		84215C3B2D70610707C931B2 /* ICloudDocumentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudDocumentStore.swift; sourceTree = "<group>"; };
 		844302C5730DFC2E5D5D1697 /* GenerationRecipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerationRecipe.swift; sourceTree = "<group>"; };
+		84B5ECDDE4B342B23802ED02 /* SoundscapeFavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapeFavoritesView.swift; sourceTree = "<group>"; };
 		8538AACCC8B86BBCBB64F210 /* CloudSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncService.swift; sourceTree = "<group>"; };
 		8590E0F34A5C74948FB89BCB /* MingSpeech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MingSpeech.swift; sourceTree = "<group>"; };
 		8AFDF0CE4ACCD3609FD24E78 /* OfflineNarrationQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineNarrationQueue.swift; sourceTree = "<group>"; };
@@ -905,6 +911,9 @@
 				DACE001CC6CC610471B8904E /* ImmersiveAudioSettingsView.swift */,
 				F83040EF5603396D30FD0AA6 /* ImmersivePacksView.swift */,
 				2E384E1F9E352EFB6396F98A /* ImmersiveQuickControls.swift */,
+				6543D48F32A373ABC9F22CBB /* SoundscapeAIIntroSheet.swift */,
+				84B5ECDDE4B342B23802ED02 /* SoundscapeFavoritesView.swift */,
+				00EF8E70E37E8C89F6F9996C /* SoundscapeModelsView.swift */,
 			);
 			path = Immersive;
 			sourceTree = "<group>";
@@ -1251,10 +1260,13 @@
 				E9CA7DC6B61AB9E6A4ACE8A3 /* SettingsView.swift in Sources */,
 				FF6D045C01A22F0D80285A59 /* SharedImportInbox.swift in Sources */,
 				22136E4536823900286B418B /* SidebarComponents.swift in Sources */,
+				F390F38E72FBB876F03BF6A1 /* SoundscapeAIIntroSheet.swift in Sources */,
+				BF53F536AF76548FF9CDEE86 /* SoundscapeFavoritesView.swift in Sources */,
 				CA56D684C18CADE7BA587EDD /* SoundscapeGenerating.swift in Sources */,
 				6E0E970BC716B7CBB069E064 /* SoundscapeLab.swift in Sources */,
 				0723DD9D001390EFBF96B608 /* SoundscapeLabView.swift in Sources */,
 				63CC680575B8053D8D49F84F /* SoundscapeModels.swift in Sources */,
+				AB9FCD9FF993C5E399587F67 /* SoundscapeModelsView.swift in Sources */,
 				5DD085EFD2FACD372D53FDCA /* SoundscapePlanner.swift in Sources */,
 				B57230561E39E788300B51C5 /* SoundscapeSourcePicker.swift in Sources */,
 				ABD956A85A2F785D0D0443A9 /* SoundscapeVocabulary.swift in Sources */,

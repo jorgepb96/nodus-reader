@@ -47,7 +47,8 @@ struct ImmersiveQuickControls: View {
             }
 
             if immersive.status == .needsPacks {
-                Text("Download a sound pack in Settings › Immersive Audio.")
+                Text(preferences.source == .ai ? "Download a model in Settings › Soundscapes."
+                                               : "Download a sound pack in Settings › Soundscapes.")
                     .font(.footnote)
                     .foregroundStyle(palette.text)
             } else if case .unavailable(let message) = immersive.status {
@@ -71,11 +72,73 @@ struct ImmersiveQuickControls: View {
                         automaticControl
                     }
                 }
+                if preferences.source == .ai {
+                    aiRow
+                }
                 LabeledSlider("Music", value: $preferences.musicVolume,
                               display: percent(preferences.musicVolume), systemImage: "music.note")
                 LabeledSlider("Ambience", value: $preferences.ambienceVolume,
                               display: percent(preferences.ambienceVolume), systemImage: "leaf")
             }
+        }
+    }
+
+    /// AI soundscapes: the book's style, the per-book pack and the favorite heart.
+    private var aiRow: some View {
+        HStack(spacing: 8) {
+            Menu {
+                Button {
+                    immersive.setBookStyle(nil)
+                } label: {
+                    if immersive.isStyleChosen {
+                        Text(String(localized: "Detected"))
+                    } else {
+                        Label(String(localized: "Detected"), systemImage: "checkmark")
+                    }
+                }
+                Divider()
+                ForEach(SoundscapeStyle.allCases) { style in
+                    Button {
+                        immersive.setBookStyle(style)
+                    } label: {
+                        if immersive.isStyleChosen && immersive.bookStyle == style {
+                            Label(style.label, systemImage: "checkmark")
+                        } else {
+                            Text(style.label)
+                        }
+                    }
+                }
+            } label: {
+                chip(icon: "theatermasks", title: immersive.bookStyle.label)
+            }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Book style"))
+            .accessibilityValue(Text(immersive.bookStyle.label))
+            .accessibilityIdentifier("soundscapes.style")
+
+            if case .preparing = immersive.generation {
+                CircleIconButton("xmark", label: "Stop preparing soundscapes") {
+                    immersive.cancelPreparation()
+                }
+                .accessibilityIdentifier("soundscapes.cancelPrepare")
+            } else if immersive.canPrepareSoundscapes {
+                CircleIconButton("wand.and.rays", label: "Prepare soundscapes for this book") {
+                    immersive.prepareSoundscapes()
+                }
+                .accessibilityIdentifier("soundscapes.prepare")
+            }
+
+            if let piece = immersive.currentGeneratedPiece {
+                CircleIconButton(piece.favorite ? "heart.fill" : "heart",
+                                 label: piece.favorite ? "Remove from favorites" : "Add to favorites",
+                                 filled: piece.favorite) {
+                    immersive.toggleFavoriteCurrent()
+                }
+                .accessibilityValue(Text(piece.favorite ? "Favorite" : "Not favorite"))
+                .accessibilityIdentifier("soundscapes.favorite")
+            }
+            Spacer(minLength: 0)
         }
     }
 
@@ -94,7 +157,7 @@ struct ImmersiveQuickControls: View {
     }
 
     private var nowPlaying: String {
-        guard immersive.preferences.isEnabled else { return String(localized: "Immersive Audio is off") }
+        guard immersive.preferences.isEnabled else { return String(localized: "Soundscapes are off") }
         guard let atmosphere = immersive.atmosphere else { return String(localized: "Nothing playing yet") }
         let parts = [atmosphere.base == .none ? nil : atmosphere.base.label, atmosphere.music?.label]
             .compactMap { $0 }
@@ -102,6 +165,11 @@ struct ImmersiveQuickControls: View {
     }
 
     private var statusLine: String {
+        switch immersive.generation {
+        case .composing(let what): return String(localized: "Composing \(what)…")
+        case .preparing(let done, let total): return String(localized: "Preparing soundscapes \(done)/\(total)")
+        default: break
+        }
         if immersive.isLocked { return String(localized: "Locked for this book") }
         if immersive.isChosenByReader { return String(localized: "Chosen by you for this book") }
         switch immersive.preferences.mode {
@@ -119,7 +187,7 @@ struct ImmersiveQuickControls: View {
 
     private var bedMenu: some View {
         Menu {
-            ForEach([BaseAmbience.none] + BaseAmbience.allCases.filter { immersive.library.installedBeds.contains($0) }) { bed in
+            ForEach([BaseAmbience.none] + BaseAmbience.allCases.filter { $0 != .none && immersive.availableBeds.contains($0) }) { bed in
                 Button { immersive.choose(base: bed) } label: { Label(bed.label, systemImage: bed.symbol) }
             }
         } label: {
@@ -135,7 +203,7 @@ struct ImmersiveQuickControls: View {
     private var musicMenu: some View {
         Menu {
             Button(String(localized: "No music")) { immersive.choose(music: nil) }
-            ForEach(MusicMood.allCases.filter { immersive.library.installedMoods.contains($0) }) { mood in
+            ForEach(MusicMood.allCases.filter { immersive.availableMoods.contains($0) }) { mood in
                 Button(mood.label) { immersive.choose(music: mood) }
             }
         } label: {

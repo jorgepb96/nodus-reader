@@ -104,7 +104,7 @@ struct SettingsView: View {
                     NavigationLink {
                         ImmersiveAudioSettingsView()
                     } label: {
-                        SettingsRow(title: "Immersive Audio", value: immersiveValue)
+                        SettingsRow(title: "Soundscapes", value: immersiveValue)
                     }
                     .accessibilityIdentifier("ImmersiveAudioSettingsRow")
                     divider
