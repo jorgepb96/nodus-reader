@@ -69,12 +69,21 @@ struct ReaderPageHighlights: Equatable {
     /// a sentence and the rest) they left a gap under the shorter one.
     static func lineRects(_ layout: NSLayoutManager, glyphRange: NSRange, in container: NSTextContainer) -> [CGRect] {
         var rects: [CGRect] = []
-        layout.enumerateEnclosingRects(forGlyphRange: glyphRange,
-                                       withinSelectedGlyphRange: NSRange(location: NSNotFound, length: 0),
-                                       in: container) { rect, _ in
-            let glyph = layout.glyphIndex(for: CGPoint(x: rect.midX, y: rect.midY), in: container)
-            let line = layout.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil)
-            rects.append(CGRect(x: rect.minX, y: line.minY, width: rect.width, height: line.height))
+        // TextKit's enclosing rects merge whole middle lines into one block: walk the
+        // lines themselves and take each line's horizontal extent from its own part.
+        layout.enumerateLineFragments(forGlyphRange: glyphRange) { line, _, _, lineGlyphs, _ in
+            let part = NSIntersectionRange(lineGlyphs, glyphRange)
+            guard part.length > 0 else { return }
+            var minX = CGFloat.greatestFiniteMagnitude
+            var maxX = -CGFloat.greatestFiniteMagnitude
+            layout.enumerateEnclosingRects(forGlyphRange: part,
+                                           withinSelectedGlyphRange: NSRange(location: NSNotFound, length: 0),
+                                           in: container) { rect, _ in
+                minX = min(minX, rect.minX)
+                maxX = max(maxX, rect.maxX)
+            }
+            guard maxX > minX else { return }
+            rects.append(CGRect(x: minX, y: line.minY, width: maxX - minX, height: line.height))
         }
         return rects
     }
