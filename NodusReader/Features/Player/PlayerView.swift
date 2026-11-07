@@ -94,6 +94,10 @@ struct PlayerView: View {
         .sheet(isPresented: $showSessionSheet) {
             if let book = playback.activeBook {
                 SoundscapeSessionSheet(book: book, onStart: { playback.toggle() })
+                    .nodusPalette(palette)
+                    .tint(palette.accent)
+                    .environment(\.colorScheme, palette.isDark ? .dark : .light)
+                    .preferredColorScheme(palette.isDark ? .dark : .light)
             }
         }
         .sheet(isPresented: $showVoicePicker) {
@@ -463,7 +467,6 @@ struct PlayerView: View {
             Button {
                 // Starting a session with AI soundscapes: offer to compose its music first.
                 if !playback.isPlaying, let book = playback.activeBook, immersive.offersSession(for: book) {
-                    immersive.markSessionOffered(book)
                     showSessionSheet = true
                 } else {
                     playback.toggle()

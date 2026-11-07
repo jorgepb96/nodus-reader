@@ -82,6 +82,10 @@ struct HomeView: View {
                 Task { await playback.start(book: book, mode: .listen) }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showPlayer = true }
             })
+            .nodusPalette(palette)
+            .tint(palette.accent)
+            .environment(\.colorScheme, palette.isDark ? .dark : .light)
+            .preferredColorScheme(palette.isDark ? .dark : .light)
         }
         .onChange(of: playback.activeBook?.id) { _, newValue in
             if newValue != nil, playback.errorMessage != nil {
@@ -273,7 +277,6 @@ struct HomeView: View {
     private func listen(to book: Book) {
         // With AI soundscapes, offer to compose the session's music before the voice starts.
         if immersive.offersSession(for: book) {
-            immersive.markSessionOffered(book)
             sessionBook = book
             return
         }

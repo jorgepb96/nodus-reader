@@ -270,6 +270,7 @@ struct ReaderView: View {
         }
         .sheet(isPresented: $showSessionSheet) {
             SoundscapeSessionSheet(book: book, onStart: performReaderNarrationToggle)
+                .readerPresentation(readerTheme)
         }
         .sheet(isPresented: $showContents) {
             ReaderNavigationSheet(
@@ -766,7 +767,6 @@ struct ReaderView: View {
     private func toggleReaderNarration() {
         // Starting a session with AI soundscapes: offer to compose its music first.
         if !(playback.activeBook?.id == book.id && playback.isPlaying), immersive.offersSession(for: book) {
-            immersive.markSessionOffered(book)
             showSessionSheet = true
             return
         }

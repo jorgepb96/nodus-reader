@@ -372,7 +372,9 @@ final class ImmersiveAudioController {
     /// this book yet in this run of the app.
     func offersSession(for book: Book) -> Bool {
         guard preferences.isEnabled, preferences.askBeforeSession, aiSource, prompts != nil,
-              asksSession(for: book), !sessionOffered.contains(book.id), !isPreparingPack else { return false }
+              asksSession(for: book), !sessionOffered.contains(book.id) else { return false }
+        // Another book's pack may still be composing (Start now): this book asks anyway.
+        if isPreparingPack, book.id == bookID { return false }
         return (soundscapeModels.anyInstalled && SoundscapeModels.isSupported) || Self.usesFixtureGenerator
     }
 
@@ -443,7 +445,8 @@ final class ImmersiveAudioController {
         packTotal = jobs.count
         packDone = 0
         generation = .preparing(done: 0, total: jobs.count)
-        Task { await worker.enqueue(jobs) }
+        // This session replaces whatever was queued, another book's pack included.
+        Task { await worker.replace(with: jobs) }
     }
 
     /// The session's music is ready or the reader started without it.

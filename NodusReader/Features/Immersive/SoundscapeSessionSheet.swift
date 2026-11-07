@@ -49,8 +49,15 @@ struct SoundscapeSessionSheet: View {
             }
             .padding(20)
         }
+        // Its own background: the system's translucent sheet does not follow the
+        // reader's theme, and the palette's text was unreadable on it.
+        .background(palette.background)
+        .presentationBackground(palette.background)
         .presentationDetents([.medium, .large])
         .interactiveDismissDisabled(composing)
+        // Asked once per book and run, counted only once the sheet is really on screen
+        // (a play pressed while the book was still opening could not present it).
+        .onAppear { immersive.markSessionOffered(book) }
         .onChange(of: immersive.generation) { _, status in
             // The session's pieces are ready: the voice starts.
             if composing, case .preparing = status {} else if composing { start() }
