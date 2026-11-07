@@ -398,6 +398,10 @@ struct PaginatedReaderContent: View {
         // Continuous narration follows the actual line, independently of the
         // slice at the viewport's top edge. Page jumps would fight that scroll.
         if flow == .scrollVertical, typography.autoScrollNarration { return }
+        #if os(iOS)
+        // Never turn the page under a finger or a selection.
+        guard ReaderTextInteraction.allowsFollow else { return }
+        #endif
         guard navigationTarget == nil || appliedNavigationID == navigationTarget?.id,
               followNarration,
               let narrationChapterIndex,

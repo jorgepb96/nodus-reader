@@ -1,0 +1,6 @@
+Typing and selecting text, fixed.
+
+- Search fields in dropdowns (voice filters, the book's voice picker, Voices & Models, the languages list and the iPad sidebar) show each letter at once: the whole list was redrawn on every key. The list now filters when you pause typing.
+- Pressing and dragging to select text works while narration plays. Every spoken word re-assigned the page text, which cancelled the selection; the text also no longer scrolls away while your finger is on it or a passage is selected, and following resumes once you let go.
+
+Everything from builds 71 and 72 is included.

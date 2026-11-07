@@ -98,16 +98,18 @@ struct VoicesView: View {
     private var modelLanguagePicker: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass").foregroundStyle(palette.muted)
-                    TextField("Search languages", text: $modelLanguageSearch)
-                        .textFieldStyle(.plain)
-                        .focused($modelLanguageSearchFocused)
-                        .onSubmit { modelLanguageSearchFocused = false }
-                        .submitLabel(.done)
-                        .accessibilityIdentifier("ModelLanguageSearch")
+                DraftSearchText(query: $modelLanguageSearch) { text in
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass").foregroundStyle(palette.muted)
+                        TextField("Search languages", text: text)
+                            .textFieldStyle(.plain)
+                            .focused($modelLanguageSearchFocused)
+                            .onSubmit { modelLanguageSearchFocused = false }
+                            .submitLabel(.done)
+                            .accessibilityIdentifier("ModelLanguageSearch")
+                    }
+                    .padding(12).background(palette.panel, in: RoundedRectangle(cornerRadius: 12)).padding(16)
                 }
-                .padding(12).background(palette.panel, in: RoundedRectangle(cornerRadius: 12)).padding(16)
                 List {
                     Button { saveModelLanguages([]); modelLanguageSearchFocused = false } label: {
                         HStack {
@@ -297,29 +299,31 @@ struct VoicesView: View {
     // MARK: Voices
 
     private var voiceSearchField: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 17))
-                .foregroundStyle(palette.muted)
-            TextField("Search voices", text: $searchText)
-                .textFieldStyle(.plain)
-                .font(.subheadline)
-                .foregroundStyle(palette.text)
-            if !searchText.isEmpty {
-                Button {
-                    searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(palette.muted)
+        DraftSearchText(query: $searchText) { text in
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 17))
+                    .foregroundStyle(palette.muted)
+                TextField("Search voices", text: text)
+                    .textFieldStyle(.plain)
+                    .font(.subheadline)
+                    .foregroundStyle(palette.text)
+                if !text.wrappedValue.isEmpty {
+                    Button {
+                        text.wrappedValue = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(palette.muted)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Clear search")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
             }
+            .padding(.horizontal, 14)
+            .frame(height: 44)
+            .background(palette.panel, in: Capsule())
+            .overlay(Capsule().stroke(palette.line, lineWidth: 1))
         }
-        .padding(.horizontal, 14)
-        .frame(height: 44)
-        .background(palette.panel, in: Capsule())
-        .overlay(Capsule().stroke(palette.line, lineWidth: 1))
     }
 
     @ViewBuilder
@@ -1261,36 +1265,41 @@ private struct VoiceMultiSelectionFilter: View {
                 Rectangle().fill(palette.line).frame(height: 0.5)
 
                 if showsSearch {
-                    HStack(spacing: 8) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundStyle(palette.muted)
-                        TextField("Search", text: $query)
-                            .textFieldStyle(.plain)
+                    DraftSearchText(query: $query) { text in
+                        HStack(spacing: 8) {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundStyle(palette.muted)
+                            TextField("Search", text: text)
+                                .textFieldStyle(.plain)
+                        }
+                        .padding(10)
+                        .background(palette.panel, in: RoundedRectangle(cornerRadius: 10))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
                     }
-                    .padding(10)
-                    .background(palette.panel, in: RoundedRectangle(cornerRadius: 10))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
                 }
 
+                // Filter once: asking for the matches inside every row
+                // filtered the whole list again for each one.
+                let matching = matchingOptions
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         filterRow(all, checked: selected.isEmpty) { selected = [] }
                         Rectangle().fill(palette.line).frame(height: 0.5)
                             .padding(.leading, 16)
-                        ForEach(matchingOptions) { option in
+                        ForEach(matching) { option in
                             filterRow(option.title, checked: selected.contains(option.id)) {
                                 if selected.contains(option.id) { selected.remove(option.id) }
                                 else { selected.insert(option.id) }
                             }
                             .accessibilityIdentifier("\(identifier)-\(option.id)")
                             .accessibilityAddTraits(selected.contains(option.id) ? .isSelected : [])
-                            if option.id != matchingOptions.last?.id {
+                            if option.id != matching.last?.id {
                                 Rectangle().fill(palette.line).frame(height: 0.5)
                                     .padding(.leading, 16)
                             }
                         }
-                        if matchingOptions.isEmpty {
+                        if matching.isEmpty {
                             Text("No results")
                                 .font(.footnote)
                                 .foregroundStyle(palette.muted)

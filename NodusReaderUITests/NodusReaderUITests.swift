@@ -687,6 +687,34 @@ final class NodusReaderUITests: XCTestCase {
         snap("iPhone-13-ReadAndListen")
     }
 
+    /// Narration updates the text on every word; a long press must still
+    /// select a passage and the text must not move away from it.
+    func testSelectingTextWhileNarrating() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let width = app.windows.firstMatch.frame.width
+        try XCTSkipIf(width >= 700, "This test runs on iPhone")
+
+        app.buttons["Read"].firstMatch.tap()
+        let body = app.textViews.firstMatch
+        XCTAssertTrue(body.waitForExistence(timeout: 15))
+        body.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+        XCTAssertTrue(app.buttons["Pause"].firstMatch.waitForExistence(timeout: 25)
+                      || app.staticTexts["READ & LISTEN"].firstMatch.exists)
+        sleep(3)
+
+        let screen = app.windows.firstMatch
+        screen.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.40))
+            .press(forDuration: 1.2, thenDragTo: screen.coordinate(withNormalizedOffset: CGVector(dx: 0.7, dy: 0.55)))
+        let highlight = app.menuItems["Highlight"].firstMatch
+        let highlightButton = app.buttons["Highlight"].firstMatch
+        XCTAssertTrue(highlight.waitForExistence(timeout: 4) || highlightButton.exists,
+                      "No passage was selected while narration played")
+        sleep(3)
+        XCTAssertTrue(highlight.exists || highlightButton.exists,
+                      "The selection was lost while narration kept playing")
+    }
+
     func testPagedReaderTurnsPagesAndBookmarks() throws {
         let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))

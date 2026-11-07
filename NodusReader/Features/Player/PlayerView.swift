@@ -1065,7 +1065,7 @@ struct VoicePickerSheet: View {
             .safeAreaInset(edge: .top, spacing: 0) {
                 filterRow
             }
-            .searchable(text: $searchText, prompt: "Search voices")
+            .searchableDraft($searchText, prompt: "Search voices")
             .navigationTitle("Voice for this book")
             .inlineNavigationTitle()
             .toolbar {

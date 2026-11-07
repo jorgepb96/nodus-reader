@@ -71,30 +71,32 @@ struct PadRootView: View {
             .padding(.top, 10)
             .padding(.bottom, 6)
 
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 14))
-                    .foregroundStyle(palette.muted)
-                TextField("Search", text: $searchText)
-                    .textFieldStyle(.plain)
-                    .font(.footnote)
-                    .foregroundStyle(palette.text)
-                if !searchText.isEmpty {
-                    Button {
-                        searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(palette.muted)
+            DraftSearchText(query: $searchText) { text in
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 14))
+                        .foregroundStyle(palette.muted)
+                    TextField("Search", text: text)
+                        .textFieldStyle(.plain)
+                        .font(.footnote)
+                        .foregroundStyle(palette.text)
+                    if !text.wrappedValue.isEmpty {
+                        Button {
+                            text.wrappedValue = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(palette.muted)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Clear search")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Clear search")
                 }
+                .padding(.horizontal, 12)
+                .frame(height: 38)
+                .background(palette.input, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
             }
-            .padding(.horizontal, 12)
-            .frame(height: 38)
-            .background(palette.input, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .padding(.horizontal, 12)
-            .padding(.bottom, 8)
 
             List(selection: selectionBinding) {
                 Section {

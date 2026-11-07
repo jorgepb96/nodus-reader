@@ -151,7 +151,7 @@ extension ReaderSelectableTextView {
     /// stays non-scrolling so selections and highlights share one text layout.
     @discardableResult
     func followNarration(_ range: NSRange, motion: ReaderScrollMotion, explicit: Bool = false) -> Bool {
-        guard window != nil, (explicit || textView.selectedRange.length == 0) else { return false }
+        guard window != nil, explicit || ReaderTextInteraction.allowsFollow else { return false }
         var ancestor = superview
         while let view = ancestor, !(view is UIScrollView) { ancestor = view.superview }
         guard let scroll = ancestor as? UIScrollView,

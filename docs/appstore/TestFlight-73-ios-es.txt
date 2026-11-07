@@ -1,0 +1,6 @@
+Escribir y seleccionar texto, corregido.
+
+- Los buscadores de los desplegables (filtros de voces, voz del libro, Voces y modelos, la lista de idiomas y la barra lateral del iPad) muestran cada letra al momento: se redibujaba toda la lista con cada tecla. Ahora la lista se filtra cuando haces una pausa al escribir.
+- Mantener pulsado y arrastrar para seleccionar texto funciona mientras suena la narración. Cada palabra leída volvía a cargar el texto de la página y cancelaba la selección; además, el texto ya no se desplaza mientras tienes el dedo encima o hay un pasaje seleccionado, y vuelve a seguir la lectura al soltarlo.
+
+Incluye todo lo de las builds 71 y 72.
