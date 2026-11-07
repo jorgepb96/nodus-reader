@@ -87,6 +87,9 @@ struct GenerationWorkerTests {
         #expect(decide({ $0.thermal = .serious }) == .wait("hot"))
         #expect(decide({ $0.thermal = .critical }) == .wait("hot"))
         #expect(decide({ $0.lowPower = true }) == .wait("low power"))
+        var saving = calm
+        saving.lowPower = true
+        #expect(GenerationAdmission.decide(saving, recipe: .music, requested: true) == .run(.music))
         #expect(decide({ $0.foreground = false }) == .wait("background"))
         #expect(decide({ $0.narrationWaiting = true }) == .wait("narration"))
         #expect(decide({ $0.analysisRunning = true }) == .wait("analysis"))

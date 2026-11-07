@@ -5276,6 +5276,17 @@
         }
       }
     },
+    "Low Power Mode is on: the voice may pause between sentences. Turn it off, or choose an iOS voice.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El modo de bajo consumo está activado: la voz puede pararse entre frases. Desactívalo o elige una voz de iOS."
+          }
+        }
+      }
+    },
     "Mac only. It runs on this Mac's GPU and generates speech at about real time; voices you clone stay on this Mac.": {
       "localizations": {
         "es": {
@@ -7462,6 +7473,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Posición en el capítulo"
+          }
+        }
+      }
+    },
+    "Powered by": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powered by"
           }
         }
       }

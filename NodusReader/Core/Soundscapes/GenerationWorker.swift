@@ -202,7 +202,8 @@ actor GenerationWorker {
             var state = await admission()
             // Scene analysis and recaps can keep the model busy for a whole long book.
             if analysisWaits >= Self.maximumAnalysisWaits { state.analysisRunning = false }
-            switch GenerationAdmission.decide(state, recipe: wanted) {
+            // A pack (priority 10+) or a piece asked for now was requested by the reader.
+            switch GenerationAdmission.decide(state, recipe: wanted, requested: job.priority >= 10) {
             case .run(let recipe): return recipe
             case .wait(let reason):
                 if reason == "analysis" { analysisWaits += 1 }

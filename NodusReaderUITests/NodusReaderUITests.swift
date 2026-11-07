@@ -846,6 +846,9 @@ final class NodusReaderUITests: XCTestCase {
         XCTAssertTrue(openPlayer.waitForExistence(timeout: 30))
         openPlayer.tap()
 
+        // The model narrating is always credited, with its licence.
+        XCTAssertTrue(app.staticTexts["Powered by"].firstMatch.waitForExistence(timeout: 10))
+        snap("Player-ModelCredit")
         let voiceControl = app.buttons["Voice for this book"].firstMatch
         XCTAssertTrue(voiceControl.waitForExistence(timeout: 10))
         voiceControl.tap()

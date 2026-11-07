@@ -115,6 +115,9 @@ public final class PlaybackController {
     @ObservationIgnored private var chained: (index: Int, voiceID: String, key: String, narration: CachedNarration,
                                               duration: TimeInterval, silence: TimeInterval)?
     @ObservationIgnored private var timeline = NarrationTimeline()
+    /// The next sentence is being prepared because the previous one ended (not a start,
+    /// seek or voice change): only then may Low Power Mode wait to play two at once.
+    @ObservationIgnored private var continuingNarration = false
     @ObservationIgnored private var scheduledVoice: VoiceCatalog.Voice?
     /// Absolute time in the full sentence, without the highlight's visual lead.
     @ObservationIgnored private var neuralPositionTime: TimeInterval?
@@ -1279,6 +1282,8 @@ public final class PlaybackController {
     private func prepareNeuralSentence(index: Int, text: String, voice: VoiceCatalog.Voice,
                                        chapterIndex: Int, offset: Int, audioTime: TimeInterval?, token: UUID) async {
         guard let book = activeBook else { return }
+        let continuing = continuingNarration
+        continuingNarration = false
         let expectedKey = pronunciationKey(text, voice: voice, book: book)
         var cached: CachedNarration?
         if let ready = prefetched[index], ready.voiceID == voice.id, ready.key == expectedKey {
@@ -1294,6 +1299,7 @@ public final class PlaybackController {
             // has been evicted rather than seek into a different timeline.
             if cached == nil { restoredTime = nil }
         }
+        let wasMiss = cached == nil
         if cached == nil {
             isLoading = true
             Logger(subsystem: "ai.nodus.reader", category: "NarrationQueue").info("Waiting for uncached sentence index=\(index)")
@@ -1310,6 +1316,16 @@ public final class PlaybackController {
         }
         guard !Task.isCancelled, token == neuralPlaybackToken,
               pronunciationKey(text, voice: voice, book: book) == expectedKey, let cached else { return }
+        if wasMiss, continuing, ProcessInfo.processInfo.isLowPowerModeEnabled, sentences.indices.contains(index + 1) {
+            // Low Power Mode slows synthesis below real time: rather than stopping after
+            // every sentence, wait a little for the next one too and play both gaplessly.
+            schedulePrefetch(after: index, voice: voice)
+            let deadline = Date().addingTimeInterval(min(cached.duration, 8))
+            while prefetched[index + 1] == nil, Date() < deadline, !Task.isCancelled, token == neuralPlaybackToken {
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+            guard !Task.isCancelled, token == neuralPlaybackToken else { return }
+        }
         guard cached.buffer.frameLength > 0 else {
             errorMessage = String(localized: "The neural engine returned no audio.")
             isPlaying = false
@@ -1722,6 +1738,7 @@ public final class PlaybackController {
         neuralStartOffset = 0
         resetWordState()
         saveProgress()
+        continuingNarration = true
         speakCurrent()
     }
 
@@ -1734,6 +1751,7 @@ public final class PlaybackController {
         audioPlayer.stop()
         chained = nil
         timeline.reset()
+        continuingNarration = false
         if !keepingEngine, audioEngine.isRunning { audioEngine.pause() }
         neuralPaused = false
         neuralWords = []

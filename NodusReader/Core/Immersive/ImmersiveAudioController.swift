@@ -96,6 +96,16 @@ final class ImmersiveAudioController {
     @ObservationIgnored private var shutdownTask: Task<Void, Never>?
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
     @ObservationIgnored private var appActive = true
+    /// False from the moment the app stops being active (app switcher, Settings,
+    /// Control Center): iOS refuses GPU work in the background, so composing stops
+    /// before the app gets there.
+    @ObservationIgnored private var sceneActive = true
+    /// A composed piece of another mood (or ambience) plays until the wanted one is
+    /// ready; only that piece, or the reader's own choice, replaces it.
+    @ObservationIgnored private var musicStandIn = false
+    @ObservationIgnored private var ambienceStandIn = false
+    /// The reader is choosing: never keep a stand-in under their choice's name.
+    @ObservationIgnored private var choosing = false
     @ObservationIgnored private var lastNarrationPlaying = false
     @ObservationIgnored private var narrationHadBook = false
     @ObservationIgnored private var engineFailed = false
@@ -456,7 +466,8 @@ final class ImmersiveAudioController {
         memory = available > 0 ? available : nil
         #endif
         let info = ProcessInfo.processInfo
-        return AdmissionState(thermal: info.thermalState, lowPower: info.isLowPowerModeEnabled, foreground: appActive,
+        return AdmissionState(thermal: info.thermalState, lowPower: info.isLowPowerModeEnabled,
+                              foreground: appActive && sceneActive,
                               narrationWaiting: playback.isPlaying && playback.isLoading, analysisRunning: analysing,
                               availableMemory: memory)
     }
@@ -483,10 +494,16 @@ final class ImmersiveAudioController {
             if let mood = piece.mood, mood == director.current?.music,
                musicTrack?.semantics.origin != "generated" || musicTrack?.moods.contains(mood) != true {
                 startMusic(mood, crossfade: preferences.crossfade, avoidSubPool: nil)
+            } else if piece.layer == .music, musicTrack == nil, director.current?.music != nil {
+                // Music is wanted and nothing plays: the first piece ready stands in
+                // until one for the scene's own mood is composed (it is asked for first).
+                playStandIn(piece)
             }
             if let bed = piece.bed, bed == director.current?.base,
                ambienceTrack?.semantics.origin != "generated" || ambienceTrack?.bed != bed {
                 startAmbience(bed, crossfade: preferences.crossfade)
+            } else if piece.layer == .ambience, ambienceTrack == nil, director.current?.base ?? .none != .none {
+                playStandIn(piece)
             }
             planSoundscapes(force: true)
         case .rejected(let job, _), .failed(let job, _):
@@ -695,7 +712,10 @@ final class ImmersiveAudioController {
         switch decision {
         case .keep where musicTrack?.moods.contains(mood) == true:
             planSoundscapes(force: true)
+        case .keep where musicStandIn && !choosing:
+            composeNow(layer: .music, mood: mood, bed: nil)
         case .keep, .stop:
+            musicStandIn = false
             // Nothing made for this mood yet: never leave another mood playing under its
             // name. With AI, compose it before anything else.
             engine.stop(.music, fadeOut: crossfade)
@@ -708,6 +728,7 @@ final class ImmersiveAudioController {
                 return
             }
             history.played(track.id, at: now)
+            musicStandIn = false
             if track.semantics.origin == "generated" { generated.markPlayed(track.id) }
             // A downloaded piece only stands in until one is composed for this mood.
             else if aiSource, generated.musicTracks(mood, style: bookStyle).isEmpty {
@@ -738,7 +759,10 @@ final class ImmersiveAudioController {
         switch decision {
         case .keep where ambienceTrack?.bed == bed:
             planSoundscapes(force: true)
+        case .keep where ambienceStandIn && !choosing:
+            composeNow(layer: .ambience, mood: nil, bed: bed)
         case .keep, .stop:
+            ambienceStandIn = false
             engine.stop(.ambience, fadeOut: crossfade)
             ambienceTrack = nil
             composeNow(layer: .ambience, mood: nil, bed: bed)
@@ -749,6 +773,7 @@ final class ImmersiveAudioController {
                 return
             }
             history.played(track.id, at: now)
+            ambienceStandIn = false
             if track.semantics.origin == "generated" { generated.markPlayed(track.id) }
             else if aiSource, generated.ambienceTracks(bed, style: bookStyle).isEmpty {
                 composeNow(layer: .ambience, mood: nil, bed: bed)
@@ -757,6 +782,27 @@ final class ImmersiveAudioController {
             engine.play(.init(id: track.id, url: url, layer: .ambience, loop: true, tailStart: nil,
                               gain: Self.gain(for: track)),
                         crossfade: crossfade)
+        }
+    }
+
+    /// Plays a just-composed piece while nothing plays on its layer.
+    private func playStandIn(_ piece: GeneratedPiece) {
+        guard policy.shouldPlay, let engine, engine.isRunning, let url = generated.url(for: piece.track) else { return }
+        let track = piece.track
+        history.played(track.id, at: clock.engaged)
+        generated.markPlayed(track.id)
+        if piece.layer == .music {
+            musicStandIn = true
+            musicTrack = track
+            engine.play(.init(id: track.id, url: url, layer: .music, loop: track.audio.isLoop,
+                              tailStart: track.audio.tailStartSeconds, gain: Self.gain(for: track)),
+                        crossfade: preferences.crossfade)
+        } else {
+            ambienceStandIn = true
+            ambienceTrack = track
+            engine.play(.init(id: track.id, url: url, layer: .ambience, loop: true, tailStart: nil,
+                              gain: Self.gain(for: track)),
+                        crossfade: preferences.crossfade)
         }
     }
 
@@ -1041,6 +1087,8 @@ final class ImmersiveAudioController {
         }
         isChosenByReader = preferences.mode == .automatic && !bookPreferences.locked
         saveBookPreferences()
+        choosing = true
+        defer { choosing = false }
         step(reason: "choice")
     }
 
@@ -1101,6 +1149,17 @@ final class ImmersiveAudioController {
                                             queue: .main) { [weak self] _ in
             // Free the generator now and retry a minute later with the short recipe.
             Task { @MainActor in self?.interruptGeneration(retryAfter: 60, shorter: true) }
+        })
+        observers.append(center.addObserver(forName: UIApplication.willResignActiveNotification, object: nil,
+                                            queue: .main) { [weak self] _ in
+            Task { @MainActor in
+                self?.sceneActive = false
+                self?.interruptGeneration(retryAfter: 0, shorter: false)
+            }
+        })
+        observers.append(center.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil,
+                                            queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.sceneActive = true }
         })
         observers.append(center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil,
                                             queue: .main) { [weak self] _ in

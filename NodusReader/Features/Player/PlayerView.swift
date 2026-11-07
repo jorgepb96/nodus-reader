@@ -16,6 +16,7 @@ struct PlayerView: View {
     @State private var macContentHeight: CGFloat = 540
     @State private var macHeaderHeight: CGFloat = 68
     @State private var showVoicePicker = false
+    @State private var lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
     @State private var showPronunciations = false
     @State private var showAudioJobs = false
 
@@ -666,14 +667,69 @@ struct PlayerView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "lock")
-                .font(.system(size: 11))
-            Text("Voice generated on this \(DeviceInfo.platformName)")
-                .font(.system(size: 11))
+        VStack(spacing: 10) {
+            if lowPowerMode, playback.isNeuralVoice, playback.activeVoice?.modelID != "ios-system" {
+                // iOS slows the processor in Low Power Mode: a neural voice can fall
+                // behind and pause between sentences. Say why, and what helps.
+                Label {
+                    Text("Low Power Mode is on: the voice may pause between sentences. Turn it off, or choose an iOS voice.")
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "battery.25percent")
+                }
+                .font(.footnote)
+                .foregroundStyle(palette.text)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(palette.panel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .accessibilityIdentifier("player.lowPowerNotice")
+            }
+            HStack(spacing: 6) {
+                Image(systemName: "lock")
+                    .font(.system(size: 11))
+                Text("Voice generated on this \(DeviceInfo.platformName)")
+                    .font(.system(size: 11))
+            }
+            .foregroundStyle(palette.muted)
+            if let credit {
+                modelCredit(credit)
+            }
         }
-        .foregroundStyle(palette.muted)
         .padding(.top, 18)
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+            lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
+    }
+
+    /// The model narrating, as its licence asks: always shown under the player.
+    private var credit: ModelCredit? {
+        guard let voiceID = playback.activeVoice?.id, let entry = models.model(forVoiceID: voiceID) else { return nil }
+        return ModelCredit(model: entry.model)
+    }
+
+    private func modelCredit(_ credit: ModelCredit) -> some View {
+        HStack(spacing: 4) {
+            Text("Powered by")
+            if let source = credit.source {
+                Link(credit.name, destination: source)
+                    .foregroundStyle(palette.accent)
+            } else {
+                Text(credit.name)
+            }
+            Text("·")
+            if let licenseURL = credit.licenseURL {
+                Link(credit.license, destination: licenseURL)
+                    .foregroundStyle(palette.accent)
+            } else {
+                Text(credit.license)
+            }
+        }
+        .font(.system(size: 11))
+        .foregroundStyle(palette.muted)
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("player.modelCredit")
     }
 
     private func errorOverlay(_ message: String) -> some View {

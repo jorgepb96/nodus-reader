@@ -36,9 +36,11 @@ enum GenerationAdmission {
 
     static func required(_ recipe: GenerationRecipe) -> Int64 { estimatedPeak(recipe) + margin }
 
-    static func decide(_ state: AdmissionState, recipe: GenerationRecipe) -> Admission {
+    /// `requested`: the reader asked for it (a pack, or an ambience or mood chosen with
+    /// nothing composed). Low Power Mode then delays only what is planned ahead.
+    static func decide(_ state: AdmissionState, recipe: GenerationRecipe, requested: Bool = false) -> Admission {
         if !state.foreground { return .wait("background") }
-        if state.lowPower { return .wait("low power") }
+        if state.lowPower, !requested { return .wait("low power") }
         if state.thermal == .serious || state.thermal == .critical { return .wait("hot") }
         if state.narrationWaiting { return .wait("narration") }
         if state.analysisRunning { return .wait("analysis") }

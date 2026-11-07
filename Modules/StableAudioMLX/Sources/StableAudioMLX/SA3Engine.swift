@@ -126,9 +126,30 @@ public actor SA3Engine {
         t5 != nil || decoder != nil || encoder != nil || !ditWeights.isEmpty
     }
 
+    /// MLX errors raised during the current generation (a GPU fault, work refused in
+    /// the background, an allocation failure): checked between steps.
+    private var mlxErrors: ErrorBox?
+
+    /// MLX reports errors through a handler whose default ends the process. Here they
+    /// become a thrown error, so a failed piece never closes the app.
     public func generate(_ request: Request, inpaint: InpaintSource? = nil,
                          progress: (@Sendable (String) -> Void)? = nil) throws -> Output {
         guard Self.isSupported else { throw EngineError.unsupportedDevice }
+        do {
+            return try withError { box in
+                mlxErrors = box
+                defer { mlxErrors = nil }
+                return try generateChecked(request, inpaint: inpaint, progress: progress)
+            }
+        } catch {
+            // Arrays from a failed evaluation must not stay in the cache.
+            unloadAll()
+            throw error
+        }
+    }
+
+    private func generateChecked(_ request: Request, inpaint: InpaintSource?,
+                                 progress: (@Sendable (String) -> Void)?) throws -> Output {
         let seconds = min(max(request.seconds, 0.5), Self.maximumSeconds)
         let sampler = PeakFootprintSampler()
         let baseline = ProcessMemory.footprint()
@@ -206,6 +227,7 @@ public actor SA3Engine {
             let mask = inpaintCondition.mask.asType(result.dtype)
             let pasted = inpaintCondition.latents.asType(result.dtype) * mask + result * (1 - mask)
             eval(pasted)
+            try mlxErrors?.check()
             return pasted
         }
         if residency == .staged {
@@ -225,6 +247,8 @@ public actor SA3Engine {
                 return audio
             }
         }
+        // A failed decode must not be read back.
+        try mlxErrors?.check()
         let requestedSamples = Int((seconds * Float(Self.sampleRate)).rounded())
         let trimmed = audio[0, 0..., 0 ..< min(requestedSamples, audio.dim(2))]
         let left = trimmed[0].asArray(Float.self)
@@ -294,6 +318,7 @@ public actor SA3Engine {
     }
 
     private func checkCancellation() throws {
+        try mlxErrors?.check()
         if Task.isCancelled { throw EngineError.cancelled }
     }
 
