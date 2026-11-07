@@ -25,6 +25,8 @@ struct LibraryView: View {
     @State private var showCollectionSheet = false
     @State private var pendingDeletion: [Book] = []
     @State private var showDeleteConfirmation = false
+    /// The book whose deletion is being confirmed, beside its cover or row.
+    @State private var deletingBook: Book?
     @State private var searchMatches: Set<UUID>?
 
     private var filteredBooks: [Book] {
@@ -105,20 +107,6 @@ struct LibraryView: View {
         .sheet(isPresented: $showCollectionSheet) {
             AddToCollectionSheet(books: collectionBooks)
         }
-        .confirmationDialog("Delete from Library?", isPresented: $showDeleteConfirmation,
-                            titleVisibility: .visible) {
-            Button("Delete from Library", role: .destructive) {
-                library.deleteBooks(pendingDeletion)
-                selectedIDs.subtract(pendingDeletion.map(\.id))
-                if selectedIDs.isEmpty { selectionMode = false }
-                pendingDeletion = []
-            }
-            Button("Cancel", role: .cancel) { pendingDeletion = [] }
-        } message: {
-            Text(pendingDeletion.count == 1
-                 ? "This removes “\(pendingDeletion.first?.title ?? "")” and its local file from Nodus Reader."
-                 : "This removes \(pendingDeletion.count) documents and their local files from Nodus Reader.")
-        }
     }
 
     // MARK: Header
@@ -179,6 +167,7 @@ struct LibraryView: View {
                 .contextMenu {
                     contextMenu(for: book)
                 }
+                .confirmsDeletion(of: book, deleting: $deletingBook) { library.deleteBooks([$0]) }
             }
         }
     }
@@ -201,6 +190,7 @@ struct LibraryView: View {
                 .contextMenu {
                     contextMenu(for: book)
                 }
+                .confirmsDeletion(of: book, deleting: $deletingBook) { library.deleteBooks([$0]) }
                 Divider().overlay(palette.line)
             }
         }
@@ -265,6 +255,21 @@ struct LibraryView: View {
                     .font(.footnote.weight(.medium))
             }
             .foregroundStyle(palette.destructive)
+            // Beside the button that asked, not at the edge of the screen.
+            .confirmationDialog("Delete from Library?", isPresented: $showDeleteConfirmation,
+                                titleVisibility: .visible) {
+                Button("Delete from Library", role: .destructive) {
+                    library.deleteBooks(pendingDeletion)
+                    selectedIDs.subtract(pendingDeletion.map(\.id))
+                    if selectedIDs.isEmpty { selectionMode = false }
+                    pendingDeletion = []
+                }
+                Button("Cancel", role: .cancel) { pendingDeletion = [] }
+            } message: {
+                Text(pendingDeletion.count == 1
+                     ? "This removes “\(pendingDeletion.first?.title ?? "")” and its local file from Nodus Reader."
+                     : "This removes \(pendingDeletion.count) documents and their local files from Nodus Reader.")
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -322,10 +327,7 @@ struct LibraryView: View {
             onEditInfo: {
                 editingBook = book
             },
-            onDelete: {
-                pendingDeletion = [book]
-                showDeleteConfirmation = true
-            }
+            onDelete: { deletingBook = book }
         )
     }
 }

@@ -687,6 +687,34 @@ final class NodusReaderUITests: XCTestCase {
         snap("iPhone-13-ReadAndListen")
     }
 
+    /// Deleting a book asks beside that book, not at the bottom of the screen.
+    func testDeleteConfirmationOpensBesideTheBook() throws {
+        let app = launch(resetReadingState: true)
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        let width = app.windows.firstMatch.frame.width
+        try XCTSkipIf(width >= 700, "This test runs on iPhone")
+
+        tapTab("Library", in: app)
+        let book = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Don Quijote'")).firstMatch
+        XCTAssertTrue(book.waitForExistence(timeout: 10))
+        book.press(forDuration: 1.2)
+        let delete = app.buttons["Delete from Library…"].firstMatch
+        XCTAssertTrue(delete.waitForExistence(timeout: 5))
+        delete.tap()
+
+        let confirm = app.buttons["Delete from Library"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        // The dialog points at the cover: just above it or just below it.
+        // Anchored to the screen it opened at the top, far above the cover.
+        let gapAbove = book.frame.minY - confirm.frame.maxY
+        let gapBelow = confirm.frame.minY - book.frame.maxY
+        XCTAssertTrue((0..<60).contains(gapAbove) || (0..<260).contains(gapBelow),
+                      "The confirmation did not open beside the book (\(confirm.frame) vs \(book.frame))")
+        snap("iPhone-DeleteBesideBook")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)).tap()
+        XCTAssertTrue(book.waitForExistence(timeout: 5), "Dismissing must not delete the book")
+    }
+
     /// Narration updates the text on every word; a long press must still
     /// select a passage and the text must not move away from it.
     func testSelectingTextWhileNarrating() throws {

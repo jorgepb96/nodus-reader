@@ -21,8 +21,8 @@ struct PadLibraryContentView: View {
     @State private var editingBook: Book?
     @State private var collectionBooks: [Book] = []
     @State private var showCollectionSheet = false
-    @State private var pendingDeletion: [Book] = []
-    @State private var showDeleteConfirmation = false
+    /// The book whose deletion is being confirmed, beside its cover or row.
+    @State private var deletingBook: Book?
 
     private var title: String {
         selection.smartList?.title ?? "Library"
@@ -68,6 +68,7 @@ struct PadLibraryContentView: View {
                                 open(book)
                             }
                             .contextMenu { contextMenu(for: book) }
+                            .confirmsDeletion(of: book, deleting: $deletingBook) { library.deleteBooks([$0]) }
                         }
                     }
                 } else {
@@ -80,6 +81,7 @@ struct PadLibraryContentView: View {
                             }
                             .buttonStyle(.plain)
                             .contextMenu { contextMenu(for: book) }
+                            .confirmsDeletion(of: book, deleting: $deletingBook) { library.deleteBooks([$0]) }
                             Divider().overlay(palette.line)
                         }
                     }
@@ -95,18 +97,6 @@ struct PadLibraryContentView: View {
         .playerSheet(isPresented: $showPlayer)
         .sheet(item: $editingBook) { BookInfoSheet(book: $0) }
         .sheet(isPresented: $showCollectionSheet) { AddToCollectionSheet(books: collectionBooks) }
-        .confirmationDialog("Delete from Library?", isPresented: $showDeleteConfirmation,
-                            titleVisibility: .visible) {
-            Button("Delete from Library", role: .destructive) {
-                library.deleteBooks(pendingDeletion)
-                pendingDeletion = []
-            }
-            Button("Cancel", role: .cancel) { pendingDeletion = [] }
-        } message: {
-            Text(pendingDeletion.count == 1
-                 ? "This removes “\(pendingDeletion.first?.title ?? "")” and its local file from Nodus Reader."
-                 : "This removes \(pendingDeletion.count) documents and their local files from Nodus Reader.")
-        }
     }
 
     private var header: some View {
@@ -215,8 +205,7 @@ struct PadLibraryContentView: View {
             },
             onEditInfo: { editingBook = book },
             onDelete: {
-                pendingDeletion = [book]
-                showDeleteConfirmation = true
+                deletingBook = book
             }
         )
     }
