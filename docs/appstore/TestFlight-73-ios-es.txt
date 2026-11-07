@@ -1,6 +1,10 @@
-Escribir y seleccionar texto, corregido.
+Escribir, seleccionar y reproducir, más fluido.
 
-- Los buscadores de los desplegables (filtros de voces, voz del libro, Voces y modelos, la lista de idiomas y la barra lateral del iPad) muestran cada letra al momento: se redibujaba toda la lista con cada tecla. Ahora la lista se filtra cuando haces una pausa al escribir.
-- Mantener pulsado y arrastrar para seleccionar texto funciona mientras suena la narración. Cada palabra leída volvía a cargar el texto de la página y cancelaba la selección; además, el texto ya no se desplaza mientras tienes el dedo encima o hay un pasaje seleccionado, y vuelve a seguir la lectura al soltarlo.
+- Los buscadores de los desplegables (filtros de voces, voz del libro, Voces y modelos, lista de idiomas, barra lateral del iPad) muestran cada letra al momento. La lista se filtra cuando haces una pausa al escribir.
+- Mantén pulsado y arrastra para seleccionar texto mientras suena la narración. La selección ya no se pierde, y el texto se queda quieto mientras tienes el dedo encima o hay un pasaje seleccionado. Vuelve a seguir la lectura al soltarlo.
+- El reproductor y los menús y paneles del lector ya no van a trompicones durante la narración.
+- Mientras suena, la posición de lectura se guarda cada 15 segundos (pausar o cerrar el libro siguen guardándola al momento).
+- Mientras se compone un paisaje sonoro con IA, tocar la pantalla da prioridad a la interfaz durante un momento.
 
-Incluye todo lo de las builds 71 y 72.
+Paisajes sonoros con IA (de la beta anterior)
+Ajustes › Paisajes sonoros: actívalos y elige IA, descarga Música y Ambientes en Modelos (unos 2,6 GB, con Wi‑Fi), pulsa reproducir en un libro y elige cuántas piezas componer primero. Powered by Stability AI; todo funciona en tu iPhone. Cuéntanos cómo suenan, tiempos de espera, calor y batería, y cualquier momento en que la voz se pause o la app se cierre.
