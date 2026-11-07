@@ -388,6 +388,20 @@ struct SoundscapeMoreOptionsView: View {
             }
             .buttonStyle(.plain)
             .panelCard(radius: 20)
+            Toggle(isOn: $preferences.askBeforeSession) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Offer music before a session").font(.subheadline.weight(.medium))
+                    Text("When you press play, compose the session's music first so the voice does not compete with it.")
+                        .font(.caption2)
+                        .foregroundStyle(palette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .tint(palette.accent)
+            .foregroundStyle(palette.text)
+            .padding(14)
+            .panelCard(radius: 16)
+            .accessibilityIdentifier("soundscapes.askBeforeSession")
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Text("Space for composed pieces")

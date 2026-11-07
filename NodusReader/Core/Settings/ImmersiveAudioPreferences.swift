@@ -24,6 +24,7 @@ final class ImmersiveAudioPreferences {
         static let defaultMusic = "nodus.immersive.defaultMusic"
         static let source = "nodus.immersive.source"
         static let generatedBudget = "nodus.immersive.generatedBudgetMB"
+        static let askBeforeSession = "nodus.immersive.askBeforeSession"
     }
 
     enum Ducking: String, CaseIterable, Identifiable, Sendable {
@@ -100,6 +101,10 @@ final class ImmersiveAudioPreferences {
     var generatedBudgetMB: Int {
         didSet { defaults.set(generatedBudgetMB, forKey: Key.generatedBudget) }
     }
+    /// AI soundscapes: offer to compose a session's music before the voice starts.
+    var askBeforeSession: Bool {
+        didSet { defaults.set(askBeforeSession, forKey: Key.askBeforeSession) }
+    }
     /// What plays in manual and study modes, and when analysis says nothing.
     var defaultAtmosphere: Atmosphere {
         didSet {
@@ -124,6 +129,7 @@ final class ImmersiveAudioPreferences {
         studyBlockMinutes = defaults.object(forKey: Key.studyBlock) as? Int ?? 45
         source = defaults.string(forKey: Key.source).flatMap(SoundscapeSource.init(rawValue:)) ?? .downloaded
         generatedBudgetMB = defaults.object(forKey: Key.generatedBudget) as? Int ?? 500
+        askBeforeSession = defaults.object(forKey: Key.askBeforeSession) as? Bool ?? true
         let base = defaults.string(forKey: Key.defaultBase).flatMap(BaseAmbience.init(rawValue:)) ?? .none
         let music = defaults.string(forKey: Key.defaultMusic).map { $0.isEmpty ? nil : MusicMood(rawValue: $0) }
         defaultAtmosphere = Atmosphere(base: base, music: music ?? .calm)

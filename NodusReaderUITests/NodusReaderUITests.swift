@@ -1405,6 +1405,35 @@ final class NodusReaderUITests: XCTestCase {
         snap("iPhone-Soundscapes-Reader")
     }
 
+    /// Pressing play with AI soundscapes offers to compose the session's music first:
+    /// progress shows, and the voice starts when the pieces are ready.
+    func testSoundscapesSessionOfferComposesThenStartsTheVoice() throws {
+        let app = launch(resetReadingState: true, immersive: true, extra: ["-NodusSoundscapeFixtureGenerator"])
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        try XCTSkipIf(app.windows.firstMatch.frame.width >= 700, "This test runs on iPhone")
+        tapTab("Settings", in: app)
+        let row = app.buttons["ImmersiveAudioSettingsRow"].firstMatch
+        if !row.waitForExistence(timeout: 10) { app.swipeUp() }
+        row.tap()
+        app.switches["immersive.enable"].firstMatch.tap()
+        app.buttons["AI"].firstMatch.tap()
+        let notNow = app.buttons["soundscapes.notNow"].firstMatch
+        if notNow.waitForExistence(timeout: 5) { notNow.tap() }
+        tapTab("Home", in: app)
+        app.buttons["Read"].firstMatch.tap()
+        let play = app.buttons["Play narration"].firstMatch
+        XCTAssertTrue(play.waitForExistence(timeout: 20))
+        play.tap()
+        let compose = app.buttons["soundscapes.session.compose"].firstMatch
+        XCTAssertTrue(compose.waitForExistence(timeout: 10), "Play should offer the session's music")
+        snap("iPhone-Soundscapes-SessionOffer")
+        compose.tap()
+        XCTAssertTrue(app.buttons["Pause narration"].firstMatch.waitForExistence(timeout: 60),
+                      "The voice should start once the session's pieces are composed")
+        // The sheet closes (its dismissal animation may still be running).
+        XCTAssertTrue(compose.waitForNonExistence(timeout: 5))
+    }
+
     func testImmersiveAudioManualWithoutAppleIntelligence() throws {
         let app = launch(resetReadingState: true, immersive: true, extra: ["-NodusImmersiveForceNoAppleIntelligence"])
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))

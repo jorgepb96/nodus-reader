@@ -1168,6 +1168,25 @@ func htmlTextStripsMarkupAndDecodesEntities() {
     #expect(HTMLText.firstHeading(from: Data(html.utf8)) == "Heading")
 }
 
+/// Project Gutenberg's EPUB3 header has an empty `<pre/>`: it must not make the rest
+/// of the book preformatted (every wrapped source line became a line break, and
+/// narration paused at each one).
+@Test
+func htmlTextIgnoresSelfClosingPre() {
+    let html = """
+    <body><header><pre/></header><p>
+          La heroica ciudad dormía la siesta. El viento Sur, caliente y
+          perezoso, empujaba las nubes.
+        </p><pre>a
+    b</pre><p>wrapped
+    again</p></body>
+    """
+    let text = HTMLText.convert(html).text
+    #expect(text.contains("caliente y perezoso, empujaba"))
+    #expect(text.contains("a\nb"))
+    #expect(text.contains("wrapped again"))
+}
+
 @Test
 func htmlTextJoinsWrappedLinesAndSkipsMarkers() {
     // Project Gutenberg wraps every source line; inline tags, footnote calls

@@ -256,5 +256,35 @@ struct GenerationWorkerTests {
         #expect(sleeps.all.contains(GenerationWorker.requestedPause))
         #expect(!sleeps.all.contains(GenerationWorker.pause(for: .nominal)))
     }
+
+    /// The planner replaces the queue every few seconds: the minute of waiting for scene
+    /// analysis must still run out, or a long book never gets a second piece.
+    @Test @MainActor func analysisCapSurvivesReplans() async {
+        var busy = calm
+        busy.analysisRunning = true
+        final class Box: @unchecked Sendable { var worker: GenerationWorker?; var plans = 0 }
+        let box = Box()
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("worker-\(UUID())", isDirectory: true)
+        let events = Events()
+        let worker = GenerationWorker(generator: FixtureGenerator(), library: GeneratedLibrary(root: root),
+                                      admission: { busy },
+                                      sleep: { seconds in
+                                          // Each admission retry, a new plan puts another piece first.
+                                          if seconds == GenerationWorker.admissionRetry, let worker = box.worker {
+                                              // Plans are seeded afresh: the same moods, other prompts.
+                                              box.plans += 1
+                                              var first = job(.tense)
+                                              first.prompt.id = "plan\(box.plans)"
+                                              await worker.replace(with: [first, job(.calm)])
+                                          }
+                                      },
+                                      defaults: UserDefaults(suiteName: "worker.\(UUID())")!,
+                                      onEvent: { events.append($0) })
+        box.worker = worker
+        await worker.enqueue([job(.tense), job(.calm)])
+        await events.wait(timeout: 10) { finished($0) >= 1 }
+        #expect(finished(events.all) >= 1)
+        await worker.cancelAll()
+    }
 }
 

@@ -31,6 +31,7 @@ struct ReaderView: View {
     private let onClose: () -> Void
 
     @State private var content: ReaderContent = .loading
+    @State private var showSessionSheet = false
     @State private var pdfPageIndex: Int
     @State private var pdfPageCount = 0
     @State private var pdfJumpPage: Int?
@@ -266,6 +267,9 @@ struct ReaderView: View {
             updateStoryPosition()
             updateImmersivePosition()
             scheduleProgressSave()
+        }
+        .sheet(isPresented: $showSessionSheet) {
+            SoundscapeSessionSheet(onStart: performReaderNarrationToggle)
         }
         .sheet(isPresented: $showContents) {
             ReaderNavigationSheet(
@@ -758,6 +762,16 @@ struct ReaderView: View {
     }
 
     private func toggleReaderNarration() {
+        // Starting a session with AI soundscapes: offer to compose its music first.
+        if !(playback.activeBook?.id == book.id && playback.isPlaying), immersive.offersSessionPreparation {
+            immersive.markSessionOffered()
+            showSessionSheet = true
+            return
+        }
+        performReaderNarrationToggle()
+    }
+
+    private func performReaderNarrationToggle() {
         if playback.activeBook?.id == book.id, playback.isPlaying {
             playback.pause()
         } else if playback.activeBook?.id == book.id,

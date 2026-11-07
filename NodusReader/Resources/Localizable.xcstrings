@@ -2443,6 +2443,28 @@
         }
       }
     },
+    "Compose and start": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Componer y empezar"
+          }
+        }
+      }
+    },
+    "Compose the music and ambience for this book before the voice starts. It takes about a minute on this device, and the voice waits so the two do not compete.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compón la música y el ambiente de este libro antes de que empiece la voz. Tarda alrededor de un minuto en este dispositivo, y la voz espera para que no compitan."
+          }
+        }
+      }
+    },
     "Composed on this device for each book, a few pieces at a time, and kept to play again offline.": {
       "localizations": {
         "es": {
@@ -2470,6 +2492,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Componiendo %@…"
+          }
+        }
+      }
+    },
+    "Composing %lld of %lld…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Componiendo %lld de %lld…"
           }
         }
       }
@@ -3180,6 +3213,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "¿Necesito una cuenta?"
+          }
+        }
+      }
+    },
+    "Don't ask again": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No volver a preguntar"
           }
         }
       }
@@ -5687,6 +5731,17 @@
         }
       }
     },
+    "Music for this session": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Música para esta sesión"
+          }
+        }
+      }
+    },
     "Music intensity": {
       "localizations": {
         "es": {
@@ -6773,6 +6828,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ofrecer un resumen tras un descanso"
+          }
+        }
+      }
+    },
+    "Offer music before a session": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ofrecer música antes de una sesión"
           }
         }
       }
@@ -9719,6 +9785,28 @@
         }
       }
     },
+    "Start now": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar ya"
+          }
+        }
+      }
+    },
+    "Start without waiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar sin esperar"
+          }
+        }
+      }
+    },
     "Start: %@ s": {
       "localizations": {
         "es": {
@@ -11509,6 +11597,17 @@
         }
       }
     },
+    "When you press play, compose the session's music first so the voice does not compete with it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al pulsar reproducir, compone primero la música de la sesión para que la voz no compita con ella."
+          }
+        }
+      }
+    },
     "Where you left off": {
       "localizations": {
         "es": {
@@ -11665,6 +11764,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Puedes activar la sincronización cuando quieras. Al hacerlo, nunca se eliminan los datos locales."
+          }
+        }
+      }
+    },
+    "You can turn this back on in Settings › Soundscapes › More options.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puedes volver a activarlo en Ajustes › Paisajes sonoros › Más opciones."
           }
         }
       }

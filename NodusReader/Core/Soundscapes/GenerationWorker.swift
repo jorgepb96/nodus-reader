@@ -73,6 +73,10 @@ actor GenerationWorker {
     private var inFlight: GenerationJob?
     /// After a memory warning, the next piece uses the short recipe.
     private var shortNext = false
+    /// Admission retries spent waiting for scene analysis since the last piece started.
+    /// Kept across plans: the planner replaces the queue every few seconds, and a
+    /// counter per admission never reached its cap on a long book.
+    private var analysisWaits = 0
     private var started: [Date] = []
     private var consecutiveFailures = 0
     private(set) var isPaused = false
@@ -185,6 +189,7 @@ actor GenerationWorker {
                 guard let current = queue.first, current.key == job.key else { continue }
                 queue.removeFirst()
                 shortNext = false
+                analysisWaits = 0
                 inFlight = current
                 await generate(current, recipe: recipe)
                 if loopID == id { inFlight = nil }
@@ -200,7 +205,6 @@ actor GenerationWorker {
 
     /// Waits until the device admits a piece; returns the recipe to use.
     private func admit(_ job: GenerationJob) async throws -> GenerationRecipe {
-        var analysisWaits = 0
         while true {
             try Task.checkCancellation()
             let wanted = forceShort || shortNext ? GenerationRecipe.short(for: job.recipe.layer) : job.recipe

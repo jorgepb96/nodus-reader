@@ -359,6 +359,55 @@ final class ImmersiveAudioController {
             || (aiSource && bookID != nil && Self.usesFixtureGenerator)
     }
 
+    /// Books offered a session's music in this run of the app (once each).
+    @ObservationIgnored private var sessionOffered: Set<UUID> = []
+
+    /// Whether pressing play should first offer to compose this session's music: AI
+    /// source with a model, the reader has not turned the question off, it was not
+    /// asked for this book in this run, and few pieces fit the book's style yet.
+    var offersSessionPreparation: Bool {
+        guard preferences.isEnabled, preferences.askBeforeSession, canPrepareSoundscapes,
+              let bookID, !sessionOffered.contains(bookID), !isPreparingPack else { return false }
+        let fitting = generated.pieces.filter { $0.layer == .music && ($0.style == bookStyle || $0.style == .neutral) }
+        return fitting.count < 3
+    }
+
+    func markSessionOffered() {
+        if let bookID { sessionOffered.insert(bookID) }
+    }
+
+    /// A small pack for the session about to start (the scene's music, one more mood and
+    /// an ambience), quick recipes, with visible progress. The voice waits for it.
+    func prepareSession() {
+        markSessionOffered()
+        guard canPrepareSoundscapes, let prompts, let worker = ensureWorker() else { return }
+        let music = soundscapeModels.isInstalled(.music) || Self.usesFixtureGenerator
+        let ambience = soundscapeModels.isInstalled(.sfx) || Self.usesFixtureGenerator
+        let current = director.current ?? preferences.defaultAtmosphere
+        var moods = [current.music ?? .calm]
+        if let other = SoundscapePlanner.defaultMoods(bookStyle).first(where: { $0 != moods[0] }) { moods.append(other) }
+        let bed = current.base != .none ? current.base : SoundscapePlanner.defaultBeds(bookStyle).first
+        let seed = UInt64.random(in: 1 ... UInt64.max / 2)
+        var jobs: [GenerationJob] = []
+        if music {
+            for (index, mood) in moods.enumerated() {
+                if let job = SoundscapePlanner.job(layer: .music, mood: mood, bed: nil, style: bookStyle, bookID: bookID,
+                                                   library: prompts, seed: seed &+ UInt64(index), priority: 20,
+                                                   studyOnly: preferences.mode == .study) { jobs.append(job) }
+            }
+        }
+        if ambience, let bed, preferences.ambienceEnabled,
+           let job = SoundscapePlanner.job(layer: .ambience, mood: nil, bed: bed, style: bookStyle, bookID: bookID,
+                                           library: prompts, seed: seed &+ 7, priority: 20,
+                                           studyOnly: preferences.mode == .study) { jobs.append(job) }
+        guard !jobs.isEmpty else { return }
+        isPreparingPack = true
+        packTotal = jobs.count
+        packDone = 0
+        generation = .preparing(done: 0, total: jobs.count)
+        Task { await worker.enqueue(jobs) }
+    }
+
     /// The optional per-book pack, generated now with visible progress.
     func prepareSoundscapes() {
         guard canPrepareSoundscapes, let prompts, let worker = ensureWorker() else { return }
