@@ -1424,14 +1424,42 @@ final class NodusReaderUITests: XCTestCase {
         let play = app.buttons["Play narration"].firstMatch
         XCTAssertTrue(play.waitForExistence(timeout: 20))
         play.tap()
-        let compose = app.buttons["soundscapes.session.compose"].firstMatch
+        let compose = app.buttons["soundscapes.session.compose3"].firstMatch
         XCTAssertTrue(compose.waitForExistence(timeout: 10), "Play should offer the session's music")
+        XCTAssertTrue(app.buttons["soundscapes.session.compose1"].exists && app.buttons["soundscapes.session.compose6"].exists)
         snap("iPhone-Soundscapes-SessionOffer")
         compose.tap()
         XCTAssertTrue(app.buttons["Pause narration"].firstMatch.waitForExistence(timeout: 60),
                       "The voice should start once the session's pieces are composed")
         // The sheet closes (its dismissal animation may still be running).
         XCTAssertTrue(compose.waitForNonExistence(timeout: 5))
+    }
+
+    /// Listening from Home asks too; "Don't ask for this book" stops it for that book,
+    /// and the atmosphere panel turns it back on.
+    func testSoundscapesSessionOfferFromHomeAndPerBookChoice() throws {
+        let app = launch(resetReadingState: true, immersive: true, extra: ["-NodusSoundscapeFixtureGenerator"])
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        try XCTSkipIf(app.windows.firstMatch.frame.width >= 700, "This test runs on iPhone")
+        tapTab("Settings", in: app)
+        let row = app.buttons["ImmersiveAudioSettingsRow"].firstMatch
+        if !row.waitForExistence(timeout: 10) { app.swipeUp() }
+        row.tap()
+        app.switches["immersive.enable"].firstMatch.tap()
+        app.buttons["AI"].firstMatch.tap()
+        let notNow = app.buttons["soundscapes.notNow"].firstMatch
+        if notNow.waitForExistence(timeout: 5) { notNow.tap() }
+        tapTab("Home", in: app)
+        app.buttons["Listen"].firstMatch.tap()
+        let one = app.buttons["soundscapes.session.compose1"].firstMatch
+        XCTAssertTrue(one.waitForExistence(timeout: 10), "Listen from Home should offer the session's music")
+        let dontAskBook = app.switches["soundscapes.session.dontAskBook"].firstMatch
+        XCTAssertTrue(dontAskBook.exists)
+        dontAskBook.tap()
+        XCTAssertEqual(dontAskBook.value as? String, "1")
+        one.tap()
+        XCTAssertTrue(app.buttons["Pause narration"].firstMatch.waitForExistence(timeout: 60),
+                      "The voice should start after the piece is composed")
     }
 
     func testImmersiveAudioManualWithoutAppleIntelligence() throws {

@@ -75,6 +75,16 @@ struct ImmersiveQuickControls: View {
                 }
                 if preferences.source == .ai {
                     aiRow
+                    if preferences.askBeforeSession {
+                        // Turns the session's music offer back on (or off) for this book.
+                        Toggle("Offer music when listening starts", isOn: Binding(
+                            get: { immersive.asksSessionForCurrentBook },
+                            set: { immersive.asksSessionForCurrentBook = $0 }))
+                            .font(.footnote)
+                            .foregroundStyle(palette.text)
+                            .tint(palette.accent)
+                            .accessibilityIdentifier("soundscapes.askForBook")
+                    }
                 }
                 LabeledSlider("Music", value: $preferences.musicVolume,
                               display: percent(preferences.musicVolume), systemImage: "music.note")

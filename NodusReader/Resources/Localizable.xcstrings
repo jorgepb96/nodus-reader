@@ -672,6 +672,17 @@
         }
       }
     },
+    "1 piece": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 pieza"
+          }
+        }
+      }
+    },
     "1 result": {
       "localizations": {
         "es": {
@@ -722,6 +733,17 @@
         }
       }
     },
+    "3 pieces": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 piezas"
+          }
+        }
+      }
+    },
     "30 minutes": {
       "localizations": {
         "es": {
@@ -768,6 +790,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "500 MB"
+          }
+        }
+      }
+    },
+    "6 pieces": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6 piezas"
           }
         }
       }
@@ -2443,24 +2476,13 @@
         }
       }
     },
-    "Compose and start": {
+    "Compose music and ambience for this book before the voice starts, so the two do not compete. More pieces are composed later, while you listen, when the story needs them.": {
       "extractionState": "manual",
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Componer y empezar"
-          }
-        }
-      }
-    },
-    "Compose the music and ambience for this book before the voice starts. It takes about a minute on this device, and the voice waits so the two do not compete.": {
-      "extractionState": "manual",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Compón la música y el ambiente de este libro antes de que empiece la voz. Tarda alrededor de un minuto en este dispositivo, y la voz espera para que no compitan."
+            "value": "Compón música y ambiente para este libro antes de que empiece la voz, para que no compitan. Más adelante, mientras escuchas, se componen más piezas cuando la historia las necesite."
           }
         }
       }
@@ -3224,6 +3246,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No volver a preguntar"
+          }
+        }
+      }
+    },
+    "Don't ask for this book": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No preguntar en este libro"
           }
         }
       }
@@ -5671,6 +5704,17 @@
         }
       }
     },
+    "More variety from the start": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más variedad desde el principio"
+          }
+        }
+      }
+    },
     "Move to": {
       "localizations": {
         "es": {
@@ -6839,6 +6883,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ofrecer música antes de una sesión"
+          }
+        }
+      }
+    },
+    "Offer music when listening starts": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ofrecer música al empezar a escuchar"
           }
         }
       }
@@ -8335,6 +8390,17 @@
         }
       }
     },
+    "Recommended: music and an ambience": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recomendado: música y un ambiente"
+          }
+        }
+      }
+    },
     "Record": {
       "localizations": {
         "es": {
@@ -9817,6 +9883,17 @@
         }
       }
     },
+    "Starts soonest": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empieza antes"
+          }
+        }
+      }
+    },
     "Status": {
       "localizations": {
         "es": {
@@ -11087,6 +11164,17 @@
         }
       }
     },
+    "Turn it back on in this book's atmosphere panel, or for every book in Settings › Soundscapes › More options.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuelve a activarlo en el panel de atmósfera de este libro, o para todos los libros en Ajustes › Paisajes sonoros › Más opciones."
+          }
+        }
+      }
+    },
     "Turn on Apple Intelligence in Settings to let the atmosphere follow the story. Manual and Study modes work meanwhile.": {
       "localizations": {
         "es": {
@@ -11764,17 +11852,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Puedes activar la sincronización cuando quieras. Al hacerlo, nunca se eliminan los datos locales."
-          }
-        }
-      }
-    },
-    "You can turn this back on in Settings › Soundscapes › More options.": {
-      "extractionState": "manual",
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Puedes volver a activarlo en Ajustes › Paisajes sonoros › Más opciones."
           }
         }
       }

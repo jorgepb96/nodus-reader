@@ -2,6 +2,7 @@
 import AVFoundation
 import Foundation
 import Observation
+import StableAudioMLX
 #if os(iOS)
 import os
 #endif
@@ -202,7 +203,7 @@ final class ImmersiveAudioController {
     /// or when the user explicitly starts narrating the other book.
     private func synchronizeBook() {
         let narrationBook = playback.mode != .read ? playback.activeBook : nil
-        let target = narrationBook ?? openReader?.book
+        let target = narrationBook ?? openReader?.book ?? sessionBook
         guard let target else {
             if policy.readerOpen { apply(policy.handle(.readerClosed)) }
             return
@@ -362,50 +363,92 @@ final class ImmersiveAudioController {
     /// Books offered a session's music in this run of the app (once each).
     @ObservationIgnored private var sessionOffered: Set<UUID> = []
 
-    /// Whether pressing play should first offer to compose this session's music: AI
-    /// source with a model, the reader has not turned the question off, it was not
-    /// asked for this book in this run, and few pieces fit the book's style yet.
-    var offersSessionPreparation: Bool {
-        guard preferences.isEnabled, preferences.askBeforeSession, canPrepareSoundscapes,
-              let bookID, !sessionOffered.contains(bookID), !isPreparingPack else { return false }
-        let fitting = generated.pieces.filter { $0.layer == .music && ($0.style == bookStyle || $0.style == .neutral) }
-        return fitting.count < 3
+    /// The book about to be listened to while its session's music is composed (the
+    /// narration has not started yet, and the reader may not be open).
+    @ObservationIgnored private var sessionBook: Book?
+
+    /// Whether starting to listen to `book` should first offer to compose the session's
+    /// music: AI source with a model, the question not turned off, and not asked for
+    /// this book yet in this run of the app.
+    func offersSession(for book: Book) -> Bool {
+        guard preferences.isEnabled, preferences.askBeforeSession, aiSource, prompts != nil,
+              asksSession(for: book), !sessionOffered.contains(book.id), !isPreparingPack else { return false }
+        return (soundscapeModels.anyInstalled && SoundscapeModels.isSupported) || Self.usesFixtureGenerator
     }
 
-    func markSessionOffered() {
-        if let bookID { sessionOffered.insert(bookID) }
+    /// The per-book choice (Don't ask for this book), on by default.
+    func asksSession(for book: Book) -> Bool {
+        _ = asksSessionRevision // observed, so switches follow a change
+        let stored = book.id == bookID ? Optional(bookPreferences) : store.loadPreferences(bookID: book.id)
+        return stored?.skipsSessionOffer != true
     }
 
-    /// A small pack for the session about to start (the scene's music, one more mood and
-    /// an ambience), quick recipes, with visible progress. The voice waits for it.
-    func prepareSession() {
-        markSessionOffered()
+    func setAsksSession(_ ask: Bool, for book: Book) {
+        var stored = (book.id == bookID ? Optional(bookPreferences) : store.loadPreferences(bookID: book.id))
+            ?? ImmersiveBookPreferences()
+        stored.skipsSessionOffer = ask ? nil : true
+        if book.id == bookID { bookPreferences = stored }
+        store.savePreferences(stored, bookID: book.id)
+        asksSessionRevision += 1
+    }
+
+    /// For the atmosphere panel's switch: the book open now.
+    var asksSessionForCurrentBook: Bool {
+        get { book.map(asksSession(for:)) ?? true }
+        set { if let book { setAsksSession(newValue, for: book) } }
+    }
+    private var asksSessionRevision = 0
+
+    func markSessionOffered(_ book: Book) {
+        sessionOffered.insert(book.id)
+    }
+
+    /// The reader is scrolling or turning pages: composing yields the GPU for a moment.
+    func readerInteracted() {
+        guard aiSource, worker != nil else { return }
+        SA3Engine.yield.hold(for: 4)
+    }
+
+    /// Composes `count` pieces for the session about to start (the scene's music first,
+    /// then other moods and an ambience), quick recipes, with visible progress; the voice
+    /// waits for them. Later pieces are composed ahead as the story needs them.
+    func prepareSession(for book: Book, count: Int) {
+        markSessionOffered(book)
+        sessionBook = book
+        synchronizeBook()
         guard canPrepareSoundscapes, let prompts, let worker = ensureWorker() else { return }
         let music = soundscapeModels.isInstalled(.music) || Self.usesFixtureGenerator
-        let ambience = soundscapeModels.isInstalled(.sfx) || Self.usesFixtureGenerator
+        let ambience = (soundscapeModels.isInstalled(.sfx) || Self.usesFixtureGenerator) && preferences.ambienceEnabled
         let current = director.current ?? preferences.defaultAtmosphere
         var moods = [current.music ?? .calm]
-        if let other = SoundscapePlanner.defaultMoods(bookStyle).first(where: { $0 != moods[0] }) { moods.append(other) }
-        let bed = current.base != .none ? current.base : SoundscapePlanner.defaultBeds(bookStyle).first
+        for mood in SoundscapePlanner.defaultMoods(bookStyle) where !moods.contains(mood) { moods.append(mood) }
+        var beds: [BaseAmbience] = current.base != .none ? [current.base] : []
+        for bed in SoundscapePlanner.defaultBeds(bookStyle) where !beds.contains(bed) { beds.append(bed) }
+        let bedCount = ambience ? (count >= 6 ? 2 : count >= 3 ? 1 : 0) : 0
+        let musicCount = music ? max(0, count - bedCount) : 0
         let seed = UInt64.random(in: 1 ... UInt64.max / 2)
         var jobs: [GenerationJob] = []
-        if music {
-            for (index, mood) in moods.enumerated() {
-                if let job = SoundscapePlanner.job(layer: .music, mood: mood, bed: nil, style: bookStyle, bookID: bookID,
-                                                   library: prompts, seed: seed &+ UInt64(index), priority: 20,
-                                                   studyOnly: preferences.mode == .study) { jobs.append(job) }
-            }
+        for (index, mood) in moods.prefix(musicCount).enumerated() {
+            if let job = SoundscapePlanner.job(layer: .music, mood: mood, bed: nil, style: bookStyle, bookID: bookID,
+                                               library: prompts, seed: seed &+ UInt64(index), priority: 20,
+                                               studyOnly: preferences.mode == .study) { jobs.append(job) }
         }
-        if ambience, let bed, preferences.ambienceEnabled,
-           let job = SoundscapePlanner.job(layer: .ambience, mood: nil, bed: bed, style: bookStyle, bookID: bookID,
-                                           library: prompts, seed: seed &+ 7, priority: 20,
-                                           studyOnly: preferences.mode == .study) { jobs.append(job) }
+        for (index, bed) in beds.prefix(musicCount == 0 ? count : bedCount).enumerated() where ambience {
+            if let job = SoundscapePlanner.job(layer: .ambience, mood: nil, bed: bed, style: bookStyle, bookID: bookID,
+                                               library: prompts, seed: seed &+ 100 &+ UInt64(index), priority: 20,
+                                               studyOnly: preferences.mode == .study) { jobs.append(job) }
+        }
         guard !jobs.isEmpty else { return }
         isPreparingPack = true
         packTotal = jobs.count
         packDone = 0
         generation = .preparing(done: 0, total: jobs.count)
         Task { await worker.enqueue(jobs) }
+    }
+
+    /// The session's music is ready or the reader started without it.
+    func sessionStarted() {
+        sessionBook = nil
     }
 
     /// The optional per-book pack, generated now with visible progress.

@@ -16,6 +16,7 @@ struct PlayerView: View {
     @State private var macContentHeight: CGFloat = 540
     @State private var macHeaderHeight: CGFloat = 68
     @State private var showVoicePicker = false
+    @State private var showSessionSheet = false
     @State private var lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
     @State private var showPronunciations = false
     @State private var showAudioJobs = false
@@ -90,6 +91,11 @@ struct PlayerView: View {
             if let book = playback.activeBook { PronunciationView(book: book) }
         }
         .sheet(isPresented: $showAudioJobs) { OfflineNarrationView().nodusPalette(palette) }
+        .sheet(isPresented: $showSessionSheet) {
+            if let book = playback.activeBook {
+                SoundscapeSessionSheet(book: book, onStart: { playback.toggle() })
+            }
+        }
         .sheet(isPresented: $showVoicePicker) {
             VoicePickerSheet()
                 .nodusPalette(palette)
@@ -455,7 +461,13 @@ struct PlayerView: View {
             transportButton("gobackward", label: "Previous sentence") { playback.previousSentence() }
                 .frame(maxWidth: .infinity)
             Button {
-                playback.toggle()
+                // Starting a session with AI soundscapes: offer to compose its music first.
+                if !playback.isPlaying, let book = playback.activeBook, immersive.offersSession(for: book) {
+                    immersive.markSessionOffered(book)
+                    showSessionSheet = true
+                } else {
+                    playback.toggle()
+                }
             } label: {
                 Image(systemName: playback.playbackActionSymbol)
                     .font(.system(size: 27, weight: .semibold))

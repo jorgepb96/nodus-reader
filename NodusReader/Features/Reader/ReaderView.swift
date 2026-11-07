@@ -269,7 +269,7 @@ struct ReaderView: View {
             scheduleProgressSave()
         }
         .sheet(isPresented: $showSessionSheet) {
-            SoundscapeSessionSheet(onStart: performReaderNarrationToggle)
+            SoundscapeSessionSheet(book: book, onStart: performReaderNarrationToggle)
         }
         .sheet(isPresented: $showContents) {
             ReaderNavigationSheet(
@@ -519,6 +519,8 @@ struct ReaderView: View {
     }
 
     private func suspendNarrationFollow() {
+        // Scrolling by hand: an AI soundscape being composed yields the GPU for a moment.
+        immersive.readerInteracted()
         if narrationActive && (playback.mode == .readAndListen || typography.autoScrollNarration) {
             followState.suspend()
         } else {
@@ -763,8 +765,8 @@ struct ReaderView: View {
 
     private func toggleReaderNarration() {
         // Starting a session with AI soundscapes: offer to compose its music first.
-        if !(playback.activeBook?.id == book.id && playback.isPlaying), immersive.offersSessionPreparation {
-            immersive.markSessionOffered()
+        if !(playback.activeBook?.id == book.id && playback.isPlaying), immersive.offersSession(for: book) {
+            immersive.markSessionOffered(book)
             showSessionSheet = true
             return
         }

@@ -10,6 +10,8 @@ struct ImmersiveBookPreferences: Codable, Equatable, Sendable {
     var locked = false
     /// The soundscape style chosen for this book; nil follows the detected one.
     var styleOverride: SoundscapeStyle? = nil
+    /// True: never offer to compose a session's music before listening to this book.
+    var skipsSessionOffer: Bool? = nil
 }
 
 /// Immersive Audio's derived data, per book, in `Immersive/`: scene maps

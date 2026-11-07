@@ -126,6 +126,21 @@ public actor SA3Engine {
         t5 != nil || decoder != nil || encoder != nil || !ditWeights.isEmpty
     }
 
+    /// Lets the interface take the GPU back: while the reader scrolls, generation waits
+    /// between diffusion steps (a step is a fraction of a second), so scrolling stays
+    /// smooth and the piece continues where it was.
+    public final class GPUYield: @unchecked Sendable {
+        private let lock = NSLock()
+        private var until = Date.distantPast
+        public init() {}
+        /// Holds generation for `seconds` from now (extended by each call).
+        public func hold(for seconds: TimeInterval) {
+            lock.withLock { until = max(until, Date().addingTimeInterval(seconds)) }
+        }
+        var isHeld: Bool { lock.withLock { Date() < until } }
+    }
+    public static let yield = GPUYield()
+
     /// MLX errors raised during the current generation (a GPU fault, work refused in
     /// the background, an allocation failure): checked between steps.
     private var mlxErrors: ErrorBox?
@@ -319,6 +334,12 @@ public actor SA3Engine {
 
     private func checkCancellation() throws {
         try mlxErrors?.check()
+        // Give way to the interface, at most a few seconds per step.
+        var waited = 0
+        while Self.yield.isHeld, waited < 60, !Task.isCancelled {
+            Thread.sleep(forTimeInterval: 0.05)
+            waited += 1
+        }
         if Task.isCancelled { throw EngineError.cancelled }
     }
 
