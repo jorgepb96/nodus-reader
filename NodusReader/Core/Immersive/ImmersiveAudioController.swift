@@ -431,8 +431,9 @@ final class ImmersiveAudioController {
         }
     }
 
-    /// The reader is scrolling or turning pages: composing yields the GPU for a moment.
-    func readerInteracted() {
+    /// The reader is touching the screen (scrolling, a menu, a sheet): composing
+    /// yields the GPU for a moment so the interface stays smooth.
+    func userInteracted() {
         guard aiSource, worker != nil else { return }
         SA3Engine.yield.hold(for: 4)
     }

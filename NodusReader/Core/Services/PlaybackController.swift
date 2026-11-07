@@ -127,6 +127,7 @@ public final class PlaybackController {
     @ObservationIgnored private var neuralPlaybackToken = UUID()
     @ObservationIgnored private var neuralPaused = false
     @ObservationIgnored private var loadToken = UUID()
+    @ObservationIgnored private var progressSaves = ProgressSaveThrottle()
     @ObservationIgnored private var restartOnResume = false
     @ObservationIgnored private var restartVoiceOnResume = false
     @ObservationIgnored private var readerResumePosition: (bookID: UUID, chapterIndex: Int, offset: Int)?
@@ -1850,6 +1851,11 @@ public final class PlaybackController {
         guard let book = activeBook, sentences.indices.contains(currentIndex),
               !narrationFinished else { return }
         let deferSync = !immediate && isPlaying
+        // Every saved position redraws what shows the book (Home behind the
+        // reader, and with it the reader and its sheets): while playing, the
+        // position is written every few sentences. Pauses, closing and leaving
+        // the app still save at once.
+        guard progressSaves.shouldSave(playing: deferSync, now: Date()) else { return }
         let sentence = sentences[currentIndex]
         let pageOrChapter = book.format == .pdf && chapters.indices.contains(chapterIndex)
             ? chapters[chapterIndex].id : chapterIndex
@@ -2077,3 +2083,20 @@ private final class BackgroundTimeRequest {
     }
 }
 #endif
+
+/// Spaces out the position saves made while narration plays; any other save
+/// (a pause, a stop, leaving the app) goes through at once.
+struct ProgressSaveThrottle {
+    static let playingInterval: TimeInterval = 15
+    private var lastPlayingSave: Date?
+
+    mutating func shouldSave(playing: Bool, now: Date) -> Bool {
+        guard playing else {
+            lastPlayingSave = nil
+            return true
+        }
+        if let last = lastPlayingSave, now.timeIntervalSince(last) < Self.playingInterval { return false }
+        lastPlayingSave = now
+        return true
+    }
+}

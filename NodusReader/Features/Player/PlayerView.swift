@@ -36,7 +36,7 @@ struct PlayerView: View {
                 #else
                 VStack(spacing: 0) {
                     coverAndText
-                    scrubber
+                    ObservationScope { scrubber }
                     transport
                     if playback.isLoading {
                         Text(loadingText)
@@ -175,7 +175,7 @@ struct PlayerView: View {
     private var macPlaybackControls: some View {
         VStack(spacing: 0) {
             coverAndText
-            scrubber
+            ObservationScope { scrubber }
             transport
             if playback.isLoading {
                 Text(loadingText)
@@ -372,7 +372,7 @@ struct PlayerView: View {
                 .lineLimit(2)
             Text("\(playback.activeBook?.displayAuthor ?? "") · \(playback.chapterTitle)")
                 .font(.caption).foregroundStyle(palette.muted).lineLimit(1)
-            if compactPlayer { contextText.padding(.top, 4) }
+            if compactPlayer { ObservationScope { contextText }.padding(.top, 4) }
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
@@ -385,7 +385,7 @@ struct PlayerView: View {
             } else {
                 cover
                 bookIdentity
-                contextText
+                ObservationScope { contextText }
             }
         }
     }
@@ -593,7 +593,8 @@ struct PlayerView: View {
         // which changes on every narrated word and re-rendered the whole player
         // at audio-frame rate, making these tiles ignore taps while playing.
         // The action reads the current offset itself when the tile is tapped.
-        .disabled(playback.currentSentence.isEmpty)
+        // The sentence count changes with the chapter, not with every sentence.
+        .disabled(playback.sentenceCount == 0)
         .accessibilityLabel("Return to narration")
         .accessibilityIdentifier("PlayerReturnToNarration")
     }

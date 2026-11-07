@@ -122,6 +122,9 @@ struct NodusReaderApp: App {
                 .environment(models)
                 .environment(janitor)
                 .modelContainer(container)
+                #if os(iOS)
+                .task { [immersive] in TouchActivity.start { immersive.userInteracted() } }
+                #endif
                 #if NODUS_SOUNDSCAPE_LAB
                 .task {
                     SoundscapeLab.shared.playback = playback

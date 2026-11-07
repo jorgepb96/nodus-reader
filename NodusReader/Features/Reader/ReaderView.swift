@@ -340,6 +340,10 @@ struct ReaderView: View {
         case .loading:
             loadingView(theme)
         case .chapters(let chapters):
+            // The spoken word changes several times a second: only the pages
+            // read it, so the reader's sheets, player and menus are not rebuilt
+            // with every word.
+            NarrationRangeReader(active: narrationActive) { narrationChapter, narrationSentence, narrationWord in
             PaginatedReaderContent(
                 book: book,
                 chapters: chapters,
@@ -350,9 +354,9 @@ struct ReaderView: View {
                 initialChapterIndex: max(book.locator.chapterIndex, 0),
                 initialFraction: min(max(book.locator.scrollFraction, 0), 1),
                 annotations: book.annotations,
-                narrationChapterIndex: narrationActive ? playback.chapterIndex : nil,
-                narrationSentenceRange: narrationActive ? playback.currentSentenceChapterRange : nil,
-                narrationWordRange: narrationActive ? playback.currentWordChapterRange : nil,
+                narrationChapterIndex: narrationChapter,
+                narrationSentenceRange: narrationSentence,
+                narrationWordRange: narrationWord,
                 searchRanges: search.isPresented ? search.rangesByChapter : [:],
                 currentSearchMatch: search.isPresented ? search.currentMatch : nil,
                 columns: paginationColumns,
@@ -374,6 +378,7 @@ struct ReaderView: View {
                 pageStep: $pageStep,
                 readerPages: $readerPages
             )
+            }
         case .pdf(let url):
             PDFReaderContainer(
                 book: book,
@@ -521,7 +526,7 @@ struct ReaderView: View {
 
     private func suspendNarrationFollow() {
         // Scrolling by hand: an AI soundscape being composed yields the GPU for a moment.
-        immersive.readerInteracted()
+        immersive.userInteracted()
         if narrationActive && (playback.mode == .readAndListen || typography.autoScrollNarration) {
             followState.suspend()
         } else {
@@ -1210,7 +1215,9 @@ struct ReaderNarrationCapsule: View {
             playerSummary
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
 
-            transportControls
+            // Previous/next depend on the sentence: they update on their own,
+            // without rebuilding the sleep-timer menu beside them.
+            ObservationScope { transportControls }
                 .fixedSize(horizontal: true, vertical: false)
 
             HStack(spacing: 0) {
@@ -1528,3 +1535,17 @@ private struct MacReaderKeyboardNavigation: NSViewRepresentable {
     }
 }
 #endif
+
+/// Reads the narrated chapter, sentence and word in its own body, so only the
+/// content it wraps is updated as the voice moves from word to word.
+private struct NarrationRangeReader<Content: View>: View {
+    @Environment(PlaybackController.self) private var playback
+    let active: Bool
+    @ViewBuilder let content: (_ chapter: Int?, _ sentence: NSRange?, _ word: NSRange?) -> Content
+
+    var body: some View {
+        content(active ? playback.chapterIndex : nil,
+                active ? playback.currentSentenceChapterRange : nil,
+                active ? playback.currentWordChapterRange : nil)
+    }
+}
