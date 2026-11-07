@@ -899,7 +899,8 @@ struct VoicePickerSheet: View {
 
     private var filterBinding: Binding<VoiceFilterSelection> {
         Binding(get: { filters }, set: { value in
-            if let encoded = value.encoded { savedVoiceFilters = encoded }
+            let adapted = value.adapted(after: filters, in: allVoices)
+            if let encoded = adapted.encoded { savedVoiceFilters = encoded }
         })
     }
 
@@ -933,16 +934,17 @@ struct VoicePickerSheet: View {
         }
     }
 
-    private var availableLanguages: [String] {
-        VoiceCatalog.baseLanguages(of: allVoices)
-    }
 
     private var filterRow: some View {
         VStack(alignment: .leading, spacing: 8) {
+            let options = VoiceFilterOptions(
+                selection: filters, voices: allVoices,
+                modelName: { id in models.models.first { $0.id == id && $0.engine.isEnabled }?.name },
+                languageName: { voices.languageName(for: $0) })
             VoiceFilterControls(selection: filterBinding,
-                                modelOptions: modelOptions,
-                                languageOptions: languageOptions,
-                                genderOptions: genderOptions)
+                                modelOptions: options.models,
+                                languageOptions: options.languages,
+                                genderOptions: options.genders)
             if filters.isActive {
                 Button {
                     filterBinding.wrappedValue = VoiceFilterSelection()
@@ -959,25 +961,6 @@ struct VoicePickerSheet: View {
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(palette.background)
-    }
-
-    private var modelOptions: [VoiceFilterOption] {
-        let ids = Set(installedModels.map(\.id)).union(filters.models)
-        return ids.map { id in
-            VoiceFilterOption(id: id, title: models.models.first { $0.id == id && $0.engine.isEnabled }?.name
-                              ?? String(localized: "Unavailable model"))
-        }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
-    }
-
-    private var languageOptions: [VoiceFilterOption] {
-        Set(availableLanguages).union(filters.languages).map {
-            VoiceFilterOption(id: $0, title: voices.languageName(for: $0))
-        }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
-    }
-
-    private var genderOptions: [VoiceFilterOption] {
-        VoiceGender.allCases.map { VoiceFilterOption(id: $0.rawValue, title: $0.label) }
-            + [VoiceFilterOption(id: VoiceFilterSelection.unspecifiedGender, title: String(localized: "Not specified"))]
     }
 
     var body: some View {
