@@ -403,7 +403,15 @@ public actor SA3Engine {
                 let audio = MLXArray(Self.fit(inpaint.channels, from: windowStart * Self.samplesPerLatent, samples: samples), [1, 2, samples])
                 let encoded = encoder(SAMESEncoder.patchAudio(audio))[0..., 0..., 0 ..< count]
                 let offset = start - windowStart
-                let piece = encoded[0..., 0..., offset ..< (offset + end - start)]
+                var piece = encoded[0..., 0..., offset ..< min(offset + end - start, encoded.dim(2))]
+                // At the edge of the audio the encoder can return a frame less than asked:
+                // that frame is generated instead of kept (it broke the concatenation).
+                let got = piece.dim(2)
+                if got < end - start {
+                    piece = concatenated([piece, MLXArray.zeros([1, piece.dim(1), end - start - got], dtype: piece.dtype)],
+                                         axis: 2)
+                    for index in (start + got) ..< end { mask[index] = 0 }
+                }
                 latents = concatenated([latents[0..., 0..., 0 ..< start], piece, latents[0..., 0..., end...]], axis: 2)
                 eval(latents)
             }

@@ -73,4 +73,20 @@ struct SoundscapeModelsTests {
         #expect(SoundscapeModels.isSupported)
         #endif
     }
+
+    /// Asking for Ambience while Music downloads queues it (the button used to stay
+    /// disabled until Music finished); it starts on its own afterwards.
+    @Test func secondModelIsQueuedWhileTheFirstInstalls() {
+        var queue = ModelInstallQueue()
+        #expect(queue.request([.music], busy: false) == [.music])
+        #expect(queue.request([.sfx], busy: true) == nil)
+        #expect(queue.queued == [.sfx])
+        #expect(queue.request([.sfx], busy: true) == nil)
+        #expect(queue.next() == [.sfx])
+        #expect(queue.queued.isEmpty && queue.next() == nil)
+        _ = queue.request([.sfx], busy: true)
+        queue.cancel()
+        #expect(queue.queued.isEmpty)
+    }
 }
+

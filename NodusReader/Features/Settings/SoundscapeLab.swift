@@ -359,6 +359,113 @@ final class SoundscapeLab {
                                                       narrationStallCount, narrationStallSeconds)))
     }
 
+    /// Installs both models through the app's own path (download, verify, convert).
+    private func installAIModels() async throws {
+        for _ in 0 ..< 80 where immersive == nil { try await Task.sleep(for: .milliseconds(250)) }
+        guard let models = immersive?.soundscapeModels else { return }
+        let start = Date()
+        if !(models.isInstalled(.music) && models.isInstalled(.sfx)) {
+            models.install([.music, .sfx])
+            var last = ""
+            while Date().timeIntervalSince(start) < 1_800 {
+                try await Task.sleep(for: .seconds(2))
+                let state = "\(models.state[.music].map { "\($0)" } ?? "-") / \(models.state[.sfx].map { "\($0)" } ?? "-")"
+                if state.prefix(12) != last.prefix(12) { event("models: \(state)"); last = state }
+                if models.isInstalled(.music) && models.isInstalled(.sfx) { break }
+                if case .failed = models.state[.music] { break }
+            }
+        }
+        append(Entry(test: "install-ai", note: String(format: "music %@, sfx %@, %.0f s",
+                                                     models.isInstalled(.music) ? "installed" : "missing",
+                                                     models.isInstalled(.sfx) ? "installed" : "missing",
+                                                     Date().timeIntervalSince(start))))
+    }
+
+    /// As a reader would: delete both models, download Music, ask for Ambience two seconds
+    /// later (it must queue, not be refused) and wait until both are installed.
+    private func queuedInstall() async throws {
+        for _ in 0 ..< 80 where immersive == nil { try await Task.sleep(for: .milliseconds(250)) }
+        guard let models = immersive?.soundscapeModels else { return }
+        models.remove(.music)
+        models.remove(.sfx)
+        let start = Date()
+        models.install([.music])
+        try await Task.sleep(for: .seconds(2))
+        models.install([.sfx])
+        event("after asking for Ambience: music \(models.state[.music].map { "\($0)" } ?? "-"), queued \(models.installQueue.queued.map(\.rawValue))")
+        var last = ""
+        while Date().timeIntervalSince(start) < 1_800 {
+            try await Task.sleep(for: .seconds(2))
+            let state = "\(models.state[.music].map { "\($0)" } ?? "-") / \(models.state[.sfx].map { "\($0)" } ?? "-") queued \(models.installQueue.queued.map(\.rawValue))"
+            if state.prefix(30) != last.prefix(30) { event("models: \(state)"); last = state }
+            if models.isInstalled(.music) && models.isInstalled(.sfx) { break }
+            if case .failed = models.state[.sfx] { break }
+        }
+        append(Entry(test: "queue-install", note: String(format: "music %@, sfx %@, %.0f s",
+                                                        models.isInstalled(.music) ? "installed" : "missing",
+                                                        models.isInstalled(.sfx) ? "installed" : "missing",
+                                                        Date().timeIntervalSince(start))))
+    }
+
+    /// The app's own session path: `prepareSession` for the last opened book with the
+    /// voice waiting, timing every stage (worker trace) until the pack is done.
+    private func sessionBody(count: Int) async throws {
+        // The autorun starts with the app: wait for the controller and the library.
+        for _ in 0 ..< 80 where immersive == nil || (library?.allBooks().isEmpty ?? true) {
+            try await Task.sleep(for: .milliseconds(250))
+        }
+        // An empty lab library: import the EPUB copied into Documents/SoundscapeLab.
+        if let library, library.allBooks().isEmpty {
+            let epub = output.appendingPathComponent("book.epub")
+            if FileManager.default.fileExists(atPath: epub.path) {
+                _ = await library.importFiles([epub], progress: { _ in })
+                event("imported book.epub: \(library.allBooks().count) books")
+            }
+        }
+        guard let immersive, let book = library?.continueBook() ?? library?.allBooks().first else {
+            append(Entry(test: "session-skipped", note: "controller \(immersive != nil), books \(library?.allBooks().count ?? -1)"))
+            return
+        }
+        immersive.preferences.source = .ai
+        if !immersive.preferences.isEnabled { immersive.setEnabled(true) }
+        guard immersive.soundscapeModels.isInstalled(.music) else {
+            append(Entry(test: "session-skipped", note: "music model not installed"))
+            return
+        }
+        let start = Date()
+        GenerationWorker.trace = { [weak self] line in
+            Task { @MainActor in self?.event(String(format: "[%.1f s] ", Date().timeIntervalSince(start)) + line) }
+        }
+        defer { GenerationWorker.trace = nil }
+        let before = Set(immersive.generated.pieces.map(\.id))
+        // As in the app: the sheet warms the composer while the reader chooses (~5 s).
+        immersive.prewarmSoundscapes()
+        try await Task.sleep(for: .seconds(5))
+        event("chose \(count) pieces")
+        let chosen = Date()
+        immersive.prepareSession(for: book, count: count)
+        var firstPiece: Double?
+        var seen = before
+        while Date().timeIntervalSince(start) < 600 {
+            try await Task.sleep(for: .milliseconds(250))
+            for piece in immersive.generated.pieces where !seen.contains(piece.id) {
+                seen.insert(piece.id)
+                let at = Date().timeIntervalSince(chosen)
+                if firstPiece == nil { firstPiece = at }
+                append(Entry(test: "session-piece", note: String(format: "%@ %@ %.0f s long, ready after %.1f s, footprint %@, %@",
+                                                                piece.layer.rawValue, piece.mood?.rawValue ?? piece.bed?.rawValue ?? "-",
+                                                                Double(piece.frames) / Double(piece.sampleRate), at,
+                                                                Self.bytes(ProcessMemory.footprint()), ThermalStateName.current)))
+            }
+            if case .preparing = immersive.generation { continue }
+            if Date().timeIntervalSince(start) > 3 { break }
+        }
+        immersive.sessionStarted()
+        append(Entry(test: "session-done", note: String(format: "%d pieces, first after %.1f s, all after %.1f s, %@",
+                                                       seen.count - before.count, firstPiece ?? -1,
+                                                       Date().timeIntervalSince(chosen), ThermalStateName.current)))
+    }
+
     /// Resumes the most recently opened book with narration and waits until it plays.
     private func startNarration() async throws {
         guard let playback, let book = library?.continueBook() else {
@@ -399,6 +506,10 @@ final class SoundscapeLab {
                 case "coexist-sfx": try await lab.coexistenceBody(kind: .sfx, long: true)
                 case "stop-narration": lab.playback?.pause(); lab.stopPlayback()
                 case "ai-e2e": try await lab.aiEndToEnd()
+                case "install-ai": try await lab.installAIModels()
+                case "queue-install": try await lab.queuedInstall()
+                case "session1": try await lab.sessionBody(count: 1)
+                case "session3": try await lab.sessionBody(count: 3)
                 default: lab.append(Entry(test: "autorun", note: "unknown step \(step)"))
                 }
             }

@@ -123,9 +123,11 @@ enum SoundscapePlanner {
                                   intensity: 2, setting: nil, studyOnly: studyOnly), priority: priority, count: 1)
         // Wanted now: the quick recipe (no continuation), so it plays within seconds;
         // longer pieces for the same mood follow in the plan.
+        // Ambience keeps its full minute: in 30 s the level varied too much and the
+        // quality gate rejected most of them (measured on an iPhone 16 Pro Max).
         return builder.finished().first.map { job in
             var job = job
-            job.recipe = .short(for: layer)
+            job.recipe = layer == .music ? .shortMusic : .ambience
             return job
         }
     }

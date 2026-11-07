@@ -23,7 +23,10 @@ enum QualityGate {
     static let maximumGainDB = 15.0
     /// Ambience beds loop: a larger 1 s level spread means an event (a thunderclap) that
     /// would repeat audibly.
-    static let maximumAmbienceSpreadDB = 10.0
+    /// Spread of 1 s levels an ambience may have. Generated rain and wind come in gusts
+    /// of 15–20 dB (measured on iPhones), which is texture; beyond this a bed drifts or
+    /// drops to near silence, and a single burst (a thunderclap) still fails.
+    static let maximumAmbienceSpreadDB = 20.0
 
     static func check(_ channels: [[Float]], sampleRate: Int, layer: CatalogTrack.Layer,
                       minimumUsefulSeconds: Double) -> QualityVerdict {

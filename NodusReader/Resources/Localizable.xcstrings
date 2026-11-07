@@ -7930,6 +7930,17 @@
         }
       }
     },
+    "Queued, after the other model…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En cola, tras el otro modelo…"
+          }
+        }
+      }
+    },
     "Quiet instrumental music and ambient sound while you read or listen, chosen for the passage you are in and kept steady.": {
       "localizations": {
         "es": {

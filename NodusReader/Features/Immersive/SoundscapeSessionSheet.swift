@@ -57,10 +57,18 @@ struct SoundscapeSessionSheet: View {
         .interactiveDismissDisabled(composing)
         // Asked once per book and run, counted only once the sheet is really on screen
         // (a play pressed while the book was still opening could not present it).
-        .onAppear { immersive.markSessionOffered(book) }
+        .onAppear {
+            immersive.markSessionOffered(book)
+            immersive.prewarmSoundscapes()
+        }
         .onChange(of: immersive.generation) { _, status in
             // The session's pieces are ready: the voice starts.
             if composing, case .preparing = status {} else if composing { start() }
+        }
+        .onChange(of: immersive.generationWaiting) { _, reason in
+            // A piece is ready and composing must wait (a warm iPhone, measured on an
+            // iPhone 13): start with what there is; the rest follows while listening.
+            if composing, reason != nil, case .preparing(let done, _) = immersive.generation, done > 0 { start() }
         }
     }
 

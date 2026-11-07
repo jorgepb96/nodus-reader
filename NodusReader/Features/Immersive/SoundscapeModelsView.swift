@@ -91,7 +91,11 @@ struct SoundscapeModelsView: View {
                 case .failed(let message):
                     Text(message).font(.caption2).foregroundStyle(palette.muted).fixedSize(horizontal: false, vertical: true)
                 default:
-                    Text(detail).font(.caption2).foregroundStyle(palette.muted)
+                    if models.installQueue.queued.contains(component) {
+                        progressLine("Queued, after the other model…")
+                    } else {
+                        Text(detail).font(.caption2).foregroundStyle(palette.muted)
+                    }
                 }
             }
             Spacer(minLength: 8)
@@ -118,6 +122,12 @@ struct SoundscapeModelsView: View {
                     .font(.subheadline.weight(.medium))
                     .nodusTextButtonStyle()
                     .frame(minHeight: 44)
+            case .notInstalled where models.installQueue.queued.contains(component),
+                 .failed where models.installQueue.queued.contains(component):
+                Button("Cancel") { models.cancelInstall() }
+                    .font(.subheadline.weight(.medium))
+                    .nodusTextButtonStyle()
+                    .frame(minHeight: 44)
             case .notInstalled, .failed:
                 Button("Download") {
                     immersive.preferences.source = .ai
@@ -126,7 +136,8 @@ struct SoundscapeModelsView: View {
                 .font(.subheadline.weight(.medium))
                 .nodusTextButtonStyle()
                 .frame(minHeight: 44)
-                .disabled(!SoundscapeModels.isSupported || models.isBusy)
+                // Another model may be installing: this one waits in line.
+                .disabled(!SoundscapeModels.isSupported)
             }
         }
         .padding(.horizontal, 14)

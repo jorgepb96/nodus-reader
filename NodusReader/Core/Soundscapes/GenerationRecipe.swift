@@ -20,8 +20,17 @@ struct GenerationRecipe: Hashable, Sendable, Codable {
     static let music = GenerationRecipe(layer: .music, seconds: 60, continueTo: 120, keepUntil: 55, minimumUsefulSeconds: 90)
     static let shortMusic = GenerationRecipe(layer: .music, seconds: 60, continueTo: nil, keepUntil: nil, minimumUsefulSeconds: 45)
     static let ambience = GenerationRecipe(layer: .ambience, seconds: 60, continueTo: nil, keepUntil: nil, minimumUsefulSeconds: 40)
+    /// The first piece of a session: 30 s, so something plays within seconds (measured
+    /// on an iPhone 16 Pro Max: about 6 s warm against 11 s for 60 s).
+    static let quickMusic = GenerationRecipe(layer: .music, seconds: 30, continueTo: nil, keepUntil: nil, minimumUsefulSeconds: 20)
     static let shortAmbience = GenerationRecipe(layer: .ambience, seconds: 30, continueTo: nil, keepUntil: nil, minimumUsefulSeconds: 20)
 
     static func full(for layer: CatalogTrack.Layer) -> GenerationRecipe { layer == .music ? .music : .ambience }
+    /// The short recipe for this layer, or this one when it is already no longer.
+    var shortened: GenerationRecipe {
+        let short = GenerationRecipe.short(for: layer)
+        return continueTo == nil && seconds <= short.seconds ? self : short
+    }
+
     static func short(for layer: CatalogTrack.Layer) -> GenerationRecipe { layer == .music ? .shortMusic : .shortAmbience }
 }

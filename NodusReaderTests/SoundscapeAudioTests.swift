@@ -58,6 +58,18 @@ struct SoundscapeAudioTests {
                                   minimumUsefulSeconds: 20) == .accept)
     }
 
+    /// Rain and wind come in gusts: about 15 dB between seconds (measured on generated
+    /// rain on an iPhone 16 Pro Max) is texture, not drift, and must pass.
+    @Test func acceptsAmbienceThatComesInGusts() {
+        var clip = noise(level: 0.05, seconds: 60)
+        for c in 0 ..< 2 {
+            for second in stride(from: 0, to: 60, by: 3) {
+                for i in (second * rate) ..< ((second + 1) * rate) { clip[c][i] *= 0.18 }
+            }
+        }
+        #expect(QualityGate.check(clip, sampleRate: rate, layer: .ambience, minimumUsefulSeconds: 40) == .accept)
+    }
+
     @Test func rejectsUnstableAmbience() {
         // Steady bed with a burst 30 dB louder: more than 10 dB of 1 s level spread.
         var clip = noise(level: 0.01, seconds: 30)

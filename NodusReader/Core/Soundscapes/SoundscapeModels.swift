@@ -91,9 +91,15 @@ final class SoundscapeModels {
         return files.reduce(0) { $0 + $1.bytes } + Self.conversionMargin
     }
 
+    /// Models asked for while another installs: shown as queued, started after it.
+    private(set) var installQueue = ModelInstallQueue()
+
     func install(_ components: Set<Component>) {
-        guard task == nil, Self.isSupported else {
-            if !Self.isSupported { for c in components { state[c] = .failed(ModelsError.unsupported.localizedDescription) } }
+        guard Self.isSupported else {
+            for c in components { state[c] = .failed(ModelsError.unsupported.localizedDescription) }
+            return
+        }
+        guard let components = installQueue.request(components.filter { !isInstalled($0) }, busy: task != nil) else {
             return
         }
         let wanted = components.filter { !isInstalled($0) }
@@ -136,6 +142,7 @@ final class SoundscapeModels {
                 try Task.checkCancellation()
                 self?.task = nil
                 self?.refresh()
+                self?.installNext()
             } catch {
                 // Cancel already reset the rows, and a new install may own `task` now.
                 if Task.isCancelled { return }
@@ -144,11 +151,17 @@ final class SoundscapeModels {
                 }
                 self?.task = nil
                 self?.refresh()
+                self?.installNext()
             }
         }
     }
 
+    private func installNext() {
+        if let next = installQueue.next() { install(next) }
+    }
+
     func cancelInstall() {
+        installQueue.cancel()
         task?.cancel()
         task = nil
         for component in Component.allCases {
@@ -221,3 +234,28 @@ final class SoundscapeModels {
         func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {}
     }
 }
+
+/// Installs one at a time (the second shares the first's common files), but a model
+/// asked for while another installs waits in line instead of being refused.
+struct ModelInstallQueue: Equatable {
+    private(set) var queued: Set<SoundscapeModels.Component> = []
+
+    /// What to start now, or nil when it was queued behind the install in progress.
+    mutating func request(_ components: Set<SoundscapeModels.Component>, busy: Bool) -> Set<SoundscapeModels.Component>? {
+        guard busy else { return components }
+        queued.formUnion(components)
+        return nil
+    }
+
+    /// After an install ends: what waited in line, if anything.
+    mutating func next() -> Set<SoundscapeModels.Component>? {
+        guard !queued.isEmpty else { return nil }
+        defer { queued = [] }
+        return queued
+    }
+
+    mutating func cancel() {
+        queued = []
+    }
+}
+

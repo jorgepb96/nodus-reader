@@ -72,6 +72,8 @@ final class ImmersiveAudioController {
     private(set) var generationWaiting: String?
     /// Priority of a piece asked for because the reader (or the director) wants it now.
     static let immediatePriority = GenerationWorker.immediatePriority
+    /// Below this headroom a memory warning stops the piece in progress.
+    static let memoryWarningHeadroom: Int64 = 400_000_000
     @ObservationIgnored private var packTotal = 0
     @ObservationIgnored private var packDone = 0
     @ObservationIgnored private var lastPlan = Date.distantPast
@@ -431,9 +433,13 @@ final class ImmersiveAudioController {
         let seed = UInt64.random(in: 1 ... UInt64.max / 2)
         var jobs: [GenerationJob] = []
         for (index, mood) in moods.prefix(musicCount).enumerated() {
-            if let job = SoundscapePlanner.job(layer: .music, mood: mood, bed: nil, style: bookStyle, bookID: bookID,
+            if var job = SoundscapePlanner.job(layer: .music, mood: mood, bed: nil, style: bookStyle, bookID: bookID,
                                                library: prompts, seed: seed &+ UInt64(index), priority: 20,
-                                               studyOnly: preferences.mode == .study) { jobs.append(job) }
+                                               studyOnly: preferences.mode == .study) {
+                // The first piece is short, so the voice waits as little as possible.
+                if index == 0 { job.recipe = .quickMusic }
+                jobs.append(job)
+            }
         }
         for (index, bed) in beds.prefix(musicCount == 0 ? count : bedCount).enumerated() where ambience {
             if let job = SoundscapePlanner.job(layer: .ambience, mood: nil, bed: bed, style: bookStyle, bookID: bookID,
@@ -447,6 +453,13 @@ final class ImmersiveAudioController {
         generation = .preparing(done: 0, total: jobs.count)
         // This session replaces whatever was queued, another book's pack included.
         Task { await worker.replace(with: jobs) }
+    }
+
+    /// The session sheet is on screen: compile the composer's kernels while the reader
+    /// decides, so the first piece starts sooner.
+    func prewarmSoundscapes() {
+        guard aiSource, soundscapeModels.anyInstalled || Self.usesFixtureGenerator, let worker = ensureWorker() else { return }
+        Task { await worker.warmUp() }
     }
 
     /// The session's music is ready or the reader started without it.
@@ -1262,8 +1275,15 @@ final class ImmersiveAudioController {
         #if os(iOS)
         observers.append(center.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil,
                                             queue: .main) { [weak self] _ in
-            // Free the generator now and retry a minute later with the short recipe.
-            Task { @MainActor in self?.interruptGeneration(retryAfter: 60, shorter: true) }
+            // A warning reports pressure on the whole system, not this app's limit. On an
+            // iPhone 13 (4 GB) one arrives every ~20 s while composing, at about 1 GB, and
+            // pieces still finish (peak ~1.2 GB): stop only when the app's own headroom is
+            // nearly gone, and retry soon with a shorter recipe.
+            Task { @MainActor in
+                let available = Int64(os_proc_available_memory())
+                if available > 0, available >= Self.memoryWarningHeadroom { return }
+                self?.interruptGeneration(retryAfter: 15, shorter: true)
+            }
         })
         observers.append(center.addObserver(forName: UIApplication.willResignActiveNotification, object: nil,
                                             queue: .main) { [weak self] _ in

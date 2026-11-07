@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import Accelerate
 import Foundation
 import StableAudioMLX
 
@@ -40,6 +41,8 @@ actor GenerationWorker {
     static let admissionRetry: Double = 15
     /// Waits for the on-device language model before composing anyway (a minute).
     static let maximumAnalysisWaits = 4
+    /// Timing of each stage, for the developer lab only (nil in the app).
+    nonisolated(unsafe) static var trace: (@Sendable (String) -> Void)?
 
     /// Seconds between pieces: longer when the device is already warm.
     static func pause(for thermal: ProcessInfo.ThermalState) -> Double {
@@ -47,7 +50,15 @@ actor GenerationWorker {
     }
 
     /// Between pieces the reader asked for (a pack, or what plays now).
-    static let requestedPause: Double = 5
+    static let requestedPause: Double = 0.5
+
+    /// The pause after a piece: short while the reader waits for pieces they asked for
+    /// (still a little longer when warm), the full pacing for pieces planned ahead.
+    /// A hot device does not get here: admission waits until it cools.
+    static func pause(requested: Bool, thermal: ProcessInfo.ThermalState) -> Double {
+        guard requested else { return pause(for: thermal) }
+        return thermal == .nominal ? requestedPause : 5
+    }
 
     /// Seconds to wait so that no more than `hourlyLimit` pieces start in an hour.
     static func waitForHourlyCap(started: [Date], now: Date) -> Double {
@@ -129,6 +140,26 @@ actor GenerationWorker {
         return queue.contains(where: same) || inFlight.map(same) == true
     }
 
+    private var warmed = false
+    /// Requested pieces already retried after a rejection (once each).
+    private var retried: Set<String> = []
+
+    /// The reader asked for it: once more with another seed, ahead of the rest.
+    private func retryRequested(_ job: GenerationJob) -> Bool {
+        guard job.priority >= 10, !retried.contains(job.key) else { return false }
+        retried.insert(job.key)
+        queue.insert(job, at: 0)
+        return true
+    }
+
+    /// Compiles the generator's kernels once, while nothing is being composed (the
+    /// reader is choosing how many pieces to compose).
+    func warmUp() async {
+        guard !warmed, loop == nil else { return }
+        warmed = true
+        await generator.warmUp()
+    }
+
     /// Replaces the queue (a new plan); the piece in progress continues.
     func replace(with jobs: [GenerationJob]) {
         queue.removeAll()
@@ -195,8 +226,7 @@ actor GenerationWorker {
                 if loopID == id { inFlight = nil }
                 if isPaused || Task.isCancelled { break }
                 let thermal = await admission().thermal
-                let requested = current.priority >= 10 && thermal == .nominal
-                try await sleep((requested ? Self.requestedPause : Self.pause(for: thermal)) * pacing)
+                try await sleep(Self.pause(requested: current.priority >= 10, thermal: thermal) * pacing)
             } catch {
                 break
             }
@@ -207,7 +237,7 @@ actor GenerationWorker {
     private func admit(_ job: GenerationJob) async throws -> GenerationRecipe {
         while true {
             try Task.checkCancellation()
-            let wanted = forceShort || shortNext ? GenerationRecipe.short(for: job.recipe.layer) : job.recipe
+            let wanted = forceShort || shortNext ? job.recipe.shortened : job.recipe
             var state = await admission()
             // Scene analysis and recaps can keep the model busy for a whole long book.
             if analysisWaits >= Self.maximumAnalysisWaits { state.analysisRunning = false }
@@ -228,7 +258,10 @@ actor GenerationWorker {
         defaults.set(true, forKey: Self.inProgressKey)
         let seed = UInt64.random(in: 1 ... UInt64.max / 2)
         do {
+            let renderStart = Date()
             let rendered = try await generator.render(job, recipe: recipe, seed: seed)
+            Self.trace?(String(format: "render %@ %.1f s", job.request.mood?.rawValue ?? job.request.bed?.rawValue ?? "-",
+                               Date().timeIntervalSince(renderStart)))
             defaults.set(false, forKey: Self.inProgressKey)
             try Task.checkCancellation()
             switch try finish(job, recipe: recipe, rendered: rendered, seed: seed) {
@@ -238,13 +271,19 @@ actor GenerationWorker {
                 consecutiveFailures = 0
                 onEvent(.finished(piece, job))
             case .rejected(let reason):
+                Self.trace?("rejected \(job.request.bed?.rawValue ?? job.request.mood?.rawValue ?? "-"): \(reason)")
                 consecutiveFailures = 0
+                if retryRequested(job) { return }
                 onEvent(.rejected(job, reason))
             }
         } catch {
             defaults.set(false, forKey: Self.inProgressKey)
             // The engine reports a cancelled piece with its own error: not a failure.
             if error is CancellationError || Task.isCancelled { return }
+            Self.trace?("failed: \(error)")
+            // A loop seam that could not be made seamless is a matter of luck: a piece the
+            // reader asked for gets one more try with another seed, like a rejection.
+            if error as? SoundscapeGenerationError == .seam, retryRequested(job) { return }
             consecutiveFailures += 1
             onEvent(.failed(job, String(describing: error)))
             if consecutiveFailures >= 3 {
@@ -262,24 +301,51 @@ actor GenerationWorker {
     /// Quality gate, levelling and AAC encoding.
     private func finish(_ job: GenerationJob, recipe: GenerationRecipe, rendered: RenderedPiece, seed: UInt64) throws -> Outcome {
         let rate = rendered.sampleRate
+        var mark = Date()
+        func lap(_ name: String) {
+            Self.trace?(String(format: "%@ %.2f s", name, Date().timeIntervalSince(mark)))
+            mark = Date()
+        }
+        defer { lap("store") }
         if case .reject(let reason) = QualityGate.check(rendered.channels, sampleRate: rate, layer: recipe.layer,
                                                         minimumUsefulSeconds: recipe.minimumUsefulSeconds) {
+            Self.trace?("rejected: \(reason)")
+            if let trace = Self.trace, reason == "unsteady ambience" {
+                // Lab only: the 1 s levels (dB) of the useful range, to see what varies.
+                let range = SA3Audio.loopableRange(rendered.channels, sampleRate: rate)
+                let n = rendered.channels.first?.count ?? 0
+                var levels: [String] = []
+                var start = 0
+                while start + rate <= n {
+                    let sum = rendered.channels.reduce(0.0) { $0 + Double(vDSP.sumOfSquares($1[start ..< (start + rate)])) }
+                    levels.append(String(format: "%.0f", 10 * log10(max(sum / Double(rate * rendered.channels.count), 1e-12))))
+                    start += rate
+                }
+                trace("levels \(range.lowerBound / rate)–\(range.upperBound / rate) s: " + levels.joined(separator: " "))
+            }
             return .rejected(reason)
         }
+        lap("gate")
         if (try? QualityGate.voiceFraction(rendered.channels, sampleRate: rate)) ?? 0 > QualityGate.maximumVoiceFraction {
             return .rejected("voice")
         }
+        lap("voice check")
         let target = QualityGate.target(for: recipe.layer)
         let leveled = SA3Audio.level(rendered.channels, sampleRate: rate, targetLUFS: target.lufs, ceilingDBTP: target.truePeak)
+        lap("level")
         var tailStart: Double?
         if recipe.layer == .music {
             let range = SA3Audio.loopableRange(leveled.channels, sampleRate: rate)
-            tailStart = max(30, Double(range.upperBound) / Double(rate) - 8)
+            // The hand-over to the next piece starts 8 s before the usable end, never
+            // before half the piece (a 30 s first piece hands over at about 21 s).
+            let usableEnd = Double(range.upperBound) / Double(rate)
+            tailStart = max(min(30, usableEnd / 2), usableEnd - 8)
         }
         let id = UUID().uuidString.lowercased()
         let bitRate = recipe.layer == .music ? 176_000 : 112_000
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("\(id).m4a")
         let frames = try SA3Audio.writeAAC(leveled.channels, sampleRate: rate, bitRate: bitRate, to: file)
+        lap("aac")
         let piece = GeneratedPiece(
             id: id, promptID: job.prompt.id, promptText: job.prompt.text, seed: seed, layer: recipe.layer,
             style: job.prompt.style ?? .neutral, mood: job.request.mood, bed: job.request.bed,

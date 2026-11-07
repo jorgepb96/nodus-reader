@@ -113,6 +113,17 @@ struct GenerationWorkerTests {
         #expect(library.url(for: piece.track) != nil)
     }
 
+    /// A 30 s first piece hands over before its end, like the longer ones.
+    @Test @MainActor func quickPieceHandsOverBeforeItsEnd() async throws {
+        let (worker, library, events) = makeWorker(generator: FixtureGenerator())
+        await worker.enqueue([job(recipe: .quickMusic)])
+        await events.wait { finished($0) == 1 }
+        let piece = try #require(library.pieces.first, "events: \(events.all)")
+        let seconds = Double(piece.frames) / Double(piece.sampleRate)
+        #expect(abs(seconds - 30) < 0.5)
+        #expect(piece.tailStart != nil && piece.tailStart! >= 15 && piece.tailStart! < seconds - 4)
+    }
+
     @Test @MainActor func rejectedPieceIsNotStored() async {
         let (worker, library, events) = makeWorker(generator: FixtureGenerator(level: 0.0005))
         await worker.enqueue([job(layer: .ambience)])
@@ -138,6 +149,11 @@ struct GenerationWorkerTests {
         await events.wait { finished($0) == 2 }
         #expect(sleeps.all.contains(GenerationWorker.pause(for: .nominal)))
         #expect(GenerationWorker.pause(for: .nominal) == 20 && GenerationWorker.pause(for: .fair) == 60)
+        // While the reader waits for pieces they asked for, a warm (fair) iPhone 13 must not
+        // pause a minute between them.
+        #expect(GenerationWorker.pause(requested: true, thermal: .nominal) == GenerationWorker.requestedPause)
+        #expect(GenerationWorker.pause(requested: true, thermal: .fair) == 5)
+        #expect(GenerationWorker.pause(requested: false, thermal: .fair) == 60)
     }
 
     @Test func hourlyCap() {
@@ -285,6 +301,59 @@ struct GenerationWorkerTests {
         await events.wait(timeout: 10) { finished($0) >= 1 }
         #expect(finished(events.all) >= 1)
         await worker.cancelAll()
+    }
+
+    /// A piece the reader asked for that the quality gate rejects is composed once more
+    /// with another seed, so a session does not come up short.
+    @Test @MainActor func rejectedRequestedPieceIsRetriedOnce() async {
+        final class FlakyGenerator: SoundscapeGenerating, @unchecked Sendable {
+            private let lock = NSLock()
+            private var calls = 0
+            var count: Int { lock.withLock { calls } }
+            func render(_ job: GenerationJob, recipe: GenerationRecipe, seed: UInt64) async throws -> RenderedPiece {
+                let first = lock.withLock { calls += 1; return calls == 1 }
+                // The first render is near silent (rejected), the second is fine.
+                return try await FixtureGenerator(level: first ? 0.0005 : 0.05).render(job, recipe: recipe, seed: seed)
+            }
+        }
+        let generator = FlakyGenerator()
+        let (worker, library, events) = makeWorker(generator: generator)
+        await worker.enqueue([job(layer: .ambience, priority: 20)])
+        await events.wait { finished($0) == 1 }
+        #expect(generator.count == 2)
+        #expect(library.pieces.count == 1)
+    }
+
+    /// After a memory warning the next piece is shorter, never longer: a 30 s first piece
+    /// stays 30 s (it became a 60 s one on an iPhone 13).
+    @Test @MainActor func interruptionNeverLengthensAPiece() async {
+        let generator = InterruptibleGenerator()
+        let (worker, _, events) = makeWorker(generator: generator)
+        await worker.enqueue([job(.calm, priority: 20, recipe: .quickMusic)])
+        await events.wait { $0.contains { if case .started = $0 { return true } else { return false } } }
+        await worker.interrupt(retryAfter: 1, shorter: true)
+        await events.wait { finished($0) == 1 }
+        #expect(generator.rendered.last == .quickMusic)
+    }
+
+    /// An ambience whose loop seam cannot be made seamless is composed once more too.
+    @Test @MainActor func seamFailureOfARequestedPieceIsRetriedOnce() async {
+        final class SeamGenerator: SoundscapeGenerating, @unchecked Sendable {
+            private let lock = NSLock()
+            private var calls = 0
+            var count: Int { lock.withLock { calls } }
+            func render(_ job: GenerationJob, recipe: GenerationRecipe, seed: UInt64) async throws -> RenderedPiece {
+                if lock.withLock({ calls += 1; return calls == 1 }) { throw SoundscapeGenerationError.seam }
+                return try await FixtureGenerator().render(job, recipe: recipe, seed: seed)
+            }
+        }
+        let generator = SeamGenerator()
+        let (worker, library, events) = makeWorker(generator: generator)
+        await worker.enqueue([job(layer: .ambience, priority: 20)])
+        await events.wait { finished($0) == 1 }
+        #expect(generator.count == 2)
+        #expect(library.pieces.count == 1)
+        #expect(!events.all.contains { if case .failed = $0 { return true } else { return false } })
     }
 }
 

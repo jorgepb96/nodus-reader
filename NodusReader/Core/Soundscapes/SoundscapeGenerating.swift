@@ -11,6 +11,13 @@ struct RenderedPiece: Sendable {
 
 protocol SoundscapeGenerating: Sendable {
     func render(_ job: GenerationJob, recipe: GenerationRecipe, seed: UInt64) async throws -> RenderedPiece
+    /// Compiles the GPU kernels ahead of the first piece (a fraction of a second of
+    /// audio, one step), so the first real piece does not pay for it.
+    func warmUp() async
+}
+
+extension SoundscapeGenerating {
+    func warmUp() async {}
 }
 
 enum SoundscapeGenerationError: Error, Equatable {
@@ -28,11 +35,19 @@ struct SA3Generator: SoundscapeGenerating {
         engine = SA3Engine(directory: directory, residency: .staged, cacheLimitBytes: 64 << 20)
     }
 
+    func warmUp() async {
+        let start = Date()
+        _ = try? await engine.generate(.init(kind: .music, prompt: "warm up", seconds: 1, steps: 1, seed: 1))
+        await engine.unloadAll()
+        GenerationWorker.trace?(String(format: "warm-up %.1f s", Date().timeIntervalSince(start)))
+    }
+
     func render(_ job: GenerationJob, recipe: GenerationRecipe, seed: UInt64) async throws -> RenderedPiece {
         let kind: SA3ModelKind = recipe.layer == .music ? .music : .sfx
         let text = job.prompt.modelText
         defer { Task { await engine.unloadAll() } }
         let base = try await engine.generate(.init(kind: kind, prompt: text, seconds: Float(recipe.seconds), seed: seed))
+        Self.trace("base \(recipe.seconds) s", base.measurement)
         if recipe.layer == .music {
             guard let total = recipe.continueTo, let keep = recipe.keepUntil else {
                 return RenderedPiece(channels: base.channels, sampleRate: base.sampleRate)
@@ -41,6 +56,7 @@ struct SA3Generator: SoundscapeGenerating {
             let continued = try await engine.generate(
                 .init(kind: kind, prompt: text, seconds: Float(total), seed: seed &+ 1),
                 inpaint: .init(channels: base.channels, keep: [0 ... keep]))
+            Self.trace("continuation to \(total) s", continued.measurement)
             return RenderedPiece(channels: continued.channels, sampleRate: continued.sampleRate)
         }
         // Ambience: a seamless loop; a seam that fails the gate is regenerated in place.
@@ -53,6 +69,13 @@ struct SA3Generator: SoundscapeGenerating {
         let repaired = try await repairSeam(loop, sampleRate: base.sampleRate, kind: kind, text: text, seed: seed &+ 2)
         guard QualityGate.seamAcceptable(repaired, sampleRate: base.sampleRate) else { throw SoundscapeGenerationError.seam }
         return RenderedPiece(channels: repaired, sampleRate: base.sampleRate)
+    }
+
+    private static func trace(_ what: String, _ m: SA3Measurement) {
+        let t = m.timings
+        GenerationWorker.trace?(String(format: "  %@: total %.1f, load %.1f, text %.2f, sampling %.1f (%d steps), decode %.1f, peak %d MB",
+                                       what, t.total, t.loading, t.t5Encode, t.sampling, t.steps.count, t.decode,
+                                       Int(m.peakFootprintBytes / 1_000_000)))
     }
 
     /// Rotates the loop so its seam sits in the middle, regenerates 4 s around it by

@@ -3601,7 +3601,7 @@
   {
    "id": "sfx.rain.4",
    "layer": "ambience",
-   "text": "Rain on city streets, cars passing on wet asphalt, no music or voices.",
+   "text": "Steady rain on city streets and wet asphalt, even and continuous, no music or voices.",
    "bed": "rain",
    "emotions": [],
    "situations": [
@@ -3615,7 +3615,7 @@
   {
    "id": "sfx.rain.5",
    "layer": "ambience",
-   "text": "Steady rain hitting neon signs and puddles, distant traffic hum, no music or voices.",
+   "text": "Steady rain on neon signs and puddles, even and continuous, no music or voices.",
    "bed": "rain",
    "emotions": [],
    "situations": [
@@ -3659,7 +3659,7 @@
   {
    "id": "sfx.rain.8",
    "layer": "ambience",
-   "text": "Light rain on a ship deck, creaking wood and dripping ropes, no music or voices.",
+   "text": "Light steady rain on a ship deck and wet ropes, even and continuous, no music or voices.",
    "bed": "rain",
    "emotions": [],
    "situations": [
