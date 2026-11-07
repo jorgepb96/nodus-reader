@@ -3,6 +3,68 @@
 import SwiftUI
 import UIKit
 
+/// Whether the reader may move its text to follow narration now: not while a
+/// finger is on the text or a passage is selected (`ReaderFollowHold`).
+@MainActor
+enum ReaderTextInteraction {
+    static var hold = ReaderFollowHold()
+    private static let textViews = NSHashTable<UITextView>.weakObjects()
+
+    static func register(_ textView: UITextView) {
+        textViews.add(textView)
+    }
+
+    static var allowsFollow: Bool {
+        let selecting = textViews.allObjects.contains { $0.window != nil && $0.selectedRange.length > 0 }
+        return hold.allowsFollow(now: Date(), hasSelection: selecting)
+    }
+}
+
+/// Watches touches on the page text without taking part in any gesture: it
+/// never recognizes, never delays or cancels touches, and cannot block or be
+/// blocked, so selection, word taps and scrolling behave as before.
+private final class ReaderTouchTracker: UIGestureRecognizer {
+    private var active: Set<ObjectIdentifier> = []
+
+    override init(target: Any? = nil, action: Selector? = nil) {
+        super.init(target: target, action: action)
+        cancelsTouchesInView = false
+        delaysTouchesBegan = false
+        delaysTouchesEnded = false
+    }
+
+    override func canPrevent(_ preventedGestureRecognizer: UIGestureRecognizer) -> Bool { false }
+    override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool { false }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        for touch in touches where active.insert(ObjectIdentifier(touch)).inserted {
+            ReaderTextInteraction.hold.touchBegan()
+        }
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+        release(touches)
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+        release(touches)
+    }
+
+    override func reset() {
+        super.reset()
+        // Touches the system stopped reporting still count as lifted.
+        for _ in active { ReaderTextInteraction.hold.touchEnded(at: Date()) }
+        active.removeAll()
+    }
+
+    private func release(_ touches: Set<UITouch>) {
+        for touch in touches where active.remove(ObjectIdentifier(touch)) != nil {
+            ReaderTextInteraction.hold.touchEnded(at: Date())
+        }
+        if active.isEmpty { state = .failed }
+    }
+}
+
 /// Read-only text with the reader's selection menu (Highlight, Add Note), word
 /// taps and highlight overlays. Used by paginated pages, continuous-scroll
 /// slices and PDF Intelligent Reading blocks; `mapping` translates local
@@ -50,6 +112,8 @@ final class ReaderSelectableTextView: UIView, UITextViewDelegate {
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         tap.cancelsTouchesInView = false
         textView.addGestureRecognizer(tap)
+        textView.addGestureRecognizer(ReaderTouchTracker())
+        ReaderTextInteraction.register(textView)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -65,8 +129,15 @@ final class ReaderSelectableTextView: UIView, UITextViewDelegate {
         overlay.setNeedsDisplay()
     }
 
+    /// The text last given, not the text view's copy: UIKit normalises the
+    /// attributes it stores, so comparing against `textView.attributedText`
+    /// never matched and every narration update re-assigned the page,
+    /// relaying it out and cancelling a selection being made.
+    private var shownText: NSAttributedString?
+
     func setText(_ text: NSAttributedString) {
-        guard !textView.attributedText.isEqual(to: text) else { return }
+        if let shownText, shownText === text || shownText.isEqual(to: text) { return }
+        shownText = text
         textView.attributedText = text
         overlay.setNeedsDisplay()
     }
@@ -105,6 +176,7 @@ final class ReaderSelectableTextView: UIView, UITextViewDelegate {
     }
 
     // MARK: Selection menu
+
 
     func textView(_ textView: UITextView, editMenuForTextIn range: NSRange,
                   suggestedActions: [UIMenuElement]) -> UIMenu? {
@@ -268,13 +340,10 @@ final class ReaderHighlightOverlayView: UIView {
         for span in spans {
             guard span.range.length > 0, NSMaxRange(span.range) <= textView.attributedText.length else { continue }
             let glyphRange = layoutManager.glyphRange(forCharacterRange: span.range, actualCharacterRange: nil)
-            var rects: [CGRect] = []
-            layoutManager.enumerateEnclosingRects(forGlyphRange: glyphRange,
-                                                  withinSelectedGlyphRange: NSRange(location: NSNotFound, length: 0),
-                                                  in: container) { glyphRect, _ in
-                rects.append(glyphRect.offsetBy(dx: textView.textContainerInset.left,
-                                                dy: textView.textContainerInset.top))
-            }
+            // Whole-line heights: the spoken part of a sentence and the rest are drawn
+            // as separate spans and must meet the next line the same way.
+            let rects = ReaderPageHighlights.lineRects(layoutManager, glyphRange: glyphRange, in: container)
+                .map { $0.offsetBy(dx: textView.textContainerInset.left, dy: textView.textContainerInset.top) }
             // A span that runs on into the next slice fills this slice's last
             // line down to its line spacing, so it meets the next slice's.
             var fills = rects

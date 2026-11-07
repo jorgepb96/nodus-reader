@@ -40,6 +40,19 @@ final class SyncJournal {
         if let observer { NotificationCenter.default.removeObserver(observer) }
     }
 
+    /// Seconds the changes saved inside `withDeferredUpload` wait before uploading.
+    private var deferral: TimeInterval?
+
+    /// Changes saved here (narration's position, every sentence) upload after `seconds`,
+    /// once: later deferred saves neither bring the upload forward nor push it back, and a
+    /// change already due (a real edit) stays due.
+    func withDeferredUpload<T>(seconds: TimeInterval, _ body: () throws -> T) rethrows -> T {
+        let previous = deferral
+        deferral = seconds
+        defer { deferral = previous }
+        return try body()
+    }
+
     func withSuspendedRecording<T>(_ body: () throws -> T) rethrows -> T {
         let previous = isSuspended
         isSuspended = true
@@ -170,13 +183,15 @@ final class SyncJournal {
         if let entry = (try? context.fetch(descriptor))?.first {
             entry.operationRaw = operation.rawValue
             entry.createdAt = Date()
-            entry.nextAttemptAt = Date()
+            // A deferred save keeps the time already scheduled (sooner or later).
+            if deferral == nil { entry.nextAttemptAt = Date() }
             entry.attempts = 0
             entry.lastError = ""
             if !payloadJSON.isEmpty { entry.payloadJSON = payloadJSON }
         } else {
-            context.insert(SyncOutboxEntry(entityType: type, entityID: id,
-                                           operation: operation, payloadJSON: payloadJSON))
+            let entry = SyncOutboxEntry(entityType: type, entityID: id, operation: operation, payloadJSON: payloadJSON)
+            if let deferral { entry.nextAttemptAt = Date().addingTimeInterval(deferral) }
+            context.insert(entry)
         }
     }
 
@@ -185,6 +200,7 @@ final class SyncJournal {
         isRecording = true
         defer { isRecording = false }
         try? context.save()
-        NotificationCenter.default.post(name: .nodusSyncOutboxChanged, object: self)
+        NotificationCenter.default.post(name: .nodusSyncOutboxChanged, object: self,
+                                        userInfo: deferral.map { ["delay": $0] })
     }
 }

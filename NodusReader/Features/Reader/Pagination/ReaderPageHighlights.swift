@@ -63,6 +63,31 @@ struct ReaderPageHighlights: Equatable {
     /// Line rects of one span, ready to be filled as a single shape. Edges
     /// snap to device pixels and sub-point gaps between stacked lines close,
     /// so a translucent fill never leaves a seam of background between lines.
+    /// The rects of `glyphRange`, one per line, each as tall as its whole line. TextKit's
+    /// enclosing rects are only as tall as the text where a range stops mid-line, but
+    /// include the line spacing where it runs on: drawn side by side (the spoken part of
+    /// a sentence and the rest) they left a gap under the shorter one.
+    static func lineRects(_ layout: NSLayoutManager, glyphRange: NSRange, in container: NSTextContainer) -> [CGRect] {
+        var rects: [CGRect] = []
+        // TextKit's enclosing rects merge whole middle lines into one block: walk the
+        // lines themselves and take each line's horizontal extent from its own part.
+        layout.enumerateLineFragments(forGlyphRange: glyphRange) { line, _, _, lineGlyphs, _ in
+            let part = NSIntersectionRange(lineGlyphs, glyphRange)
+            guard part.length > 0 else { return }
+            var minX = CGFloat.greatestFiniteMagnitude
+            var maxX = -CGFloat.greatestFiniteMagnitude
+            layout.enumerateEnclosingRects(forGlyphRange: part,
+                                           withinSelectedGlyphRange: NSRange(location: NSNotFound, length: 0),
+                                           in: container) { rect, _ in
+                minX = min(minX, rect.minX)
+                maxX = max(maxX, rect.maxX)
+            }
+            guard maxX > minX else { return }
+            rects.append(CGRect(x: minX, y: line.minY, width: maxX - minX, height: line.height))
+        }
+        return rects
+    }
+
     static func fillRects(_ rects: [CGRect], scale: CGFloat) -> [CGRect] {
         let scale = max(scale, 1)
         func snap(_ value: CGFloat) -> CGFloat { (value * scale).rounded() / scale }

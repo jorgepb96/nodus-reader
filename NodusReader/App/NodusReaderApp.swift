@@ -78,6 +78,8 @@ struct NodusReaderApp: App {
             defaults.removeObject(forKey: "nodus.reader.flow")
             defaults.removeObject(forKey: "nodus.reader.pageTurn")
             defaults.removeObject(forKey: "nodus.reader.fontScale")
+            // Voice filters chosen in one test must not narrow the next one's picker.
+            defaults.removeObject(forKey: VoiceFilterSelection.storageKey)
         }
         #endif
         let preferences = ReaderPreferences(defaults: defaults)
@@ -120,6 +122,17 @@ struct NodusReaderApp: App {
                 .environment(models)
                 .environment(janitor)
                 .modelContainer(container)
+                #if os(iOS)
+                .task { [immersive] in TouchActivity.start { immersive.userInteracted() } }
+                #endif
+                #if NODUS_SOUNDSCAPE_LAB
+                .task {
+                    SoundscapeLab.shared.playback = playback
+                    SoundscapeLab.shared.library = library
+                    SoundscapeLab.shared.immersive = immersive
+                    SoundscapeLab.shared.autorunIfRequested()
+                }
+                #endif
         }
         #if os(macOS)
         .defaultSize(width: 1360, height: 860)

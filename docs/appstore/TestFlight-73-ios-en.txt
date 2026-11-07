@@ -1,0 +1,10 @@
+Smoother typing, selecting and playback.
+
+- Search fields in dropdowns (voice filters, the book's voice picker, Voices & Models, the languages list, the iPad sidebar) show each letter at once. The list filters when you pause typing.
+- Press and drag to select text while narration plays. The selection no longer gets lost, and the text stays still while your finger is on it or a passage is selected. Following resumes when you let go.
+- The player, the reader's menus and sheets no longer stutter during narration.
+- While playing, the reading position is saved every 15 seconds (pausing or closing the book still saves at once).
+- While an AI soundscape is being composed, touching the screen gives the interface priority for a moment.
+
+AI soundscapes (from the previous beta)
+Settings › Soundscapes: turn them on and choose AI, download Music and Ambience in Models (about 2.6 GB, on Wi-Fi), then press play in a book and pick how many pieces to compose first. Powered by Stability AI; everything runs on your iPhone. Tell us how they sound, waiting times, heat and battery, and any moment the voice pauses or the app closes.

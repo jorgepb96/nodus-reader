@@ -1,0 +1,7 @@
+Smoother interface while something plays.
+
+- The player, the reader's menus and sheets no longer stutter during narration: they were being redrawn with every spoken word and every sentence.
+- While playing, the reading position is saved every 15 seconds instead of every sentence (pausing, closing the book or leaving the app still save at once).
+- While an AI soundscape is being composed, touching the screen (a menu, a sheet, scrolling) gives the interface priority for a moment.
+
+Everything from build 71 (AI soundscapes, steadier narration) is included.

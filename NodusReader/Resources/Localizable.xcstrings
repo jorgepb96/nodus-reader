@@ -562,6 +562,26 @@
         }
       }
     },
+    "%lld/5": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld/5"
+          }
+        }
+      }
+    },
+    "1 GB": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 GB"
+          }
+        }
+      }
+    },
     "1 book": {
       "localizations": {
         "es": {
@@ -652,6 +672,17 @@
         }
       }
     },
+    "1 piece": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 pieza"
+          }
+        }
+      }
+    },
     "1 result": {
       "localizations": {
         "es": {
@@ -682,12 +713,33 @@
         }
       }
     },
+    "2 GB": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 GB"
+          }
+        }
+      }
+    },
     "25 min": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "25 min"
+          }
+        }
+      }
+    },
+    "3 pieces": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 piezas"
           }
         }
       }
@@ -728,6 +780,27 @@
           "stringUnit": {
             "state": "translated",
             "value": "5 minutos"
+          }
+        }
+      }
+    },
+    "500 MB": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "500 MB"
+          }
+        }
+      }
+    },
+    "6 pieces": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6 piezas"
           }
         }
       }
@@ -818,6 +891,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Licencia AGPL-3.0-only"
+          }
+        }
+      }
+    },
+    "AI": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con IA"
+          }
+        }
+      }
+    },
+    "AI music follows this style for the book.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La música con IA sigue este estilo en este libro."
+          }
+        }
+      }
+    },
+    "AI soundscapes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paisajes con IA"
+          }
+        }
+      }
+    },
+    "AI soundscapes are not available on this device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los paisajes con IA no están disponibles en este dispositivo."
           }
         }
       }
@@ -1092,6 +1206,16 @@
         }
       }
     },
+    "Add to favorites": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir a favoritos"
+          }
+        }
+      }
+    },
     "Adds a button to the reader with a recap and a list of characters.": {
       "localizations": {
         "es": {
@@ -1197,7 +1321,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ambiente"
+            "value": "Ambientes"
           }
         }
       }
@@ -1568,6 +1692,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Predeterminada del libro"
+          }
+        }
+      }
+    },
+    "Book style": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estilo del libro"
           }
         }
       }
@@ -2302,6 +2436,16 @@
         }
       }
     },
+    "Comedy": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comedia"
+          }
+        }
+      }
+    },
     "Comic": {
       "localizations": {
         "es": {
@@ -2328,6 +2472,69 @@
           "stringUnit": {
             "state": "translated",
             "value": "Compilando para este dispositivo. La primera vez puede tardar un minuto."
+          }
+        }
+      }
+    },
+    "Compose music and ambience for this book before the voice starts, so the two do not compete. More pieces are composed later, while you listen, when the story needs them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compón música y ambiente para este libro antes de que empiece la voz, para que no compitan. Más adelante, mientras escuchas, se componen más piezas cuando la historia las necesite."
+          }
+        }
+      }
+    },
+    "Composed on this device for each book, a few pieces at a time, and kept to play again offline.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se componen en este dispositivo para cada libro, unas pocas piezas cada vez, y se guardan para volver a sonar sin conexión."
+          }
+        }
+      }
+    },
+    "Composes a few pieces for this book now, so they are ready to play.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compone ahora unas pocas piezas para este libro, para que estén listas."
+          }
+        }
+      }
+    },
+    "Composing %@…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Componiendo %@…"
+          }
+        }
+      }
+    },
+    "Composing %lld of %lld…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Componiendo %lld de %lld…"
+          }
+        }
+      }
+    },
+    "Composing is paused: %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La composición está en pausa: %@."
           }
         }
       }
@@ -2572,6 +2779,16 @@
         }
       }
     },
+    "Cyberpunk": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cyberpunk"
+          }
+        }
+      }
+    },
     "DEFAULT": {
       "localizations": {
         "es": {
@@ -2692,12 +2909,32 @@
         }
       }
     },
+    "Delete Composed Soundscapes?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Borrar los paisajes compuestos?"
+          }
+        }
+      }
+    },
     "Delete Custom Theme?": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "¿Eliminar el tema personalizado?"
+          }
+        }
+      }
+    },
+    "Delete Model?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Borrar el modelo?"
           }
         }
       }
@@ -2798,6 +3035,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eliminar caché"
+          }
+        }
+      }
+    },
+    "Delete composed soundscapes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borrar paisajes compuestos"
           }
         }
       }
@@ -2952,6 +3199,16 @@
         }
       }
     },
+    "Detected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectado"
+          }
+        }
+      }
+    },
     "Device-local data": {
       "localizations": {
         "es": {
@@ -2978,6 +3235,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "¿Necesito una cuenta?"
+          }
+        }
+      }
+    },
+    "Don't ask again": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No volver a preguntar"
+          }
+        }
+      }
+    },
+    "Don't ask for this book": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No preguntar en este libro"
           }
         }
       }
@@ -3032,6 +3311,26 @@
         }
       }
     },
+    "Download a model in Settings › Soundscapes.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga un modelo en Ajustes › Paisajes sonoros."
+          }
+        }
+      }
+    },
+    "Download a model to compose soundscapes on this device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga un modelo para componer paisajes sonoros en este dispositivo."
+          }
+        }
+      }
+    },
     "Download a sound pack in Settings › Immersive Audio.": {
       "localizations": {
         "es": {
@@ -3042,12 +3341,32 @@
         }
       }
     },
+    "Download a sound pack in Settings › Soundscapes.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga un paquete de sonidos en Ajustes › Paisajes sonoros."
+          }
+        }
+      }
+    },
     "Download a sound pack to hear Immersive Audio. The sounds are stored on this device and play offline.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Descarga un paquete de sonidos para escuchar el audio inmersivo. Los sonidos se guardan en este dispositivo y suenan sin conexión."
+          }
+        }
+      }
+    },
+    "Download a sound pack to hear soundscapes. The sounds are stored on this device and play offline.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga un paquete de sonidos para escuchar paisajes sonoros. Los sonidos se guardan en este dispositivo y suenan sin conexión."
           }
         }
       }
@@ -3082,6 +3401,26 @@
         }
       }
     },
+    "Download music": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar música"
+          }
+        }
+      }
+    },
+    "Download music and ambience": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar música y ambientes"
+          }
+        }
+      }
+    },
     "Download new sounds": {
       "localizations": {
         "es": {
@@ -3107,7 +3446,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descargado"
+            "value": "Descargados"
           }
         }
       }
@@ -3138,6 +3477,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Descargando de Hugging Face"
+          }
+        }
+      }
+    },
+    "Downloading…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando…"
           }
         }
       }
@@ -3332,6 +3682,16 @@
         }
       }
     },
+    "Every piece composed on this device is deleted, favorites included. New ones are composed while you read.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se borran todas las piezas compuestas en este dispositivo, también los favoritos. Se compondrán otras nuevas mientras lees."
+          }
+        }
+      }
+    },
     "Every sound was chosen for Nodus Reader from public-domain (CC0) and attribution (CC-BY) sources and checked one by one. The authors are credited here, with each licence, source and the changes made. The full provenance record, with each file’s checksums and processing, is published with the source code.": {
       "localizations": {
         "es": {
@@ -3342,12 +3702,32 @@
         }
       }
     },
+    "Everything happens on this device: sounds are downloaded or composed here and played offline, and in Automatic mode Apple Intelligence reads the passages here. No text or audio leaves the device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo ocurre en este dispositivo: los sonidos se descargan o se componen aquí y suenan sin conexión, y en el modo Automático Apple Intelligence lee los pasajes aquí. Ningún texto ni audio sale del dispositivo."
+          }
+        }
+      }
+    },
     "Everything happens on this device: the sounds are downloaded once and played offline, and in Automatic mode Apple Intelligence reads the passages here. No text or audio leaves the device.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Todo ocurre en este dispositivo: los sonidos se descargan una vez y suenan sin conexión, y en el modo automático Apple Intelligence lee los pasajes aquí. Ningún texto ni audio sale del dispositivo."
+          }
+        }
+      }
+    },
+    "Everything runs on this device. No text or audio leaves it, and no account is needed.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo se ejecuta en este dispositivo. Ningún texto ni audio sale de él y no hace falta ninguna cuenta."
           }
         }
       }
@@ -3367,7 +3747,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Desplegado"
+            "value": "Expandido"
           }
         }
       }
@@ -3422,12 +3802,32 @@
         }
       }
     },
+    "Fairy tale": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuento"
+          }
+        }
+      }
+    },
+    "Fantasy": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fantasía"
+          }
+        }
+      }
+    },
     "Fast": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rápido"
+            "value": "Rápida"
           }
         }
       }
@@ -3437,7 +3837,17 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máxima velocidad"
+            "value": "La más rápida"
+          }
+        }
+      }
+    },
+    "Favorite": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favorito"
           }
         }
       }
@@ -3712,6 +4122,16 @@
         }
       }
     },
+    "Gemma Terms of Use": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemma Terms of Use"
+          }
+        }
+      }
+    },
     "Gender": {
       "localizations": {
         "es": {
@@ -3763,7 +4183,6 @@
       }
     },
     "Generating the next sentence…": {
-      "extractionState": "manual",
       "localizations": {
         "es": {
           "stringUnit": {
@@ -3923,12 +4342,32 @@
         }
       }
     },
+    "Historical": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Histórico"
+          }
+        }
+      }
+    },
     "Home": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Inicio"
+          }
+        }
+      }
+    },
+    "Horror": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terror"
           }
         }
       }
@@ -4413,6 +4852,17 @@
         }
       }
     },
+    "Installing…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalando…"
+          }
+        }
+      }
+    },
     "Installs a Kokoro or Phonon Core ML bundle folder that is already on this device": {
       "localizations": {
         "es": {
@@ -4439,6 +4889,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Música instrumental y ambientes grabados con licencias libres (CC0 y CC-BY), seleccionados para leer. Se descargan una vez, se verifican, se guardan en este dispositivo y nunca se sincronizan."
+          }
+        }
+      }
+    },
+    "Instrumental pieces for every mood and style": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piezas instrumentales para cada ánimo y estilo"
           }
         }
       }
@@ -4498,7 +4958,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sólo leer"
+            "value": "Solo leer"
           }
         }
       }
@@ -4728,7 +5188,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Linnet no ha podido descargar o verificar %@. Vuelve a intentarlo."
+            "value": "Linnet no pudo descargar o verificar %@. Inténtalo de nuevo."
           }
         }
       }
@@ -4739,6 +5199,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Licencias de Linnet"
+          }
+        }
+      }
+    },
+    "Linnet model weights by VoxRT, licensed under the Linnet Weights License 1.0\nPowered by Linnet (VoxRT)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesos del modelo Linnet de VoxRT, con la licencia Linnet Weights License 1.0\nPowered by Linnet (VoxRT)"
           }
         }
       }
@@ -4879,6 +5349,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Espejismos"
+          }
+        }
+      }
+    },
+    "Low Power Mode is on: the voice may pause between sentences. Turn it off, or choose an iOS voice.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El modo de bajo consumo está activado: la voz puede pararse entre frases. Desactívalo o elige una voz de iOS."
           }
         }
       }
@@ -5083,6 +5564,16 @@
         }
       }
     },
+    "Model card": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ficha del modelo"
+          }
+        }
+      }
+    },
     "Model card and licence": {
       "localizations": {
         "es": {
@@ -5148,7 +5639,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Moderado"
+            "value": "Moderada"
           }
         }
       }
@@ -5169,6 +5660,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voces más naturales. La velocidad depende del modelo y del dispositivo."
+          }
+        }
+      }
+    },
+    "More options": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más opciones"
           }
         }
       }
@@ -5203,6 +5704,17 @@
         }
       }
     },
+    "More variety from the start": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más variedad desde el principio"
+          }
+        }
+      }
+    },
     "Move to": {
       "localizations": {
         "es": {
@@ -5233,6 +5745,26 @@
         }
       }
     },
+    "Music and ambience": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Música y ambientes"
+          }
+        }
+      }
+    },
+    "Music and ambience composed on this device for the book you are reading, then kept to play again offline.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Música y ambientes compuestos en este dispositivo para el libro que lees, que se guardan para volver a sonar sin conexión."
+          }
+        }
+      }
+    },
     "Music and ambience could not start on this audio output. Narration is not affected.": {
       "localizations": {
         "es": {
@@ -5243,12 +5775,33 @@
         }
       }
     },
+    "Music for this session": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Música para esta sesión"
+          }
+        }
+      }
+    },
     "Music intensity": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Intensidad musical"
+          }
+        }
+      }
+    },
+    "Music needs about 1.9 GB; music and ambience about 2.9 GB. Use Wi‑Fi. You can delete either later.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La música ocupa unos 1,9 GB; música y ambientes, unos 2,9 GB. Usa wifi. Puedes borrar cualquiera de los dos más adelante."
           }
         }
       }
@@ -5479,6 +6032,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Las voces neuronales se sincronizan palabra a palabra con el reconocimiento de voz de Apple en el dispositivo, para que el resaltado siga al audio. iOS puede descargar una vez su modelo de voz para el idioma del libro. El audio nunca sale de este dispositivo."
+          }
+        }
+      }
+    },
+    "Neutral": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neutro"
           }
         }
       }
@@ -5728,7 +6291,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No requiere descarga"
+            "value": "Sin descargas"
           }
         }
       }
@@ -5738,7 +6301,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sin descargas. Muy rápidas, aunque menos naturales."
+            "value": "Sin descargas. Muy rápidas, con voces menos naturales."
           }
         }
       }
@@ -5788,7 +6351,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No hay modelos para estos idiomas."
+            "value": "Ningún modelo coincide con estos idiomas."
           }
         }
       }
@@ -5968,7 +6531,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No hay ningún modelo de voz instalado. Descarga un modelo para activar la narración."
+            "value": "No hay ningún modelo de voz instalado. Descarga uno abajo para activar la narración."
           }
         }
       }
@@ -6103,12 +6666,42 @@
         }
       }
     },
+    "Noir": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noir"
+          }
+        }
+      }
+    },
     "Not available in this version of Nodus Reader: there is no Core ML version of this model that runs on Apple devices yet. Accepting the licence now only gives your account access for later.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "No está disponible en esta versión de Nodus Reader: todavía no existe una versión Core ML de este modelo para dispositivos Apple. Aceptar ahora la licencia solo da acceso a tu cuenta para más adelante."
+          }
+        }
+      }
+    },
+    "Not enough free space: AI soundscapes need %@ free to download and prepare.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay espacio suficiente: los paisajes con IA necesitan %@ libres para descargarse y prepararse."
+          }
+        }
+      }
+    },
+    "Not favorite": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No favorito"
           }
         }
       }
@@ -6123,12 +6716,32 @@
         }
       }
     },
+    "Not installed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No instalado"
+          }
+        }
+      }
+    },
+    "Not now": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no"
+          }
+        }
+      }
+    },
     "Not selected": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sin seleccionar"
+            "value": "No seleccionado"
           }
         }
       }
@@ -6259,6 +6872,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ofrecer un resumen tras un descanso"
+          }
+        }
+      }
+    },
+    "Offer music before a session": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ofrecer música antes de una sesión"
+          }
+        }
+      }
+    },
+    "Offer music when listening starts": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ofrecer música al empezar a escuchar"
           }
         }
       }
@@ -6843,6 +7478,16 @@
         }
       }
     },
+    "Pieces are composed a few at a time while a book is open, and never in the background or when the device is hot.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las piezas se componen unas pocas cada vez mientras hay un libro abierto, nunca en segundo plano ni cuando el dispositivo está caliente."
+          }
+        }
+      }
+    },
     "Pink": {
       "localizations": {
         "es": {
@@ -6953,6 +7598,27 @@
         }
       }
     },
+    "Powered by": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powered by"
+          }
+        }
+      }
+    },
+    "Powered by Stability AI": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powered by Stability AI"
+          }
+        }
+      }
+    },
     "Precise word timing": {
       "localizations": {
         "es": {
@@ -6973,12 +7639,33 @@
         }
       }
     },
+    "Prepare": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparar"
+          }
+        }
+      }
+    },
     "Prepare a whole book, or keep a few chapters ready as you read. Documents without chapters use paragraph groups. Sentences stay whole, and saved audio stays on this device.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Prepara un libro completo o mantén varios capítulos listos mientras lees. Los documentos sin capítulos se dividen en grupos de párrafos, sin partir frases. El audio se guarda en este dispositivo."
+          }
+        }
+      }
+    },
+    "Prepare soundscapes for this book": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparar paisajes para este libro"
           }
         }
       }
@@ -6993,12 +7680,32 @@
         }
       }
     },
+    "Preparing on this device…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando en este dispositivo…"
+          }
+        }
+      }
+    },
     "Preparing selection…": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Preparando el fragmento…"
+          }
+        }
+      }
+    },
+    "Preparing soundscapes %lld/%lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando paisajes %1$lld/%2$lld"
           }
         }
       }
@@ -7178,7 +7885,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Proporcionadas por Apple con iOS"
+            "value": "Incluidas por Apple con iOS"
           }
         }
       }
@@ -7219,6 +7926,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "En cola · se reanuda cuando los motores de voz quedan libres"
+          }
+        }
+      }
+    },
+    "Queued, after the other model…": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En cola, tras el otro modelo…"
           }
         }
       }
@@ -7343,6 +8061,16 @@
         }
       }
     },
+    "Rain, forests, cities and other places": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lluvia, bosques, ciudades y otros lugares"
+          }
+        }
+      }
+    },
     "Read": {
       "localizations": {
         "es": {
@@ -7458,7 +8186,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lee sin narración. Puedes elegir una voz después."
+            "value": "Lee sin narración. Puedes elegir una voz más tarde."
           }
         }
       }
@@ -7538,7 +8266,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El modo de lectura no está disponible mientras esté activado el desplazamiento automático al escuchar. Desactívalo en «Leer y escuchar» para elegir páginas o la dirección de desplazamiento."
+            "value": "El modo de lectura no está disponible mientras el desplazamiento automático al escuchar está activado. Desactívalo en Leer y escuchar para elegir páginas o una dirección de desplazamiento."
           }
         }
       }
@@ -7669,6 +8397,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reconociendo las palabras en este dispositivo…"
+          }
+        }
+      }
+    },
+    "Recommended: music and an ambience": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recomendado: música y un ambiente"
           }
         }
       }
@@ -7823,6 +8562,16 @@
         }
       }
     },
+    "Remove from favorites": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar de favoritos"
+          }
+        }
+      }
+    },
     "Remove job, keep audio": {
       "localizations": {
         "es": {
@@ -7898,7 +8647,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Voz sustituta"
+            "value": "Voz de sustitución"
           }
         }
       }
@@ -8023,6 +8772,16 @@
         }
       }
     },
+    "Romance": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Romance"
+          }
+        }
+      }
+    },
     "Romantic": {
       "localizations": {
         "es": {
@@ -8129,6 +8888,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Análisis de escenas"
+          }
+        }
+      }
+    },
+    "Science fiction": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ciencia ficción"
           }
         }
       }
@@ -8818,7 +9587,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lento"
+            "value": "Lenta"
           }
         }
       }
@@ -8923,12 +9692,42 @@
         }
       }
     },
+    "Sound packs recorded by people and shared under free licences, downloaded once and played offline.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paquetes de sonidos grabados por personas y compartidos con licencias libres; se descargan una vez y suenan sin conexión."
+          }
+        }
+      }
+    },
     "Sounds": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Sonidos"
+          }
+        }
+      }
+    },
+    "Soundscapes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paisajes sonoros"
+          }
+        }
+      }
+    },
+    "Soundscapes are off": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los paisajes sonoros están desactivados"
           }
         }
       }
@@ -8959,6 +9758,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Espacio"
+          }
+        }
+      }
+    },
+    "Space for composed pieces": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espacio para piezas compuestas"
           }
         }
       }
@@ -9003,6 +9812,36 @@
         }
       }
     },
+    "Stability AI Acceptable Use Policy": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Política de uso aceptable de Stability AI"
+          }
+        }
+      }
+    },
+    "Stability AI Community License": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stability AI Community License"
+          }
+        }
+      }
+    },
+    "Stable Audio 3 Small composes music and ambience on this device. Deleting a model keeps the pieces already composed; they play without it.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stable Audio 3 Small compone música y ambientes en este dispositivo. Al borrar un modelo se conservan las piezas ya compuestas, que suenan sin él."
+          }
+        }
+      }
+    },
     "Standard": {
       "localizations": {
         "es": {
@@ -9018,7 +9857,29 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Empieza a escuchar sin descargar nada. Son muy rápidas, aunque suenan menos naturales."
+            "value": "Empieza a escuchar sin descargar nada. Muy rápidas, con voces menos naturales."
+          }
+        }
+      }
+    },
+    "Start now": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar ya"
+          }
+        }
+      }
+    },
+    "Start without waiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar sin esperar"
           }
         }
       }
@@ -9029,6 +9890,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Inicio: %@ s"
+          }
+        }
+      }
+    },
+    "Starts soonest": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empieza antes"
           }
         }
       }
@@ -9069,6 +9941,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Detener narración"
+          }
+        }
+      }
+    },
+    "Stop preparing soundscapes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dejar de preparar paisajes"
           }
         }
       }
@@ -9383,6 +10265,16 @@
         }
       }
     },
+    "Tap the heart while an AI piece plays to keep it here.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca el corazón mientras suena una pieza con IA para guardarla aquí."
+          }
+        }
+      }
+    },
     "Tavern": {
       "localizations": {
         "es": {
@@ -9673,6 +10565,16 @@
         }
       }
     },
+    "The models are Stability AI's Stable Audio 3 Small (Stability AI Community License) with Google's T5Gemma (Gemma Terms of Use). Powered by Stability AI.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los modelos son Stable Audio 3 Small de Stability AI (Stability AI Community License) con T5Gemma de Google (Gemma Terms of Use). Powered by Stability AI."
+          }
+        }
+      }
+    },
     "The neural engine returned audio in an unsupported format.": {
       "localizations": {
         "es": {
@@ -9689,6 +10591,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "El motor neuronal no ha devuelto audio."
+          }
+        }
+      }
+    },
+    "The pieces already composed stay and keep playing. You can download the model again later.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las piezas ya compuestas se conservan y siguen sonando. Puedes volver a descargar el modelo más adelante."
           }
         }
       }
@@ -9808,7 +10720,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La voz no ha podido generar audio válido. Reinténtalo o elige otra voz."
+            "value": "La voz no pudo generar audio utilizable. Inténtalo de nuevo o elige otra voz."
           }
         }
       }
@@ -10103,6 +11015,16 @@
         }
       }
     },
+    "Thriller": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thriller"
+          }
+        }
+      }
+    },
     "Title": {
       "localizations": {
         "es": {
@@ -10249,6 +11171,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prueba a borrar la búsqueda o los filtros."
+          }
+        }
+      }
+    },
+    "Turn it back on in this book's atmosphere panel, or for every book in Settings › Soundscapes › More options.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuelve a activarlo en el panel de atmósfera de este libro, o para todos los libros en Ajustes › Paisajes sonoros › Más opciones."
           }
         }
       }
@@ -10428,7 +11361,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Usar voces de iOS"
+            "value": "Usar las voces de iOS"
           }
         }
       }
@@ -10488,7 +11421,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Muy rápido"
+            "value": "Muy rápida"
           }
         }
       }
@@ -10498,7 +11431,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Muy rápido · Valoración orientativa"
+            "value": "Muy rápida · Valoración orientativa"
           }
         }
       }
@@ -10628,7 +11561,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Voces de todos los modelos de este %@. Reproduce cualquiera para probarla; si eliges una de otro modelo, ese modelo pasa a ser el motor de voz. Los modelos se quedan en este dispositivo. Las voces elegidas manualmente pueden sincronizarse con iCloud."
+            "value": "Voces de todos los modelos de este %@. Reproduce cualquiera para probarla; elegir una de otro modelo convierte ese modelo en el motor de voz. Los modelos de voz se quedan en este dispositivo. Las voces elegidas a mano pueden sincronizarse con iCloud."
           }
         }
       }
@@ -10663,6 +11596,16 @@
         }
       }
     },
+    "War": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bélico"
+          }
+        }
+      }
+    },
     "Weight": {
       "localizations": {
         "es": {
@@ -10693,6 +11636,16 @@
         }
       }
     },
+    "Western": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Western"
+          }
+        }
+      }
+    },
     "What is Hugging Face and how do I get a token?": {
       "localizations": {
         "es": {
@@ -10713,6 +11666,16 @@
         }
       }
     },
+    "When it fills, the pieces heard least recently are deleted first. Favorites are always kept.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando se llena, se borran primero las piezas que hace más tiempo que no suenan. Los favoritos siempre se conservan."
+          }
+        }
+      }
+    },
     "When narration pauses": {
       "localizations": {
         "es": {
@@ -10729,6 +11692,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Al abrir un libro que no has leído en dos días o más."
+          }
+        }
+      }
+    },
+    "When you press play, compose the session's music first so the voice does not compete with it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al pulsar reproducir, compone primero la música de la sesión para que la voz no compita con ella."
           }
         }
       }
@@ -11033,6 +12007,17 @@
         }
       }
     },
+    "hourly limit reached": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "límite por hora alcanzado"
+          }
+        }
+      }
+    },
     "iCloud": {
       "localizations": {
         "es": {
@@ -11093,6 +12078,28 @@
         }
       }
     },
+    "paused in Low Power Mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "en pausa por bajo consumo"
+          }
+        }
+      }
+    },
+    "paused in the background": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "en pausa en segundo plano"
+          }
+        }
+      }
+    },
     "play": {
       "localizations": {
         "es": {
@@ -11109,6 +12116,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "esta voz"
+          }
+        }
+      }
+    },
+    "waiting for free memory": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "esperando memoria libre"
+          }
+        }
+      }
+    },
+    "waiting for scene analysis": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "esperando al análisis de escenas"
+          }
+        }
+      }
+    },
+    "waiting for the device to cool": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "esperando a que se enfríe el dispositivo"
+          }
+        }
+      }
+    },
+    "waiting for the narration": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "esperando a la narración"
           }
         }
       }

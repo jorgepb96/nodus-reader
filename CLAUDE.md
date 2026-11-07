@@ -114,6 +114,18 @@ manifest is bundled; CC0 packs download from Hugging Face or the GitHub Release 
 Build the catalog with `tools/immersive-audio/` and never add a source shared with Nodus
 Drift. See `docs/IMMERSIVE_AUDIO.md`.
 
+Soundscapes (Settings › Soundscapes, formerly Immersive Audio) choose one source:
+downloaded CC0 packs or **AI soundscapes** composed on the device with Stable Audio 3
+Small on MLX (`Modules/StableAudioMLX`, `Core/Soundscapes`). The director still decides
+when the atmosphere changes; AI only supplies what plays: music pieces of ~120 s
+(continued by inpainting) that rotate, ambience loops, a 300-prompt library chosen by
+book style, emotion and situation, composed ahead while a book plays, cached and shared
+by books, never in the background or when hot. Models download per device (Stability
+AI Community License, Gemma terms) and are never bundled. MLX cannot run in the
+Simulator; `-NodusSoundscapeFixtureGenerator` stands in for UI tests. See
+`docs/IMMERSIVE_AUDIO.md` and `docs/SOUNDSCAPES_FEASIBILITY.md`; the developer-only
+Soundscape Lab compiles only with `NODUS_SOUNDSCAPE_LAB`.
+
 On devices with Apple Intelligence (iOS/macOS 26+), the reader offers recaps and a
 character list (`StoryCompanion`, Settings › Recaps & Characters, on by default). Only
 `SystemLanguageModel` runs, on the device, never Private Cloud Compute; only text before

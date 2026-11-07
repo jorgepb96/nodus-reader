@@ -20,6 +20,29 @@ import AVFoundation
         #expect(VoiceCatalog.replacement(in: [regional, c], language: "es-MX", gender: nil, defaultID: c.id)?.id == regional.id)
         #expect(VoiceCatalog.replacement(in: [a,b,c], language: "ja-JP", gender: nil, defaultID: a.id) == nil)
     }
+    /// No voice chosen for the book: the book's language decides. The default voice
+    /// reads it when it speaks that language; a voice saved for another situation never
+    /// reads a Spanish book in English.
+    @Test func bookWithoutItsOwnVoiceFollowsItsLanguage() {
+        let suite = "voice-language-\(UUID())"; let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let catalog = VoiceCatalog(defaults: defaults)
+        let english = voice("fred", language: "en-US")
+        let spanish = voice("monica", language: "es-ES")
+        catalog.setNeuralVoices([english, spanish])
+        catalog.defaultVoiceID = english.id
+        let book = Book(title: "Quijote", author: "", format: .txt, language: "es", fileName: "q.txt",
+                        relativePath: "q.txt", fileSize: 0, contentHash: "q")
+        let resolver = VoiceSelectionResolver(defaults: defaults)
+        #expect(resolver.resolve(book: book, catalog: catalog, commit: true)?.id == spanish.id)
+        #expect(catalog.narrationVoice(preferredID: nil, language: book.language)?.id == spanish.id)
+        // An English book keeps the default voice.
+        let novel = Book(title: "Dracula", author: "", format: .txt, language: "en", fileName: "d.txt",
+                         relativePath: "d.txt", fileSize: 0, contentHash: "d")
+        #expect(resolver.resolve(book: novel, catalog: catalog, commit: false)?.id == english.id)
+        #expect(catalog.narrationVoice(preferredID: nil, language: novel.language)?.id == english.id)
+    }
+
     @Test func localReplacementSurvivesRestartAndDoesNotRestoreOriginal() {
         let suite = "voice-fallback-\(UUID())"; let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }

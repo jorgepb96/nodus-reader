@@ -56,6 +56,7 @@ Resolved versions are pinned in
 | `ptts` / PhononTTS | <https://github.com/gradium-ai/xn-ptts> | v0.4.1 (Swift sources vendored in `Modules/PhononTTS/`) | MIT OR Apache-2.0 | Phonon narration |
 | QwenANE, GVoiceKit, GVoiceProductionKit | <https://github.com/TinyTrashLabs/gloam-voice-studio> | `f46258b1889dd0c94d227c265831853f54fd9f7d`, vendored in `Modules/QwenANE/` | MIT, © 2026 TinyTrashLabs | Core ML Qwen speech and voice preparation; Mac `upMall` placement adapted, see `NODUS_VENDOR.md`. Full notice in `Modules/QwenANE/LICENSE` |
 | LinnetTTS / CLinnetTTS | <https://github.com/VoxRT/LinnetTTS> | 0.1.1, Swift sources unchanged; official static SDK repackaged as frameworks | Apache-2.0, © 2026 Wiseport Ltd. (trading as VoxRT) | Local English narration; full publisher NOTICE and code/asset licences available in the app |
+| StableAudioMLX | <https://github.com/kellyvv/StableAudio3-IOS> (network code) and <https://github.com/Stability-AI/stable-audio-3> `optimized/mlx` (encoder port, numerical reference) | `9281022`, `790793b`; vendored and adapted in `Modules/StableAudioMLX/` (see `NODUS_VENDOR.md`) | MIT, © 2026 stableaudio3-ios contributors; MIT, © 2026 Stability AI | AI soundscapes: Stable Audio 3 Small on MLX |
 | PhononCore (binary, **modified**) | xn-ptts v0.4.1, rebuilt by this project | `phononcore-0.4.1-nodus.1` release of this repository | MIT OR Apache-2.0 | Phonon runtime; see below |
 
 The MIT notices keep their copyright lines; the Apache-2.0 licence text is at
@@ -131,12 +132,26 @@ and in `docs/immersive-audio/PROVENANCE.md`, which records for every file its so
 licence evidence, original and processed SHA-256 and every transformation applied. Only
 the catalog manifest (`NodusReader/Resources/ImmersiveAudio/catalog.json`) ships in the app.
 
+## AI soundscape models (downloaded on request, never bundled)
+
+Stable Audio 3 Small Music and Small SFX, the SAME-S autoencoder and the T5Gemma text
+encoder are downloaded from `stabilityai/stable-audio-3-optimized` at a pinned revision
+only when the reader turns on AI soundscapes, verified by size and SHA-256 and converted
+on the device. They are not part of Nodus Reader's source or binary.
+
+This Stability AI Model is licensed under the Stability AI Community License, Copyright ©
+Stability AI Ltd. All Rights Reserved. Powered by Stability AI. Use is subject to
+Stability AI's Acceptable Use Policy (<https://stability.ai/use-policy>). Gemma is provided
+under and subject to the Gemma Terms of Use found at ai.google.dev/gemma/terms. The licence
+texts are downloaded with the models and shown in the app (Settings › Soundscapes ›
+Models). Audio generated on the device belongs to the user, as far as the law allows.
+
 ## Services the app can contact
 
 External services include Hugging Face (model and voice downloads, optional sign-in
 through Hugging Face's own OAuth page), jsDelivr (serves this repository's OAuth client
 metadata, `oauth/huggingface-client.json`, which Hugging Face reads), Apple iCloud
-(optional sync), the Immersive Audio catalog (Hugging Face dataset
+(optional sync), the AI soundscape models (Hugging Face, `stabilityai/stable-audio-3-optimized`), the Immersive Audio catalog (Hugging Face dataset
 `jorgepb96/nodus-reader-immersive-audio`, mirrored as a GitHub Release of this
 repository) and the web pages a user shares to the app. See `PRIVACY.md`.
 

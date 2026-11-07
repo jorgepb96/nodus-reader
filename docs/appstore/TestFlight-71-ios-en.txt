@@ -1,0 +1,19 @@
+New in this beta: AI soundscapes. Nodus can now compose music and ambience for the book you are reading, on your iPhone, with Stable Audio 3 Small (Powered by Stability AI). Nothing leaves your device.
+
+How to try it
+1. Settings › Soundscapes: turn Soundscapes on and choose AI.
+2. Models: download Music and Ambience (about 2.6 GB together, on Wi-Fi). You can ask for the second while the first downloads.
+3. Open a book and press play. Nodus asks how many pieces to compose before the voice starts: 1, 3 (recommended) or 6. The first music is ready in about 6 to 12 seconds, depending on the iPhone.
+4. While you listen, more pieces are composed as the story needs them. Open the music note in the reader to change the ambience or the music, pick the book's style, and keep pieces you like with the heart.
+
+What we would like to hear about
+- How the music and the ambiences sound, and whether loops are seamless.
+- Waiting times, heat and battery on your iPhone (older or 4 GB iPhones are slower and warm up sooner).
+- Any moment where the voice pauses, stutters or the app closes.
+
+Also in this beta
+- Neural narration no longer pauses every few sentences, and no longer pauses in the middle of sentences after abbreviations, initials or dialogue tags.
+- Gutenberg EPUBs no longer break lines in the middle of paragraphs.
+- Reading position syncs with iCloud more efficiently while you listen.
+
+AI soundscapes need an iPhone with Apple silicon and are off by default. Downloaded sound packs remain available under Soundscapes › Downloaded.

@@ -79,7 +79,51 @@ public enum SentenceTokenizer {
             segmentStart = NSMaxRange(enclosingRange)
         }
         appendSentences(in: NSRange(location: segmentStart, length: ns.length - segmentStart))
-        return result
+        return mergingFalseBoundaries(result, in: ns)
+    }
+
+    /// Titles and common abbreviations (English and Spanish) that end in a period
+    /// without ending the sentence. "etc." and "no." are left out: they often do.
+    private static let abbreviations: Set<String> = [
+        "mr", "mrs", "ms", "dr", "st", "jr", "sr", "srs", "sra", "sras", "srta", "sres", "dña", "dª", "ud", "uds",
+        "vd", "vds", "prof", "gen", "col", "capt", "lt", "sgt", "rev", "fr", "vs", "ej", "pág", "págs", "núm", "nº",
+    ]
+
+    /// The system tokenizer splits after "Sr." or "J." and between a quoted question and
+    /// its "he asked": the voice then closes its intonation and pauses mid-sentence.
+    /// Such pieces are joined back; real boundaries stay.
+    private static func mergingFalseBoundaries(_ ranges: [NSRange], in ns: NSString) -> [NSRange] {
+        guard var current = ranges.first else { return ranges }
+        var merged: [NSRange] = []
+        for next in ranges.dropFirst() {
+            let gap = NSRange(location: NSMaxRange(current), length: max(0, next.location - NSMaxRange(current)))
+            let sameParagraph = !ns.substring(with: gap).contains("\n")
+            if sameParagraph, endsWithAbbreviation(ns.substring(with: current)) || startsInLowercase(ns.substring(with: next)) {
+                current = NSRange(location: current.location, length: NSMaxRange(next) - current.location)
+            } else {
+                merged.append(current)
+                current = next
+            }
+        }
+        merged.append(current)
+        return merged
+    }
+
+    private static func endsWithAbbreviation(_ sentence: String) -> Bool {
+        guard sentence.hasSuffix(".") else { return false }
+        let body = sentence.dropLast()
+        let word = body.reversed().prefix { $0.isLetter || $0 == "ª" || $0 == "º" }
+        // "Mary's." ends in a possessive, not an initial.
+        if let before = body.dropLast(word.count).last, "'’".contains(before) { return false }
+        let token = String(word.reversed()).lowercased()
+        // A single letter is an initial ("J. R. R. Tolkien", "D. Quijote", "p. ej.").
+        return token.count == 1 || abbreviations.contains(token)
+    }
+
+    /// "he asked" after a quoted question, "—dijo" after an exclamation.
+    private static func startsInLowercase(_ sentence: String) -> Bool {
+        guard let first = sentence.first(where: { $0.isLetter }) else { return false }
+        return first.isLowercase
     }
 
     private static func isDecorativeSeparator(_ line: String) -> Bool {

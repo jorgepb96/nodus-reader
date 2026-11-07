@@ -383,8 +383,13 @@ public final class LibraryService {
         save()
     }
 
+    /// While narration plays its position is saved every sentence: on the device at
+    /// once, to iCloud at most this often (a pause, a stop or leaving the app uploads now).
+    public static let progressSyncInterval: TimeInterval = 60
+
     public func updateProgress(_ book: Book, locator: ReadingLocator, progress: Double,
-                               preservingNarrationPosition: Bool = true, characterOffset: Int? = nil) {
+                               preservingNarrationPosition: Bool = true, characterOffset: Int? = nil,
+                               deferredSync: Bool = false) {
         var updated = locator
         if preservingNarrationPosition, updated.narrationPosition == nil {
             updated.narrationPosition = book.locator.narrationPosition
@@ -401,7 +406,11 @@ public final class LibraryService {
             book.status = .inProgress
         }
         book.touch()
-        save()
+        if deferredSync, let syncJournal {
+            syncJournal.withDeferredUpload(seconds: Self.progressSyncInterval) { save() }
+        } else {
+            save()
+        }
         // PDF's stored fraction is for the whole document, not this page.
         // Visual text readers can provide their exact first visible character.
         var position: [String: Any] = ["bookID": book.id, "chapter": updated.chapterIndex,

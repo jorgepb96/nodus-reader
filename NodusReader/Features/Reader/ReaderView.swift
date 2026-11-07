@@ -31,6 +31,7 @@ struct ReaderView: View {
     private let onClose: () -> Void
 
     @State private var content: ReaderContent = .loading
+    @State private var showSessionSheet = false
     @State private var pdfPageIndex: Int
     @State private var pdfPageCount = 0
     @State private var pdfJumpPage: Int?
@@ -267,6 +268,10 @@ struct ReaderView: View {
             updateImmersivePosition()
             scheduleProgressSave()
         }
+        .sheet(isPresented: $showSessionSheet) {
+            SoundscapeSessionSheet(book: book, onStart: performReaderNarrationToggle)
+                .readerPresentation(readerTheme)
+        }
         .sheet(isPresented: $showContents) {
             ReaderNavigationSheet(
                 book: book,
@@ -335,6 +340,10 @@ struct ReaderView: View {
         case .loading:
             loadingView(theme)
         case .chapters(let chapters):
+            // The spoken word changes several times a second: only the pages
+            // read it, so the reader's sheets, player and menus are not rebuilt
+            // with every word.
+            NarrationRangeReader(active: narrationActive) { narrationChapter, narrationSentence, narrationWord in
             PaginatedReaderContent(
                 book: book,
                 chapters: chapters,
@@ -345,9 +354,9 @@ struct ReaderView: View {
                 initialChapterIndex: max(book.locator.chapterIndex, 0),
                 initialFraction: min(max(book.locator.scrollFraction, 0), 1),
                 annotations: book.annotations,
-                narrationChapterIndex: narrationActive ? playback.chapterIndex : nil,
-                narrationSentenceRange: narrationActive ? playback.currentSentenceChapterRange : nil,
-                narrationWordRange: narrationActive ? playback.currentWordChapterRange : nil,
+                narrationChapterIndex: narrationChapter,
+                narrationSentenceRange: narrationSentence,
+                narrationWordRange: narrationWord,
                 searchRanges: search.isPresented ? search.rangesByChapter : [:],
                 currentSearchMatch: search.isPresented ? search.currentMatch : nil,
                 columns: paginationColumns,
@@ -369,6 +378,7 @@ struct ReaderView: View {
                 pageStep: $pageStep,
                 readerPages: $readerPages
             )
+            }
         case .pdf(let url):
             PDFReaderContainer(
                 book: book,
@@ -515,6 +525,8 @@ struct ReaderView: View {
     }
 
     private func suspendNarrationFollow() {
+        // Scrolling by hand: an AI soundscape being composed yields the GPU for a moment.
+        immersive.userInteracted()
         if narrationActive && (playback.mode == .readAndListen || typography.autoScrollNarration) {
             followState.suspend()
         } else {
@@ -758,6 +770,15 @@ struct ReaderView: View {
     }
 
     private func toggleReaderNarration() {
+        // Starting a session with AI soundscapes: offer to compose its music first.
+        if !(playback.activeBook?.id == book.id && playback.isPlaying), immersive.offersSession(for: book) {
+            showSessionSheet = true
+            return
+        }
+        performReaderNarrationToggle()
+    }
+
+    private func performReaderNarrationToggle() {
         if playback.activeBook?.id == book.id, playback.isPlaying {
             playback.pause()
         } else if playback.activeBook?.id == book.id,
@@ -1194,7 +1215,9 @@ struct ReaderNarrationCapsule: View {
             playerSummary
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
 
-            transportControls
+            // Previous/next depend on the sentence: they update on their own,
+            // without rebuilding the sleep-timer menu beside them.
+            ObservationScope { transportControls }
                 .fixedSize(horizontal: true, vertical: false)
 
             HStack(spacing: 0) {
@@ -1217,7 +1240,11 @@ struct ReaderNarrationCapsule: View {
                 }
                 sleepTimer
             }
-                .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
+                // Never narrower than its 44 pt buttons: on a phone with Soundscapes on,
+                // three buttons do not fit an equal side column, and they used to spill
+                // over the forward button. Play stays centred whenever they fit.
+                .frame(minWidth: CGFloat(immersive.preferences.isEnabled ? 3 : 2) * 44,
+                       maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.horizontal, 6)
         .frame(height: 62)
@@ -1295,6 +1322,7 @@ struct ReaderNarrationCapsule: View {
                     .font(.system(size: 13))
                     .foregroundStyle(theme.text)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .padding(.horizontal, 6)
@@ -1507,3 +1535,17 @@ private struct MacReaderKeyboardNavigation: NSViewRepresentable {
     }
 }
 #endif
+
+/// Reads the narrated chapter, sentence and word in its own body, so only the
+/// content it wraps is updated as the voice moves from word to word.
+private struct NarrationRangeReader<Content: View>: View {
+    @Environment(PlaybackController.self) private var playback
+    let active: Bool
+    @ViewBuilder let content: (_ chapter: Int?, _ sentence: NSRange?, _ word: NSRange?) -> Content
+
+    var body: some View {
+        content(active ? playback.chapterIndex : nil,
+                active ? playback.currentSentenceChapterRange : nil,
+                active ? playback.currentWordChapterRange : nil)
+    }
+}

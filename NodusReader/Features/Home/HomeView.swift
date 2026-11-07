@@ -16,6 +16,8 @@ struct HomeView: View {
 
     @State private var readingBook: Book?
     @State private var showPlayer = false
+    @State private var sessionBook: Book?
+    @Environment(ImmersiveAudioController.self) private var immersive
 
     private var continueBook: Book? {
         let opened = books
@@ -74,6 +76,17 @@ struct HomeView: View {
         .inlineNavigationTitle()
         .readerCover(item: $readingBook)
         .playerSheet(isPresented: $showPlayer)
+        .sheet(item: $sessionBook) { book in
+            SoundscapeSessionSheet(book: book, onStart: {
+                // The voice starts now; the player opens once this sheet has closed.
+                Task { await playback.start(book: book, mode: .listen) }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showPlayer = true }
+            })
+            .nodusPalette(palette)
+            .tint(palette.accent)
+            .environment(\.colorScheme, palette.isDark ? .dark : .light)
+            .preferredColorScheme(palette.isDark ? .dark : .light)
+        }
         .onChange(of: playback.activeBook?.id) { _, newValue in
             if newValue != nil, playback.errorMessage != nil {
                 showPlayer = true
@@ -262,6 +275,15 @@ struct HomeView: View {
     }
 
     private func listen(to book: Book) {
+        // With AI soundscapes, offer to compose the session's music before the voice starts.
+        if immersive.offersSession(for: book) {
+            sessionBook = book
+            return
+        }
+        startListening(to: book)
+    }
+
+    private func startListening(to book: Book) {
         showPlayer = true
         Task { await playback.start(book: book, mode: .listen) }
     }

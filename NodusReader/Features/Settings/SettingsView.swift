@@ -104,10 +104,18 @@ struct SettingsView: View {
                     NavigationLink {
                         ImmersiveAudioSettingsView()
                     } label: {
-                        SettingsRow(title: "Immersive Audio", value: immersiveValue)
+                        SettingsRow(title: "Soundscapes", value: immersiveValue)
                     }
                     .accessibilityIdentifier("ImmersiveAudioSettingsRow")
                     divider
+                    #if NODUS_SOUNDSCAPE_LAB
+                    NavigationLink {
+                        SoundscapeLabView()
+                    } label: {
+                        SettingsRow(title: "Soundscape Lab", value: nil)
+                    }
+                    divider
+                    #endif
                     NavigationLink {
                         PrivacyView()
                     } label: {

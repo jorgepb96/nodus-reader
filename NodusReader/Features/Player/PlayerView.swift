@@ -16,6 +16,8 @@ struct PlayerView: View {
     @State private var macContentHeight: CGFloat = 540
     @State private var macHeaderHeight: CGFloat = 68
     @State private var showVoicePicker = false
+    @State private var showSessionSheet = false
+    @State private var lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
     @State private var showPronunciations = false
     @State private var showAudioJobs = false
 
@@ -34,7 +36,7 @@ struct PlayerView: View {
                 #else
                 VStack(spacing: 0) {
                     coverAndText
-                    scrubber
+                    ObservationScope { scrubber }
                     transport
                     if playback.isLoading {
                         Text(loadingText)
@@ -89,6 +91,15 @@ struct PlayerView: View {
             if let book = playback.activeBook { PronunciationView(book: book) }
         }
         .sheet(isPresented: $showAudioJobs) { OfflineNarrationView().nodusPalette(palette) }
+        .sheet(isPresented: $showSessionSheet) {
+            if let book = playback.activeBook {
+                SoundscapeSessionSheet(book: book, onStart: { playback.toggle() })
+                    .nodusPalette(palette)
+                    .tint(palette.accent)
+                    .environment(\.colorScheme, palette.isDark ? .dark : .light)
+                    .preferredColorScheme(palette.isDark ? .dark : .light)
+            }
+        }
         .sheet(isPresented: $showVoicePicker) {
             VoicePickerSheet()
                 .nodusPalette(palette)
@@ -164,7 +175,7 @@ struct PlayerView: View {
     private var macPlaybackControls: some View {
         VStack(spacing: 0) {
             coverAndText
-            scrubber
+            ObservationScope { scrubber }
             transport
             if playback.isLoading {
                 Text(loadingText)
@@ -361,7 +372,7 @@ struct PlayerView: View {
                 .lineLimit(2)
             Text("\(playback.activeBook?.displayAuthor ?? "") · \(playback.chapterTitle)")
                 .font(.caption).foregroundStyle(palette.muted).lineLimit(1)
-            if compactPlayer { contextText.padding(.top, 4) }
+            if compactPlayer { ObservationScope { contextText }.padding(.top, 4) }
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
@@ -374,7 +385,7 @@ struct PlayerView: View {
             } else {
                 cover
                 bookIdentity
-                contextText
+                ObservationScope { contextText }
             }
         }
     }
@@ -454,7 +465,12 @@ struct PlayerView: View {
             transportButton("gobackward", label: "Previous sentence") { playback.previousSentence() }
                 .frame(maxWidth: .infinity)
             Button {
-                playback.toggle()
+                // Starting a session with AI soundscapes: offer to compose its music first.
+                if !playback.isPlaying, let book = playback.activeBook, immersive.offersSession(for: book) {
+                    showSessionSheet = true
+                } else {
+                    playback.toggle()
+                }
             } label: {
                 Image(systemName: playback.playbackActionSymbol)
                     .font(.system(size: 27, weight: .semibold))
@@ -577,7 +593,8 @@ struct PlayerView: View {
         // which changes on every narrated word and re-rendered the whole player
         // at audio-frame rate, making these tiles ignore taps while playing.
         // The action reads the current offset itself when the tile is tapped.
-        .disabled(playback.currentSentence.isEmpty)
+        // The sentence count changes with the chapter, not with every sentence.
+        .disabled(playback.sentenceCount == 0)
         .accessibilityLabel("Return to narration")
         .accessibilityIdentifier("PlayerReturnToNarration")
     }
@@ -666,14 +683,69 @@ struct PlayerView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "lock")
-                .font(.system(size: 11))
-            Text("Voice generated on this \(DeviceInfo.platformName)")
-                .font(.system(size: 11))
+        VStack(spacing: 10) {
+            if lowPowerMode, playback.isNeuralVoice, playback.activeVoice?.modelID != "ios-system" {
+                // iOS slows the processor in Low Power Mode: a neural voice can fall
+                // behind and pause between sentences. Say why, and what helps.
+                Label {
+                    Text("Low Power Mode is on: the voice may pause between sentences. Turn it off, or choose an iOS voice.")
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "battery.25percent")
+                }
+                .font(.footnote)
+                .foregroundStyle(palette.text)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(palette.panel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .accessibilityIdentifier("player.lowPowerNotice")
+            }
+            HStack(spacing: 6) {
+                Image(systemName: "lock")
+                    .font(.system(size: 11))
+                Text("Voice generated on this \(DeviceInfo.platformName)")
+                    .font(.system(size: 11))
+            }
+            .foregroundStyle(palette.muted)
+            if let credit {
+                modelCredit(credit)
+            }
         }
-        .foregroundStyle(palette.muted)
         .padding(.top, 18)
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+            lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
+    }
+
+    /// The model narrating, as its licence asks: always shown under the player.
+    private var credit: ModelCredit? {
+        guard let voiceID = playback.activeVoice?.id, let entry = models.model(forVoiceID: voiceID) else { return nil }
+        return ModelCredit(model: entry.model)
+    }
+
+    private func modelCredit(_ credit: ModelCredit) -> some View {
+        HStack(spacing: 4) {
+            Text("Powered by")
+            if let source = credit.source {
+                Link(credit.name, destination: source)
+                    .foregroundStyle(palette.accent)
+            } else {
+                Text(credit.name)
+            }
+            Text("·")
+            if let licenseURL = credit.licenseURL {
+                Link(credit.license, destination: licenseURL)
+                    .foregroundStyle(palette.accent)
+            } else {
+                Text(credit.license)
+            }
+        }
+        .font(.system(size: 11))
+        .foregroundStyle(palette.muted)
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("player.modelCredit")
     }
 
     private func errorOverlay(_ message: String) -> some View {
@@ -993,7 +1065,7 @@ struct VoicePickerSheet: View {
             .safeAreaInset(edge: .top, spacing: 0) {
                 filterRow
             }
-            .searchable(text: $searchText, prompt: "Search voices")
+            .searchableDraft($searchText, prompt: "Search voices")
             .navigationTitle("Voice for this book")
             .inlineNavigationTitle()
             .toolbar {
@@ -1005,13 +1077,16 @@ struct VoicePickerSheet: View {
                 await voices.loadIfNeeded()
                 guard !Task.isCancelled, !didInitializeFilters else { return }
                 let currentVoice = playback.activeVoice ?? voices.defaultVoice
-                let language = VoiceCatalog.languageCode(currentVoice?.language)
-                    ?? VoiceCatalog.languageCode(playback.activeBook?.language)
+                // The book's language first: the voice playing may belong to another book.
+                let bookLanguage = VoiceCatalog.languageCode(playback.activeBook?.language)
+                let voiceLanguage = VoiceCatalog.languageCode(currentVoice?.language)
+                let language = bookLanguage ?? voiceLanguage
+                let voiceFitsBook = bookLanguage == nil || bookLanguage == voiceLanguage
                 let model = currentVoice?.modelID ?? models.selectedModel?.id ?? installedModels.first?.id
                 automaticFilters = VoiceFilterSelection(
                     models: model.map { Set([$0]) } ?? [],
                     languages: language.map { Set([$0]) } ?? [],
-                    genders: currentVoice?.gender.map { Set([$0.rawValue]) } ?? []
+                    genders: voiceFitsBook ? currentVoice?.gender.map { Set([$0.rawValue]) } ?? [] : []
                 )
                 didInitializeFilters = true
             }

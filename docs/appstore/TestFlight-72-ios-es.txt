@@ -1,0 +1,7 @@
+Interfaz más fluida mientras se reproduce algo.
+
+- El reproductor y los menús y paneles del lector ya no van a trompicones durante la narración: se redibujaban con cada palabra y cada frase.
+- Mientras suena, la posición de lectura se guarda cada 15 segundos en vez de en cada frase (pausar, cerrar el libro o salir de la app siguen guardándola al momento).
+- Mientras se compone un paisaje sonoro con IA, tocar la pantalla (un menú, un panel, desplazarte) da prioridad a la interfaz durante un momento.
+
+Incluye todo lo de la build 71 (paisajes sonoros con IA, narración más estable).

@@ -233,6 +233,10 @@ struct PDFReflowView: View {
     /// False for a moment after the reflow appears: the first positioning
     /// lands at once instead of sliding from the top of a page.
     @State private var settled = false
+    /// The page a return to narration placed: the indicator keeps it while the line
+    /// glides into place (earlier pages show above a centred line, and a short reflow
+    /// may still be at its end), until the reader scrolls by hand.
+    @State private var heldPage: Int?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// The book's own typography when it has one, the global one otherwise.
@@ -386,7 +390,7 @@ struct PDFReflowView: View {
                 // change and fights the text view's line-by-line narration follow.
                 .onScrollTargetVisibilityChange(idType: Int.self, threshold: 0.01) { ids in
                     visiblePages = Set(ids)
-                    guard narrationReturnTarget == nil else { return }
+                    guard narrationReturnTarget == nil, heldPage == nil else { return }
                     guard let first = ids.min() else { return }
                     pdfPageIndex = atEnd ? document.pages.last?.pageIndex ?? first : first
                 }
@@ -394,7 +398,7 @@ struct PDFReflowView: View {
                     geometry.visibleRect.maxY >= geometry.contentSize.height - 2
                 } action: { _, isAtEnd in
                     atEnd = isAtEnd
-                    if isAtEnd, let last = document.pages.last { pdfPageIndex = last.pageIndex }
+                    if isAtEnd, heldPage == nil, let last = document.pages.last { pdfPageIndex = last.pageIndex }
                 }
                 // `.never`: with `.hidden` the Mac adds its scroller beside
                 // the reflow scrollbar when scroll bars always show.
@@ -404,6 +408,7 @@ struct PDFReflowView: View {
                     // continuous reader: deceleration also follows the
                     // narration's own moves and stopped auto-scroll by itself.
                     if phase == .tracking || phase == .interacting {
+                        heldPage = nil
                         onManualNavigation?()
                     }
                 }
@@ -415,6 +420,7 @@ struct PDFReflowView: View {
                             theme: theme
                         ) { page in
                             onManualNavigation?()
+                            heldPage = nil
                             pdfPageIndex = page
                             jumpToPage = nil
                             scroll(proxy, to: page, in: document)
@@ -435,6 +441,7 @@ struct PDFReflowView: View {
                     // Explicit navigation is a one-shot jump; narration owns
                     // the offset between jumps, just as in the continuous reader.
                     guard let target else { return }
+                    heldPage = nil
                     let forward = target > pdfPageIndex
                     let page = reflowPage(for: target, forward: forward, in: document) ?? target
                     jumpToPage = nil
@@ -502,7 +509,9 @@ struct PDFReflowView: View {
         startedReturn = target.id
         let page = target.chapterIndex
         if !settled {
-            scroll(proxy, to: page, in: document)
+            // A page already on screen is not scrolled to: SwiftUI reapplies a
+            // `scrollTo` at the next layout and would undo the line's placement.
+            if !visiblePages.contains(page) { scroll(proxy, to: page, in: document) }
             armedReturn = (target.id, .instant)
         } else if visiblePages.contains(page) {
             armedReturn = (target.id, .smooth)
@@ -630,12 +639,11 @@ struct PDFReflowView: View {
             },
             animatesFollow: settled,
             onScrollRequestHandled: { id in
-                guard narrationReturnTarget?.id == id else { return }
+                guard let target = narrationReturnTarget, target.id == id else { return }
                 armedReturn = nil
                 narrationReturnTarget = nil
-                if let first = visiblePages.min() {
-                    pdfPageIndex = atEnd ? job.document?.pages.last?.pageIndex ?? first : first
-                }
+                heldPage = target.chapterIndex
+                pdfPageIndex = target.chapterIndex
             },
             onWordTap: { offset in onStartNarration(pageIndex, offset) },
             onHighlight: { range, color in

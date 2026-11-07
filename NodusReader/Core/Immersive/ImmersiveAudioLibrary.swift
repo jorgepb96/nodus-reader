@@ -130,7 +130,11 @@ final class ImmersiveAudioLibrary {
 
     /// Re-reads what is on disk. A file counts once its size matches the
     /// manifest (its hash was checked when it was downloaded).
+    /// Called after the installed sounds change (download, delete).
+    @ObservationIgnored var onChange: (() -> Void)?
+
     func refresh() {
+        defer { onChange?() }
         guard let catalog else { return }
         var installed = Set<String>()
         for track in catalog.tracks {

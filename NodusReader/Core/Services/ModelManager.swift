@@ -873,6 +873,20 @@ final class ModelManager {
     /// One sentence of neural speech (mono Float PCM) from an installed
     /// engine. The voice decides the model, selected or not (the Voices screen
     /// previews any installed model); its engine is loaded if needed.
+    /// Kokoro's English fallback phonemizer (MisakiSwift's BART) runs on MLX. On the
+    /// iPhone it must use the CPU: the GPU is refused while narration continues in the
+    /// background, and `Device.setDefault` no longer applies once MLX has started.
+    /// Any MLX error becomes a thrown error for this sentence instead of ending the app.
+    private static func kokoroPhonemizing<R>(_ body: () async throws -> R) async throws -> R {
+        #if os(iOS) && !targetEnvironment(simulator)
+        return try await withError { _ in
+            try await Device.withDefaultDevice(Device(.cpu)) { try await body() }
+        }
+        #else
+        return try await withError { _ in try await body() }
+        #endif
+    }
+
     func synthesize(_ text: String, voiceID: String, engine: Engine) async throws -> NarrationSynthesis {
         try Task.checkCancellation()
         guard engine.isEnabled else { throw NeuralNarrationError.engineNotLoaded(engine.label) }
@@ -920,7 +934,7 @@ final class ModelManager {
                                                                  bundle: Self.kokoroCacheDirectory)
                 return measured(NarrationSynthesis(samples: samples, sampleRate: 24_000))
             }
-            let inputs = try await kokoro.prepare(text, voice: KokoroVoiceID(name))
+            let inputs = try await Self.kokoroPhonemizing { try await kokoro.prepare(text, voice: KokoroVoiceID(name)) }
             var samples: [Float] = []
             for (index, input) in inputs.enumerated() {
                 try Task.checkCancellation()

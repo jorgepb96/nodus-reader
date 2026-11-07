@@ -32,6 +32,13 @@ enum ScenePrompt {
     academic (papers, textbooks), manual (instructions, technical), reference, poetry, drama or other.
     """
 
+    static let styleInstructions = """
+    You choose background music for a book in a reading app. From a sample of the book, pick the genre \
+    whose film music would suit it: fantasy, scienceFiction, cyberpunk, horror, noir (crime, detectives), \
+    thriller, western, historical, war, romance, comedy, adventure, fairyTale (children's stories), or \
+    neutral when no genre stands out.
+    """
+
     static func passage(_ text: String, before: String, after: String, language: String) -> String {
         """
         Language of the book: \(language).
@@ -49,7 +56,10 @@ enum ScenePrompt {
     weather=\(SceneWeather.allCases.map(\.rawValue).joined(separator: "|")); \
     tone=\(SceneTone.allCases.map(\.rawValue).joined(separator: "|")); \
     action=\(SceneAction.allCases.map(\.rawValue).joined(separator: "|")); intensity=0-3; \
-    change=none|minor|clear; evidence=<at most 12 words copied from the passage>
+    change=none|minor|clear; \
+    emotion=\(SceneEmotion.allCases.map(\.rawValue).joined(separator: "|"))|none; \
+    situation=\(SceneSituation.allCases.map(\.rawValue).joined(separator: "|"))|none; \
+    evidence=<at most 12 words copied from the passage>
     """
 }
 
@@ -71,11 +81,22 @@ enum SceneLineParser {
               let action = fields["action"].flatMap(SceneAction.init(rawValue:)),
               let intensity = fields["intensity"].flatMap(Int.init), (0...3).contains(intensity),
               let change = fields["change"].flatMap(SceneChange.init(rawValue:)) else { return nil }
+        // Optional (version 2): absent or "none" is nil; any other unknown word rejects the line.
+        var emotion: SceneEmotion?
+        if let raw = fields["emotion"], raw != "none" {
+            guard let value = SceneEmotion(rawValue: raw) else { return nil }
+            emotion = value
+        }
+        var situation: SceneSituation?
+        if let raw = fields["situation"], raw != "none" {
+            guard let value = SceneSituation(rawValue: raw) else { return nil }
+            situation = value
+        }
         let evidence = (fields["evidence"] ?? "").trimmingCharacters(in: CharacterSet(charactersIn: "\"“”«» "))
         return SceneReading(passageKind: kind, setting: setting, settingClarity: clarity, weather: weather,
                             tone: tone, action: action, intensity: intensity, sceneChange: change,
                             evidence: evidence, evidenceVerified: SceneEvidence.verify(evidence, in: passage),
-                            source: .generalFallback)
+                            source: .generalFallback, emotion: emotion, situation: situation)
     }
 }
 
@@ -148,6 +169,20 @@ enum TaggedChange { case none, minor, clear }
 
 @available(iOS 26.0, macOS 26.0, *)
 @Generable
+enum TaggedEmotion {
+    case sadness, nostalgia, hope, fear, unease, dread, irony, absurd, joy, tenderness
+    case awe, wonder, anger, triumph, relief, determination, longing, serenity, grief, suspense, none
+}
+
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
+enum TaggedSituation {
+    case chase, escape, discovery, revelation, farewell, reunion, battle, journey
+    case investigation, celebration, ritual, mourning, confrontation, rest, romance, night, none
+}
+
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
 enum TaggedDocumentKind {
     case fiction, narrativeNonfiction, essay, academic, manual, reference, poetry, drama, other
 }
@@ -169,6 +204,10 @@ struct SceneTagging {
     var intensity: Int
     @Guide(description: "Whether the passage begins a different scene (place, time or characters) from the text before")
     var sceneChange: TaggedChange
+    @Guide(description: "The main feeling the passage conveys; none if unclear")
+    var emotion: TaggedEmotion
+    @Guide(description: "What is happening in the passage; none if nothing in the list")
+    var situation: TaggedSituation
     @Guide(description: "At most 12 words copied exactly from the passage that show the setting or the mood")
     var evidence: String
 }
@@ -177,6 +216,20 @@ struct SceneTagging {
 @Generable
 struct DocumentTagging {
     var kind: TaggedDocumentKind
+}
+
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
+enum TaggedStyle {
+    case neutral, fantasy, scienceFiction, cyberpunk, horror, noir, thriller, western
+    case historical, war, romance, comedy, adventure, fairyTale
+}
+
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
+struct StyleTagging {
+    @Guide(description: "The genre that best fits the music this sample would have in a film; neutral if none stands out")
+    var style: TaggedStyle
 }
 
 /// Reads book passages with Apple's on-device model and answers in the
@@ -225,6 +278,29 @@ actor SceneAnalyzer {
                 kind = nil
             }
             if let kind, let value = DocumentKind(rawValue: kind) { votes.append(value) }
+        }
+        return votes
+    }
+
+    /// The model's soundscape style for each sample; refusals give no vote.
+    func styleVotes(samples: [String], language: String) async throws -> [SoundscapeStyle] {
+        var votes: [SoundscapeStyle] = []
+        for sample in samples {
+            try Task.checkCancellation()
+            let model = tagging
+            let style: String?
+            do {
+                style = try await run {
+                    let session = LanguageModelSession(model: model, instructions: ScenePrompt.styleInstructions)
+                    let response = try await session.respond(
+                        to: "Language: \(language).\nSAMPLE: \(sample)", generating: StyleTagging.self,
+                        options: GenerationOptions(samplingMode: .greedy, maximumResponseTokens: 20))
+                    return "\(response.content.style)"
+                }
+            } catch let error where Self.isRefusal(error) {
+                style = nil
+            }
+            if let style, let value = SoundscapeStyle(rawValue: style) { votes.append(value) }
         }
         return votes
     }
@@ -314,7 +390,7 @@ actor SceneAnalyzer {
 /// The generated values as plain strings (Sendable, outside the session).
 @available(iOS 26.0, macOS 26.0, *)
 private struct TaggedValues: Sendable {
-    let kind, setting, weather, tone, action, change, evidence: String
+    let kind, setting, weather, tone, action, change, evidence, emotion, situation: String
     let clarity, intensity: Int
 
     init(_ tagging: SceneTagging) {
@@ -324,6 +400,8 @@ private struct TaggedValues: Sendable {
         tone = "\(tagging.tone)"
         action = "\(tagging.action)"
         change = "\(tagging.sceneChange)"
+        emotion = "\(tagging.emotion)"
+        situation = "\(tagging.situation)"
         evidence = tagging.evidence
         clarity = tagging.settingClarity
         intensity = tagging.intensity
@@ -336,7 +414,8 @@ private struct TaggedValues: Sendable {
         return SceneReading(passageKind: kind, setting: setting, settingClarity: min(max(clarity, 0), 3),
                             weather: weather, tone: tone, action: action, intensity: min(max(intensity, 0), 3),
                             sceneChange: change, evidence: evidence,
-                            evidenceVerified: SceneEvidence.verify(evidence, in: passage), source: .contentTagging)
+                            evidenceVerified: SceneEvidence.verify(evidence, in: passage), source: .contentTagging,
+                            emotion: SceneEmotion(rawValue: emotion), situation: SceneSituation(rawValue: situation))
     }
 }
 #endif

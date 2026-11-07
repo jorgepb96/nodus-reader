@@ -125,10 +125,12 @@ final class CloudSyncService {
             forName: .nodusSyncOutboxChanged,
             object: journal,
             queue: .main
-        ) { [weak self] _ in
+        ) { [weak self] note in
+            // Narration's position waits up to a minute; anything else goes up now.
+            let delay = note.userInfo?["delay"] as? TimeInterval ?? 1
             Task { @MainActor [weak self] in
                 self?.pendingCount = self?.journal.pendingCount() ?? 0
-                self?.scheduleSync()
+                self?.scheduleSync(after: delay)
             }
         }
     }
@@ -1246,7 +1248,11 @@ final class CloudSyncService {
     // MARK: Helpers
 
     private static func hasCloudKitContainerEntitlement() -> Bool {
-        #if os(macOS)
+        #if NODUS_SOUNDSCAPE_LAB
+        // Lab builds install beside the reader with their own bundle ID and no iCloud
+        // entitlements; creating a CKContainer there traps on a device.
+        return false
+        #elseif os(macOS)
         guard let task = SecTaskCreateFromSelf(nil),
               let value = SecTaskCopyValueForEntitlement(
                 task,

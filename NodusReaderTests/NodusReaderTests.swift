@@ -290,12 +290,12 @@ func narrationScrollFollowsTheActualLineAndRespectsSelection() throws {
     let range = (source as NSString).range(of: "Target")
     view.textView.selectedRange = NSRange(location: 0, length: 4)
     let selectedOffset = scroll.contentOffset
-    view.followNarration(range, animated: false)
+    _ = view.followNarration(range, motion: .instant)
     #expect(scroll.contentOffset == selectedOffset, "Following must not move the viewport while text is selected")
     view.textView.selectedRange = NSRange(location: 0, length: 0)
     // Leave room below the final line, as the reader does while auto-scrolling.
     scroll.contentSize.height += 400
-    view.followNarration(range, animated: false)
+    _ = view.followNarration(range, motion: .instant)
     #expect(scroll.contentOffset.y > 640)
     let glyph = view.textView.layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
     let line = view.textView.layoutManager.lineFragmentRect(forGlyphAt: glyph.location, effectiveRange: nil)
@@ -338,7 +338,7 @@ func narrationScrollFollowsTheActualLineOnMac() async throws {
         try await Task.sleep(for: .milliseconds(50))
     }
     #expect(NSEvent.pressedMouseButtons == 0)
-    view.followNarration(range, animated: false)
+    _ = view.followNarration(range, motion: .instant)
     #expect(scroll.contentView.documentVisibleRect.minY > 640)
     let layout = try #require(view.textView.layoutManager)
     let glyph = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
@@ -1166,6 +1166,25 @@ func htmlTextStripsMarkupAndDecodesEntities() {
     #expect(!text.contains("<p>"))
     #expect(!text.contains("ignored"))
     #expect(HTMLText.firstHeading(from: Data(html.utf8)) == "Heading")
+}
+
+/// Project Gutenberg's EPUB3 header has an empty `<pre/>`: it must not make the rest
+/// of the book preformatted (every wrapped source line became a line break, and
+/// narration paused at each one).
+@Test
+func htmlTextIgnoresSelfClosingPre() {
+    let html = """
+    <body><header><pre/></header><p>
+          La heroica ciudad dormía la siesta. El viento Sur, caliente y
+          perezoso, empujaba las nubes.
+        </p><pre>a
+    b</pre><p>wrapped
+    again</p></body>
+    """
+    let text = HTMLText.convert(html).text
+    #expect(text.contains("caliente y perezoso, empujaba"))
+    #expect(text.contains("a\nb"))
+    #expect(text.contains("wrapped again"))
 }
 
 @Test
@@ -3074,3 +3093,23 @@ func macPlayerOpensTheNarratedBookAtItsExactCursorWithoutChangingTransport() asy
     #expect(playback.consumeReaderResume(for: book) == nil, "The reader consumes the transfer only once")
 }
 #endif
+
+/// A narrated "sentence" that is not one makes the voice close its intonation and
+/// pause mid-sentence: abbreviations, initials and dialogue tags stay attached.
+@Test
+func sentencesKeepAbbreviationsInitialsAndDialogueTags() {
+    #expect(SentenceTokenizer.sentences(from: "El Sr. García y el Dr. Pérez llegaron con D. Quijote a la venta.")
+            == ["El Sr. García y el Dr. Pérez llegaron con D. Quijote a la venta."])
+    #expect(SentenceTokenizer.sentences(from: "Mr. Harker met Dr. Seward at St. Mary's. It was late.")
+            == ["Mr. Harker met Dr. Seward at St. Mary's.", "It was late."])
+    #expect(SentenceTokenizer.sentences(from: "J. R. R. Tolkien wrote it. Then he left.")
+            == ["J. R. R. Tolkien wrote it.", "Then he left."])
+    #expect(SentenceTokenizer.sentences(from: "\"Is it you?\" he asked. \"Yes,\" said Mrs. Westenra.")
+            == ["\"Is it you?\" he asked.", "\"Yes,\" said Mrs. Westenra."])
+    #expect(SentenceTokenizer.sentences(from: "\"I don't know!\" cried Lucy. She wept.")
+            == ["\"I don't know!\" cried Lucy.", "She wept."])
+    // Real boundaries stay.
+    #expect(SentenceTokenizer.sentences(from: "Chapter 1. The End") == ["Chapter 1.", "The End"])
+    #expect(SentenceTokenizer.sentences(from: "—¡Válgame Dios! —dijo Sancho—. ¿No le dije yo?").count == 2)
+}
+

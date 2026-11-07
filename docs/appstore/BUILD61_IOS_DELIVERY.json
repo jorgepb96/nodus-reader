@@ -1,0 +1,37 @@
+{
+  "id": "8ec00b43-61b7-4545-88b1-490de72d2101",
+  "version": "61",
+  "uploadedDate": "2026-11-06T11:55:11-08:00",
+  "expirationDate": "2027-02-04T11:55:11-08:00",
+  "expired": false,
+  "minOsVersion": "18.0",
+  "lsMinimumSystemVersion": "15.0",
+  "computedMinMacOsVersion": "15.0",
+  "computedMinVisionOsVersion": "2.0",
+  "iconAssetToken": {
+    "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/6c/2e/f7/6c2ef745-a5d0-9e5a-a25b-6c0f7974a135/AppIcon76x76@2x_U007eipad.png/{w}x{h}bb.{f}",
+    "width": 152,
+    "height": 152
+  },
+  "processingState": "VALID",
+  "buildAudienceType": "APP_STORE_ELIGIBLE",
+  "usesNonExemptEncryption": false,
+  "preReleaseVersion": {
+    "version": "0.1.0",
+    "platform": "IOS"
+  },
+  "buildBetaDetail": {
+    "autoNotifyEnabled": true,
+    "internalBuildState": "IN_BETA_TESTING",
+    "externalBuildState": "READY_FOR_BETA_SUBMISSION"
+  },
+  "betaAppReviewSubmission": null,
+  "groups": [
+    "6fca3f0a-fada-4405-a6a0-9357bab03698"
+  ],
+  "sourceCommit": "ab01cb35be32ec19658304cabb8b56c855e2854c",
+  "distribution": "Internal only",
+  "publicBeta": false,
+  "productionReviewSubmitted": false,
+  "physicalValidation": "Pending user testing"
+}

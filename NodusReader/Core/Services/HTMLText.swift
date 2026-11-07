@@ -174,7 +174,8 @@ public enum HTMLText {
                 } else if name == "br" {
                     breakLine(1)
                 }
-                if name == "pre" { inPre = !isClosing }
+                // An empty `<pre/>` (Project Gutenberg's EPUB3 header) opens nothing.
+                if name == "pre", !selfClosing { inPre = !isClosing }
                 if let id = anchor {
                     if pendingSpace, !out.isEmpty, !lastIsNewline() { out.append(32); pendingSpace = false }
                     anchors[id] = out.count

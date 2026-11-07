@@ -31,6 +31,11 @@ final class VoiceSelectionResolver {
             .flatMap { try? JSONDecoder().decode([String: Replacement].self, from: $0) } ?? [:]
     }
     func resolve(book: Book, catalog: VoiceCatalog, commit: Bool) -> VoiceCatalog.Voice? {
+        // No voice chosen for this book: its language decides (a replacement saved for
+        // an earlier default must not keep reading a Spanish book in English).
+        guard book.preferredVoiceID != nil else {
+            return catalog.narrationVoice(preferredID: nil, language: book.language)
+        }
         let snapshot = book.preferredVoiceSnapshotJSON.data(using: .utf8)
             .flatMap { try? JSONDecoder().decode(VoiceSelectionSnapshot.self, from: $0) }
             .flatMap { $0.id == book.preferredVoiceID ? $0 : nil }

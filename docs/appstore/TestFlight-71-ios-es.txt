@@ -1,0 +1,19 @@
+Novedad de esta beta: paisajes sonoros con IA. Nodus compone ahora música y ambiente para el libro que estás leyendo, en tu iPhone, con Stable Audio 3 Small (Powered by Stability AI). Nada sale de tu dispositivo.
+
+Cómo probarlo
+1. Ajustes › Paisajes sonoros: actívalos y elige IA.
+2. Modelos: descarga Música y Ambientes (unos 2,6 GB entre los dos, con Wi‑Fi). Puedes pedir el segundo mientras se descarga el primero.
+3. Abre un libro y pulsa reproducir. Nodus pregunta cuántas piezas componer antes de que empiece la voz: 1, 3 (recomendado) o 6. La primera música está lista en unos 6 a 12 segundos, según el iPhone.
+4. Mientras escuchas, se componen más piezas cuando la historia las necesita. Abre la nota musical en el lector para cambiar el ambiente o la música, elegir el estilo del libro y guardar con el corazón las piezas que te gusten.
+
+Qué nos interesa saber
+- Cómo suenan la música y los ambientes, y si los bucles son continuos.
+- Tiempos de espera, calor y batería en tu iPhone (los iPhone antiguos o de 4 GB son más lentos y se calientan antes).
+- Cualquier momento en que la voz se pause, se entrecorte o la app se cierre.
+
+También en esta beta
+- La narración neuronal ya no se pausa cada pocas frases, ni a mitad de frase tras abreviaturas, iniciales o incisos de diálogo.
+- Los EPUB de Gutenberg ya no cortan líneas a mitad de párrafo.
+- La posición de lectura se sincroniza con iCloud de forma más eficiente mientras escuchas.
+
+Los paisajes con IA necesitan un iPhone con Apple silicon y vienen desactivados. Los paquetes de sonidos descargados siguen disponibles en Paisajes sonoros › Descargados.
