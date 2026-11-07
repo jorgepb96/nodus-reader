@@ -12,6 +12,9 @@ struct AdmissionState: Sendable, Equatable {
     var analysisRunning: Bool
     /// `os_proc_available_memory()`; nil where the system does not report it (macOS).
     var availableMemory: Int64?
+    /// Seconds of neural narration ready ahead of what is heard; nil when no neural
+    /// voice is narrating (a system voice needs no cushion).
+    var narrationBuffered: Double? = nil
 }
 
 enum Admission: Equatable, Sendable {
@@ -33,6 +36,9 @@ enum GenerationAdmission {
     }
 
     static let margin: Int64 = 300_000_000
+    /// Seconds of narration that must be ready before a piece starts.
+    static let plannedCushion: Double = 20
+    static let requestedCushion: Double = 8
 
     static func required(_ recipe: GenerationRecipe) -> Int64 { estimatedPeak(recipe) + margin }
 
@@ -45,6 +51,11 @@ enum GenerationAdmission {
         // Measured on the iPhone: composing does not delay the voice, so only pieces
         // planned ahead wait for a sentence to arrive.
         if state.narrationWaiting, !requested { return .wait("narration") }
+        // Composing slows the voice's synthesis: start a piece only with a cushion of
+        // audio ready ahead (on an iPhone 16 Pro Max the voice stalled every ~18 s).
+        if let buffered = state.narrationBuffered, buffered < (requested ? requestedCushion : plannedCushion) {
+            return .wait("narration")
+        }
         // Scene analysis runs out of process on the Neural Engine; only pieces planned
         // ahead give way to it.
         if state.analysisRunning, !requested { return .wait("analysis") }

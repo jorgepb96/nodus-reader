@@ -6,6 +6,7 @@ import Foundation
 @MainActor
 final class NarrationPrefetchWorker {
     private var task: Task<Void, Never>?
+    var isRunning: Bool { task != nil }
     private var token = UUID()
 
     func start(next: @escaping () -> Int?, produce: @escaping (Int) async throws -> Void) {

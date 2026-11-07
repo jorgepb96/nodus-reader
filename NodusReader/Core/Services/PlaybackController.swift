@@ -86,7 +86,7 @@ public final class PlaybackController {
     @ObservationIgnored private let library: LibraryService
     @ObservationIgnored private let defaults: UserDefaults
     public let voices: VoiceCatalog
-    @ObservationIgnored private let models: ModelManager
+    @ObservationIgnored let models: ModelManager
     let offlineAudio: OfflineNarrationQueue
 
     #if canImport(MediaPlayer)
@@ -319,12 +319,20 @@ public final class PlaybackController {
     private func observePronunciations() {
         let observedID = activeBook?.id
         let previousRules = activeBook?.pronunciations ?? []
+        let previousJSON = activeBook?.pronunciationsJSON
         withObservationTracking {
             _ = activeBook?.pronunciationsJSON
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 guard self.activeBook?.id == observedID else { self.observePronunciations(); return }
+                // SwiftData reports a change whenever the book is saved (progress, every
+                // sentence): only a real change of rules may discard the prepared
+                // sentences, or the voice ran out of them and paused every few seconds.
+                guard self.activeBook?.pronunciationsJSON != previousJSON else {
+                    self.observePronunciations()
+                    return
+                }
                 self.resetPrefetch()
                 guard let book = self.activeBook, self.sentences.indices.contains(self.currentIndex),
                       PronunciationTransformer.prepare(self.sentences[self.currentIndex].text, rules: previousRules).signature !=
@@ -554,6 +562,28 @@ public final class PlaybackController {
     /// Narration is always neural now; false only while no model is installed.
     public var isNeuralVoice: Bool { activeVoice != nil }
 
+    /// Lab diagnostics: what is prefetched relative to the sentence playing.
+    public var prefetchDescription: String {
+        let ahead = prefetched.keys.sorted().map { "+\($0 - currentIndex)" }.joined(separator: ",")
+        return "sentence \(currentIndex), prefetched [\(ahead)], worker \(prefetchWorker.isRunning ? "running" : "idle"), "
+            + "chained \(chained.map { "\($0.index)" } ?? "-"), loading \(isLoading)"
+    }
+
+    /// Seconds of neural narration ready ahead of the listener: the rest of the sentence
+    /// playing plus the consecutive sentences already synthesized. Nil when nothing
+    /// neural is playing. AI soundscapes compose only with a cushion.
+    public var narrationBufferedAhead: TimeInterval? {
+        guard isPlaying, !neuralPaused, neuralBufferDuration > 0 else { return nil }
+        let heard = (neuralPositionTime ?? neuralStartTime) - neuralStartTime
+        var ahead = max(0, neuralBufferDuration - heard)
+        var index = currentIndex + 1
+        while let ready = prefetched[index] {
+            ahead += ready.narration.duration
+            index += 1
+        }
+        return ahead / max(speedMultiplier, 0.5)
+    }
+
     public var sleepRemainingLabel: String? {
         guard let end = sleepEndsAt else { return nil }
         let seconds = max(0, Int(end.timeIntervalSinceNow))
@@ -730,7 +760,7 @@ public final class PlaybackController {
     /// Save before the scene goes inactive without interrupting background audio.
     public func persistPosition() {
         captureNarrationTime()
-        saveProgress()
+        saveProgress(immediate: true)
     }
 
     public func resume() {
@@ -1814,9 +1844,12 @@ public final class PlaybackController {
         updateNowPlaying()
     }
 
-    private func saveProgress() {
+    /// Saves the position on the device every time; while the voice plays, the iCloud
+    /// upload waits up to a minute (a pause, a stop or leaving the app upload at once).
+    private func saveProgress(immediate: Bool = false) {
         guard let book = activeBook, sentences.indices.contains(currentIndex),
               !narrationFinished else { return }
+        let deferSync = !immediate && isPlaying
         let sentence = sentences[currentIndex]
         let pageOrChapter = book.format == .pdf && chapters.indices.contains(chapterIndex)
             ? chapters[chapterIndex].id : chapterIndex
@@ -1836,13 +1869,13 @@ public final class PlaybackController {
                 : max(book.locator.pageIndex ?? 0, 0)
             let locator = ReadingLocator(chapterIndex: pageID, scrollFraction: chapterProgress,
                                          pageIndex: pageID, narrationPosition: position)
-            library.updateProgress(book, locator: locator, progress: overallProgress)
+            library.updateProgress(book, locator: locator, progress: overallProgress, deferredSync: deferSync)
             return
         }
         var locator = ReadingLocator(chapterIndex: chapterIndex, scrollFraction: chapterProgress,
                                      narrationPosition: position)
         locator.pageIndex = book.locator.pageIndex
-        library.updateProgress(book, locator: locator, progress: overallProgress)
+        library.updateProgress(book, locator: locator, progress: overallProgress, deferredSync: deferSync)
     }
 
     // MARK: Audio session and remote controls

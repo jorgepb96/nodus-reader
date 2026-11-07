@@ -629,3 +629,30 @@ func livePronunciationCloudKitRoundTrip() async throws {
         print("LIVE PRONUNCIATION: reader received initial rule, sent edit and received deletion", session)
     }
 }
+
+/// Narration saves its position every sentence. On the device that is cheap; for
+/// iCloud it is held back to one upload a minute, while a pause or stop uploads at once.
+@Test @MainActor
+func narrationProgressUploadsAtMostOnceAMinute() throws {
+    let fixture = try SyncFixture()
+    let book = try fixture.book()
+    func entry() throws -> SyncOutboxEntry {
+        try #require(try fixture.container.mainContext.fetch(FetchDescriptor<SyncOutboxEntry>())
+            .first { $0.entityID == book.id })
+    }
+    // As after an upload: nothing pending for the book.
+    for pending in try fixture.container.mainContext.fetch(FetchDescriptor<SyncOutboxEntry>()) {
+        fixture.container.mainContext.delete(pending)
+    }
+    try fixture.container.mainContext.save()
+    let locator = ReadingLocator(chapterIndex: 0, scrollFraction: 0.1)
+    fixture.library.updateProgress(book, locator: locator, progress: 0.1, deferredSync: true)
+    #expect(try entry().nextAttemptAt > Date().addingTimeInterval(LibraryService.progressSyncInterval - 5))
+    // Another sentence a few seconds later does not bring the upload forward or push it back.
+    let scheduled = try entry().nextAttemptAt
+    fixture.library.updateProgress(book, locator: locator, progress: 0.11, deferredSync: true)
+    #expect(abs(try entry().nextAttemptAt.timeIntervalSince(scheduled)) < 1)
+    // A pause saves normally: the position goes up now.
+    fixture.library.updateProgress(book, locator: locator, progress: 0.12)
+    #expect(try entry().nextAttemptAt <= Date())
+}

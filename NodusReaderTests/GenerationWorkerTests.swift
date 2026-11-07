@@ -93,6 +93,15 @@ struct GenerationWorkerTests {
         #expect(decide({ $0.foreground = false }) == .wait("background"))
         #expect(decide({ $0.narrationWaiting = true }) == .wait("narration"))
         #expect(decide({ $0.analysisRunning = true }) == .wait("analysis"))
+        // The voice keeps a cushion: no piece starts while it has little audio ready ahead
+        // (measured: composing during narration stalled the voice every ~18 s).
+        #expect(decide({ $0.narrationBuffered = 12 }) == .wait("narration"))
+        #expect(decide({ $0.narrationBuffered = 25 }) == .run(.music))
+        var thin = calm
+        thin.narrationBuffered = 6
+        #expect(GenerationAdmission.decide(thin, recipe: .music, requested: true) == .wait("narration"))
+        thin.narrationBuffered = 12
+        #expect(GenerationAdmission.decide(thin, recipe: .music, requested: true) == .run(.music))
         let full = GenerationAdmission.required(.music)
         let short = GenerationAdmission.required(.shortMusic)
         #expect(short < full)

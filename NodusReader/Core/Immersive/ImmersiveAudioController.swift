@@ -407,6 +407,30 @@ final class ImmersiveAudioController {
         sessionOffered.insert(book.id)
     }
 
+    @ObservationIgnored private var narrationGuard: Task<Void, Never>?
+
+    /// While a piece is composed under a neural voice, the voice comes first: when its
+    /// cushion of ready audio runs low, composing waits between diffusion steps.
+    private func guardNarrationWhileComposing() {
+        guard narrationGuard == nil else { return }
+        narrationGuard = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                switch self.generation {
+                case .idle, .paused:
+                    self.narrationGuard = nil
+                    return
+                default: break
+                }
+                if let buffered = self.playback.narrationBufferedAhead,
+                   buffered < GenerationAdmission.requestedCushion {
+                    SA3Engine.yield.hold(for: 1)
+                }
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+        }
+    }
+
     /// The reader is scrolling or turning pages: composing yields the GPU for a moment.
     func readerInteracted() {
         guard aiSource, worker != nil else { return }
@@ -575,16 +599,19 @@ final class ImmersiveAudioController {
         memory = available > 0 ? available : nil
         #endif
         let info = ProcessInfo.processInfo
-        return AdmissionState(thermal: info.thermalState, lowPower: info.isLowPowerModeEnabled,
+        var state = AdmissionState(thermal: info.thermalState, lowPower: info.isLowPowerModeEnabled,
                               foreground: appActive && sceneActive,
                               narrationWaiting: playback.isPlaying && playback.isLoading, analysisRunning: analysing,
                               availableMemory: memory)
+        state.narrationBuffered = playback.narrationBufferedAhead
+        return state
     }
 
     private func handle(_ event: WorkerEvent) {
         switch event {
         case .started(let job):
             generationWaiting = nil
+            guardNarrationWhileComposing()
             if isPreparingPack, job.priority < Self.immediatePriority {
                 generation = .preparing(done: packDone, total: packTotal)
             } else {

@@ -3093,3 +3093,23 @@ func macPlayerOpensTheNarratedBookAtItsExactCursorWithoutChangingTransport() asy
     #expect(playback.consumeReaderResume(for: book) == nil, "The reader consumes the transfer only once")
 }
 #endif
+
+/// A narrated "sentence" that is not one makes the voice close its intonation and
+/// pause mid-sentence: abbreviations, initials and dialogue tags stay attached.
+@Test
+func sentencesKeepAbbreviationsInitialsAndDialogueTags() {
+    #expect(SentenceTokenizer.sentences(from: "El Sr. García y el Dr. Pérez llegaron con D. Quijote a la venta.")
+            == ["El Sr. García y el Dr. Pérez llegaron con D. Quijote a la venta."])
+    #expect(SentenceTokenizer.sentences(from: "Mr. Harker met Dr. Seward at St. Mary's. It was late.")
+            == ["Mr. Harker met Dr. Seward at St. Mary's.", "It was late."])
+    #expect(SentenceTokenizer.sentences(from: "J. R. R. Tolkien wrote it. Then he left.")
+            == ["J. R. R. Tolkien wrote it.", "Then he left."])
+    #expect(SentenceTokenizer.sentences(from: "\"Is it you?\" he asked. \"Yes,\" said Mrs. Westenra.")
+            == ["\"Is it you?\" he asked.", "\"Yes,\" said Mrs. Westenra."])
+    #expect(SentenceTokenizer.sentences(from: "\"I don't know!\" cried Lucy. She wept.")
+            == ["\"I don't know!\" cried Lucy.", "She wept."])
+    // Real boundaries stay.
+    #expect(SentenceTokenizer.sentences(from: "Chapter 1. The End") == ["Chapter 1.", "The End"])
+    #expect(SentenceTokenizer.sentences(from: "—¡Válgame Dios! —dijo Sancho—. ¿No le dije yo?").count == 2)
+}
+

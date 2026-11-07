@@ -407,6 +407,74 @@ final class SoundscapeLab {
                                                         Date().timeIntervalSince(start))))
     }
 
+    /// Imports every EPUB copied into Documents/SoundscapeLab (duplicates are skipped).
+    private func importBooks() async throws {
+        for _ in 0 ..< 80 where library == nil { try await Task.sleep(for: .milliseconds(250)) }
+        guard let library else { return }
+        let files = (try? FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil))?
+            .filter { $0.pathExtension.lowercased() == "epub" } ?? []
+        _ = await library.importFiles(files, progress: { _ in })
+        event("library: " + library.allBooks().map { "\($0.title) [\($0.language)]" }.joined(separator: ", "))
+    }
+
+    /// Installs Phonon 31M (English) as a reader would from Models, and selects it.
+    private func installPhonon() async throws {
+        for _ in 0 ..< 80 where playback == nil { try await Task.sleep(for: .milliseconds(250)) }
+        guard let models = playback?.models,
+              let model = models.models.first(where: { $0.id == "phonon-31m-en" }) else { return }
+        let start = Date()
+        if !models.isInstalled(model) {
+            models.install(model)
+            while Date().timeIntervalSince(start) < 900, !models.isInstalled(model) {
+                try await Task.sleep(for: .seconds(2))
+                if case .failed(let message) = models.state(for: model) { event("phonon failed: \(message)"); break }
+            }
+        }
+        models.selectModel(model)
+        append(Entry(test: "install-phonon", note: String(format: "%@ in %.0f s", models.isInstalled(model) ? "installed" : "missing",
+                                                         Date().timeIntervalSince(start))))
+    }
+
+    /// Voice only (30 s), then a three-piece session composed while the voice plays,
+    /// then voice only again (30 s); stalls are counted in each phase.
+    private func narrateWhileComposing() async throws {
+        guard let playback, playback.isPlaying, let immersive, let book = playback.activeBook else {
+            append(Entry(test: "narrate-compose-skipped", note: "narration was not playing"))
+            return
+        }
+        immersive.preferences.source = .ai
+        if !immersive.preferences.isEnabled { immersive.setEnabled(true) }
+        func phase(_ name: String, seconds: Double) async throws {
+            resetStalls()
+            try await Task.sleep(for: .seconds(seconds))
+            append(Entry(test: name, note: "stalls \(narrationStallCount), \(String(format: "%.1f", narrationStallSeconds)) s in \(Int(seconds)) s"))
+        }
+        // Every 5 s, what the narration has ready (to see why it stalls).
+        let probe = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard let self, let playback = self.playback else { return }
+                self.event(String(format: "buffer %.0f s; ", playback.narrationBufferedAhead ?? -1) + playback.prefetchDescription)
+            }
+        }
+        defer { probe.cancel() }
+        try await phase("voice-only", seconds: 30)
+        resetStalls()
+        let start = Date()
+        GenerationWorker.trace = { [weak self] line in Task { @MainActor in self?.event(line) } }
+        immersive.prepareSession(for: book, count: 3)
+        while Date().timeIntervalSince(start) < 300 {
+            try await Task.sleep(for: .milliseconds(500))
+            if case .preparing = immersive.generation { continue }
+            if Date().timeIntervalSince(start) > 3 { break }
+        }
+        immersive.sessionStarted()
+        GenerationWorker.trace = nil
+        append(Entry(test: "voice-while-composing", note: String(format: "stalls %d, %.1f s in %.0f s of composing",
+                                                                narrationStallCount, narrationStallSeconds, Date().timeIntervalSince(start))))
+        try await phase("voice-after", seconds: 30)
+    }
+
     /// The app's own session path: `prepareSession` for the last opened book with the
     /// voice waiting, timing every stage (worker trace) until the pack is done.
     private func sessionBody(count: Int) async throws {
@@ -467,7 +535,10 @@ final class SoundscapeLab {
     }
 
     /// Resumes the most recently opened book with narration and waits until it plays.
-    private func startNarration() async throws {
+    private func startNarration(language: String? = nil) async throws {
+        if let language, let book = library?.allBooks().first(where: { $0.language.hasPrefix(language) }) {
+            book.lastOpenedAt = Date()
+        }
         guard let playback, let book = library?.continueBook() else {
             append(Entry(test: "narrate-skipped", note: "no opened book or no playback controller"))
             return
@@ -507,6 +578,10 @@ final class SoundscapeLab {
                 case "stop-narration": lab.playback?.pause(); lab.stopPlayback()
                 case "ai-e2e": try await lab.aiEndToEnd()
                 case "install-ai": try await lab.installAIModels()
+                case "import-books": try await lab.importBooks()
+                case "install-phonon": try await lab.installPhonon()
+                case "narrate-en": try await lab.startNarration(language: "en")
+                case "narrate-compose": try await lab.narrateWhileComposing()
                 case "queue-install": try await lab.queuedInstall()
                 case "session1": try await lab.sessionBody(count: 1)
                 case "session3": try await lab.sessionBody(count: 3)
@@ -692,7 +767,7 @@ final class SoundscapeLab {
                     if !wasStalled {
                         self.narrationStallCount += 1
                         stallStart = Date()
-                        self.event("stall begins at \(self.sentenceDescription)")
+                        self.event("stall begins at \(self.sentenceDescription); \(self.playback?.prefetchDescription ?? "")")
                     }
                 } else if wasStalled {
                     self.event(String(format: "stall ends after %.1f s", Date().timeIntervalSince(stallStart)))
