@@ -42,8 +42,12 @@ enum GenerationAdmission {
         if !state.foreground { return .wait("background") }
         if state.lowPower, !requested { return .wait("low power") }
         if state.thermal == .serious || state.thermal == .critical { return .wait("hot") }
-        if state.narrationWaiting { return .wait("narration") }
-        if state.analysisRunning { return .wait("analysis") }
+        // Measured on the iPhone: composing does not delay the voice, so only pieces
+        // planned ahead wait for a sentence to arrive.
+        if state.narrationWaiting, !requested { return .wait("narration") }
+        // Scene analysis runs out of process on the Neural Engine; only pieces planned
+        // ahead give way to it.
+        if state.analysisRunning, !requested { return .wait("analysis") }
         guard let available = state.availableMemory else { return .run(recipe) }
         if available >= required(recipe) { return .run(recipe) }
         let short = GenerationRecipe.short(for: recipe.layer)

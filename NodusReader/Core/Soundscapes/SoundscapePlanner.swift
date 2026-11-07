@@ -121,7 +121,13 @@ enum SoundscapePlanner {
         builder.add(PromptRequest(layer: layer, style: style, mood: layer == .music ? mood : nil,
                                   bed: layer == .ambience ? bed : nil, emotion: nil, situation: nil,
                                   intensity: 2, setting: nil, studyOnly: studyOnly), priority: priority, count: 1)
-        return builder.finished().first
+        // Wanted now: the quick recipe (no continuation), so it plays within seconds;
+        // longer pieces for the same mood follow in the plan.
+        return builder.finished().first.map { job in
+            var job = job
+            job.recipe = .short(for: layer)
+            return job
+        }
     }
 
     static func defaultMoods(_ style: SoundscapeStyle) -> [MusicMood] {

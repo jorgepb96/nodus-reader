@@ -46,6 +46,9 @@ actor GenerationWorker {
         thermal == .fair ? 60 : 20
     }
 
+    /// Between pieces the reader asked for (a pack, or what plays now).
+    static let requestedPause: Double = 5
+
     /// Seconds to wait so that no more than `hourlyLimit` pieces start in an hour.
     static func waitForHourlyCap(started: [Date], now: Date) -> Double {
         let recent = started.filter { now.timeIntervalSince($0) < 3_600 }.sorted()
@@ -186,7 +189,9 @@ actor GenerationWorker {
                 await generate(current, recipe: recipe)
                 if loopID == id { inFlight = nil }
                 if isPaused || Task.isCancelled { break }
-                try await sleep(Self.pause(for: await admission().thermal) * pacing)
+                let thermal = await admission().thermal
+                let requested = current.priority >= 10 && thermal == .nominal
+                try await sleep((requested ? Self.requestedPause : Self.pause(for: thermal)) * pacing)
             } catch {
                 break
             }

@@ -102,5 +102,7 @@ struct SoundscapePlannerTests {
         let job = try #require(SoundscapePlanner.job(layer: .ambience, mood: nil, bed: .fireplace, style: .noir,
                                                      bookID: nil, library: library, seed: 3, priority: 30))
         #expect(job.request.bed == .fireplace && job.priority == 30 && job.recipe.layer == .ambience)
+        // A piece wanted now is the quick recipe: it plays within seconds.
+        #expect(job.recipe == .shortAmbience)
     }
 }

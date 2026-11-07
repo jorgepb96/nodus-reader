@@ -241,5 +241,20 @@ struct GenerationWorkerTests {
         #expect(await worker.pending.filter { $0.request.mood == .tense }.count == 1)
         await worker.cancelAll()
     }
+
+    /// What the reader asked for does not wait for scene analysis, and the next piece
+    /// asked for follows after a short pause.
+    @Test @MainActor func requestedPiecesSkipAnalysisAndPaceShort() async {
+        var busy = calm
+        busy.analysisRunning = true
+        let sleeps = Sleeps()
+        let (worker, _, events) = makeWorker(generator: FixtureGenerator(), admission: busy, sleeps: sleeps)
+        await worker.enqueue([job(.tense, priority: GenerationWorker.immediatePriority),
+                              job(.calm, priority: GenerationWorker.immediatePriority)])
+        await events.wait { finished($0) == 2 }
+        #expect(!events.all.contains { if case .waiting = $0 { return true } else { return false } })
+        #expect(sleeps.all.contains(GenerationWorker.requestedPause))
+        #expect(!sleeps.all.contains(GenerationWorker.pause(for: .nominal)))
+    }
 }
 

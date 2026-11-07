@@ -268,13 +268,10 @@ final class ReaderHighlightOverlayView: UIView {
         for span in spans {
             guard span.range.length > 0, NSMaxRange(span.range) <= textView.attributedText.length else { continue }
             let glyphRange = layoutManager.glyphRange(forCharacterRange: span.range, actualCharacterRange: nil)
-            var rects: [CGRect] = []
-            layoutManager.enumerateEnclosingRects(forGlyphRange: glyphRange,
-                                                  withinSelectedGlyphRange: NSRange(location: NSNotFound, length: 0),
-                                                  in: container) { glyphRect, _ in
-                rects.append(glyphRect.offsetBy(dx: textView.textContainerInset.left,
-                                                dy: textView.textContainerInset.top))
-            }
+            // Whole-line heights: the spoken part of a sentence and the rest are drawn
+            // as separate spans and must meet the next line the same way.
+            let rects = ReaderPageHighlights.lineRects(layoutManager, glyphRange: glyphRange, in: container)
+                .map { $0.offsetBy(dx: textView.textContainerInset.left, dy: textView.textContainerInset.top) }
             // A span that runs on into the next slice fills this slice's last
             // line down to its line spacing, so it meets the next slice's.
             var fills = rects

@@ -138,8 +138,16 @@ public final class VoiceCatalog {
     /// Voice IDs identify the engine and checkpoint as well as the voice.
     /// A missing voice uses a temporary language-aware fallback; callers
     /// retain the saved preference so reinstalling its model restores it.
+    /// The voice that reads a book: its own voice when installed; otherwise the default
+    /// voice when it speaks the book's language, else an installed voice of that language.
     public func narrationVoice(preferredID: String?, language: String?) -> Voice? {
         if let exact = voice(withID: preferredID) { return exact }
+        let fallback = voice(withID: defaultVoiceID)
+        let bookLanguage = language.flatMap { $0.isEmpty ? nil : Self.languageCode($0) }
+        if let fallback, bookLanguage == nil || Self.languageCode(fallback.language) == bookLanguage {
+            return fallback
+        }
+        // Never another language silently: nil when no installed voice speaks it.
         return Self.replacement(in: allInstalledVoices, language: language, gender: nil, defaultID: defaultVoiceID)
     }
 

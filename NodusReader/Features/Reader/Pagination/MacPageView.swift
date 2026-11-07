@@ -290,13 +290,8 @@ final class MacHighlightOverlayView: NSView {
             guard let text = textView.textStorage, span.range.length > 0,
                   NSMaxRange(span.range) <= text.length else { continue }
             let glyphRange = layoutManager.glyphRange(forCharacterRange: span.range, actualCharacterRange: nil)
-            var rects: [NSRect] = []
-            layoutManager.enumerateEnclosingRects(forGlyphRange: glyphRange,
-                                                  withinSelectedGlyphRange: NSRange(location: NSNotFound, length: 0),
-                                                  in: container) { rect, _ in
-                rects.append(rect.offsetBy(dx: textView.textContainerOrigin.x,
-                                            dy: textView.textContainerOrigin.y))
-            }
+            let rects = ReaderPageHighlights.lineRects(layoutManager, glyphRange: glyphRange, in: container)
+                .map { $0.offsetBy(dx: textView.textContainerOrigin.x, dy: textView.textContainerOrigin.y) }
             // A span that runs on into the next slice fills this slice's last
             // line down to its line spacing, so it meets the next slice's.
             var fills = rects

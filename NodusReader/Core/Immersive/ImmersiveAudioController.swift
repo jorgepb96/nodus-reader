@@ -140,7 +140,8 @@ final class ImmersiveAudioController {
         observeSystem()
         library.onInstalledChanged = { [weak self] in self?.libraryChanged() }
         self.soundscapeModels.onChange = { [weak self] in self?.libraryChanged() }
-        self.generated.onChange = { [weak self] in self?.updateStatus() }
+        self.generated.onChange = { [weak self] in self?.soundsChanged() }
+        self.library.onChange = { [weak self] in self?.soundsChanged() }
     }
 
     // MARK: Reader
@@ -1028,6 +1029,25 @@ final class ImmersiveAudioController {
     }
 
     /// Packs were installed or deleted: start playing if waiting for them.
+    /// Sounds were added or deleted. A deleted file keeps playing from its open handle
+    /// (a loop forever): stop it, and let the layer pick again or compose.
+    private func soundsChanged() {
+        updateStatus()
+        guard let engine else { return }
+        if let track = musicTrack, url(for: track) == nil {
+            engine.stop(.music, fadeOut: 1)
+            musicTrack = nil
+            musicStandIn = false
+            if policy.shouldPlay, let mood = director.current?.music { startMusic(mood, crossfade: 1, avoidSubPool: nil) }
+        }
+        if let track = ambienceTrack, url(for: track) == nil {
+            engine.stop(.ambience, fadeOut: 1)
+            ambienceTrack = nil
+            ambienceStandIn = false
+            if policy.shouldPlay, let bed = director.current?.base, bed != .none { startAmbience(bed, crossfade: 1) }
+        }
+    }
+
     private func libraryChanged() {
         updateStatus()
         if policy.shouldPlay, engine?.isRunning != true {
