@@ -26,6 +26,7 @@
 		16143A1BAB297801FB6E7E8B /* IOSReaderPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FC7158911830A319D83B1AE /* IOSReaderPageView.swift */; };
 		1688B1BEB6AB60CD6799CB5C /* GainCurve.swift in Sources */ = {isa = PBXBuildFile; fileRef = C43F47C42A013DE4A8049B92 /* GainCurve.swift */; };
 		16B10D1B0A6FFDB50CA17964 /* LibraryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDD2DD8236ECF3854999A01D /* LibraryComponents.swift */; };
+		1722FA3BF54422D112E0F154 /* VoiceFilterFacetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D39D0F52F65AD4EBD58B589 /* VoiceFilterFacetTests.swift */; };
 		17EBDBD0B3A6038A921C7424 /* AtmosphereMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0BF9CDEED3AA8637E2C6DB3 /* AtmosphereMapper.swift */; };
 		184BDCEA2326221E8EA771AF /* PasteTextImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F6A090E1EB629FC7CA451C4 /* PasteTextImportView.swift */; };
 		1A2A158A99767B8175B41AAD /* PromptLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F8C109DE4105E94D475DC38 /* PromptLibrary.swift */; };
@@ -316,6 +317,7 @@
 		3B1DBD289B69A2FBE2AFE55C /* ReadingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingSettingsView.swift; sourceTree = "<group>"; };
 		3B6D690834C5BF2B92AEAD2E /* ImportError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportError.swift; sourceTree = "<group>"; };
 		3D1C3CFF9FF3261F6D0174B1 /* SoundscapeAudioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundscapeAudioTests.swift; sourceTree = "<group>"; };
+		3D39D0F52F65AD4EBD58B589 /* VoiceFilterFacetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceFilterFacetTests.swift; sourceTree = "<group>"; };
 		3F6A090E1EB629FC7CA451C4 /* PasteTextImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteTextImportView.swift; sourceTree = "<group>"; };
 		40A191E547B3FA244E030216 /* PDFReflowEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReflowEngine.swift; sourceTree = "<group>"; };
 		411AF1A170335684302EFFE6 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
@@ -806,6 +808,7 @@
 				B77664F53036C39CBCF5CAA1 /* SyncTests.swift */,
 				EFD5EBF13ACCE8B1B700EC00 /* SynthesisCancellationTests.swift */,
 				3AE7E932286FBBAE6E148764 /* VoiceAvailabilityTests.swift */,
+				3D39D0F52F65AD4EBD58B589 /* VoiceFilterFacetTests.swift */,
 			);
 			path = NodusReaderTests;
 			sourceTree = "<group>";
@@ -1376,6 +1379,7 @@
 				D558825DFD17434164BEB8D2 /* SyncTests.swift in Sources */,
 				39B09E3B8B1E61EF03A23E2B /* SynthesisCancellationTests.swift in Sources */,
 				4782D9133525F15E3344EE69 /* VoiceAvailabilityTests.swift in Sources */,
+				1722FA3BF54422D112E0F154 /* VoiceFilterFacetTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1474,7 +1478,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 73;
+				CURRENT_PROJECT_VERSION = 74;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1542,7 +1546,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 73;
+				CURRENT_PROJECT_VERSION = 74;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;

@@ -1,0 +1,6 @@
+Voice filters that adapt to each other.
+
+- The Model, Language and Gender filters only list what the other two leave available: with Kokoro chosen, languages Kokoro does not speak are not listed, and genders follow the model and language too. Changing one filter drops choices in the others that no voice could satisfy, so the list never ends up empty.
+- The dropdowns no longer have a search field.
+
+Also from build 73: search fields show each letter at once, and press-and-drag selection works while narration plays.

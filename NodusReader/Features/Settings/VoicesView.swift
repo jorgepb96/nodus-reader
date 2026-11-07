@@ -39,8 +39,15 @@ struct VoicesView: View {
 
     private var voiceFilterBinding: Binding<VoiceFilterSelection> {
         Binding(get: { voiceFilters }, set: { value in
-            if let encoded = value.encoded { savedVoiceFilters = encoded }
+            let adapted = value.adapted(after: voiceFilters, in: filterableVoices)
+            if let encoded = adapted.encoded { savedVoiceFilters = encoded }
         })
+    }
+
+    /// The voices the model, language and gender filters choose among: every
+    /// installed model's voices within the chosen quality.
+    private var filterableVoices: [VoiceCatalog.Voice] {
+        voices.allInstalledVoices.filter { qualityFilter == nil || $0.quality == qualityFilter }
     }
     @State private var hfToken = ""
     @State private var hfStatus: String?
@@ -1052,34 +1059,20 @@ struct VoicesView: View {
 
     private var filterRow: some View {
         VStack(alignment: .leading, spacing: 8) {
+            let options = VoiceFilterOptions(
+                selection: voiceFilters, voices: filterableVoices,
+                modelName: { id in models.models.first { $0.id == id && $0.engine.isEnabled }?.name },
+                languageName: { voices.languageName(for: $0) })
             VoiceFilterControls(selection: voiceFilterBinding,
-                                modelOptions: voiceModelOptions,
-                                languageOptions: voiceLanguageOptions,
-                                genderOptions: voiceGenderOptions)
+                                modelOptions: options.models,
+                                languageOptions: options.languages,
+                                genderOptions: options.genders)
             HStack(spacing: 8) {
                 qualityFilterMenu
                 Spacer(minLength: 0)
                 clearFiltersButton
             }
         }
-    }
-
-    private var voiceModelOptions: [VoiceFilterOption] {
-        Set(installedModels.map(\.id)).union(voiceFilters.models).map { id in
-            VoiceFilterOption(id: id, title: models.models.first { $0.id == id && $0.engine.isEnabled }?.name
-                              ?? String(localized: "Unavailable model"))
-        }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
-    }
-
-    private var voiceLanguageOptions: [VoiceFilterOption] {
-        Set(VoiceCatalog.baseLanguages(of: voices.allInstalledVoices)).union(voiceFilters.languages).map {
-            VoiceFilterOption(id: $0, title: voices.languageName(for: $0))
-        }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
-    }
-
-    private var voiceGenderOptions: [VoiceFilterOption] {
-        VoiceGender.allCases.map { VoiceFilterOption(id: $0.rawValue, title: $0.label) }
-            + [VoiceFilterOption(id: VoiceFilterSelection.unspecifiedGender, title: String(localized: "Not specified"))]
     }
 
     private var qualityFilterMenu: some View {
@@ -1160,11 +1153,100 @@ struct VoiceFilterSelection: Codable, Equatable {
             && (languages.isEmpty || VoiceCatalog.languageCode(voice.language).map { languages.contains($0) } == true)
             && (genders.isEmpty || genders.contains(voice.gender?.rawValue ?? Self.unspecifiedGender))
     }
+
+    enum Facet: CaseIterable { case model, language, gender }
+
+    @MainActor
+    static func value(of voice: VoiceCatalog.Voice, for facet: Facet) -> String? {
+        switch facet {
+        case .model: voice.modelID
+        case .language: VoiceCatalog.languageCode(voice.language)
+        case .gender: voice.gender?.rawValue ?? unspecifiedGender
+        }
+    }
+
+    subscript(facet: Facet) -> Set<String> {
+        get {
+            switch facet {
+            case .model: models
+            case .language: languages
+            case .gender: genders
+            }
+        }
+        set {
+            switch facet {
+            case .model: models = newValue
+            case .language: languages = newValue
+            case .gender: genders = newValue
+            }
+        }
+    }
+
+    /// What one filter can offer: the values found among the voices that
+    /// pass the other two filters. A filter never narrows its own list, so
+    /// another model or language stays one tap away.
+    @MainActor
+    func available(_ facet: Facet, in voices: [VoiceCatalog.Voice]) -> Set<String> {
+        var others = self
+        others[facet] = []
+        return Set(voices.filter { others.matches($0) }.compactMap { Self.value(of: $0, for: facet) })
+    }
+
+    @MainActor
+    func facets(in voices: [VoiceCatalog.Voice]) -> (models: Set<String>, languages: Set<String>, genders: Set<String>) {
+        (available(.model, in: voices), available(.language, in: voices), available(.gender, in: voices))
+    }
+
+    /// After one filter changes, drops the choices in the others that no
+    /// voice can satisfy any more (Kokoro chosen with German selected clears
+    /// German), so the list never ends up empty because of a hidden choice.
+    /// Later filters are checked against the earlier ones kept.
+    @MainActor
+    func adapted(after previous: VoiceFilterSelection, in voices: [VoiceCatalog.Voice]) -> VoiceFilterSelection {
+        guard let changed = Facet.allCases.first(where: { self[$0] != previous[$0] }) else { return self }
+        var result = VoiceFilterSelection()
+        result[changed] = self[changed]
+        for facet in Facet.allCases where facet != changed {
+            let offered = result.available(facet, in: voices)
+            result[facet] = self[facet].intersection(offered)
+        }
+        return result
+    }
 }
 
 struct VoiceFilterOption: Identifiable {
     let id: String
     let title: String
+}
+
+/// The options of the three voice filters, adapted to each other: each lists
+/// only what the voices left by the other two offer, plus anything already
+/// ticked so it can be unticked.
+struct VoiceFilterOptions {
+    var models: [VoiceFilterOption] = []
+    var languages: [VoiceFilterOption] = []
+    var genders: [VoiceFilterOption] = []
+
+    @MainActor
+    init(selection: VoiceFilterSelection, voices: [VoiceCatalog.Voice],
+         modelName: (String) -> String?, languageName: (String) -> String) {
+        let facets = selection.facets(in: voices)
+        func sorted(_ options: [VoiceFilterOption]) -> [VoiceFilterOption] {
+            options.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+        }
+        models = sorted(facets.models.union(selection.models).map { id in
+            VoiceFilterOption(id: id, title: modelName(id)
+                ?? voices.first { $0.modelID == id }?.modelName
+                ?? String(localized: "Unavailable model"))
+        })
+        languages = sorted(facets.languages.union(selection.languages).map {
+            VoiceFilterOption(id: $0, title: languageName($0))
+        })
+        let genders = facets.genders.union(selection.genders)
+        self.genders = (VoiceGender.allCases.map { VoiceFilterOption(id: $0.rawValue, title: $0.label) }
+            + [VoiceFilterOption(id: VoiceFilterSelection.unspecifiedGender, title: String(localized: "Not specified"))])
+            .filter { genders.contains($0.id) }
+    }
 }
 
 /// The three voice filters use the same multi-selection controls everywhere.
@@ -1209,7 +1291,6 @@ private struct VoiceMultiSelectionFilter: View {
     @Environment(\.nodusPalette) private var palette
     @State private var isPresented = false
     @State private var presentedOptions: [VoiceFilterOption] = []
-    @State private var query = ""
 
     private var selectedNames: [String] {
         options.filter { selected.contains($0.id) }.map(\.title)
@@ -1221,15 +1302,9 @@ private struct VoiceMultiSelectionFilter: View {
         return "\(title) (\(selected.count))"
     }
 
-    private var matchingOptions: [VoiceFilterOption] {
-        let search = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        return search.isEmpty ? presentedOptions : presentedOptions.filter { $0.title.localizedCaseInsensitiveContains(search) }
-    }
-
     var body: some View {
         Button {
             presentedOptions = options
-            query = ""
             isPresented = true
         } label: {
             HStack(spacing: 4) {
@@ -1264,42 +1339,24 @@ private struct VoiceMultiSelectionFilter: View {
 
                 Rectangle().fill(palette.line).frame(height: 0.5)
 
-                if showsSearch {
-                    DraftSearchText(query: $query) { text in
-                        HStack(spacing: 8) {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundStyle(palette.muted)
-                            TextField("Search", text: text)
-                                .textFieldStyle(.plain)
-                        }
-                        .padding(10)
-                        .background(palette.panel, in: RoundedRectangle(cornerRadius: 10))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                    }
-                }
-
-                // Filter once: asking for the matches inside every row
-                // filtered the whole list again for each one.
-                let matching = matchingOptions
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         filterRow(all, checked: selected.isEmpty) { selected = [] }
                         Rectangle().fill(palette.line).frame(height: 0.5)
                             .padding(.leading, 16)
-                        ForEach(matching) { option in
+                        ForEach(presentedOptions) { option in
                             filterRow(option.title, checked: selected.contains(option.id)) {
                                 if selected.contains(option.id) { selected.remove(option.id) }
                                 else { selected.insert(option.id) }
                             }
                             .accessibilityIdentifier("\(identifier)-\(option.id)")
                             .accessibilityAddTraits(selected.contains(option.id) ? .isSelected : [])
-                            if option.id != matching.last?.id {
+                            if option.id != presentedOptions.last?.id {
                                 Rectangle().fill(palette.line).frame(height: 0.5)
                                     .padding(.leading, 16)
                             }
                         }
-                        if matching.isEmpty {
+                        if presentedOptions.isEmpty {
                             Text("No results")
                                 .font(.footnote)
                                 .foregroundStyle(palette.muted)
@@ -1318,15 +1375,12 @@ private struct VoiceMultiSelectionFilter: View {
         }
     }
 
-    private var showsSearch: Bool { presentedOptions.count > 10 }
-
     /// With the arrow on top the popover opens below the chip, where a phone
     /// has room. Size it for the list instead of being squeezed above the
     /// chip, and keep the list scrollable.
     private var popoverHeight: CGFloat {
         let rows = min(max(presentedOptions.count + 1, 3), 9)
-        let searchHeight: CGFloat = showsSearch ? 58 : 0
-        return min(400, CGFloat(rows) * 48 + 64 + searchHeight)
+        return min(400, CGFloat(rows) * 48 + 64)
     }
 
     private func filterRow(_ label: String, checked: Bool, action: @escaping () -> Void) -> some View {

@@ -1,0 +1,6 @@
+Filtros de voces que se adaptan entre sí.
+
+- Los filtros de Modelo, Idioma y Género solo muestran lo que dejan disponible los otros dos: con Kokoro elegido no aparecen los idiomas que Kokoro no habla, y los géneros también siguen al modelo y al idioma. Al cambiar un filtro se quitan de los demás las opciones que ninguna voz cumpliría, así que la lista nunca se queda vacía.
+- Los desplegables ya no tienen buscador.
+
+También de la build 73: los buscadores muestran cada letra al momento, y mantener pulsado y arrastrar para seleccionar funciona mientras suena la narración.
