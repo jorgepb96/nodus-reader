@@ -30,11 +30,10 @@
     "6fca3f0a-fada-4405-a6a0-9357bab03698"
   ],
   "sourceCommit": "c11d2e456d9516767be65f181a9abdd3d886936c",
-  "distribution": "Internal and Public",
+  "distribution": "Internal only (removed from Public on 8 November 2026, replaced by 1.0.0 (76))",
   "publicBeta": {
-    "group": "Public",
-    "externalBuildState": "WAITING_FOR_BETA_REVIEW",
-    "betaReviewSubmitted": true
+    "removed": true,
+    "replacedBy": "1.0.0 (76)"
   },
   "productionReviewSubmitted": false
 }
