@@ -1,7 +1,12 @@
-Build 75, private Mac beta.
+Nodus Reader for Mac, build 75.
 
-- The original page beside PDF Intelligent Reading follows the reader's theme (it was always white) and hides or shows with the sidebar button beside the mode picker, or Option-Command-I; your choice is remembered.
-- New voice volume control in the atmosphere panel, beside Music and Ambience; it starts at 100%.
-- Settings › Soundscapes shows the AI models as installed as soon as the download finishes.
+AI soundscapes
+Settings › Soundscapes: turn them on, choose AI and download Music and Ambience in Models (about 2.9 GB). Music and ambiences are composed on this Mac with Stable Audio 3 Small (Powered by Stability AI), follow the book's style and scenes, are kept to play offline, and nothing leaves the device. When you press play, the app asks how many pieces to compose before the voice.
 
-Includes everything from build 74. Please also try iCloud sync with your iPhone (build 75 on both).
+Reader and narration
+- Voice volume control in the atmosphere panel, beside Music and Ambience.
+- Neural narration no longer pauses between sentences, and the highlight covers every line of the narrated sentence.
+- The original page beside PDF Intelligent Reading follows the reader's theme and hides or shows with its button or Option-Command-I.
+- The voice filters adapt to each other; Ming, Studio voices and Qwen remain available on the Mac.
+
+Tell us how the AI soundscapes do on your Mac (waiting times, heat, battery) and whether iCloud sync between the Mac and the iPhone works.

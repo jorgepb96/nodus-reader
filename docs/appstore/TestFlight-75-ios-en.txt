@@ -1,7 +1,11 @@
-Build 75, private.
+New since build 73.
 
-- New voice volume control in the reader's atmosphere panel, beside Music and Ambience: the voice starts at 100% and you can lower it under the music.
-- Settings › Soundscapes shows the AI models as installed as soon as the download finishes (it kept saying "Not installed" until you left and came back).
+- Voice volume: the reader's atmosphere panel has a voice control beside Music and Ambience; it starts at 100% and you can lower it under the music.
+- Voice filters adapt to each other: with a model chosen, only its languages and genders are listed, and the other way round. The dropdowns no longer have a search field.
+- Deleting a book asks beside that book, not at the bottom or top of the screen.
+- Settings › Soundscapes shows the AI models as installed as soon as the download finishes.
 - On iPad, the original page beside PDF Intelligent Reading follows the reader's theme and hides or shows with the button beside the mode picker.
+- Tested on a real iPhone 16 Pro Max, including the Share Extension from Safari.
 
-Checked on a real iPhone 16 Pro Max: every interface test and the Share Extension from Safari. iCloud sync between iPhone and Mac is still to be tested.
+AI soundscapes
+Settings › Soundscapes: turn them on, choose AI and download Music and Ambience in Models (about 2.6 GB, on Wi-Fi); then press play in a book and choose how many pieces to compose first. Powered by Stability AI; everything runs on your iPhone. Tell us how they sound, waiting times, heat and battery.

@@ -1,7 +1,12 @@
-Compilación 75, beta privada de Mac.
+Nodus Reader para Mac, build 75.
 
-- La página original junto a la lectura inteligente de PDF sigue el tema del lector (antes salía siempre en blanco) y se oculta o se muestra con el botón de la barra lateral junto al selector de modo, o con ⌥⌘I; recuerda tu elección.
-- Nuevo control de volumen de la voz en el panel de atmósfera, junto a Música y Ambientes; empieza al 100 %.
-- Ajustes › Paisajes sonoros ya muestra los modelos de IA como instalados en cuanto termina la descarga.
+Paisajes sonoros con IA
+Ajustes › Paisajes sonoros: actívalos, elige IA y descarga Música y Ambientes en Modelos (unos 2,9 GB). La música y los ambientes se componen en este Mac con Stable Audio 3 Small (Powered by Stability AI), siguen el estilo y las escenas del libro, se guardan para sonar sin conexión y nada sale del dispositivo. Al pulsar reproducir, la app pregunta cuántas piezas componer antes de la voz.
 
-Incluye todo lo de la 74. Prueba también la sincronización con iCloud con tu iPhone (build 75 en ambos).
+Lector y narración
+- Control de volumen de la voz en el panel de atmósfera, junto a Música y Ambientes.
+- La voz neuronal ya no se pausa entre frases y el resaltado cubre todas las líneas de la frase narrada.
+- La página original junto a la lectura inteligente de PDF sigue el tema del lector y se oculta o se muestra con su botón o con ⌥⌘I.
+- Los filtros de voces se adaptan entre sí; Ming, las voces de Studio y Qwen siguen disponibles en Mac.
+
+Cuéntanos cómo van los paisajes con IA en tu Mac (tiempos, calor, batería) y si la sincronización con iCloud entre el Mac y el iPhone funciona.
