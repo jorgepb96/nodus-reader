@@ -1,0 +1,19 @@
+Compilación 74, beta privada de Mac. Es la primera desde la 56 e incluye todo lo hecho desde entonces.
+
+Paisajes sonoros con IA (nuevo)
+Ajustes › Paisajes sonoros: actívalos y elige IA, y descarga Música y Ambientes en Modelos (unos 2,9 GB). La música y los ambientes se componen en este Mac con Stable Audio 3 Small (Powered by Stability AI), siguen el estilo y las escenas del libro, se guardan para volver a sonar sin conexión y nada sale del dispositivo. Al pulsar reproducir, la app pregunta cuántas piezas componer antes de la voz (1, 3 o 6). La nota musical del lector cambia ambiente, música y estilo; el corazón guarda las piezas que te gusten.
+
+Narración y lector
+- La voz neuronal ya no se pausa cada pocas frases ni a mitad de frase tras abreviaturas o diálogos, y enlaza una frase con la siguiente sin silencios.
+- El resaltado cubre todas las líneas de la frase narrada y ninguna otra.
+- El reproductor y los menús ya no se redibujan con cada palabra.
+- Los EPUB de Gutenberg ya no cortan líneas a mitad de párrafo; volver a la narración en PDF llega a la página narrada.
+
+Voces
+- Los filtros de Modelo, Idioma y Género se adaptan entre sí y ya no tienen buscador; el selector se abre en el idioma del libro.
+- Ming, las voces de Studio y Qwen siguen disponibles en Mac.
+
+Búsqueda
+- Los buscadores de voces e idiomas muestran cada letra al momento.
+
+Prueba en especial los paisajes con IA en tu Mac (tiempos, calor, batería) y que la narración nunca se corte.
