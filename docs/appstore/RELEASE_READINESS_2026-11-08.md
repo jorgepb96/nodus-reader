@@ -6,7 +6,7 @@ build attached. macOS stays out of scope until requested.
 
 ## Verdict
 
-**Not yet — about one to two weeks.** The product is complete and tested (358 unit
+**Ready for review whenever Jorge decides** (updated 8 November 2026, evening). Every must-do item below is done; nothing has been submitted. The product is complete and tested (358 unit
 tests, 39 UI tests, public beta approved on every build). What remains is release
 work: one version change, licence and policy paperwork, two physical-device checks
 and refreshed listing material. None needs new features.
@@ -15,13 +15,13 @@ and refreshed listing material. None needs new features.
 
 | # | Item | Why | Who |
 |---|---|---|---|
-| 1 | Set `MARKETING_VERSION` to `1.0` (now `0.1.0`), upload a new build and attach it to the iOS 1.0 draft. | App Store Connect only accepts a build whose version string matches the App Store version. | Claude |
+| 1 | **Done.** `MARKETING_VERSION` is 1.0.0; build 1.0.0 (76) is in TestFlight (Internal) and attached to the iOS draft, renamed 1.0.0 to match. Release type manual. | App Store Connect only accepts a build whose version matches. | Done |
 | 2 | **Done 8 November 2026.** iCloud sync between iPhone and Mac checked by Jorge with TestFlight build 75 on both. On a real iPhone 16 Pro Max (iOS 27.2) the full UI suite passes and `ShareExtensionDeviceTests` shares a page from Safari to the Share Extension, which reaches the signed App Group and offers Import. | The simulator cannot exercise CloudKit or the App Group. | Done |
-| 3 | Review the licences of the 127 Immersive Audio tracks (80 CC0, 34 CC-BY-3.0, 13 CC-BY-4.0). Every catalog entry still says "maintainer review pending", while Settings › Soundscapes › Credits says each sound was "checked one by one". Either confirm them (evidence snapshots are in `build/immersive-audio/evidence/`) and mark them verified in the catalog, or soften the in-app sentence. | App Store Connect declares "has the necessary rights" for third-party content; the claim and the record must agree. | Jorge, then Claude updates the catalog |
+| 3 | **Done.** Settings › Soundscapes › Credits now says each sound comes from CC0 or CC-BY sources with its licence recorded, matching the catalog; the in-app credits list every author, licence, source and change. | The claim and the record agree. | Done |
 | 4 | **Done 8 November 2026.** Registered under the Stability AI Community License (individual developer, under US$1M revenue, customer-facing use); Stability confirmed the licence as activated (`evidence/stability-community-license-activated-2026-11-08.png`). "Powered by Stability AI", the licence texts and the Acceptable Use Policy are shown in the app. No other bundled or downloadable model requires registration. | Public distribution of a product built on the model. | Done |
-| 5 | Update the privacy policy (repo `PRIVACY.md` and https://nodusresearch.com/reader/privacy/, last updated 3 November) to name the AI soundscape models: downloaded on request from `stabilityai/stable-audio-3-optimized` on Hugging Face, run on the device, generated audio stays local. | The policy lists Hugging Face downloads but not the soundscape models added since. | Claude drafts the repo text; Jorge publishes the web page |
-| 6 | Write 1.0 review notes. `ReviewNotes-56-en.txt` describes a beta (five-minute sessions, pending validation). The 1.0 notes should cover: no account needed; how to get a book (import any DRM-free EPUB/PDF, e.g. from Project Gutenberg); iOS voices work without downloads; AI soundscapes are off by default, need an Apple-silicon iPhone and a ~2.6–2.9 GB download on request, and run on the device; the optional Hugging Face sign-in only unlocks gated non-commercial voices the user downloads with their own access. | Reviewers otherwise meet an empty library and multi-gigabyte downloads without context. | Claude |
-| 7 | Refresh the screenshots. The current 60 captures come from build 56; the player, voice filters and Soundscapes settings have changed since. At minimum the iPhone 6.9" and iPad 13" sets in both languages. | The listing should show the app as shipped. | Claude (UI test capture) |
+| 5 | **Done.** `PRIVACY.md` and https://nodusresearch.com/reader/privacy/ (jorgepb96/nodus#1334, live) name the AI soundscape models, their download from Stability AI on Hugging Face, local composition and no sync. Last updated 8 November 2026. | Done | Done |
+| 6 | **Done.** `ReviewNotes-1.0.0-en.txt` saved in App Store Connect: no account, how to get a book, iOS voices without downloads, optional models and AI soundscapes (off by default, 2.6–2.9 GB, on device), microphone only on Mac, privacy policy and source links. | Done | Done |
+| 7 | **Done.** 40 new screenshots (iPhone 6.9" and iPad 13", English and Spanish, 10 each) from build 75/76, uploaded and COMPLETE (`SCREENSHOTS_20261108.json`). The iPhone Duo sets are still from build 56. An App Preview video recorded on a real iPhone (to show AI soundscapes, which the Simulator cannot run) is left to Jorge. | Done | Done |
 
 ## Should do (not blocking review)
 

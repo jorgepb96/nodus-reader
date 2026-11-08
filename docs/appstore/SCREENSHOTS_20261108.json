@@ -1,0 +1,166 @@
+[
+  {
+    "locale": "en-US",
+    "display": "APP_IPHONE_67",
+    "set": "7496f100-8242-43c2-8805-3f8a13046b8f",
+    "files": [
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-en-01-Welcome.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-en-02-Home.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-en-03-Library.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-en-04-Reader.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-en-05-Search.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-en-06-ReadAndListen.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-en-07-Player.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-en-08-PDF.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-en-09-Settings.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-en-10-VoiceModels.png"
+    ],
+    "ids": [
+      "34400019-6e96-8246-802c-5505ab71a8f1",
+      "d3400019-6e96-8246-801d-84424e2ffcdc",
+      "13400019-6e96-8246-8001-3e56cb802b2e",
+      "bcc00019-6e96-8246-8018-cbafd70f20fb",
+      "41000019-6e96-8246-8037-309b51de5dbd",
+      "c2c00019-6e96-8246-803c-b09584f92047",
+      "bf000019-6e96-8246-8024-824d74edc4dd",
+      "95800019-6e96-8246-802b-f21e86c9b532",
+      "76400019-6e96-8246-8008-d0cb24028a9d",
+      "50400019-6e96-8246-802a-eb1883006c8d"
+    ],
+    "states": [
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE"
+    ]
+  },
+  {
+    "locale": "es-ES",
+    "display": "APP_IPHONE_67",
+    "set": "07f4712e-379b-4f69-ae5d-3a5bfb1cb8fd",
+    "files": [
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-es-01-Welcome.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-es-02-Home.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-es-03-Library.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-es-04-Reader.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-es-05-Search.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-es-06-ReadAndListen.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-es-07-Player.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-es-08-PDF.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-es-09-Settings.png",
+      "docs/appstore/screenshots/AppStore-iPhone-20261108-es-10-VoiceModels.png"
+    ],
+    "ids": [
+      "63c00019-6e96-8246-8035-b18bf89b35b8",
+      "97400019-6e96-8246-801c-8da579084734",
+      "c6400019-6e96-8246-802d-e031e5094077",
+      "fd800019-6e96-8246-800d-654c3d6c63d1",
+      "e1c00019-6e96-8246-8037-3861b003bd0c",
+      "e6800019-6e96-8246-8029-ab9df2cdc9da",
+      "e4c00019-6e96-8246-8021-5b22a8f1592a",
+      "55800019-6e96-8246-8010-4b94d175ef9b",
+      "90000019-6e96-8246-801b-958d42cba2dc",
+      "fdc00019-6e96-8246-802d-174737159c35"
+    ],
+    "states": [
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE"
+    ]
+  },
+  {
+    "locale": "en-US",
+    "display": "APP_IPAD_PRO_3GEN_129",
+    "set": "18e1266c-ed2a-47ce-9422-c98a8e7b5c88",
+    "files": [
+      "docs/appstore/screenshots/AppStore-iPad-20261108-en-01-Welcome.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-en-02-Home.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-en-03-Library.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-en-04-Reader.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-en-05-Search.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-en-06-ReadAndListen.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-en-07-Player.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-en-08-PDF.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-en-09-Settings.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-en-10-VoiceModels.png"
+    ],
+    "ids": [
+      "f5400019-6e96-8246-802e-e3027e4bbb15",
+      "18c00019-6e96-8246-803f-f8259d83043c",
+      "68c00019-6e96-8246-8018-8b4840774fad",
+      "8a000019-6e96-8246-8029-080d70e6ac50",
+      "07c00019-6e96-8246-800e-e2d332e7c2f2",
+      "32400019-6e96-8246-8035-84ae3df92cc1",
+      "e7000019-6e96-8246-8038-5c3bbb29164e",
+      "a8c00019-6e96-8246-8022-887f9a2c1ffe",
+      "93c00019-6e96-8246-8014-d95d1540ffe7",
+      "68000019-6e96-8246-801a-c7826258af08"
+    ],
+    "states": [
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE"
+    ]
+  },
+  {
+    "locale": "es-ES",
+    "display": "APP_IPAD_PRO_3GEN_129",
+    "set": "52db81f0-fc9b-4172-90c1-c95f15d5f688",
+    "files": [
+      "docs/appstore/screenshots/AppStore-iPad-20261108-es-01-Welcome.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-es-02-Home.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-es-03-Library.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-es-04-Reader.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-es-05-Search.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-es-06-ReadAndListen.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-es-07-Player.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-es-08-PDF.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-es-09-Settings.png",
+      "docs/appstore/screenshots/AppStore-iPad-20261108-es-10-VoiceModels.png"
+    ],
+    "ids": [
+      "e9400019-6e96-8246-8011-73b1626ea3e1",
+      "ad400019-6e96-8246-8004-06311f5a92c2",
+      "50000019-6e96-8246-8019-74e198db409a",
+      "04000019-6e96-8246-8028-1360e2c36aae",
+      "91000019-6e96-8246-801b-3050eb537209",
+      "84000019-6e96-8246-8022-451490d02844",
+      "75800019-6e96-8246-8019-f2cc49d6a86d",
+      "9a400019-6e96-8246-8033-ed88d94ec5b0",
+      "45800019-6e96-8246-8028-ec38066d212a",
+      "39800019-6e96-8246-803c-37f724701025"
+    ],
+    "states": [
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE",
+      "COMPLETE"
+    ]
+  }
+]
