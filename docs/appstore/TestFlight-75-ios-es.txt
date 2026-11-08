@@ -1,0 +1,11 @@
+Novedades desde la build 73.
+
+- Volumen de la voz: el panel de atmósfera del lector tiene un control para la voz junto a Música y Ambientes; empieza al 100 % y puedes bajarla bajo la música.
+- Filtros de voces que se adaptan entre sí: con un modelo elegido solo aparecen sus idiomas y géneros, y al revés. Los desplegables ya no tienen buscador.
+- Al eliminar un libro, la confirmación aparece junto a ese libro, no abajo ni arriba del todo.
+- Ajustes › Paisajes sonoros muestra los modelos de IA como instalados en cuanto termina la descarga.
+- En el iPad, la página original junto a la lectura inteligente de PDF sigue el tema del lector y se oculta o se muestra con el botón junto al selector de modo.
+- Probado en un iPhone 16 Pro Max real, incluida la extensión para compartir desde Safari.
+
+Paisajes sonoros con IA
+Ajustes › Paisajes sonoros: actívalos, elige IA y descarga Música y Ambientes en Modelos (unos 2,6 GB, con Wi‑Fi); luego pulsa reproducir en un libro y elige cuántas piezas componer primero. Powered by Stability AI; todo funciona en tu iPhone. Cuéntanos cómo suenan, los tiempos de espera, el calor y la batería.

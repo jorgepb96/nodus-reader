@@ -1,0 +1,40 @@
+{
+  "id": "739ca569-4a54-420b-b336-a256b8b258e8",
+  "version": "75",
+  "uploadedDate": "2026-11-08T06:15:52-08:00",
+  "expirationDate": "2027-02-06T06:15:52-08:00",
+  "expired": false,
+  "minOsVersion": "15.0",
+  "lsMinimumSystemVersion": "15.0",
+  "computedMinMacOsVersion": null,
+  "computedMinVisionOsVersion": null,
+  "iconAssetToken": {
+    "templateUrl": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/90/95/df/9095dfec-1a55-2d6a-21c0-68dfc4c034a9/AppIcon.icns/{w}x{h}bb.{f}",
+    "width": 256,
+    "height": 256
+  },
+  "processingState": "VALID",
+  "buildAudienceType": "APP_STORE_ELIGIBLE",
+  "usesNonExemptEncryption": false,
+  "preReleaseVersion": {
+    "version": "0.1.0",
+    "platform": "MAC_OS"
+  },
+  "buildBetaDetail": {
+    "autoNotifyEnabled": true,
+    "internalBuildState": "IN_BETA_TESTING",
+    "externalBuildState": "READY_FOR_BETA_SUBMISSION"
+  },
+  "betaAppReviewSubmission": null,
+  "groups": [
+    "6fca3f0a-fada-4405-a6a0-9357bab03698"
+  ],
+  "sourceCommit": "c11d2e456d9516767be65f181a9abdd3d886936c",
+  "distribution": "Internal and Public",
+  "publicBeta": {
+    "group": "Public",
+    "externalBuildState": "WAITING_FOR_BETA_REVIEW",
+    "betaReviewSubmitted": true
+  },
+  "productionReviewSubmitted": false
+}

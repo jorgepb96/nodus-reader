@@ -196,6 +196,30 @@ public final class PlaybackController {
         }
     }
     public private(set) var speedMultiplier: Double = 1.0
+    /// The narrating voice's level, from the atmosphere panel: full volume until
+    /// the reader lowers it under music and ambience. Kept per device.
+    public private(set) var voiceVolume: Double = 1
+
+    /// A setter rather than `didSet`: with `@Observable`, clamping inside the
+    /// property's own observer re-entered it without end.
+    public func setVoiceVolume(_ volume: Double) {
+        let clamped = min(max(volume, 0), 1)
+        guard clamped != voiceVolume else { return }
+        voiceVolume = clamped
+        NarrationVolume.save(clamped, to: defaults)
+        applyVoiceVolume()
+    }
+
+    private func applyVoiceVolume() {
+        #if DEBUG
+        // UI tests exercise the real playback clock without audible output.
+        if ProcessInfo.processInfo.arguments.contains("-NodusSilentAudioTests") {
+            audioPlayer.volume = 0
+            return
+        }
+        #endif
+        audioPlayer.volume = Float(voiceVolume)
+    }
     public var sleepTimer: SleepTimerOption = .off
     public private(set) var sleepEndsAt: Date?
 
@@ -217,12 +241,8 @@ public final class PlaybackController {
         // Restore the audio rate as well as its label before any narration
         // starts; otherwise the UI can show the saved speed while playing 1×.
         timePitch.rate = Float(speedMultiplier)
-        #if DEBUG
-        // UI tests exercise the real playback clock without audible output.
-        if ProcessInfo.processInfo.arguments.contains("-NodusSilentAudioTests") {
-            audioPlayer.volume = 0
-        }
-        #endif
+        voiceVolume = NarrationVolume.load(from: defaults)
+        applyVoiceVolume()
         if let neuralFormat {
             audioEngine.attach(audioPlayer)
             audioEngine.attach(timePitch)
@@ -2086,6 +2106,20 @@ private final class BackgroundTimeRequest {
 
 /// Spaces out the position saves made while narration plays; any other save
 /// (a pause, a stop, leaving the app) goes through at once.
+/// The voice volume chosen in the atmosphere panel: full volume when never set.
+enum NarrationVolume {
+    static let key = "nodus.narration.voiceVolume"
+
+    static func load(from defaults: UserDefaults) -> Double {
+        guard defaults.object(forKey: key) != nil else { return 1 }
+        return min(max(defaults.double(forKey: key), 0), 1)
+    }
+
+    static func save(_ volume: Double, to defaults: UserDefaults) {
+        defaults.set(min(max(volume, 0), 1), forKey: key)
+    }
+}
+
 struct ProgressSaveThrottle {
     static let playingInterval: TimeInterval = 15
     private var lastPlayingSave: Date?
