@@ -989,4 +989,8 @@ ES.update({
     "Fairy tale": "Cuento",
     "Stop": "Detener",
     "Play": "Reproducir",
+    "Hide original page": "Ocultar la página original",
+    "Show original page": "Mostrar la página original",
+    "Shown": "Visible",
+    "Hidden": "Oculto",
 })

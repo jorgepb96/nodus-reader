@@ -31,6 +31,12 @@ enum PDFReadingMode: String, CaseIterable, Identifiable {
 
 // MARK: - Container
 
+/// Whether Intelligent Reading shows the original page beside the text when
+/// there is room. Remembered on this device; the mode bar's button toggles it.
+enum PDFSourcePanelPreference {
+    static let key = "nodus.pdf.sourcePanelVisible"
+}
+
 struct PDFReaderContainer: View {
     @Environment(LibraryService.self) private var library
     @Environment(ReaderPreferences.self) private var preferences
@@ -55,9 +61,13 @@ struct PDFReaderContainer: View {
     /// The original page opens as a sheet when there is no room for the panel.
     @State private var showSourceSheet = false
     @State private var sourceAvailable = false
+    @AppStorage(PDFSourcePanelPreference.key) private var sourcePanelVisible = true
+
+    /// Wide enough for the original page beside the text instead of a sheet.
+    private var fitsSourcePanel: Bool { width > PDFReflowView.sourcePanelMinWidth }
 
     private var showsSourceButton: Bool {
-        mode == .intelligent && width > 0 && width <= PDFReflowView.sourcePanelMinWidth
+        mode == .intelligent && width > 0
     }
 
     var body: some View {
@@ -75,17 +85,25 @@ struct PDFReaderContainer: View {
                 // Beside the picker, so it never covers the first line of text.
                 if showsSourceButton {
                     Button {
-                        showSourceSheet = true
+                        // Beside the text it shows or hides the panel; on a
+                        // narrow window it opens the page as a sheet.
+                        if fitsSourcePanel { sourcePanelVisible.toggle() } else { showSourceSheet = true }
                     } label: {
-                        Image(systemName: "rectangle.righthalf.inset.filled")
+                        Image(systemName: fitsSourcePanel ? "sidebar.right" : "rectangle.righthalf.inset.filled")
                             .font(.system(size: 16))
-                            .foregroundStyle(theme.text)
+                            .foregroundStyle(fitsSourcePanel && sourcePanelVisible ? theme.accent : theme.text)
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .disabled(!sourceAvailable)
+                    #if os(macOS)
+                    .keyboardShortcut("i", modifiers: [.command, .option])
+                    .help(fitsSourcePanel && sourcePanelVisible ? "Hide original page" : "Show original page")
+                    #endif
                     .accessibilityLabel("Original page panel")
+                    .accessibilityValue(fitsSourcePanel ? (sourcePanelVisible ? "Shown" : "Hidden") : "")
+                    .accessibilityIdentifier("PDFSourcePanelToggle")
                 }
             }
             .frame(maxWidth: .infinity)
@@ -200,6 +218,7 @@ struct PDFReflowView: View {
     @Environment(\.readerFollowState) private var followState
     @Environment(\.readerManualNavigation) private var onManualNavigation
     @Environment(\.windowFitsPadLayout) private var windowFitsPadLayout
+    @AppStorage(PDFSourcePanelPreference.key) private var sourcePanelVisible = true
 
     let book: Book
     let url: URL
@@ -253,7 +272,7 @@ struct PDFReflowView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let showPanel = proxy.size.width > Self.sourcePanelMinWidth
+            let showPanel = sourcePanelVisible && proxy.size.width > Self.sourcePanelMinWidth
             HStack(spacing: 0) {
                 reflowContent(viewportHeight: proxy.size.height)
                     .frame(maxWidth: .infinity)
@@ -263,6 +282,7 @@ struct PDFReflowView: View {
                         book: book,
                         url: url,
                         document: document,
+                        theme: theme,
                         pageIndex: pdfPageIndex,
                         showImages: $showImages,
                         skipHeaders: $skipHeaders,
@@ -302,7 +322,7 @@ struct PDFReflowView: View {
         .sheet(isPresented: $showSourceSheet) {
             NavigationStack {
                 if let document = job.document {
-                    PDFSourcePanel(book: book, url: url, document: document,
+                    PDFSourcePanel(book: book, url: url, document: document, theme: theme,
                                    pageIndex: pdfPageIndex,
                                    showImages: $showImages,
                                    skipHeaders: $skipHeaders,
@@ -735,7 +755,7 @@ struct PDFReflowView: View {
                         Spacer()
                         Button("Compare with page \(block.pageIndex + 1)") {
                             pdfPageIndex = block.pageIndex
-                            if !isWide { showSourceSheet = true }
+                            if isWide { sourcePanelVisible = true } else { showSourceSheet = true }
                         }
                         .font(.caption2)
                         .foregroundStyle(theme.accent)
@@ -829,6 +849,8 @@ struct PDFSourcePanel: View {
     let book: Book
     let url: URL
     let document: PDFReflowDocument
+    /// The reader's theme: the panel belongs to the page, not the system chrome.
+    let theme: ReaderTheme
     /// The page on screen in the reflow.
     let pageIndex: Int
     @Binding var showImages: Bool
@@ -850,7 +872,7 @@ struct PDFSourcePanel: View {
                     Spacer()
                     Text("\(pageIndex + 1) / \(document.totalPageCount)")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.muted)
                         .monospacedDigit()
                 }
 
@@ -876,7 +898,7 @@ struct PDFSourcePanel: View {
                 .aspectRatio(0.77, contentMode: .fit)
                 .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.black.opacity(0.12), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(theme.line, lineWidth: 1))
 
                 HStack(spacing: 8) {
                     Button {
@@ -892,7 +914,7 @@ struct PDFSourcePanel: View {
                     Spacer()
                     Text((page?.regions.count ?? 0) == 0 ? "No regions" : "\(page?.regions.count ?? 0) regions")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.muted)
                     Spacer()
                     Button {
                         onGoToPage(min(document.pageCount - 1, pageIndex + 1))
@@ -926,23 +948,18 @@ struct PDFSourcePanel: View {
 
                 Text("Regions are detected locally. Nothing is uploaded.")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.muted)
                     .padding(.top, 4)
             }
             .padding(14)
             .padding(.bottom, 28)
         }
-        .background(uiBackground)
+        .foregroundStyle(theme.text)
+        .tint(theme.accent)
+        .background(theme.background)
         .task(id: pageIndex) { await loadImage() }
     }
 
-    private var uiBackground: Color {
-        #if os(macOS)
-        Color(nsColor: .windowBackgroundColor)
-        #else
-        Color(uiColor: .systemBackground)
-        #endif
-    }
 
     private func fittedPageRect(page: PDFReflowPage, in size: CGSize) -> CGRect {
         guard page.width > 1, page.height > 1 else {

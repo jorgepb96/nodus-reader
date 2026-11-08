@@ -4282,6 +4282,26 @@
         }
       }
     },
+    "Hidden": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oculto"
+          }
+        }
+      }
+    },
+    "Hide original page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocultar la página original"
+          }
+        }
+      }
+    },
     "Hide sidebar": {
       "localizations": {
         "es": {
@@ -9372,6 +9392,16 @@
         }
       }
     },
+    "Show original page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar la página original"
+          }
+        }
+      }
+    },
     "Show sidebar": {
       "localizations": {
         "es": {
@@ -9398,6 +9428,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ver la guía"
+          }
+        }
+      }
+    },
+    "Shown": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visible"
           }
         }
       }

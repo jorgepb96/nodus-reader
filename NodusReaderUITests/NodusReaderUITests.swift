@@ -998,6 +998,32 @@ final class NodusReaderUITests: XCTestCase {
                       "Read & Listen did not start from Intelligent Reading")
     }
 
+    /// On a wide reader the original page sits beside Intelligent Reading and
+    /// the mode bar's button hides and shows it.
+    func testPDFOriginalPagePanelHidesAndShows() throws {
+        let app = launch(resetReadingState: true)
+        let width = app.windows.firstMatch.frame.width
+        try XCTSkipIf(width < 700, "This test runs on iPad")
+        app.staticTexts["All Books"].firstMatch.tap()
+        let pdf = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@",
+                                                    "Experiments in Plant Hybridization")).firstMatch
+        XCTAssertTrue(pdf.waitForExistence(timeout: 30))
+        pdf.tap()
+        let intelligent = app.segmentedControls.buttons["Intelligent Reading"].firstMatch
+        XCTAssertTrue(intelligent.waitForExistence(timeout: 15))
+        intelligent.tap()
+
+        let panelNote = app.staticTexts["Regions are detected locally. Nothing is uploaded."].firstMatch
+        XCTAssertTrue(panelNote.waitForExistence(timeout: 60), "The original page is beside the text")
+        let toggle = app.buttons["PDFSourcePanelToggle"].firstMatch
+        XCTAssertEqual(toggle.value as? String, "Shown")
+        toggle.tap()
+        XCTAssertFalse(panelNote.waitForExistence(timeout: 2), "The panel hides")
+        XCTAssertEqual(toggle.value as? String, "Hidden")
+        toggle.tap()
+        XCTAssertTrue(panelNote.waitForExistence(timeout: 5), "The panel comes back")
+    }
+
     func testPDFReflowHighlightAndNote() throws {
         let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
