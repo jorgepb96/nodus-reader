@@ -1,3 +1,7 @@
-Version 1.0.0 (76), App Store release candidate.
+Nodus Reader 1.0.0 (76): the App Store release candidate.
 
-This is build 75 with the final version number, and Soundscapes › Credits and licences now describes each sound's recorded licence accurately. Check that everything works as in 75 before sending it for review.
+Includes everything from build 75 (voice volume, voice filters that adapt to each other, delete confirmation beside the book, the PDF original page on iPad following the reader's theme) and revised Soundscapes credits text.
+
+AI soundscapes: Settings › Soundscapes, turn them on, choose AI and download Music and Ambience in Models (about 2.6 GB, on Wi-Fi). Powered by Stability AI; everything runs on your iPhone.
+
+Please report anything that goes wrong before the App Store release.
