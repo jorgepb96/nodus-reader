@@ -47,6 +47,24 @@ struct SoundscapeModelsTests {
         #expect(models.requiredFreeBytes(for: [.sfx]) == SA3Manifest.sfx.bytes + SoundscapeModels.conversionMargin)
     }
 
+    /// Settings › Soundscapes asks `isInstalled`/`anyInstalled`; when a model
+    /// finishes installing from the Models screen, that summary must redraw
+    /// instead of keeping "Not installed".
+    @Test func viewsAskingIsInstalledHearAboutAnInstall() {
+        let (models, directory) = models()
+        var changed = false
+        withObservationTracking {
+            _ = models.isInstalled(.music)
+            _ = models.anyInstalled
+        } onChange: {
+            changed = true
+        }
+        touch(shared(directory) + component(directory, .music))
+        models.refresh()
+        #expect(changed)
+        #expect(models.isInstalled(.music))
+    }
+
     @Test func removingMusicKeepsSharedWhileSfxInstalled() {
         let (models, directory) = models()
         touch(shared(directory) + component(directory, .music) + component(directory, .sfx))

@@ -59,7 +59,13 @@ final class SoundscapeModels {
         refresh()
     }
 
-    func isInstalled(_ component: Component) -> Bool { directory.isReady(component.kind) }
+    /// The files on disk decide, but the observed `state` is read too: the disk
+    /// is not observable, so a view asking only the disk (Settings › Soundscapes)
+    /// kept "Not installed" after a model finished installing elsewhere.
+    func isInstalled(_ component: Component) -> Bool {
+        _ = state[component]
+        return directory.isReady(component.kind)
+    }
     var anyInstalled: Bool { Component.allCases.contains(where: isInstalled) }
     var isBusy: Bool { task != nil }
 
