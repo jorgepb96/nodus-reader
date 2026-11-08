@@ -704,12 +704,17 @@ final class NodusReaderUITests: XCTestCase {
 
         let confirm = app.buttons["Delete from Library"].firstMatch
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
-        // The dialog points at the cover: just above it or just below it.
-        // Anchored to the screen it opened at the top, far above the cover.
-        let gapAbove = book.frame.minY - confirm.frame.maxY
-        let gapBelow = confirm.frame.minY - book.frame.maxY
-        XCTAssertTrue((0..<60).contains(gapAbove) || (0..<260).contains(gapBelow),
-                      "The confirmation did not open beside the book (\(confirm.frame) vs \(book.frame))")
+        // The bubble points at the cover from above, below or the side (a
+        // real iPhone put it to the right). Anchored to the screen it opened
+        // at the top, more than 100 pt from the cover.
+        let a = confirm.frame, b = book.frame
+        let horizontalGap = max(0, max(a.minX - b.maxX, b.minX - a.maxX))
+        let verticalGap = max(0, max(a.minY - b.maxY, b.minY - a.maxY))
+        // The button sits below the bubble's title and message.
+        let besideOrAbove = horizontalGap < 60 && verticalGap < 60
+        let below = horizontalGap < 60 && (0..<260).contains(a.minY - b.maxY)
+        XCTAssertTrue(besideOrAbove || below,
+                      "The confirmation did not open beside the book (\(a) vs \(b))")
         snap("iPhone-DeleteBesideBook")
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)).tap()
         XCTAssertTrue(book.waitForExistence(timeout: 5), "Dismissing must not delete the book")
@@ -1107,7 +1112,10 @@ final class NodusReaderUITests: XCTestCase {
                 app.scrollViews.containing(.switch, identifier: "AutoScrollNarrationToggle").firstMatch.swipeUp()
             }
             follow.tap()
-            app.scrollViews.containing(.switch, identifier: "AutoScrollNarrationToggle").firstMatch.swipeDown()
+            // Back to the top of the popover by dragging from the row's label:
+            // on a large iPhone the scroll view itself reports an empty visible frame.
+            let start = follow.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
+            start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: 400)))
         }
 
         if isPad {
@@ -1420,11 +1428,14 @@ final class NodusReaderUITests: XCTestCase {
         XCTAssertTrue(row.label.contains("Soundscapes"))
         row.tap()
         app.switches["immersive.enable"].firstMatch.tap()
-        // Choosing AI the first time explains it; the Simulator cannot run the models.
+        // Choosing AI the first time explains it: the Simulator cannot run the
+        // models and says so; a device that can offers the downloads.
         let ai = app.buttons["AI"].firstMatch
         XCTAssertTrue(ai.waitForExistence(timeout: 5))
         ai.tap()
-        XCTAssertTrue(app.staticTexts["soundscapes.unavailable"].firstMatch.waitForExistence(timeout: 5)
+        let unavailable = app.staticTexts["soundscapes.unavailable"].firstMatch
+        let download = app.buttons["soundscapes.downloadMusic"].firstMatch
+        XCTAssertTrue(unavailable.waitForExistence(timeout: 5) || download.exists
                       || app.otherElements["soundscapes.unavailable"].firstMatch.exists)
         snap("iPhone-Soundscapes-AIIntro")
         app.buttons["soundscapes.notNow"].firstMatch.tap()
