@@ -1,0 +1,21 @@
+Nodus Reader 1.0.0 — notes for App Review
+
+No account is needed and nothing is required to sign in. iCloud sync is optional and off by default.
+
+Getting started
+1. On first launch choose "Use iOS voices" (listens immediately, no download), "Download a model" or "Just read".
+2. Import any DRM-free EPUB, PDF, TXT, Markdown, HTML or RTF with the + button (Files), or share a web page to Nodus Reader from Safari. Free public-domain books are available from Project Gutenberg (https://www.gutenberg.org). DRM-protected books are not supported.
+3. Open the book and tap Listen (or tap any word) to hear it read aloud with the text highlighted.
+
+Optional downloads (all on request, nothing is bundled)
+- Natural voices: Settings › Voices & Models › Models. Kokoro and Phonon download from Hugging Face. Two Phonon models (Spanish and Multilingual) are licensed for non-commercial use by their publisher and require the user's own Hugging Face account; signing in happens on Hugging Face's page and is never needed for the rest of the app.
+- Soundscapes (Settings › Soundscapes, off by default): downloaded sound packs (CC0/CC-BY, credited in the app) or AI soundscapes. AI soundscapes need an iPhone or iPad with Apple silicon and a download of about 2.6–2.9 GB; music and ambience are then composed on the device with Stable Audio 3 Small ("Powered by Stability AI", Community License registered). No book text or audio leaves the device.
+
+On-device processing
+Narration, PDF text recognition and reading, recaps and character lists (Apple Intelligence, on-device model only, never Private Cloud Compute) and soundscape composition all run on the device. The app has no ads, no tracking, no analytics and no Nodus account. Privacy policy: https://nodusresearch.com/reader/privacy/
+
+Permissions
+The microphone permission string exists for creating custom voices, which is a Mac-only feature; the iPhone and iPad app never asks for it. Background audio is used for narration and lock-screen controls.
+
+Source code
+Nodus Reader is open source under AGPL-3.0-only: https://github.com/jorgepb96/nodus-reader
