@@ -1,7 +1,9 @@
-import sys,subprocess,plistlib,zipfile,hashlib,json
+import sys,subprocess,plistlib,zipfile,hashlib,json,re
 from pathlib import Path
 root=Path(__file__).resolve().parents[2]
 platform=sys.argv[1]
+# The marketing version the archive must carry, read from project.yml.
+expected=re.search(r'MARKETING_VERSION: "([^"]+)"',(root/'project.yml').read_text()).group(1)
 number=sys.argv[2] if len(sys.argv)>2 else "57"
 if platform=='ios':
  package=root/f'build/export-ios-{number}/Nodus Reader.ipa'
@@ -16,7 +18,7 @@ else:
 app=next(target.rglob('Nodus Reader.app'))
 info_path=app/'Info.plist' if platform=='ios' else app/'Contents/Info.plist'
 info=plistlib.loads(info_path.read_bytes())
-assert info['CFBundleVersion']==number and info['CFBundleShortVersionString']=='0.1.0'
+assert info['CFBundleVersion']==number and info['CFBundleShortVersionString']==expected
 assert info['CFBundleIdentifier']=='ai.nodus.reader'
 resources = app if platform=='ios' else app/'Contents/Resources'
 for name in ['LinnetNotice.txt','LinnetCodeLicense.txt','LinnetWeightsLicense.txt','LinnetModelManifest.json']:
@@ -40,6 +42,6 @@ else: assert ent['com.apple.security.app-sandbox'] is True
 binary=app/info['CFBundleExecutable'] if platform=='ios' else app/'Contents/MacOS'/info['CFBundleExecutable']
 arch=subprocess.check_output(['lipo','-archs',str(binary)],text=True).strip()
 assert arch=='arm64',arch
-result={'platform':platform,'version':'0.1.0','build':number,'sourceSnapshot':f'isolated source, build {number}','package':str(package.relative_to(root)),'bytes':package.stat().st_size,'sha256':hashlib.sha256(package.read_bytes()).hexdigest(),'signatureVerified':True,'productionICloud':True,'architecture':arch}
+result={'platform':platform,'version':expected,'build':number,'sourceSnapshot':f'isolated source, build {number}','package':str(package.relative_to(root)),'bytes':package.stat().st_size,'sha256':hashlib.sha256(package.read_bytes()).hexdigest(),'signatureVerified':True,'productionICloud':True,'architecture':arch}
 (root/f'build/Build{number}-{platform}-verification.json').write_text(json.dumps(result,indent=2))
 print(json.dumps(result))

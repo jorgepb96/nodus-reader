@@ -1,0 +1,3 @@
+Version 1.0.0 (76), App Store release candidate.
+
+This is build 75 with the final version number, and Soundscapes › Credits and licences now describes each sound's recorded licence accurately. Check that everything works as in 75 before sending it for review.
