@@ -7,6 +7,7 @@ import SwiftUI
 /// the two levels. Used in the player, the reader popover and on the Mac.
 struct ImmersiveQuickControls: View {
     @Environment(ImmersiveAudioController.self) private var immersive
+    @Environment(PlaybackController.self) private var playback
     @Environment(\.nodusPalette) private var palette
     var showsTitle = true
     @State private var showStyles = false
@@ -86,6 +87,11 @@ struct ImmersiveQuickControls: View {
                             .accessibilityIdentifier("soundscapes.askForBook")
                     }
                 }
+                // The narrating voice beside the music and ambience it plays over.
+                LabeledSlider("Voice", value: Binding(get: { playback.voiceVolume },
+                                                      set: { playback.setVoiceVolume($0) }),
+                              display: percent(playback.voiceVolume), systemImage: "waveform")
+                    .accessibilityIdentifier("soundscapes.voiceVolume")
                 LabeledSlider("Music", value: $preferences.musicVolume,
                               display: percent(preferences.musicVolume), systemImage: "music.note")
                 LabeledSlider("Ambience", value: $preferences.ambienceVolume,

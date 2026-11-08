@@ -1374,6 +1374,14 @@ final class NodusReaderUITests: XCTestCase {
         snap(pad ? "iPad-ImmersiveAudio-Reader" : "iPhone-ImmersiveAudio-Reader")
         lock.tap()
         XCTAssertEqual(lock.value as? String, "Unlocked")
+
+        // The narrating voice has its own level beside music and ambience,
+        // at full volume until the reader lowers it.
+        let voice = app.sliders["Voice"].firstMatch
+        if !voice.waitForExistence(timeout: 3) { app.swipeUp() }
+        XCTAssertTrue(voice.waitForExistence(timeout: 5))
+        voice.adjust(toNormalizedSliderPosition: 0.5)
+        XCTAssertNotEqual(voice.value as? String, "100 %")
     }
 
     func testSoundscapesSettings() throws {
