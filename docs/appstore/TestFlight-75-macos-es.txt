@@ -1,0 +1,7 @@
+Compilación 75, beta privada de Mac.
+
+- La página original junto a la lectura inteligente de PDF sigue el tema del lector (antes salía siempre en blanco) y se oculta o se muestra con el botón de la barra lateral junto al selector de modo, o con ⌥⌘I; recuerda tu elección.
+- Nuevo control de volumen de la voz en el panel de atmósfera, junto a Música y Ambientes; empieza al 100 %.
+- Ajustes › Paisajes sonoros ya muestra los modelos de IA como instalados en cuanto termina la descarga.
+
+Incluye todo lo de la 74. Prueba también la sincronización con iCloud con tu iPhone (build 75 en ambos).

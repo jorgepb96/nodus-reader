@@ -1,0 +1,7 @@
+Build 75, private.
+
+- New voice volume control in the reader's atmosphere panel, beside Music and Ambience: the voice starts at 100% and you can lower it under the music.
+- Settings › Soundscapes shows the AI models as installed as soon as the download finishes (it kept saying "Not installed" until you left and came back).
+- On iPad, the original page beside PDF Intelligent Reading follows the reader's theme and hides or shows with the button beside the mode picker.
+
+Checked on a real iPhone 16 Pro Max: every interface test and the Share Extension from Safari. iCloud sync between iPhone and Mac is still to be tested.

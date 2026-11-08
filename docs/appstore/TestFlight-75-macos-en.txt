@@ -1,0 +1,7 @@
+Build 75, private Mac beta.
+
+- The original page beside PDF Intelligent Reading follows the reader's theme (it was always white) and hides or shows with the sidebar button beside the mode picker, or Option-Command-I; your choice is remembered.
+- New voice volume control in the atmosphere panel, beside Music and Ambience; it starts at 100%.
+- Settings › Soundscapes shows the AI models as installed as soon as the download finishes.
+
+Includes everything from build 74. Please also try iCloud sync with your iPhone (build 75 on both).

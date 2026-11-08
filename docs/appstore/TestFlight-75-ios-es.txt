@@ -1,0 +1,7 @@
+Compilación 75 privada.
+
+- Nuevo control de volumen de la voz en el panel de atmósfera del lector, junto a Música y Ambientes: la voz empieza al 100 % y puedes bajarla bajo la música.
+- Ajustes › Paisajes sonoros ya muestra los modelos de IA como instalados en cuanto termina la descarga (antes seguía diciendo «No instalado» hasta salir y volver).
+- En el iPad, la página original junto a la lectura inteligente de PDF sigue el tema del lector y se oculta o se muestra con el botón junto al selector de modo.
+
+Comprobado en un iPhone 16 Pro Max real: todas las pruebas de interfaz y la extensión para compartir desde Safari. Queda probar la sincronización con iCloud entre el iPhone y el Mac.
