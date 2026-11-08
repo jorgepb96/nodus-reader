@@ -783,7 +783,7 @@ ES.update({"Audio credits": "Créditos de audio"})
 
 ES.update({
     "Instrumental music and recorded ambiences under free licences (CC0 and CC-BY), selected for reading. They are downloaded once, verified, stored on this device and never synced.": "Música instrumental y ambientes grabados con licencias libres (CC0 y CC-BY), seleccionados para leer. Se descargan una vez, se verifican, se guardan en este dispositivo y nunca se sincronizan.",
-    "Every sound was chosen for Nodus Reader from public-domain (CC0) and attribution (CC-BY) sources and checked one by one. The authors are credited here, with each licence, source and the changes made. The full provenance record, with each file’s checksums and processing, is published with the source code.": "Cada sonido se eligió para Nodus Reader entre fuentes de dominio público (CC0) y de atribución (CC-BY) y se comprobó uno a uno. Aquí se cita a sus autores, con la licencia, la fuente y los cambios realizados. El registro completo de procedencia, con las sumas de verificación y el procesamiento de cada archivo, se publica con el código fuente.",
+    "Every sound comes from public-domain (CC0) and attribution (CC-BY) sources, each with its licence recorded. The authors are credited here, with each licence, source and the changes made. The full provenance record, with each file’s checksums and processing, is published with the source code.": "Cada sonido procede de fuentes de dominio público (CC0) y de atribución (CC-BY), con su licencia registrada. Aquí se cita a sus autores, con la licencia, la fuente y los cambios realizados. El registro completo de procedencia, con las sumas de verificación y el procesamiento de cada archivo, se publica con el código fuente.",
 })
 
 ES.update({
