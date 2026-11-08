@@ -1,0 +1,3 @@
+Versión 1.0.0 (76), candidata para el App Store.
+
+Es la build 75 con el número de versión definitivo, y el texto de Créditos y licencias de los paisajes sonoros describe con exactitud el registro de licencias de cada sonido. Comprueba que todo funciona como en la 75 antes de enviarla a revisión.

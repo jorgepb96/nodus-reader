@@ -247,7 +247,7 @@ struct ImmersiveCreditsView: View {
             LazyVStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
                     DisplayTitle("Credits and licences")
-                    Text("Every sound was chosen for Nodus Reader from public-domain (CC0) and attribution (CC-BY) sources and checked one by one. The authors are credited here, with each licence, source and the changes made. The full provenance record, with each file’s checksums and processing, is published with the source code.")
+                    Text("Every sound comes from public-domain (CC0) and attribution (CC-BY) sources, each with its licence recorded. The authors are credited here, with each licence, source and the changes made. The full provenance record, with each file’s checksums and processing, is published with the source code.")
                         .font(.footnote)
                         .foregroundStyle(palette.muted)
                         .fixedSize(horizontal: false, vertical: true)

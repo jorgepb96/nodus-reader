@@ -19,11 +19,11 @@ App Store Connect in step.
 | Privacy policy URL | https://nodusresearch.com/reader/privacy/ |
 | Copyright | 2026 Jorge Pérez Burgueño |
 | App privacy | Data Not Collected (live App Store Connect preview verified 5 November 2026) |
-| App Store state | Prepare for Submission; no App Store submission |
+| App Store state | iOS 1.0.0 draft, Prepare for Submission, build 1.0.0 (76) attached; not submitted (macOS draft unchanged) |
 | Release | Manual after approval; App Store version not submitted |
-| App Review detail | Contact, notes and no demo account filled |
-| iPhone screenshots | 10 English, 10 Spanish; final native captures verified COMPLETE, with order and checksums |
-| iPad screenshots | 10 English, 10 Spanish; final native captures verified COMPLETE, with order and checksums |
+| App Review detail | Contact, 1.0.0 notes (`ReviewNotes-1.0.0-en.txt`) and no demo account |
+| iPhone screenshots | 10 English, 10 Spanish from build 75/76 (8 November 2026), COMPLETE; see `SCREENSHOTS_20261108.json` |
+| iPad screenshots | 10 English, 10 Spanish from build 75/76 (8 November 2026), COMPLETE; see `SCREENSHOTS_20261108.json` |
 | iPhone Duo screenshots | 10 English, 10 Spanish; native closed/open displays (1398 × 2034 / 2853 × 2007), separate Duo sets, all COMPLETE |
 
 ## English (U.S.)
