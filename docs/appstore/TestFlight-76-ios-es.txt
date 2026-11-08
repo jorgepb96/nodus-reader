@@ -1,3 +1,7 @@
-Versión 1.0.0 (76), candidata para el App Store.
+Nodus Reader 1.0.0 (76): la versión candidata para el App Store.
 
-Es la build 75 con el número de versión definitivo, y el texto de Créditos y licencias de los paisajes sonoros describe con exactitud el registro de licencias de cada sonido. Comprueba que todo funciona como en la 75 antes de enviarla a revisión.
+Incluye todo lo de la build 75 (volumen de la voz, filtros de voces que se adaptan, confirmación de borrado junto al libro, página original del PDF en el iPad con el tema del lector) y el texto de Créditos y licencias de los paisajes sonoros revisado.
+
+Paisajes sonoros con IA: Ajustes › Paisajes sonoros, actívalos, elige IA y descarga Música y Ambientes en Modelos (unos 2,6 GB, con Wi‑Fi). Powered by Stability AI; todo funciona en tu iPhone.
+
+Cuéntanos cualquier fallo antes de su publicación en el App Store.

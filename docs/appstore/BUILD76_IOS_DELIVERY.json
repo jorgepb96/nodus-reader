@@ -30,8 +30,12 @@
     "6fca3f0a-fada-4405-a6a0-9357bab03698"
   ],
   "sourceCommit": "3c702ead7841b94c2fcef2e355431f8e56163cb3",
-  "distribution": "Internal only",
-  "publicBeta": false,
+  "distribution": "Internal and Public",
+  "publicBeta": {
+    "group": "Public",
+    "externalBuildState": "WAITING_FOR_BETA_REVIEW",
+    "betaReviewSubmitted": true
+  },
   "productionReviewSubmitted": false,
   "physicalValidation": "Pending user testing"
 }
