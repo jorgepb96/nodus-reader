@@ -1,0 +1,19 @@
+Build 74, private Mac beta. The first since 56, with everything made since then.
+
+AI soundscapes (new)
+Settings › Soundscapes: turn them on and choose AI, then download Music and Ambience in Models (about 2.9 GB). Music and ambiences are composed on this Mac with Stable Audio 3 Small (Powered by Stability AI), follow the book's style and scenes, are kept to play again offline, and nothing leaves the device. When you press play, the app asks how many pieces to compose before the voice (1, 3 or 6). The music note in the reader changes ambience, music and style; the heart keeps pieces you like.
+
+Narration and reader
+- Neural narration no longer pauses every few sentences or mid-sentence after abbreviations or dialogue, and joins one sentence to the next without silence.
+- The highlight covers every line of the narrated sentence and no other.
+- The player and menus are no longer redrawn on every word.
+- Gutenberg EPUBs no longer break lines mid-paragraph; returning to narration in PDFs reaches the narrated page.
+
+Voices
+- The Model, Language and Gender filters adapt to each other and no longer have a search field; the picker opens on the book's language.
+- Ming, Studio voices and Qwen remain available on the Mac.
+
+Search
+- The voice and language search fields show each letter at once.
+
+Please try the AI soundscapes on your Mac (waiting times, heat, battery) and check that narration never stops.
