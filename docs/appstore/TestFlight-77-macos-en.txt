@@ -1,0 +1,10 @@
+Nodus Reader for Mac 1.0.0 (77): fixes from TestFlight reports.
+
+Very long books (serial novels of 1,000 to 2,400 chapters)
+- They open faster, and the reader lays out only the chapters around you instead of the whole book. Pages are numbered within the chapter, with your progress through the book as a percentage.
+- Narration starts in seconds: pressing play no longer reads the whole book a second time.
+
+Long PDFs
+- The app no longer closes when PDFKit cannot read the text of a page: that page is read with OCR instead, and reading a long PDF uses less memory.
+
+Everything from build 76 is included (AI soundscapes, voice volume, voice filters). Tell us how very long books behave on your Mac and whether iCloud sync with the iPhone works.

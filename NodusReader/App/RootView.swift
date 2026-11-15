@@ -133,6 +133,9 @@ struct RootView: View {
                 if ProcessInfo.processInfo.arguments.contains("-NodusLongContentsSample") {
                     await SampleLibrary.seedLongContentsIfNeeded(library: library)
                 }
+                if ProcessInfo.processInfo.arguments.contains("-NodusSerialNovelSample") {
+                    await SampleLibrary.seedSerialNovelIfNeeded(library: library)
+                }
                 if ProcessInfo.processInfo.arguments.contains("-NodusResetReadingState") {
                     SampleLibrary.resetReadingState(library: library)
                 }

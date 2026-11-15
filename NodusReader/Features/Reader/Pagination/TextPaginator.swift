@@ -29,17 +29,20 @@ enum TextPaginator {
 
     /// Chapters are independent TextKit layouts, so a long book is laid out on
     /// every core at once. `known` holds chapters already paginated with the
-    /// same style and size (the chapter on screen), which are reused.
+    /// same style and size (the chapter on screen), which are reused. `only`
+    /// limits the pages to those chapters: the window of a very long book.
     static func paginateConcurrently(chapters: [ExtractedChapter], style: ReaderPageStyle,
                                      pageSize: CGSize,
-                                     known: [Int: [ReaderPage]] = [:]) async -> PaginatedBook {
+                                     known: [Int: [ReaderPage]] = [:],
+                                     only window: Range<Int>? = nil) async -> PaginatedBook {
+        let window = (window ?? chapters.indices).clamped(to: chapters.indices)
         let results = await withTaskGroup(of: (Int, [ReaderPage]).self) { group in
-            var next = 0
+            var next = window.lowerBound
             var results = known
             let width = max(2, ProcessInfo.processInfo.activeProcessorCount)
             func addNext() {
-                while next < chapters.count, known[next] != nil { next += 1 }
-                guard next < chapters.count else { return }
+                while next < window.upperBound, known[next] != nil { next += 1 }
+                guard next < window.upperBound else { return }
                 let index = next
                 let chapter = chapters[index]
                 next += 1
@@ -56,7 +59,7 @@ enum TextPaginator {
             return results
         }
         guard !Task.isCancelled else { return .empty }
-        return assemble(chapters.indices.map { results[$0] ?? [] })
+        return assemble(window.map { results[$0] ?? [] })
     }
 
     /// The pages of one chapter, with ids starting at zero. `assemble` gives

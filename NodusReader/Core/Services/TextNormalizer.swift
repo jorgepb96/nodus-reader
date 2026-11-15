@@ -483,8 +483,8 @@ public enum ParagraphJoiner {
             let paragraph = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !paragraph.isEmpty else { continue }
             if let last = result.last,
-               last.count >= 80,
-               paragraph.count >= 80,
+               Self.hasAtLeast80Characters(last),
+               Self.hasAtLeast80Characters(paragraph),
                let lastCharacter = last.last, lastCharacter.isLetter,
                let firstCharacter = paragraph.first, firstCharacter.isLowercase {
                 result[result.count - 1] = last + " " + paragraph
@@ -494,6 +494,11 @@ public enum ParagraphJoiner {
         }
         return result.joined(separator: "\n\n")
     }
+
+    /// `count >= 80` without counting the whole paragraph.
+    private static func hasAtLeast80Characters(_ text: String) -> Bool {
+        text.index(text.startIndex, offsetBy: 80, limitedBy: text.endIndex) != nil
+    }
 }
 
 /// Project Gutenberg and Biblioteca Virtual Miguel de Cervantes add legal
@@ -501,10 +506,42 @@ public enum ParagraphJoiner {
 /// part of the book and must not become chapters or paragraphs.
 enum EPUBTextCleaner {
     static func clean(_ text: String) -> String {
+        // Every rule below needs one of these names in the text; almost no
+        // chapter has them, and the rules lowercase and scan it several times.
+        guard mentionsBoilerplateSource(text) else {
+            return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
         var value = text
         value = stripProjectGutenberg(value)
         value = stripCervantesVirtual(value)
         return value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static let boilerplateMarkers: [[UInt8]] = ["gutenberg", "cervantes", "generado de forma autom"]
+        .map { Array($0.utf8) }
+
+    /// Whether the text names Project Gutenberg or the Cervantes library,
+    /// ignoring ASCII case. A byte scan: this runs on every chapter.
+    static func mentionsBoilerplateSource(_ text: String) -> Bool {
+        var text = text
+        return text.withUTF8 { bytes in
+            let count = bytes.count
+            var index = 0
+            while index < count {
+                let byte = bytes[index] | 0x20
+                if byte == 0x67 /* g */ || byte == 0x63 /* c */ {
+                    for marker in boilerplateMarkers where marker[0] == byte && index + marker.count <= count {
+                        var offset = 1
+                        while offset < marker.count, bytes[index + offset] | 0x20 == marker[offset] | 0x20 {
+                            offset += 1
+                        }
+                        if offset == marker.count { return true }
+                    }
+                }
+                index += 1
+            }
+            return false
+        }
     }
 
     private static func stripProjectGutenberg(_ text: String) -> String {

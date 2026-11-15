@@ -675,8 +675,14 @@ public final class PlaybackController {
                 throw ImportError.emptyDocument(book.title)
             }
             library.refreshChapterTitlesIfNeeded(book, chapters: loaded)
+            // Splitting a serial novel into sentences takes seconds: off the
+            // main thread, or the reader froze between Play and the voice.
+            let built = await Task.detached(priority: .userInitiated) {
+                Self.buildSentences(from: loaded)
+            }.value
+            guard token == loadToken, activeBook?.id == book.id else { return }
             chapters = loaded
-            sentences = Self.buildSentences(from: loaded)
+            sentences = built
             resetPrefetch()
             guard !sentences.isEmpty else {
                 throw ImportError.emptyDocument(book.title)
@@ -1251,15 +1257,27 @@ public final class PlaybackController {
         }.value
     }
 
-    private static func buildSentences(from chapters: [ExtractedChapter]) -> [NarrationSentence] {
+    /// Every chapter is tokenized on its own, so a long book uses all the
+    /// cores; the sentences keep the book's order and consecutive ids.
+    nonisolated static func buildSentences(from chapters: [ExtractedChapter]) -> [NarrationSentence] {
+        var perChapter = [[(text: String, range: NSRange)]](repeating: [], count: chapters.count)
+        perChapter.withUnsafeMutableBufferPointer { buffer in
+            let slots = UnsafeSendableBuffer(buffer)
+            DispatchQueue.concurrentPerform(iterations: chapters.count) { chapterIndex in
+                let text = chapters[chapterIndex].text
+                let ns = text as NSString
+                slots.buffer[chapterIndex] = SentenceTokenizer.ranges(from: text).map {
+                    (ns.substring(with: $0), $0)
+                }
+            }
+        }
         var result: [NarrationSentence] = []
-        for (chapterIndex, chapter) in chapters.enumerated() {
-            let ns = chapter.text as NSString
-            for range in SentenceTokenizer.ranges(from: chapter.text) {
-                let text = ns.substring(with: range)
+        result.reserveCapacity(perChapter.reduce(0) { $0 + $1.count })
+        for (chapterIndex, sentences) in perChapter.enumerated() {
+            for sentence in sentences {
                 result.append(NarrationSentence(id: result.count, chapterIndex: chapterIndex,
-                                                text: text, chapterOffset: range.location,
-                                                chapterLength: range.length))
+                                                text: sentence.text, chapterOffset: sentence.range.location,
+                                                chapterLength: sentence.range.length))
             }
         }
         return result

@@ -18,6 +18,12 @@ struct ReaderPageInfo: Equatable {
     /// Only the chapter on screen is laid out yet (the rest of the book is
     /// still being paginated), so book-wide page numbers are not known.
     var isProvisional = false
+    /// A very long book: only the chapters around the reader are laid out,
+    /// so `pageIndex` and `pageCount` count the pages of that window and the
+    /// position in the book is `bookFraction`.
+    var isPartial = false
+    /// How much of the book lies before the end of the last page on screen.
+    var bookFraction: Double = 0
 }
 
 /// Owns TextKit pagination and turns a chapter list into page-curl (iOS), a
@@ -69,6 +75,19 @@ struct PaginatedReaderContent: View {
     /// at the right slice instead of animating across the book.
     @State private var layoutGeneration = UUID()
     @State private var appliedNavigationID: UUID?
+    @State private var extent: ReaderBookExtent?
+    /// Very long books: the chapters the pages on screen cover. Nil when the
+    /// pages cover the whole book.
+    @State private var shownWindow: Range<Int>?
+    /// Very long books: the chapter the reader (or the narration it follows)
+    /// reached at the edge of the window, or outside it. Setting it lays out
+    /// the chapters around that one.
+    @State private var windowAnchor: Int?
+    /// The first or last chapter laid out, while the reader is in it. It
+    /// becomes the anchor only once they have stayed there for a moment: a
+    /// continuous column reports its first slices for an instant while it is
+    /// being built, which is not the reader arriving at the edge.
+    @State private var edgeChapter: Int?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var pageTurn: PageTurnStyle {
         reduceMotion && typography.pageTurn == .curl ? .slide : typography.pageTurn
@@ -178,12 +197,15 @@ struct PaginatedReaderContent: View {
             .frame(width: proxy.size.width, height: proxy.size.height)
             // A requested chapter takes priority over the background book
             // layout, so a long book does not make contents navigation wait.
-            .task(id: "\(key)-\(navigationTarget?.id.uuidString ?? "")") {
+            .task(id: "\(key)-\(navigationTarget?.id.uuidString ?? "")-\(windowAnchor.map(String.init) ?? "")") {
                 await buildPages(size: size, key: key, columns: columnCount, style: pageStyle)
             }
         }
         .onChange(of: pageIndex) { _, _ in
             updatePageInfo()
+        }
+        .task(id: edgeChapter) {
+            await requestWindow(aroundEdge: edgeChapter)
         }
         .onChange(of: navigationTarget) { _, _ in
             applyNavigationTarget()
@@ -215,11 +237,24 @@ struct PaginatedReaderContent: View {
     /// cancels this pass through `.task(id:)`.
     private func buildPages(size: CGSize, key: String, columns: Int,
                             style: ReaderPageStyle) async {
-        guard key != builtKey || pages.isEmpty else { return }
-        pageStep = max(1, columns)
         let chapters = self.chapters
         let layout = "\(book.id.uuidString)-\(chapters.count)-" +
             TextPaginator.layoutSignature(style, pageSize: size)
+        let bookExtent: ReaderBookExtent
+        if let extent, extent.lengths.count == chapters.count {
+            bookExtent = extent
+        } else {
+            bookExtent = await Self.offMain { ReaderBookExtent(chapters: chapters) }
+            guard !Task.isCancelled else { return }
+            extent = bookExtent
+        }
+        if bookExtent.isLarge {
+            pageStep = max(1, columns)
+            await buildWindow(size: size, key: key, style: style, layout: layout, extent: bookExtent)
+            return
+        }
+        guard key != builtKey || pages.isEmpty else { return }
+        pageStep = max(1, columns)
 
         if layout == shownLayout, shownComplete, !pages.isEmpty {
             if shownStyle != style {
@@ -288,24 +323,125 @@ struct PaginatedReaderContent: View {
         builtKey = key
     }
 
+    /// A very long book: lays out the chapter the reader is going to and
+    /// then the chapters around it, never the whole book. The window follows
+    /// the reader: when they reach its first or last chapter (`windowAnchor`)
+    /// it grows in that direction, reusing every chapter already laid out, so
+    /// the pages on screen keep their place.
+    private func buildWindow(size: CGSize, key: String, style: ReaderPageStyle,
+                             layout: String, extent: ReaderBookExtent) async {
+        let chapters = self.chapters
+        let hadPages = !pages.isEmpty
+        let sameLayout = hadPages && layout == shownLayout
+        let pendingTarget = navigationTarget.flatMap { appliedNavigationID == $0.id ? nil : $0 }
+        let requestedAnchor = windowAnchor
+        // An anchor left by an earlier position is ignored.
+        let anchor = requestedAnchor.flatMap { chapter in
+            (hadPages && chapter == pageInfo.chapterIndex) ||
+                (followNarration && chapter == narrationChapterIndex) ? chapter : nil
+        }
+        let focus = min(max(pendingTarget?.chapterIndex ?? anchor
+                                ?? (hadPages ? pageInfo.chapterIndex : initialChapterIndex), 0),
+                        max(chapters.count - 1, 0))
+
+        if sameLayout, shownComplete, let window = shownWindow,
+           window.contains(focus), !extent.isEdge(focus, of: window) {
+            // The chapters on screen already surround it.
+            if shownStyle != style {
+                let current = PaginatedBook(pages: pages, firstPageByChapter: firstPageByChapter)
+                let recolored = await Self.offMain {
+                    TextPaginator.recolored(current, chapters: chapters, style: style)
+                }
+                guard !Task.isCancelled else { return }
+                pages = recolored.pages
+                readerPages = recolored.pages
+                generation = UUID()
+                shownStyle = style
+            }
+            builtKey = key
+            if windowAnchor != nil, windowAnchor == requestedAnchor { windowAnchor = nil }
+            return
+        }
+
+        let targetFraction: Double = {
+            if let pendingTarget { return min(max(pendingTarget.fraction, 0), 1) }
+            guard hadPages else { return max(0, min(initialFraction, 1)) }
+            guard focus == pageInfo.chapterIndex, pageInfo.pagesInChapter > 1 else { return 0 }
+            return Double(pageInfo.pageIndexInChapter) / Double(pageInfo.pagesInChapter - 1)
+        }()
+
+        // Chapters already laid out with this size, font and colours.
+        let reusable = sameLayout && shownStyle == style
+        var known: [Int: [ReaderPage]] = [:]
+        if reusable {
+            for page in pages { known[page.chapterIndex, default: []].append(page) }
+        }
+        let shown = reusable && shownComplete ? shownWindow : nil
+        let window = extent.window(around: focus, extending: shown)
+        let appends = shown.map { $0.lowerBound == window.lowerBound } ?? false
+
+        // 1. The chapter the reader is going to, so it appears at once.
+        if known[focus] == nil, chapters.indices.contains(focus) {
+            let chapter = chapters[focus]
+            let first = await Self.offMain {
+                TextPaginator.paginateChapter(chapter, index: focus, style: style, pageSize: size)
+            }
+            guard !Task.isCancelled else { return }
+            if !first.isEmpty {
+                known[focus] = first
+                if window.count > 1 {
+                    show(PaginatedBook(pages: first, firstPageByChapter: [focus: 0]),
+                         chapter: focus, fraction: targetFraction,
+                         layout: layout, style: style, complete: false, window: focus..<(focus + 1))
+                }
+            }
+        }
+
+        // 2. The chapters around it.
+        let reused = known
+        let paginated = await Self.offMain {
+            await TextPaginator.paginateConcurrently(chapters: chapters, style: style, pageSize: size,
+                                                     known: reused, only: window)
+        }
+        guard !Task.isCancelled else { return }
+        if layout == shownLayout, !pages.isEmpty, window.contains(pageInfo.chapterIndex) {
+            // Keep the exact page the reader is on (they may have turned
+            // pages meanwhile): that chapter's pages are identical.
+            show(paginated, chapter: pageInfo.chapterIndex, pageInChapter: pageInfo.pageIndexInChapter,
+                 layout: layout, style: style, complete: true, window: window, keepsPageIndexes: appends)
+        } else {
+            show(paginated, chapter: focus, fraction: targetFraction,
+                 layout: layout, style: style, complete: true, window: window)
+        }
+        builtKey = key
+        // Served, unless the reader reached another edge meanwhile.
+        if windowAnchor != nil, windowAnchor == requestedAnchor { windowAnchor = nil }
+    }
+
     private func show(_ paginated: PaginatedBook, chapter: Int, fraction: Double,
-                      layout: String, style: ReaderPageStyle, complete: Bool) {
+                      layout: String, style: ReaderPageStyle, complete: Bool,
+                      window: Range<Int>? = nil) {
         let chapterPages = paginated.pages.lazy.filter { $0.chapterIndex == chapter }.count
         let offset = Int((fraction * Double(max(chapterPages - 1, 0))).rounded())
         show(paginated, chapter: chapter, pageInChapter: offset,
-             layout: layout, style: style, complete: complete)
+             layout: layout, style: style, complete: complete, window: window)
     }
 
+    /// - Parameter keepsPageIndexes: the new pages only add chapters after
+    ///   the ones on screen, so a continuous column keeps scrolling instead
+    ///   of being rebuilt.
     private func show(_ paginated: PaginatedBook, chapter: Int, pageInChapter: Int,
-                      layout: String, style: ReaderPageStyle, complete: Bool) {
+                      layout: String, style: ReaderPageStyle, complete: Bool,
+                      window: Range<Int>? = nil, keepsPageIndexes: Bool = false) {
         pages = paginated.pages
         readerPages = paginated.pages
         firstPageByChapter = paginated.firstPageByChapter
         generation = UUID()
-        layoutGeneration = UUID()
+        if !keepsPageIndexes { layoutGeneration = UUID() }
         shownLayout = layout
         shownStyle = style
         shownComplete = complete
+        shownWindow = window
         guard !paginated.pages.isEmpty else {
             pageIndex = 0
             updatePageInfo()
@@ -343,15 +479,47 @@ struct PaginatedReaderContent: View {
             return
         }
         let page = pages[pageIndex]
-        let info = ReaderPageInfo(pageIndex: pageIndex, pageCount: pages.count,
+        var info = ReaderPageInfo(pageIndex: pageIndex, pageCount: pages.count,
                                   chapterIndex: page.chapterIndex,
                                   chapterTitle: page.chapterTitle,
                                   pageIndexInChapter: page.pageIndexInChapter,
                                   pagesInChapter: page.pagesInChapter,
                                   isProvisional: !shownComplete)
+        if shownWindow != nil, let extent {
+            let last = pages[min(pageIndex + max(pageStep, 1) - 1, pages.count - 1)]
+            info.isPartial = true
+            info.bookFraction = extent.fraction(chapter: last.chapterIndex, offset: last.chapterEndOffset)
+        }
         if pageInfo != info {
             pageInfo = info
         }
+        // The reader reached the first or last chapter laid out: the ones
+        // beyond it are laid out before they get to its last page.
+        var edge: Int?
+        if shownComplete, let window = shownWindow, let extent, extent.isEdge(page.chapterIndex, of: window) {
+            edge = page.chapterIndex
+        }
+        if edgeChapter != edge { edgeChapter = edge }
+    }
+
+    private func requestWindow(aroundEdge chapter: Int?) async {
+        guard let chapter else { return }
+        try? await Task.sleep(for: .milliseconds(350))
+        guard !Task.isCancelled, edgeChapter == chapter, shownComplete, pageInfo.chapterIndex == chapter,
+              let window = shownWindow, let extent, extent.isEdge(chapter, of: window),
+              windowAnchor != chapter else { return }
+        windowAnchor = chapter
+    }
+
+    /// The narration the reader follows moved to a chapter that is not laid
+    /// out (a very long book): lay out the chapters around it.
+    private func followNarrationWindowIfNeeded() {
+        guard followNarration, navigationTarget == nil, shownComplete,
+              let window = shownWindow, let narrationChapterIndex,
+              chapters.indices.contains(narrationChapterIndex),
+              !window.contains(narrationChapterIndex),
+              windowAnchor != narrationChapterIndex else { return }
+        windowAnchor = narrationChapterIndex
     }
 
     /// A chapter can be absent from the provisional pages. Keep the request
@@ -395,6 +563,7 @@ struct PaginatedReaderContent: View {
     }
 
     private func followNarrationIfNeeded() {
+        followNarrationWindowIfNeeded()
         // Continuous narration follows the actual line, independently of the
         // slice at the viewport's top edge. Page jumps would fight that scroll.
         if flow == .scrollVertical, typography.autoScrollNarration { return }

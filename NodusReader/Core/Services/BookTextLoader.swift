@@ -6,15 +6,36 @@ import Foundation
 /// Reading cache when it exists (its OCR is already done), otherwise from
 /// PDFKit, with OCR for pages whose text layer is missing or garbled.
 public enum BookTextLoader {
+    /// The reader, narration, recaps and soundscapes all ask for the text of
+    /// the book that is open. One extraction serves them all: a serial novel
+    /// takes seconds to parse and a long PDF is read page by page, so every
+    /// extra pass was a wait (narration parsed the book again after the
+    /// reader had) and, for PDFs, another copy of the document in memory.
     public static func loadChapters(for book: Book, fileStore: FileStore = .shared) async throws -> [ExtractedChapter] {
         let url = fileStore.documentURL(for: book)
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw ImportError.fileAccessDenied(book.fileName)
         }
         let format = book.format
-        let bookID = book.id
-        let contentHash = book.contentHash
-        return try await Task.detached(priority: .userInitiated) {
+        // A PDF reads from the Intelligent Reading cache once it is complete:
+        // its text (and every offset in it) then differs from PDFKit's.
+        let reflow = format == .pdf
+            ? Self.modificationDate(PDFReflowStore(fileStore: fileStore).manifestURL(for: book.id)) : nil
+        let key = BookTextCache.Key(bookID: book.id, contentHash: book.contentHash, path: url.path,
+                                    modified: Self.modificationDate(url), reflowModified: reflow)
+        return try await BookTextCache.shared.chapters(for: key) {
+            try await extractChapters(url: url, format: format, bookID: key.bookID,
+                                      contentHash: key.contentHash, fileStore: fileStore)
+        }
+    }
+
+    private static func modificationDate(_ url: URL) -> Date? {
+        (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+    }
+
+    private static func extractChapters(url: URL, format: BookFormat, bookID: UUID, contentHash: String,
+                                        fileStore: FileStore) async throws -> [ExtractedChapter] {
+        try await Task.detached(priority: .userInitiated) {
             // One chapter per page (empty pages too): chapter N is page N,
             // so narration starts on the page the reader shows.
             if format == .pdf,
@@ -36,6 +57,42 @@ public enum BookTextLoader {
     public static func plainText(for book: Book, fileStore: FileStore = .shared) async throws -> String {
         let chapters = try await loadChapters(for: book, fileStore: fileStore)
         return chapters.map(\.text).joined(separator: "\n\n")
+    }
+}
+
+/// The text of the book last opened, and the extraction in flight. Callers
+/// that arrive while a book is being extracted wait for that same pass.
+/// Only one book is kept: its chapters are the ones the reader already holds.
+actor BookTextCache {
+    struct Key: Hashable, Sendable {
+        var bookID: UUID
+        var contentHash: String
+        var path: String
+        var modified: Date?
+        var reflowModified: Date?
+    }
+
+    static let shared = BookTextCache()
+
+    private var cached: (key: Key, chapters: [ExtractedChapter])?
+    private var inFlight: [Key: Task<[ExtractedChapter], Error>] = [:]
+
+    func chapters(for key: Key,
+                  extract: @escaping @Sendable () async throws -> [ExtractedChapter]) async throws -> [ExtractedChapter] {
+        if let cached, cached.key == key { return cached.chapters }
+        if let running = inFlight[key] { return try await running.value }
+        // Not a child of the caller: a reader that closes must not cancel
+        // the pass narration is also waiting for.
+        let task = Task.detached(priority: .userInitiated) { try await extract() }
+        inFlight[key] = task
+        defer { inFlight[key] = nil }
+        let chapters = try await task.value
+        if !chapters.isEmpty { cached = (key, chapters) }
+        return chapters
+    }
+
+    func removeAll() {
+        cached = nil
     }
 }
 
@@ -134,4 +191,22 @@ public enum SentenceTokenizer {
     }
 
     private static let separatorMarks = CharacterSet(charactersIn: "_-–—―*⁂⁎~•·=─━═﹏＿－")
+}
+
+/// Lets `DispatchQueue.concurrentPerform` fill one slot per iteration: every
+/// iteration writes only its own index, so the writes never overlap.
+struct UnsafeSendableBuffer<Element>: @unchecked Sendable {
+    let buffer: UnsafeMutableBufferPointer<Element>
+
+    init(_ buffer: UnsafeMutableBufferPointer<Element>) {
+        self.buffer = buffer
+    }
+}
+
+struct UncheckedSendableBox<Value>: @unchecked Sendable {
+    let value: Value
+
+    init(_ value: Value) {
+        self.value = value
+    }
 }

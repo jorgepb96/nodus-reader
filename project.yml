@@ -15,7 +15,7 @@ settings:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: minimal
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "76"
+    CURRENT_PROJECT_VERSION: "77"
     # English is the base language and Spanish the one translation: a device
     # in Spanish shows Spanish, any other language shows English.
     SWIFT_EMIT_LOC_STRINGS: YES
@@ -115,6 +115,9 @@ targets:
     settings:
       base:
         INFOPLIST_FILE: NodusReader/Info.plist
+        # One Objective-C++ function: catching the C++ exception PDFKit's text
+        # layout throws on some pages, which Swift cannot.
+        SWIFT_OBJC_BRIDGING_HEADER: NodusReader/Core/Support/NodusReader-Bridging-Header.h
         CODE_SIGN_ENTITLEMENTS: Config/NodusReader.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": Config/NodusReader-macOS.entitlements
         # XcodeGen's application preset uses the iOS runpath. A macOS bundle

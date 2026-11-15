@@ -134,6 +134,16 @@ skipped by finding the first chapter heading followed by prose. Read passages ar
 summarised in the background while a book is open and cached in `Companion/`
 (device-local, never synced). Elsewhere the feature does not appear.
 
+A very long book (over four million characters: serial novels of 1,000 to 2,400
+chapters) is laid out only around the reader (`ReaderBookExtent`, a window of chapters
+that grows as they read); its pages are numbered within the chapter and its progress is
+measured in text. The reader ignores the keyboard, so searching never lays the book out
+again. `BookTextLoader` extracts a book once for the reader, narration, recaps and
+soundscapes, and narration splits sentences off the main thread. A PDF page's text layer
+is read through `PDFTextLayer`: an exception in PDFKit's layout is caught
+(`NodusExceptionGuard`, the one Objective-C++ file, through the bridging header) and the
+page is then read with OCR and never laid out again.
+
 Kokoro speaks English (SDK phonemizer) and Spanish (`SpanishG2P`, rule-based, matching
 espeak-ng) and is unavailable in the Simulator (MLX needs a Metal device).
 Phonon 31M is English and downloads in the app. Phonon 40M Spanish and Multilingual
@@ -157,6 +167,10 @@ See `docs/ROADMAP.md`, `docs/ICLOUD.md` and `docs/NARRATION_SYNC.md`.
   narration, tap-a-word, PDF Intelligent Reading, Phonon narration (behavioural:
   progress past sentence 1), iCloud settings and the Spanish book-language voice
   filter. The iPad capture test is skipped on an iPhone destination and vice versa.
+- `LargeBookTests` and the `testSerialNovelOpensNavigatesAndNarrates` UI test
+  (`-NodusSerialNovelSample`, 1,300 chapters) cover the window of a very long book, the
+  shared text extraction, parallel EPUB parsing and sentence splitting, and the PDF text
+  layer guard. `TEST_RUNNER_NODUS_LARGE_BOOK_PROBE=1` prints timings for 2,400 chapters.
 - Screenshots are stored in `docs/screenshots/` and compared with `design/screens/`.
 - Unsigned simulator builds cannot exercise CloudKit or the App Group; those paths
   report unavailability explicitly and are documented as requiring signed

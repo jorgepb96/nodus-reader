@@ -19,9 +19,14 @@ public enum PDFPageText {
     /// The page's text: its text layer when it reads as words, otherwise
     /// (with `allowOCR`) what OCR finds on the rendered page, or nil.
     public static func readableText(page: PDFPage, allowOCR: Bool) -> String? {
-        let layer = page.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let layer = PDFTextLayer.string(of: page)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !layer.isEmpty, !isGarbled(layer) { return layer }
-        guard allowOCR, let lines = try? recognizeLines(page: page), !lines.isEmpty else { return nil }
+        return allowOCR ? recognizedText(page: page) : nil
+    }
+
+    /// What OCR reads on the rendered page, or nil when it finds nothing.
+    public static func recognizedText(page: PDFPage) -> String? {
+        guard let lines = try? recognizeLines(page: page), !lines.isEmpty else { return nil }
         return lines.map(\.text).joined(separator: "\n")
     }
 
@@ -104,5 +109,120 @@ public enum PDFPageText {
         context.translateBy(x: -bounds.minX, y: -bounds.minY)
         page.draw(with: .cropBox, to: context)
         return context.makeImage()
+    }
+}
+
+/// The text layer of a PDF page, read defensively.
+///
+/// `PDFPage.string` lays the page out in reading order. On some pages (a
+/// dense, multi-column index) that layout allocates without bound and throws
+/// `std::bad_alloc`, which closed the app while it was reading a long book in
+/// the background. The exception is caught, and the page is remembered: it is
+/// never laid out again and is read with OCR instead. A page that was being
+/// read when the app died (the system can end it for memory before the
+/// exception is thrown) is treated the same way the next time.
+public enum PDFTextLayer {
+    public static func string(of page: PDFPage) -> String? {
+        guard let document = page.document, let key = PDFTextLayerJournal.key(for: document) else {
+            return guardedString(of: page).text
+        }
+        let index = document.index(for: page)
+        guard index != NSNotFound else { return guardedString(of: page).text }
+        let journal = PDFTextLayerJournal.shared
+        guard journal.begin(document: key, page: index) else { return nil }
+        let result = guardedString(of: page)
+        journal.end(document: key, page: index, failed: result.failed)
+        return result.text
+    }
+
+    private static func guardedString(of page: PDFPage) -> (text: String?, failed: Bool) {
+        var text: String?
+        let completed = NodusPerformCatchingExceptions {
+            text = page.string
+        }
+        return (completed ? text : nil, !completed)
+    }
+}
+
+/// Which pages' text layers must not be read, and which are being read now.
+/// Both are written to disk as they change, so they survive the app being
+/// closed in the middle of a page.
+final class PDFTextLayerJournal: @unchecked Sendable {
+    static let shared = PDFTextLayerJournal(directory: defaultDirectory)
+
+    private static var defaultDirectory: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        return base.appendingPathComponent("PDFTextLayer", isDirectory: true)
+    }
+
+    /// A document is known by its file name and size: stored books are named
+    /// after their identifier, and the container path can change.
+    static func key(for document: PDFDocument) -> String? {
+        guard let url = document.documentURL else { return nil }
+        let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+        return "\(url.lastPathComponent)|\(size)"
+    }
+
+    private let lock = NSLock()
+    private let skippedURL: URL
+    private let pendingURL: URL
+    private var skipped: [String: Set<Int>] = [:]
+    private var pending: [String] = []
+
+    init(directory: URL) {
+        skippedURL = directory.appendingPathComponent("skipped.json")
+        pendingURL = directory.appendingPathComponent("pending.txt")
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        if let data = try? Data(contentsOf: skippedURL),
+           let stored = try? JSONDecoder().decode([String: Set<Int>].self, from: data) {
+            skipped = stored
+        }
+        // Pages the app was reading when it last ended.
+        if let left = try? String(contentsOf: pendingURL, encoding: .utf8) {
+            var changed = false
+            for line in left.split(separator: "\n") {
+                let parts = line.split(separator: "\t")
+                guard parts.count == 2, let page = Int(parts[1]) else { continue }
+                changed = skipped[String(parts[0]), default: []].insert(page).inserted || changed
+            }
+            if changed { saveSkipped() }
+            try? FileManager.default.removeItem(at: pendingURL)
+        }
+    }
+
+    func isSkipped(document: String, page: Int) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return skipped[document]?.contains(page) == true
+    }
+
+    /// False when the page's text layer must not be read.
+    func begin(document: String, page: Int) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard skipped[document]?.contains(page) != true else { return false }
+        pending.append("\(document)\t\(page)")
+        savePending()
+        return true
+    }
+
+    func end(document: String, page: Int, failed: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        if let index = pending.firstIndex(of: "\(document)\t\(page)") { pending.remove(at: index) }
+        savePending()
+        if failed, skipped[document, default: []].insert(page).inserted { saveSkipped() }
+    }
+
+    private func savePending() {
+        // Not atomic on purpose: this runs twice per page, and the bytes
+        // reach the file even if the process ends right after.
+        try? Data(pending.joined(separator: "\n").utf8).write(to: pendingURL)
+    }
+
+    private func saveSkipped() {
+        guard let data = try? JSONEncoder().encode(skipped) else { return }
+        try? data.write(to: skippedURL, options: .atomic)
     }
 }

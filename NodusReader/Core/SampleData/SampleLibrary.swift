@@ -186,6 +186,62 @@ enum SampleLibrary {
         }
     }
 
+    /// Opt-in real EPUB the size of a serial web novel (1,300 chapters, about
+    /// thirteen million characters): the reader lays out only the chapters
+    /// around the reader, and narration must start without a long wait. Two
+    /// opening sections put chapter N at position N + 2 in the contents, as
+    /// in the books that reported it.
+    static func seedSerialNovelIfNeeded(library: LibraryService) async {
+        let title = "Serial Novel Test"
+        guard !library.allBooks().contains(where: { $0.title == title }) else { return }
+        let spec = serialNovelSpec(title: title, chapters: 1300, paragraphs: 28)
+        do {
+            let url = try makeEPUB(spec)
+            defer { try? FileManager.default.removeItem(at: url) }
+            _ = await library.importFiles([url], into: nil) { _ in }
+        } catch {
+            print("Serial novel fixture failed: \(error)")
+        }
+    }
+
+    static func serialNovelSpec(title: String, chapters: Int, paragraphs: Int) -> Spec {
+        var sections = [
+            Chapter(title: "Synopsis", paragraphs: syntheticParagraphs(seed: -1, count: 3)),
+            Chapter(title: "Author's note", paragraphs: syntheticParagraphs(seed: -2, count: 3)),
+        ]
+        sections += (1...max(chapters, 1)).map { number in
+            Chapter(title: "Chapter \(number): The Lantern", paragraphs: syntheticParagraphs(seed: number, count: paragraphs))
+        }
+        return Spec(title: title, author: "Nodus Reader", language: "en",
+                    description: "Serial novel test fixture.", asPDF: false, chapters: sections)
+    }
+
+    nonisolated private static let syntheticWords = [
+        "the", "quiet", "river", "carried", "a", "lantern", "past", "old", "walls", "and", "nobody", "asked",
+        "where", "it", "had", "come", "from", "because", "every", "night", "another", "followed", "slowly",
+        "under", "bridge", "while", "city", "slept", "merchant", "counted", "his", "coins", "again", "before",
+        "dawn", "she", "remembered", "letter", "that", "never", "arrived", "they", "walked", "without", "speaking",
+        "through", "market", "towards", "harbour", "wind", "turned", "cold", "with", "first", "rain", "of", "autumn",
+    ]
+
+    /// Deterministic prose with some dialogue: `count` paragraphs of three to
+    /// five sentences.
+    nonisolated static func syntheticParagraphs(seed: Int, count: Int) -> [String] {
+        var state = UInt64(bitPattern: Int64(seed)) &* 6364136223846793005 &+ 1442695040888963407
+        func next(_ bound: Int) -> Int {
+            state = state &* 6364136223846793005 &+ 1442695040888963407
+            return Int((state >> 33) % UInt64(bound))
+        }
+        return (0..<count).map { _ in
+            (0..<(3 + next(3))).map { _ in
+                var sentence = (0..<(8 + next(12))).map { _ in syntheticWords[next(syntheticWords.count)] }
+                    .joined(separator: " ")
+                sentence = sentence.prefix(1).uppercased() + sentence.dropFirst()
+                return next(4) == 0 ? "“\(sentence),” he said." : sentence + "."
+            }.joined(separator: " ")
+        }
+    }
+
     // MARK: - EPUB
 
     static func makeEPUB(_ spec: Spec) throws -> URL {
