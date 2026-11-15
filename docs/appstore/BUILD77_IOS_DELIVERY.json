@@ -1,0 +1,34 @@
+{
+  "id": "c122b7e9-e43f-4ad0-b7a0-f1ce406ccb69",
+  "version": "77",
+  "uploadedDate": "2026-11-15T15:46:44-08:00",
+  "expirationDate": "2027-02-13T15:46:44-08:00",
+  "expired": false,
+  "minOsVersion": "18.0",
+  "lsMinimumSystemVersion": "15.0",
+  "processingState": "VALID",
+  "buildAudienceType": "APP_STORE_ELIGIBLE",
+  "usesNonExemptEncryption": false,
+  "preReleaseVersion": {
+    "version": "1.0.0",
+    "platform": "IOS"
+  },
+  "buildBetaDetail": {
+    "autoNotifyEnabled": true,
+    "internalBuildState": "IN_BETA_TESTING",
+    "externalBuildState": "IN_BETA_TESTING"
+  },
+  "groups": [
+    "6fca3f0a-fada-4405-a6a0-9357bab03698",
+    "b2c18bee-362c-4fc0-804a-6869fb3ee638"
+  ],
+  "sourceCommit": "fac442b2041056a0d5d064ee9b0deb9caa8b33bb",
+  "distribution": "Internal and Public",
+  "publicBeta": {
+    "group": "Public",
+    "externalBuildState": "IN_BETA_TESTING",
+    "betaReviewSubmitted": true
+  },
+  "productionReviewSubmitted": false,
+  "physicalValidation": "Pending user testing"
+}
