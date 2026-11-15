@@ -44,6 +44,7 @@
 		27F9823D7762B1767AC481D6 /* ptts in Frameworks */ = {isa = PBXBuildFile; productRef = B6EAE7E2B49A93B0400912EF /* ptts */; };
 		2816587FB924F9E9459981FF /* IOSPageCurlReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9F14E25401EF76966FA4D8 /* IOSPageCurlReader.swift */; };
 		282DC7F73378FFA864F78FBD /* LegacySampleLibraryCleanup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A717B6B0E95196C14F3754A /* LegacySampleLibraryCleanup.swift */; };
+		2B367CC7E1369A70B6562EBC /* NodusExceptionGuard.mm in Sources */ = {isa = PBXBuildFile; fileRef = E2FEC914223C5036D4215875 /* NodusExceptionGuard.mm */; };
 		2C8C93923DCBAA49662F7233 /* QwenModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DD5D735AE999154919BB4A8 /* QwenModels.swift */; };
 		302318C2606A1ACDD02905D1 /* CloudSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8538AACCC8B86BBCBB64F210 /* CloudSyncService.swift */; };
 		311EDDB1440A45317B5542F6 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24F5DE2AF8C0440722A84BCA /* ShareViewController.swift */; };
@@ -73,6 +74,7 @@
 		4782D9133525F15E3344EE69 /* VoiceAvailabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AE7E932286FBBAE6E148764 /* VoiceAvailabilityTests.swift */; };
 		4AD7405E159A8B520CD9B923 /* GenerationWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DBC3018B652DC29FB41C1C /* GenerationWorker.swift */; };
 		4E0FDFE41F4C119058E345CE /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = 97847CD1D596CE9027A9176A /* DesignSystem */; };
+		4FED6403D17FC33B6E40E7D4 /* LargeBookTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BADDDFEACEC280C10047D122 /* LargeBookTests.swift */; };
 		5099A910F0ED267510AF00B2 /* es-dave.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0005C78195DEDA225A96E2ED /* es-dave.wav */; };
 		50D610110186BFCE9A734E87 /* MacScreenCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87EA8C3C2FC93A24565D37 /* MacScreenCapture.swift */; };
 		5173F711BC3B35D5EDA9213C /* SyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F210889CB9BA7F90F3091A /* SyncCoordinator.swift */; };
@@ -327,6 +329,7 @@
 		411AF1A170335684302EFFE6 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		44842233DC53215E5317E6AF /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
 		44E2DA3BD1B5D199038D65DB /* OfflineNarrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineNarrationView.swift; sourceTree = "<group>"; };
+		45F36C48DB14A2BA112064CA /* NodusReader-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NodusReader-Bridging-Header.h"; sourceTree = "<group>"; };
 		47FB1020F73FB02783C83624 /* MacReaderHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacReaderHost.swift; sourceTree = "<group>"; };
 		482C91BD01D7902D6B10D7D4 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		482FE9B80156426A2D90639D /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -425,6 +428,7 @@
 		B92ACA8FB08BD4057B37EE49 /* SceneEmotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneEmotionTests.swift; sourceTree = "<group>"; };
 		B941272380069A2F6FB186B3 /* LinnetModelManifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = LinnetModelManifest.json; sourceTree = "<group>"; };
 		BAC22CA72744D450E16EDA3F /* GenerationStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerationStatus.swift; sourceTree = "<group>"; };
+		BADDDFEACEC280C10047D122 /* LargeBookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeBookTests.swift; sourceTree = "<group>"; };
 		BDA91162B04CADBF6E04CA22 /* ImmersiveAudioPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveAudioPreferences.swift; sourceTree = "<group>"; };
 		BE2978B146AAED77C4B24049 /* MacPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPageView.swift; sourceTree = "<group>"; };
 		BF8BFE81EF2793597A876031 /* LinnetTTS */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LinnetTTS; path = Modules/LinnetTTS; sourceTree = SOURCE_ROOT; };
@@ -445,6 +449,7 @@
 		CC87EA8C3C2FC93A24565D37 /* MacScreenCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacScreenCapture.swift; sourceTree = "<group>"; };
 		CD2B787FBD05B0C0AAA1EC8F /* QwenModelManifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = QwenModelManifest.json; sourceTree = "<group>"; };
 		D3A948B31F01AEE2881D6EFA /* KokoroSpanish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KokoroSpanish.swift; sourceTree = "<group>"; };
+		D45CD9416AE3E7B17C3A4103 /* NodusExceptionGuard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NodusExceptionGuard.h; sourceTree = "<group>"; };
 		D593BBC908B5D057F4618106 /* PaginatedReaderContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginatedReaderContent.swift; sourceTree = "<group>"; };
 		DACE001CC6CC610471B8904E /* ImmersiveAudioSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveAudioSettingsView.swift; sourceTree = "<group>"; };
 		DC340F77AE4EF567395A7AAF /* Pronunciation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pronunciation.swift; sourceTree = "<group>"; };
@@ -457,6 +462,7 @@
 		E2C4C405E7873290B965CA3D /* GeneratedLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedLibrary.swift; sourceTree = "<group>"; };
 		E2E20562AA22E60E323BDE92 /* BookTextLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookTextLoader.swift; sourceTree = "<group>"; };
 		E2FA94F52B8C7B9E71224107 /* SelectableReaderText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableReaderText.swift; sourceTree = "<group>"; };
+		E2FEC914223C5036D4215875 /* NodusExceptionGuard.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = NodusExceptionGuard.mm; sourceTree = "<group>"; };
 		E483BD1220C8FB1C4804D5A9 /* CoverGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverGenerator.swift; sourceTree = "<group>"; };
 		E62F2F972274F54CF57BEE33 /* SearchResultsContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResultsContent.swift; sourceTree = "<group>"; };
 		E689078A482D385E80EABEB6 /* ReaderAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderAppearance.swift; sourceTree = "<group>"; };
@@ -635,6 +641,16 @@
 			path = PDF;
 			sourceTree = "<group>";
 		};
+		32B81FE0C2B5FF953B92CA11 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				D45CD9416AE3E7B17C3A4103 /* NodusExceptionGuard.h */,
+				E2FEC914223C5036D4215875 /* NodusExceptionGuard.mm */,
+				45F36C48DB14A2BA112064CA /* NodusReader-Bridging-Header.h */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
 		33B41233AF931A2F90D456B5 /* Sidebar */ = {
 			isa = PBXGroup;
 			children = (
@@ -726,6 +742,7 @@
 				3CC0EA296AA9B530F7E94DC8 /* Services */,
 				8086BD091F259F2FE75362B5 /* Settings */,
 				0F0529953AE1E20377DE1F21 /* Soundscapes */,
+				32B81FE0C2B5FF953B92CA11 /* Support */,
 				D9F306B422AC2E988D62A9F9 /* Sync */,
 			);
 			path = Core;
@@ -796,6 +813,7 @@
 				9C92D37114C9DA876DEEB80F /* GenerationWorkerTests.swift */,
 				312116DC9C5983C929EE9754 /* HighlightLineRectsTests.swift */,
 				F1751C48BB4E4953E0FDC724 /* ImmersiveAudioTests.swift */,
+				BADDDFEACEC280C10047D122 /* LargeBookTests.swift */,
 				76700F1C2E69C85E27270874 /* ModelCreditTests.swift */,
 				6EA7D9099837F99FB64DB0E3 /* ModelQualityTests.swift */,
 				A029E04EFC274C2C387DF466 /* NarrationChainTests.swift */,
@@ -1270,6 +1288,7 @@
 				B5B6011211682C0432D23FCF /* NarrationChain.swift in Sources */,
 				8A33B3F197619F9853B71F8E /* NarrationPrefetchWorker.swift in Sources */,
 				E2D347656C8707229567EE90 /* NavigationModel.swift in Sources */,
+				2B367CC7E1369A70B6562EBC /* NodusExceptionGuard.mm in Sources */,
 				CF5F0A39E4882E6C4AA6E75D /* NodusReaderApp.swift in Sources */,
 				4299DE4C7CC6615D3F249AD2 /* ObservationScope.swift in Sources */,
 				745581BAF82A40C6561659FC /* OfflineNarrationQueue.swift in Sources */,
@@ -1372,6 +1391,7 @@
 				AC028630AC5C983D000F7C76 /* GenerationWorkerTests.swift in Sources */,
 				75885328104BACB2388A9C64 /* HighlightLineRectsTests.swift in Sources */,
 				D6F8B8E6339B1D764E96C866 /* ImmersiveAudioTests.swift in Sources */,
+				4FED6403D17FC33B6E40E7D4 /* LargeBookTests.swift in Sources */,
 				69D9B51BF6538A4156764205 /* ModelCreditTests.swift in Sources */,
 				93E3AEF69F7B910E6290E287 /* ModelQualityTests.swift in Sources */,
 				04AE9E950A31C9D7B62C4CC5 /* NarrationChainTests.swift in Sources */,
@@ -1494,7 +1514,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 76;
+				CURRENT_PROJECT_VERSION = 77;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1562,7 +1582,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 76;
+				CURRENT_PROJECT_VERSION = 77;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6RPLS9EA4X;
@@ -1651,6 +1671,7 @@
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OBJC_BRIDGING_HEADER = "NodusReader/Core/Support/NodusReader-Bridging-Header.h";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -1766,6 +1787,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "NodusReader/Core/Support/NodusReader-Bridging-Header.h";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

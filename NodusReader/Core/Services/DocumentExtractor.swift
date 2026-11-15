@@ -34,9 +34,12 @@ public enum DocumentExtractor {
 
     // MARK: - PDF
 
+    /// Pages read from one `PDFDocument` before it is reopened.
+    private static let pagesPerDocument = 200
+
     private static func extractPDF(url: URL, fallbackTitle: String,
                                    completeText: Bool) throws -> DocumentExtraction {
-        guard let document = PDFDocument(url: url) else {
+        guard var document = PDFDocument(url: url) else {
             throw ImportError.unreadableDocument(url.lastPathComponent)
         }
 
@@ -64,18 +67,29 @@ public enum DocumentExtractor {
         var ocrBudget = completeText ? Int.max : 6
         for index in 0..<pageLimit {
             if completeText, Task.isCancelled { break }
-            guard let page = document.page(at: index) else { continue }
-            let layer = page.string ?? ""
-            let layerReadable = !layer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                && !PDFPageText.isGarbled(layer)
-            if !layerReadable { ocrBudget -= 1 }
-            let text = PDFPageText.readableText(page: page, allowOCR: !layerReadable && ocrBudget >= 0) ?? ""
-            let cleaned = HTMLText.normalize(text)
-            // Narration keeps empty pages so that chapter N stays page N.
-            guard !cleaned.isEmpty || completeText else { continue }
-            chapters.append(ExtractedChapter(id: index, title: String(localized: "Page \(index + 1)"), text: cleaned))
-            extractedCharacters += cleaned.count
-            if !completeText, extractedCharacters > 500_000 { break }
+            // PDFKit keeps the layout of every page it has read. Over a book
+            // of thousands of pages that is the whole document laid out in
+            // memory, so a long read starts again from a fresh document.
+            if index > 0, index.isMultiple(of: pagesPerDocument), let fresh = PDFDocument(url: url) {
+                document = fresh
+            }
+            // The page, its text and the OCR images are temporaries: drained
+            // per page, not when the whole book has been read.
+            let stop: Bool = autoreleasepool {
+                guard let page = document.page(at: index) else { return false }
+                let layer = (PDFTextLayer.string(of: page) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let layerReadable = !layer.isEmpty && !PDFPageText.isGarbled(layer)
+                if !layerReadable { ocrBudget -= 1 }
+                let text = layerReadable ? layer
+                    : (ocrBudget >= 0 ? PDFPageText.recognizedText(page: page) ?? "" : "")
+                let cleaned = HTMLText.normalize(text)
+                // Narration keeps empty pages so that chapter N stays page N.
+                guard !cleaned.isEmpty || completeText else { return false }
+                chapters.append(ExtractedChapter(id: index, title: String(localized: "Page \(index + 1)"), text: cleaned))
+                extractedCharacters += cleaned.count
+                return !completeText && extractedCharacters > 500_000
+            }
+            if stop { break }
         }
 
         let searchText = chapters.map(\.text).joined(separator: "\n\n")

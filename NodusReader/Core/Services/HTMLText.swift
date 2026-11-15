@@ -73,6 +73,13 @@ public enum HTMLText {
             pendingSpace = false
             out.append(contentsOf: units)
         }
+        // The common case, one character of prose, without an array for it.
+        func emit(unit: UInt16) {
+            guard skipTag == nil else { return }
+            if pendingSpace, !out.isEmpty, !lastIsNewline() { out.append(32) }
+            pendingSpace = false
+            out.append(unit)
+        }
 
         var i = 0
         while i < chars.count {
@@ -194,7 +201,7 @@ public enum HTMLText {
             if c == 32 || c == 9 || c == 10 || c == 13 || c == 0xA0 || c == 12 {
                 if inPre, c == 10 { breakLine(1) } else { pendingSpace = true }
             } else {
-                emit([c])
+                emit(unit: c)
             }
             i += 1
         }
@@ -247,7 +254,10 @@ public enum HTMLText {
 
     /// First heading or `<title>` in the document, used as the chapter label.
     public static func firstHeading(from data: Data) -> String? {
-        let html = TextFileDecoder.decode(data) ?? ""
+        firstHeading(in: TextFileDecoder.decode(data) ?? "")
+    }
+
+    static func firstHeading(in html: String) -> String? {
         for pattern in ["(?is)<h1[^>]*>(.*?)</h1>", "(?is)<h2[^>]*>(.*?)</h2>", "(?is)<title[^>]*>(.*?)</title>"] {
             if let match = firstMatch(pattern, in: html) {
                 let cleaned = normalize(decodeEntities(stripTags(match)))
@@ -259,7 +269,10 @@ public enum HTMLText {
 
     /// The document's `<title>`, without falling back to its headings.
     public static func documentTitle(from data: Data) -> String? {
-        let html = TextFileDecoder.decode(data) ?? ""
+        documentTitle(in: TextFileDecoder.decode(data) ?? "")
+    }
+
+    static func documentTitle(in html: String) -> String? {
         guard let match = firstMatch("(?is)<title[^>]*>(.*?)</title>", in: html) else { return nil }
         let cleaned = normalize(decodeEntities(stripTags(match)))
         return cleaned.isEmpty ? nil : cleaned
@@ -280,8 +293,22 @@ public enum HTMLText {
         text.replacingOccurrences(of: "(?is)<[^>]+>", with: " ", options: .regularExpression)
     }
 
+    /// Compiled once: these run on every chapter of a book, from several
+    /// threads (`NSRegularExpression` is safe to share).
+    private static let regexLock = NSLock()
+    nonisolated(unsafe) private static var regexes: [String: NSRegularExpression] = [:]
+
+    private static func regex(_ pattern: String) -> NSRegularExpression? {
+        regexLock.lock()
+        defer { regexLock.unlock() }
+        if let cached = regexes[pattern] { return cached }
+        let compiled = try? NSRegularExpression(pattern: pattern)
+        regexes[pattern] = compiled
+        return compiled
+    }
+
     private static func firstMatch(_ pattern: String, in text: String) -> String? {
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        guard let regex = regex(pattern) else { return nil }
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         guard let match = regex.firstMatch(in: text, range: range), match.numberOfRanges > 1,
               let capture = Range(match.range(at: 1), in: text) else { return nil }
@@ -301,7 +328,7 @@ public enum HTMLText {
             "szlig": "ß", "ccedil": "ç", "agrave": "à", "egrave": "è"
         ]
 
-        guard let regex = try? NSRegularExpression(pattern: "&(#x?[0-9A-Fa-f]+|[A-Za-z]+);") else {
+        guard let regex = regex("&(#x?[0-9A-Fa-f]+|[A-Za-z]+);") else {
             return value
         }
         let matches = regex.matches(in: value, range: NSRange(value.startIndex..<value.endIndex, in: value))

@@ -53,6 +53,7 @@ enum LibraryStorageScope {
     static func isIsolated(arguments: [String], environment: [String: String]) -> Bool {
         #if DEBUG
         arguments.contains("-NodusSampleLibrary") || arguments.contains("-NodusLongContentsSample") ||
+            arguments.contains("-NodusSerialNovelSample") ||
             environment["XCTestConfigurationFilePath"] != nil || environment["XCTestBundlePath"] != nil
         #else
         false

@@ -7258,6 +7258,16 @@
         }
       }
     },
+    "Page %lld of %lld in this chapter · %lld%%": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Página %1$lld de %2$lld de este capítulo · %3$lld %%"
+          }
+        }
+      }
+    },
     "Page %lld of %lld · %lld%%": {
       "localizations": {
         "es": {

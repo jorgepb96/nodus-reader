@@ -676,7 +676,7 @@ enum PDFReflowExtractor {
     }
 
     private static func textLines(page: PDFPage, bounds: CGRect) -> [Line] {
-        guard let string = page.string, !string.isEmpty else { return [] }
+        guard let string = PDFTextLayer.string(of: page), !string.isEmpty else { return [] }
         let ns = string as NSString
         var lines: [Line] = []
         ns.enumerateSubstrings(in: NSRange(location: 0, length: ns.length),

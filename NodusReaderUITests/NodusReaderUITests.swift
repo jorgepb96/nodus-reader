@@ -329,6 +329,87 @@ final class NodusReaderUITests: XCTestCase {
             .waitForExistence(timeout: 15), "Filtering must preserve the original chapter destination")
     }
 
+    /// A serial novel of 1,300 chapters: the reader opens on a chapter at
+    /// once, a chapter found with the contents search opens (its keyboard
+    /// must not lay the book out again), reading on crosses the chapters
+    /// laid out around the reader, and narration starts without a long wait.
+    func testSerialNovelOpensNavigatesAndNarrates() throws {
+        // A window of two or three chapters on each side, so that a few
+        // dozen page turns reach its end.
+        let app = launch(resetReadingState: true,
+                         extra: ["-NodusSerialNovelSample", "-NodusWindowCharacters", "20000"])
+        XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60))
+        try XCTSkipIf(app.windows.firstMatch.frame.width >= 700, "iPhone reader")
+        tapTab("Library", in: app)
+        let librarySearch = app.textFields["Search library"].firstMatch
+        XCTAssertTrue(librarySearch.waitForExistence(timeout: 10))
+        librarySearch.tap()
+        librarySearch.typeText("Serial Novel Test")
+        let book = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Serial Novel Test'")).firstMatch
+        XCTAssertTrue(book.waitForExistence(timeout: 120), "The serial novel fixture was not imported")
+        book.tap()
+
+        // Only the chapters around the reader are laid out: pages are
+        // numbered within the chapter, with the progress through the book.
+        let chapterProgress = app.staticTexts.containing(
+            NSPredicate(format: "label BEGINSWITH 'Page 1 of' AND label CONTAINS 'in this chapter ·'")).firstMatch
+        XCTAssertTrue(chapterProgress.waitForExistence(timeout: 30), "A very long book must open on its chapter at once")
+        XCTAssertTrue(chapterProgress.label.hasSuffix("0%"), chapterProgress.label)
+
+        let contents = app.buttons["Contents, bookmarks and notes"]
+        XCTAssertTrue(contents.waitForExistence(timeout: 10))
+        contents.tap()
+        let field = app.textFields["Search chapters"].firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("282")
+        // The position, the title and a longer number all match.
+        XCTAssertTrue(app.staticTexts["ContentsNumber-282"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["ContentsNumber-1284"].exists)
+        let result = app.buttons.containing(.staticText, identifier: "ContentsNumber-284").firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 10))
+        result.tap()
+        XCTAssertTrue(app.staticTexts["Chapter 282: The Lantern"].firstMatch.waitForExistence(timeout: 15),
+                      "A chapter chosen from the contents search must open")
+        let arrived = app.staticTexts.containing(
+            NSPredicate(format: "label BEGINSWITH 'Page 1 of' AND label ENDSWITH 'in this chapter · 22%'")).firstMatch
+        XCTAssertTrue(arrived.waitForExistence(timeout: 15))
+        let pagesInChapter = arrived.label
+        snap("iPhone-SerialNovel-01-Chapter")
+
+        // The search keyboard covers the reader; it must not resize the page
+        // (the whole book was laid out again, twice, for every search).
+        app.buttons["Search in book"].tap()
+        let bookSearch = app.textFields["ReaderSearchField"]
+        XCTAssertTrue(bookSearch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.buttons["Done"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts[pagesInChapter].firstMatch.waitForExistence(timeout: 10),
+                      "The keyboard must not change the number of pages in the chapter")
+
+        // Reading on leaves the chapters first laid out around this one.
+        let next = app.buttons["Next page"].firstMatch
+        XCTAssertTrue(next.waitForExistence(timeout: 5))
+        let farChapter = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Chapter 287: '")).firstMatch
+        var turns = 0
+        while !farChapter.exists, turns < 140 {
+            XCTAssertTrue(next.isEnabled, "The reader stopped at the end of the chapters laid out (turn \(turns))")
+            next.tap()
+            turns += 1
+        }
+        XCTAssertTrue(farChapter.exists, "Reading on must cross into chapters that were not laid out at first")
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'in this chapter ·'")).firstMatch.exists)
+        snap("iPhone-SerialNovel-02-ReadOn")
+
+        // Narration starts from this page without parsing the book again.
+        app.buttons["Play narration"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["Pause narration"].firstMatch.waitForExistence(timeout: 30),
+                      "Narration of a very long book must start promptly")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Chapter 287: '")).firstMatch
+            .waitForExistence(timeout: 10), "Narration must stay on the chapter the reader was on")
+        app.buttons["Pause narration"].firstMatch.tap()
+    }
+
     func testPadScreens() throws {
         let app = launch(resetReadingState: true)
         XCTAssertTrue(app.staticTexts["Moby-Dick"].firstMatch.waitForExistence(timeout: 60),

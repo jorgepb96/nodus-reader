@@ -154,9 +154,6 @@ struct ReaderView: View {
         ZStack {
             theme.background.ignoresSafeArea()
             contentView(theme)
-                // The search keyboard covers the page instead of shrinking it:
-                // a smaller page would lay out the whole book again.
-                .ignoresSafeArea(.keyboard)
                 #if os(macOS)
                 // Reserve separate gutters: navigation must never cover words.
                 .padding(.horizontal, effectiveReadingFlow == .paged ? 48 : 0)
@@ -206,6 +203,12 @@ struct ReaderView: View {
                 }
             }
         }
+        // A keyboard (searching the book, or its chapters in the contents
+        // sheet) covers the reader instead of resizing it. Ignored here, not
+        // on the page alone: the bottom bar rode up with the keyboard and the
+        // page shrank with it, so the whole book was laid out again when the
+        // keyboard appeared and once more when it left.
+        .ignoresSafeArea(.keyboard)
         .preferredColorScheme(theme.isDark ? .dark : .light)
         // Sheets and popovers presented from the reader use its colour scheme,
         // so they take the matching palette: never dark labels on a dark
@@ -482,6 +485,8 @@ struct ReaderView: View {
     /// Pages as the reader numbers them; a PDF's chapters are its pages.
     private func storyPageNumber(chapter: Int, offset: Int) -> Int? {
         if book.format == .pdf { return chapter + 1 }
+        // A very long book has no book-wide page numbers.
+        guard !pageInfo.isPartial else { return nil }
         return readerPages.firstIndex {
             $0.chapterIndex == chapter && offset >= $0.chapterStartOffset && offset < max($0.chapterEndOffset, $0.chapterStartOffset + 1)
         }.map { $0 + 1 }
@@ -914,7 +919,11 @@ struct ReaderView: View {
             // Count every visible page: on the Mac spread the right-hand page
             // is read too, so the last spread reaches 100 %.
             let lastVisible = min(pageInfo.pageIndex + max(pageStep, 1), pageInfo.pageCount)
-            let overall = min(1, Double(lastVisible) / Double(pageInfo.pageCount))
+            // A very long book is laid out around the reader only: its
+            // progress is the text read, not a count of pages.
+            let overall = pageInfo.isPartial
+                ? pageInfo.bookFraction
+                : min(1, Double(lastVisible) / Double(pageInfo.pageCount))
             library.updateProgress(
                 book,
                 locator: ReadingLocator(chapterIndex: pageInfo.chapterIndex,
@@ -1029,6 +1038,10 @@ struct ReaderView: View {
             // Only this chapter is laid out yet; book-wide numbers follow.
             return String(localized: "Page \(pageInfo.pageIndexInChapter + 1) of \(pageInfo.pagesInChapter) in this chapter")
         }
+        if pageInfo.isPartial {
+            let percent = Int((pageInfo.bookFraction * 100).rounded())
+            return String(localized: "Page \(pageInfo.pageIndexInChapter + 1) of \(pageInfo.pagesInChapter) in this chapter · \(percent)%")
+        }
         let percent = Int((Double(pageInfo.pageIndex + 1) / Double(pageInfo.pageCount) * 100).rounded())
         return String(localized: "Page \(pageInfo.pageIndex + 1) of \(pageInfo.pageCount) · \(percent)%")
     }
@@ -1092,7 +1105,8 @@ struct ReaderView: View {
             let page = readerPages[pageIndex]
             library.addBookmark(
                 book,
-                title: String(localized: "Page \(pageIndex + 1)"),
+                // A very long book numbers pages within the chapter.
+                title: String(localized: "Page \((pageInfo.isPartial ? page.pageIndexInChapter : pageIndex) + 1)"),
                 chapterTitle: page.chapterTitle,
                 locator: ReadingLocator(chapterIndex: page.chapterIndex,
                                         scrollFraction: page.pagesInChapter > 1

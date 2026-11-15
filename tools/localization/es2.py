@@ -52,6 +52,7 @@ ES = {
 "Page %lld": "Página %lld",
 "Page %lld of %lld": "Página %1$lld de %2$lld",
 "Page %lld of %lld in this chapter": "Página %1$lld de %2$lld de este capítulo",
+"Page %lld of %lld in this chapter · %lld%%": "Página %1$lld de %2$lld de este capítulo · %3$lld %%",
 "Page %lld of %lld · %lld%%": "Página %1$lld de %2$lld · %3$lld %%",
 "Page curl": "Pasar página",
 "Page image": "Imagen de la página",

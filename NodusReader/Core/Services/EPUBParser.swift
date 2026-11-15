@@ -95,31 +95,40 @@ public enum EPUBParser {
 
         // No chapter-count cap: serial novels can exceed 2,000 chapters and
         // truncating them silently loses the end of the book. The extracted
-        // byte budget bounds the total work; the per-chapter pool keeps
-        // Foundation's parsing temporaries from accumulating across
-        // thousands of chapters.
+        // byte budget bounds the total work. The archive is read in order;
+        // each batch of files is then converted on every core, which is
+        // where the time goes in a book of thousands of chapters. The
+        // per-file pool keeps Foundation's parsing temporaries from
+        // accumulating across them.
+        var pointsByPath: [String: [NavigationPoint]] = [:]
+        for point in navigationPoints {
+            pointsByPath[foldedPath(point.path), default: []].append(point)
+        }
+        let documents = spineItems.filter {
+            $0.mediaType.contains("html") || $0.href.lowercased().hasSuffix(".xhtml")
+        }
         var builder = ChapterBuilder(hasNavigation: !navigationPoints.isEmpty)
-        for item in spineItems {
-            autoreleasepool {
-                guard item.mediaType.contains("html") || item.href.lowercased().hasSuffix(".xhtml") else { return }
+        var next = 0
+        while next < documents.count {
+            let batch = documents[next..<min(next + spineBatchSize, documents.count)]
+            next = batch.endIndex
+            let sources: [(path: String, data: Data)] = batch.compactMap { item in
                 let path = resolve(item.href, relativeTo: baseDirectory)
-                guard let chapterData = try? data(path) else { return }
-                let raw = String(data: chapterData, encoding: .utf8)
-                    ?? String(data: chapterData, encoding: .isoLatin1)
-                    ?? ""
-                let conversion = HTMLText.convert(raw)
-                let points = navigationPoints.filter { $0.path.caseInsensitiveCompare(path) == .orderedSame }
-                builder.add(conversion, points: points, heading: HTMLText.firstHeading(from: chapterData),
-                            documentTitle: HTMLText.documentTitle(from: chapterData),
-                            hasSectionHeading: HTMLText.hasSectionHeading(raw))
+                guard let chapterData = try? data(path) else { return nil }
+                return (path, chapterData)
+            }
+            for document in convert(sources) {
+                builder.add(document.conversion, points: pointsByPath[foldedPath(document.path)] ?? [],
+                            heading: document.heading, documentTitle: document.documentTitle,
+                            hasSectionHeading: document.hasSectionHeading)
             }
         }
         let extractedChapters = builder.chapters
-        var chapters: [ExtractedChapter] = extractedChapters.compactMap { chapter in
+        var chapters: [ExtractedChapter] = concurrentMap(extractedChapters) { chapter -> ExtractedChapter? in
             let text = ParagraphJoiner.join(EPUBTextCleaner.clean(chapter.text))
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
             return ExtractedChapter(id: 0, title: ChapterBuilder.cleanTitle(chapter.title), text: text)
-        }
+        }.compactMap { $0 }
         for index in chapters.indices { chapters[index].id = index }
 
         guard !chapters.isEmpty else {
@@ -154,6 +163,57 @@ public enum EPUBParser {
             chapters: chapters,
             coverData: coverData
         )
+    }
+
+    /// Files converted together: enough to keep every core busy, few enough
+    /// that their raw HTML is only briefly in memory.
+    private static let spineBatchSize = 64
+
+    private struct SpineDocument {
+        var path: String
+        var conversion: HTMLText.Conversion
+        var heading: String?
+        var documentTitle: String?
+        var hasSectionHeading: Bool
+    }
+
+    private static func convert(_ sources: [(path: String, data: Data)]) -> [SpineDocument] {
+        concurrentMap(sources) { source in
+            autoreleasepool {
+                let raw = String(data: source.data, encoding: .utf8)
+                    ?? String(data: source.data, encoding: .isoLatin1)
+                    ?? ""
+                // Headings use the decoder that also recognises UTF-16.
+                let decoded = TextFileDecoder.decode(source.data) ?? ""
+                return SpineDocument(path: source.path, conversion: HTMLText.convert(raw),
+                                     heading: HTMLText.firstHeading(in: decoded),
+                                     documentTitle: HTMLText.documentTitle(in: decoded),
+                                     hasSectionHeading: HTMLText.hasSectionHeading(raw))
+            }
+        }
+    }
+
+    /// `transform` over `items` on every core, results in order.
+    private static func concurrentMap<Item, Result>(_ items: [Item],
+                                                    _ transform: (Item) -> Result) -> [Result] {
+        guard items.count > 1 else { return items.map(transform) }
+        var results = [Result?](repeating: nil, count: items.count)
+        results.withUnsafeMutableBufferPointer { buffer in
+            let slots = UnsafeSendableBuffer(buffer)
+            withoutActuallyEscaping(transform) { transform in
+                let work = UncheckedSendableBox(transform)
+                DispatchQueue.concurrentPerform(iterations: items.count) { index in
+                    slots.buffer[index] = work.value(items[index])
+                }
+            }
+        }
+        return results.map { $0! }
+    }
+
+    /// Spine and contents paths are compared ignoring case, as before
+    /// (`caseInsensitiveCompare`), without comparing every pair of them.
+    private static func foldedPath(_ path: String) -> String {
+        path.folding(options: .caseInsensitive, locale: nil)
     }
 
     static func encryptsText(_ encryptionXML: Data) -> Bool {

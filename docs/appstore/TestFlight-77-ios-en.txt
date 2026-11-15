@@ -1,0 +1,11 @@
+Nodus Reader 1.0.0 (77): fixes from your TestFlight reports. Thank you for sending them.
+
+Very long books (serial novels of 1,000 to 2,400 chapters)
+- They open faster, and the reader lays out only the chapters around you instead of the whole book, so it no longer freezes or keeps paginating for minutes. Pages are numbered within the chapter, with your progress through the book as a percentage.
+- Narration starts in seconds: pressing play no longer reads the whole book a second time, and the app stays responsive meanwhile.
+- Choosing a chapter from the contents search works. The keyboard made the reader lay out the whole book again, twice; it now covers the page without resizing it. The same applies to Search in book.
+
+Long PDFs
+- The app no longer closes when PDFKit cannot read the text of a page (reported while searching the index of a large book): that page is read with OCR instead, and reading a long PDF uses less memory. We could not reproduce this one with our own files, so please send the report if it happens again.
+
+Everything from build 76 is included. If a long book still opens slowly, tell us how many chapters it has and which device you use.
