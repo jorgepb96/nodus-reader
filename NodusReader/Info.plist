@@ -93,6 +93,20 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- Lets Nodus Link ask whether Reader is installed before offering a report to it.
+	     The scheme carries no data: the document itself arrives as a file through Open In,
+	     and ImportCoordinator.handleOpenURLs ignores every URL that is not a file. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>ai.nodus.reader</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>nodusreader</string>
+			</array>
+		</dict>
+	</array>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.books</string>
 	<key>LSMinimumSystemVersion</key>
