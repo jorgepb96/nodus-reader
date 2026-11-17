@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/screenshots/readme-banner.png" alt="Nodus Reader: an open book, an audio waveform and the Nodus Reader N on a dark background.">
+  <img src="docs/screenshots/readme-banner.png" alt="Nodus Reader: a glowing open book with an audio waveform, and the Nodus Reader N. Your library, read aloud. Read beautifully, listen privately, anywhere. EPUB and PDF, highlights and notes, offline AI voices, iCloud sync. Free and open source, on iPhone, iPad and Mac.">
 </p>
 
 <p align="center">
