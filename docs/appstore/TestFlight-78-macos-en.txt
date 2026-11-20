@@ -1,0 +1,9 @@
+Nodus Reader for Mac 1.0.0 (78): fixes from TestFlight reports.
+
+Read & Listen
+- The highlight no longer falls a sentence behind the voice after a pause. When narration was paused just as a sentence was ending, the voice went on to the next sentence on resume while the highlight stayed on the previous one until the book was reopened.
+
+Nodus Link
+- Nodus Link can now tell that Nodus Reader is installed and offer to open its reports here.
+
+Everything from build 77 is included. Tell us if the highlight ever drifts from the voice again.

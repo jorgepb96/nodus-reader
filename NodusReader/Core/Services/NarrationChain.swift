@@ -43,3 +43,32 @@ struct NarrationTimeline: Equatable {
         offset = 0
     }
 }
+
+/// What the end of a sentence's audio does to narration.
+///
+/// The end is reported by the player once the audio has been heard, which can be
+/// after a pause has been pressed: the last few hundred milliseconds of a sentence
+/// are still in the output (longer over Bluetooth) when the reader pauses. That end
+/// must still move the cursor on, or the queued sentence plays on resume while the
+/// highlight stays one sentence behind until the book is reopened.
+enum NarrationSentenceEnd: Equatable {
+    /// A stale report (narration stopped or restarted since) or nothing is playing.
+    case ignore
+    /// The engine stopped under a playing sentence (a route or device change).
+    case engineStopped
+    /// The book's last sentence ended.
+    case finishBook
+    /// The next sentence is already queued behind this one: move the cursor to it.
+    case advanceChained
+    /// Nothing is queued: move to the next sentence and speak it (on resume, when paused).
+    case advance
+
+    static func resolve(isCurrent: Bool, isPlaying: Bool, isPaused: Bool, engineRunning: Bool,
+                        hasNext: Bool, nextIsChained: Bool) -> NarrationSentenceEnd {
+        guard isCurrent, isPlaying || isPaused else { return .ignore }
+        // A paused engine is not running either: that is not a stopped engine.
+        if !isPaused, !engineRunning { return .engineStopped }
+        guard hasNext else { return .finishBook }
+        return nextIsChained ? .advanceChained : .advance
+    }
+}

@@ -1,0 +1,9 @@
+Nodus Reader 1.0.0 (78): correcciones a partir de vuestros avisos en TestFlight. Gracias por enviarlos.
+
+Leer y escuchar
+- El resaltado ya no se queda una frase por detrás de la voz después de una pausa. Si se pausaba la narración justo cuando terminaba una frase, al reanudar la voz pasaba a la siguiente mientras el resaltado seguía en la anterior hasta reabrir el libro. Dinos si vuelve a ocurrir y si escuchas con auriculares Bluetooth.
+
+Nodus Link
+- Nodus Link ya puede saber que Nodus Reader está instalado y ofrecer abrir aquí sus informes.
+
+Incluye todo lo de la build 77.

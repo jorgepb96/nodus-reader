@@ -846,7 +846,11 @@ public final class PlaybackController {
                 neuralPaused = false
                 isPlaying = true
                 startNeuralProgress()
-                if let voice = activeVoice { schedulePrefetch(after: currentIndex, voice: voice) }
+                if let voice = activeVoice {
+                    schedulePrefetch(after: currentIndex, voice: voice)
+                    // A next sentence made while paused was not queued then.
+                    chainNext(after: currentIndex, voice: voice, book: book, token: neuralPlaybackToken)
+                }
             } else {
                 speakCurrent(fromOffset: currentWordRange?.location ?? neuralStartOffset,
                              fromTime: neuralPositionTime)
@@ -1757,29 +1761,46 @@ public final class PlaybackController {
     }
 
     private func neuralSentenceFinished(token: UUID) {
-        guard token == neuralPlaybackToken, isPlaying, !neuralPaused else { return }
-        // A stopped engine (route or device change) completes its scheduled
-        // buffers at once: that is not the end of the sentence.
-        guard audioEngine.isRunning else {
+        // The end is reported once the audio has been heard, which can be after
+        // the reader paused: its tail was still in the output. It must still
+        // move the cursor on, or the queued sentence plays on resume while the
+        // highlight stays a sentence behind until the book is reopened.
+        let paused = neuralPaused
+        let end = NarrationSentenceEnd.resolve(
+            isCurrent: token == neuralPlaybackToken, isPlaying: isPlaying, isPaused: paused,
+            engineRunning: audioEngine.isRunning, hasNext: currentIndex + 1 < sentences.count,
+            nextIsChained: chained?.index == currentIndex + 1 && scheduledVoice != nil && activeBook != nil)
+        switch end {
+        case .ignore:
+            return
+        case .engineStopped:
+            // A stopped engine (route or device change) completes its scheduled
+            // buffers at once: that is not the end of the sentence.
             stoppedByEngine = true
             audioUnavailable()
             return
+        case .finishBook:
+            neuralProgressTask?.cancel()
+            neuralProgressTask = nil
+            finishBook()
+            return
+        case .advanceChained, .advance:
+            break
         }
         neuralProgressTask?.cancel()
         neuralProgressTask = nil
-        guard currentIndex + 1 < sentences.count else {
-            finishBook()
-            return
-        }
         let nextIndex = currentIndex + 1
         let nextChapter = sentences[nextIndex].chapterIndex
         if sleepTimer == .endOfChapter, nextChapter != chapterIndex {
-            pause()
             sleepTimer = .off
-            return
+            if !paused {
+                pause()
+                return
+            }
         }
-        if let chain = chained, chain.index == nextIndex, let voice = scheduledVoice, let book = activeBook {
-            // Already playing: move the state along without touching the player.
+        if end == .advanceChained, let chain = chained, let voice = scheduledVoice, let book = activeBook {
+            // Already playing (or plays on resume): move the state along
+            // without touching the player.
             chained = nil
             timeline.advance(past: neuralBufferDuration, silence: chain.silence)
             currentIndex = nextIndex
@@ -1796,10 +1817,17 @@ public final class PlaybackController {
             narrationPeak = Self.peak(of: chain.narration.buffer)
             saveProgress()
             updateNowPlaying()
+            // Paused: resume starts the clock, prefetch and the next chain.
+            guard !paused else { return }
             startNeuralProgress()
             schedulePrefetch(after: nextIndex, voice: voice)
             chainNext(after: nextIndex, voice: voice, book: book, token: neuralPlaybackToken)
             return
+        }
+        if paused {
+            // Nothing is left on the paused player: resume speaks the next
+            // sentence from its start instead of playing an empty queue.
+            stopAudio(keepingEngine: true)
         }
         currentIndex = nextIndex
         chapterIndex = nextChapter
@@ -1807,6 +1835,7 @@ public final class PlaybackController {
         neuralStartOffset = 0
         resetWordState()
         saveProgress()
+        guard !paused else { return }
         continuingNarration = true
         speakCurrent()
     }
