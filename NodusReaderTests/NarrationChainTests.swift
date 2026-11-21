@@ -49,3 +49,41 @@ struct NarrationChainTests {
         #expect(timeline.offset == 0)
     }
 }
+
+@Suite("End of a narrated sentence")
+struct NarrationSentenceEndTests {
+    private func resolve(isCurrent: Bool = true, isPlaying: Bool = true, isPaused: Bool = false,
+                         engineRunning: Bool = true, hasNext: Bool = true,
+                         nextIsChained: Bool = false) -> NarrationSentenceEnd {
+        NarrationSentenceEnd.resolve(isCurrent: isCurrent, isPlaying: isPlaying, isPaused: isPaused,
+                                     engineRunning: engineRunning, hasNext: hasNext,
+                                     nextIsChained: nextIsChained)
+    }
+
+    @Test func playingSentenceMovesToTheQueuedOne() {
+        #expect(resolve(nextIsChained: true) == .advanceChained)
+        #expect(resolve() == .advance)
+    }
+
+    /// Pausing while a sentence's tail is still in the output: its end arrives
+    /// paused, and dropping it left the highlight a sentence behind the voice.
+    @Test func sentenceEndingAfterAPauseStillMovesTheCursor() {
+        #expect(resolve(isPlaying: false, isPaused: true, engineRunning: false,
+                        nextIsChained: true) == .advanceChained)
+        #expect(resolve(isPlaying: false, isPaused: true, engineRunning: false) == .advance)
+        #expect(resolve(isPlaying: false, isPaused: true, engineRunning: false, hasNext: false) == .finishBook)
+    }
+
+    @Test func staleOrStoppedReportsAreIgnored() {
+        #expect(resolve(isCurrent: false, nextIsChained: true) == .ignore)
+        #expect(resolve(isPlaying: false, isPaused: false) == .ignore)
+    }
+
+    @Test func stoppedEngineUnderPlayingSentenceIsNotItsEnd() {
+        #expect(resolve(engineRunning: false, nextIsChained: true) == .engineStopped)
+    }
+
+    @Test func lastSentenceFinishesTheBook() {
+        #expect(resolve(hasNext: false) == .finishBook)
+    }
+}
