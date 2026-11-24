@@ -1015,6 +1015,22 @@ final class NodusReaderUITests: XCTestCase {
         XCTAssertTrue(englishNeural.allElementsBoundByIndex.allSatisfy { !$0.isHittable },
                       "English neural voices were shown before the Spanish book voices")
 
+        // Each voice can be heard before choosing it: the sample button spins
+        // while the model loads, and playing it does not choose the voice.
+        let sample = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH 'Play sample'")
+        ).firstMatch
+        XCTAssertTrue(sample.waitForExistence(timeout: 5), "The voice picker has no sample button")
+        sample.tap()
+        let activeSample = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH 'Loading sample' OR label BEGINSWITH 'Stop sample'")
+        ).firstMatch
+        XCTAssertTrue(activeSample.waitForExistence(timeout: 10), "The sample did not start loading")
+        snap("Player-VoicePickerSample")
+        XCTAssertTrue(app.navigationBars["Voice for this book"].exists,
+                      "Playing a sample closed the voice picker")
+        if activeSample.exists { activeSample.tap() }
+
         // The model filter sits next to the language filter and contains only
         // installed neural models.
         let modelFilter = app.buttons["Filter by Model"].firstMatch

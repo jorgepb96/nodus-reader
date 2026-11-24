@@ -1,0 +1,6 @@
+Nodus Reader 1.0.0 (79): an idea from your TestFlight feedback. Thank you for sending it.
+
+Read & Listen
+- Hear a voice before choosing it. In the player's "Voice for this book" list, each voice now has a play button on the right. It spins while the voice loads, plays a short sample, and stops if you tap it again or close the list. Tapping the voice's name still chooses it for the book.
+
+Everything from build 78 is included.
