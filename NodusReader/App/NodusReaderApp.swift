@@ -64,6 +64,9 @@ struct NodusReaderApp: App {
         }
         #endif
         _playback = State(initialValue: playback)
+        #if os(iOS) && canImport(CarPlay)
+        CarPlayServices.shared.attach(library: library, playback: playback, models: models)
+        #endif
         _immersive = State(initialValue: ImmersiveAudioController(
             preferences: ImmersiveAudioPreferences(defaults: defaults),
             library: ImmersiveAudioLibrary(fileStore: library.fileStore),

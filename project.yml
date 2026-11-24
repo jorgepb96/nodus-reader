@@ -120,6 +120,9 @@ targets:
         SWIFT_OBJC_BRIDGING_HEADER: NodusReader/Core/Support/NodusReader-Bridging-Header.h
         CODE_SIGN_ENTITLEMENTS: Config/NodusReader.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": Config/NodusReader-macOS.entitlements
+        # The CarPlay audio entitlement is not granted yet: only the Simulator,
+        # which does not check it, gets it. See docs/CARPLAY.md.
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": Config/NodusReader-Simulator.entitlements
         # XcodeGen's application preset uses the iOS runpath. A macOS bundle
         # embeds SwiftPM frameworks in Contents/Frameworks, so the archived app
         # could not find them and aborted before starting.

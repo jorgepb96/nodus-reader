@@ -1033,6 +1033,7 @@ public final class PlaybackController {
         speedMultiplier = multiplier
         timePitch.rate = Float(multiplier)
         defaults.set(multiplier, forKey: Self.speedPreferenceKey)
+        updateNowPlaying()
         guard isPlaying else {
             if activeBook != nil { restartOnResume = true }
             return
@@ -2058,6 +2059,8 @@ public final class PlaybackController {
         // a complete narration duration is known.
         #else
         info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+        // CarPlay's speed button shows the reader's speed.
+        info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = speedMultiplier
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = Double(currentIndex)
         #endif
         info[MPNowPlayingInfoPropertyPlaybackQueueCount] = sentences.count

@@ -102,6 +102,10 @@ Mac (`MingVoiceStore`). These Studio voices live in the Studio tab of Voices & M
 (Mac only), where they can be renamed or deleted after a confirmation, and are listed
 with Ming's voices as Studio voices. Ming is not offered on iOS.
 
+CarPlay (audio, iOS only) lists recent books and the library, plays narration and offers
+chapters and speed on Now Playing; it never shows book text. The `carplay-audio`
+entitlement is not granted yet, so only Simulator builds carry it. See `docs/CARPLAY.md`.
+
 On iPad and Mac, Settings is a sidebar destination (footer gear, ⌘, on the Mac) shown in
 the detail column, not a sheet or a separate window.
 
