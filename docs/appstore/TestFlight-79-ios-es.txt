@@ -1,0 +1,6 @@
+Nodus Reader 1.0.0 (79): una idea de vuestros comentarios en TestFlight. Gracias por enviarla.
+
+Leer y escuchar
+- Escucha una voz antes de elegirla. En la lista «Voz para este libro» del reproductor, cada voz tiene ahora un botón de reproducir a la derecha. Gira mientras la voz se carga, reproduce una frase de muestra y se detiene si lo vuelves a tocar o cierras la lista. Tocar el nombre de la voz la sigue eligiendo para el libro.
+
+Incluye todo lo de la build 78.

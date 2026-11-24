@@ -1016,28 +1016,35 @@ struct VoicePickerSheet: View {
                 ForEach(visibleLanguages, id: \.self) { language in
                     Section(voices.languageName(for: language)) {
                         ForEach(visibleVoices.filter { VoiceCatalog.languageCode($0.language) == language }) { voice in
-                            Button {
-                                // Synthesis loads the model identified by this
-                                // voice without changing the global default.
-                                playback.setVoice(voice)
-                                dismiss()
-                            } label: {
-                                HStack(spacing: 10) {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(voice.name)
-                                            .foregroundStyle(palette.text)
-                                        Text("\(voice.engineLabel) · \(VoiceCatalog.variantName(for: voice.language)) · \(voice.qualityLabel)")
-                                            .font(.caption)
-                                            .foregroundStyle(palette.muted)
+                            HStack(spacing: 12) {
+                                Button {
+                                    // Synthesis loads the model identified by this
+                                    // voice without changing the global default.
+                                    playback.setVoice(voice)
+                                    dismiss()
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(voice.name)
+                                                .foregroundStyle(palette.text)
+                                            Text("\(voice.engineLabel) · \(VoiceCatalog.variantName(for: voice.language)) · \(voice.qualityLabel)")
+                                                .font(.caption)
+                                                .foregroundStyle(palette.muted)
+                                        }
+                                        Spacer()
+                                        if playback.activeVoiceID == voice.id {
+                                            Image(systemName: "checkmark")
+                                                .foregroundStyle(palette.accent)
+                                        }
                                     }
-                                    Spacer()
-                                    if playback.activeVoiceID == voice.id {
-                                        Image(systemName: "checkmark")
-                                            .foregroundStyle(palette.accent)
-                                    }
+                                    .contentShape(Rectangle())
                                 }
+                                .buttonStyle(.plain)
+
+                                // Hear a voice before choosing it: the button
+                                // spins while the model loads and synthesises.
+                                VoiceSampleButton(voice: voice, name: voice.name)
                             }
-                            .buttonStyle(.plain)
                             .listRowBackground(palette.panel)
                         }
                     }
@@ -1056,6 +1063,8 @@ struct VoicePickerSheet: View {
                     Button("Done") { dismiss() }
                 }
             }
+            // A sample keeps playing only while its voice is on screen.
+            .onDisappear { playback.stopSample() }
             .task {
                 await voices.loadIfNeeded()
                 guard !Task.isCancelled, !didInitializeFilters else { return }
