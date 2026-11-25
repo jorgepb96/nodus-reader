@@ -39,9 +39,14 @@ next build with automatic signing regenerates the profiles. It was enabled on
   without text skipped, untitled chapters numbered, the window around the current
   chapter in a 2,400-chapter book).
 - The phone app still launches normally with the CarPlay scene declared.
-- **Not yet exercised on a CarPlay screen.** Xcode 27.1 replaced Simulator.app with
-  Device Hub, which has no CarPlay display. Creating SimulatorKit's CarPlay HID service
-  by hand (`IndigoHIDMessageToCreateCarPlayService`) does not bring the car screen up
-  either. Check the templates with a signed build on an iPhone connected to the CarPlay
-  Simulator (Additional Tools for Xcode), in a car, or with Xcode 26's Simulator
-  (I/O › External Displays › CarPlay), before shipping.
+- Checked on 2026-11-25 with a signed Debug build on an iPhone 16 Pro Max connected to
+  CarPlay Simulator (Additional Tools for Xcode 27.2): Recent and All Books list covers,
+  authors and progress; choosing a book opens Now Playing with the chapter, artwork,
+  Chapters and the speed button; Chapters lists the book's chapters; the speed button
+  steps through the reader's speeds and shows the current one.
+- Xcode 27.1's Device Hub has no CarPlay display, so the car screen needs CarPlay
+  Simulator and an iPhone (or a car). Clicks inside its screen need the window in front.
+- The speed button showed "x0" until the iOS Now Playing rate became the reader's speed
+  while narration plays (`MPNowPlayingInfoPropertyPlaybackRate`), and
+  `changePlaybackRateCommand` now accepts the reader's speeds from other remotes.
+- Not yet checked: jumping to a chapter from the car, and a book that is only in iCloud.
