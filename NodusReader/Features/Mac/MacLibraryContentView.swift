@@ -8,6 +8,7 @@ import SwiftUI
 enum LibraryViewMode: String, CaseIterable, Identifiable {
     case grid
     case list
+    static let storageKey = "nodus.mac.libraryViewMode"
     var id: String { rawValue }
     var systemImage: String { self == .grid ? "square.grid.2x2" : "list.bullet" }
 }
@@ -23,7 +24,9 @@ struct MacLibraryContentView: View {
 
     @Query(sort: \Book.addedAt, order: .reverse) private var books: [Book]
 
-    @State private var viewMode: LibraryViewMode = .list
+    /// Remembered across sections and launches: as `@State` it reset to the
+    /// list whenever the view was rebuilt (another sidebar item, the reader).
+    @AppStorage(LibraryViewMode.storageKey) private var viewMode: LibraryViewMode = .list
     @State private var tableWidth: CGFloat = 600
     @State private var selectedBookID: Book.ID?
     @State private var fallbackBookID: Book.ID?

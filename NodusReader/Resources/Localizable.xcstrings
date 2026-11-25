@@ -1796,6 +1796,16 @@
         }
       }
     },
+    "Brisk": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ágil"
+          }
+        }
+      }
+    },
     "CHAPTER %lld": {
       "localizations": {
         "es": {
@@ -5946,6 +5956,16 @@
         }
       }
     },
+    "Narration pace": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ritmo de la narración"
+          }
+        }
+      }
+    },
     "Narration unavailable": {
       "localizations": {
         "es": {
@@ -5992,6 +6012,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lectura narrativa"
+          }
+        }
+      }
+    },
+    "Natural": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Natural"
+          }
+        }
+      }
+    },
+    "Natural keeps the pauses each voice leaves between sentences. Brisk shortens them by punctuation and reads very short sentences together with the next one.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Natural respeta las pausas que deja cada voz entre frases. Ágil las acorta según la puntuación y lee las frases muy cortas junto a la siguiente."
           }
         }
       }

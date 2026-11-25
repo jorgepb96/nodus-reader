@@ -43,6 +43,15 @@ struct ContinuousReaderContent: View {
     /// False for a moment after the column is (re)built, so the first
     /// positioning lands at once instead of sliding from a slice's top edge.
     @State private var settled = false
+    /// The slice a rebuilt column was asked to open on, until it is on
+    /// screen. Until then the column is still placing itself and reports
+    /// its first slices, the top of the chapters laid out: taken as the
+    /// reader's position, that page was saved and, in a very long book, read
+    /// as reaching the edge of the window, which laid out earlier chapters
+    /// and rebuilt the column at their top again. The reader walked back
+    /// chapter after chapter until the narration took over.
+    @State private var landingID: Int?
+    @State private var landingAnchor: UnitPoint = .top
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.readerFollowState) private var followState
     @Environment(\.readerManualNavigation) private var onManualNavigation
@@ -81,11 +90,17 @@ struct ContinuousReaderContent: View {
                 // place, so treating it as manual input stopped auto-scroll
                 // by itself. Every user drag already starts with tracking.
                 if phase == .tracking || phase == .interacting {
+                    // The user's own scrolling is always the reader's position.
+                    landingID = nil
                     onManualNavigation?()
                 }
             }
             .onScrollTargetVisibilityChange(idType: Int.self, threshold: 0.01) { ids in
                 visibleIDs = Set(ids)
+                if let landingID {
+                    guard ids.contains(landingID) else { return }
+                    self.landingID = nil
+                }
                 // The user or the narration follow scrolled: report the slice
                 // at the leading edge.
                 guard let first = ids.min() else { return }
@@ -102,7 +117,7 @@ struct ContinuousReaderContent: View {
                 return geometry.visibleRect.maxX >= geometry.contentSize.width - 2
             } action: { _, isAtEnd in
                 atEnd = isAtEnd
-                if isAtEnd, let last = pages.indices.last { report(last) }
+                if isAtEnd, landingID == nil, let last = pages.indices.last { report(last) }
             }
             .scrollIndicators(axis == .vertical ? .automatic : .never)
             .background(Color(platformColor: style.background))
@@ -113,10 +128,10 @@ struct ContinuousReaderContent: View {
                 let returnPage = returnPageID
                 if axis == .vertical, let id = returnPage ?? narrationPageID {
                     leadingID = id
-                    proxy.scrollTo(id, anchor: .center)
+                    land(proxy, on: id, anchor: .center)
                 } else {
                     leadingID = pageIndex
-                    proxy.scrollTo(pageIndex, anchor: anchor)
+                    land(proxy, on: pageIndex, anchor: anchor)
                 }
                 if let target = narrationReturnTarget, returnPage != nil {
                     armedReturn = (target.id, .instant)
@@ -125,6 +140,16 @@ struct ContinuousReaderContent: View {
             .task {
                 try? await Task.sleep(for: .milliseconds(450))
                 settled = true
+                // A first scroll requested before the lazy column knew its
+                // slices' heights can stop short of them: ask once more, now
+                // that the slices around it are laid out.
+                guard let id = landingID else { return }
+                proxy.scrollTo(id, anchor: landingAnchor)
+                try? await Task.sleep(for: .milliseconds(450))
+                // Never hold the position longer: whatever is on screen now
+                // is where the reader is.
+                landingID = nil
+                if let first = visibleIDs.min() { report(atEnd ? pages.indices.last ?? first : first) }
             }
             .onChange(of: narrationPageID) { _, id in
                 // The spoken line moved to another slice. On screen, its text
@@ -140,6 +165,11 @@ struct ContinuousReaderContent: View {
                 // A pending return places the exact line itself; snapping
                 // the slice's top edge first was the jump before the glide.
                 if axis == .vertical, narrationReturnTarget != nil { return }
+                if landingID != nil {
+                    // Still placing itself: go straight to the new page.
+                    land(proxy, on: index, anchor: anchor)
+                    return
+                }
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
                     proxy.scrollTo(index, anchor: anchor)
                 }
@@ -152,7 +182,7 @@ struct ContinuousReaderContent: View {
                     narrationReturnTarget = nil
                 } else if !settled {
                     leadingID = id
-                    proxy.scrollTo(id, anchor: .center)
+                    land(proxy, on: id, anchor: .center)
                     armedReturn = (target.id, .instant)
                 } else if visibleIDs.contains(id) {
                     // Already on screen: one glide up or down, or nothing at
@@ -183,6 +213,9 @@ struct ContinuousReaderContent: View {
     /// one motion, never back and forth. A distant slice is reached at once;
     /// animating through hundreds of lazily built slices would stutter.
     private func travel(_ proxy: ScrollViewProxy, to id: Int, returnID: UUID?) {
+        // A deliberate move owns the scroll from here: what it brings on
+        // screen is the reader's position.
+        landingID = nil
         let reference = leadingID ?? pageIndex
         let forward = id > (visibleIDs.max() ?? reference)
         let neighbour = min(max(forward ? id - 1 : id + 1, 0), max(pages.count - 1, 0))
@@ -208,6 +241,14 @@ struct ContinuousReaderContent: View {
                 finish()
             }
         }
+    }
+
+    /// Scrolls a column that is (re)opening to `id` and holds the reader's
+    /// position there until that slice is really on screen.
+    private func land(_ proxy: ScrollViewProxy, on id: Int, anchor: UnitPoint) {
+        landingID = id
+        landingAnchor = anchor
+        proxy.scrollTo(id, anchor: anchor)
     }
 
     private func report(_ id: Int) {

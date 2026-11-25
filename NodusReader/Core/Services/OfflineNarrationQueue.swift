@@ -63,7 +63,8 @@ struct OfflineNarrationPlan: Codable, Identifiable, Sendable {
 
     @MainActor
     static func make(book: Book, chapters: [ExtractedChapter], voice: VoiceCatalog.Voice,
-                     paragraphsPerBlock: Int, cache: NarrationAudioCache) -> Self {
+                     paragraphsPerBlock: Int, cache: NarrationAudioCache,
+                     pace: NarrationPace = .natural) -> Self {
         let byChapter = chapters.count > 1 && book.format != .pdf
         var sentences: [Sentence] = [], units: [Unit] = []
         var unitStart = 0, paragraphCount = 0
@@ -79,7 +80,9 @@ struct OfflineNarrationPlan: Codable, Identifiable, Sendable {
                 if ns.substring(with: range).rangeOfCharacter(from: .alphanumerics) != nil { paragraphEnds.append(NSMaxRange(range)) }
             }
             var nextParagraph = 0
-            for range in SentenceTokenizer.ranges(from: chapter.text) {
+            // The same sentences narration speaks at this pace, so their audio is reused.
+            let ranges = SentenceTokenizer.ranges(from: chapter.text)
+            for range in pace.joinsShortSentences ? NarrationPacing.joiningShortSentences(ranges, in: ns) : ranges {
                 let text = ns.substring(with: range)
                 let prepared = PronunciationTransformer.prepare(text, rules: book.pronunciations)
                 let key = cache.key(text: text, engine: voice.engineRaw, voice: voice.id, pronunciation: prepared.signature)
