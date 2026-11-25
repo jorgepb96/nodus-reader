@@ -22,23 +22,15 @@ SwiftUI still provides the phone and iPad window scene.
 
 ## Entitlement
 
-`com.apple.developer.carplay-audio` must be granted by Apple before a signed build can
-include it. Until then only Simulator builds carry it
-(`Config/NodusReader-Simulator.entitlements`, selected with
-`CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]` in `project.yml`). Without the
-entitlement, device and TestFlight builds simply do not appear in CarPlay.
+Apple granted the CarPlay Audio App entitlement to the account on 2026-11-25.
+`com.apple.developer.carplay-audio` is in `Config/NodusReader.entitlements`, so every iOS
+build carries it.
 
-Requesting it: the Account Holder fills in the CarPlay entitlement request at
-developer.apple.com/contact/carplay, category **Audio**, describing the app as offline
-narration of the user's own books with no text shown in the car.
-
-When Apple grants it:
-
-1. Add `com.apple.developer.carplay-audio` = `true` to `Config/NodusReader.entitlements`.
-2. Remove `Config/NodusReader-Simulator.entitlements` and its line in `project.yml`, then
-   run `xcodegen generate`.
-3. Regenerate the iOS provisioning profiles (automatic signing does this) and verify on
-   a real head unit or the CarPlay Simulator (Additional Tools for Xcode).
+It is a managed capability: it must also be enabled on the App ID, or automatic signing
+fails with "Entitlement com.apple.developer.carplay-audio not found and could not be
+included in profile". In Certificates, Identifiers & Profiles › Identifiers ›
+`ai.nodus.reader` › Additional Capabilities, enable **CarPlay Audio App** and save; the
+next build with automatic signing regenerates the profiles.
 
 ## Verification status
 
@@ -46,6 +38,9 @@ When Apple grants it:
   without text skipped, untitled chapters numbered, the window around the current
   chapter in a 2,400-chapter book).
 - The phone app still launches normally with the CarPlay scene declared.
-- **Not yet exercised on a CarPlay screen**: this Xcode has no Simulator.app, whose
-  I/O › External Displays › CarPlay menu is what drives the car screen. Check the
-  templates there, or with the CarPlay Simulator, before shipping.
+- **Not yet exercised on a CarPlay screen.** Xcode 27.1 replaced Simulator.app with
+  Device Hub, which has no CarPlay display. Creating SimulatorKit's CarPlay HID service
+  by hand (`IndigoHIDMessageToCreateCarPlayService`) does not bring the car screen up
+  either. Check the templates with a signed build on an iPhone connected to the CarPlay
+  Simulator (Additional Tools for Xcode), in a car, or with Xcode 26's Simulator
+  (I/O › External Displays › CarPlay), before shipping.
