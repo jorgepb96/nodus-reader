@@ -2016,6 +2016,16 @@
         }
       }
     },
+    "Chapters": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capítulos"
+          }
+        }
+      }
+    },
     "Chapters and parts": {
       "localizations": {
         "es": {
@@ -4642,6 +4652,16 @@
         }
       }
     },
+    "Import books on your iPhone to listen to them here.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa libros en tu iPhone para escucharlos aquí."
+          }
+        }
+      }
+    },
     "Import cancelled": {
       "localizations": {
         "es": {
@@ -6316,6 +6336,16 @@
         }
       }
     },
+    "No books yet": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay libros"
+          }
+        }
+      }
+    },
     "No collections yet": {
       "localizations": {
         "es": {
@@ -6742,6 +6772,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No está disponible en esta versión de Nodus Reader: todavía no existe una versión Core ML de este modelo para dispositivos Apple. Aceptar ahora la licencia solo da acceso a tu cuenta para más adelante."
+          }
+        }
+      }
+    },
+    "Not downloaded": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No descargado"
           }
         }
       }
@@ -8437,6 +8477,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No hay resúmenes disponibles para este libro."
+          }
+        }
+      }
+    },
+    "Recent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recientes"
           }
         }
       }

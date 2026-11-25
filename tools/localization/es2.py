@@ -998,4 +998,10 @@ ES.update({
     "Natural": "Natural",
     "Brisk": "Ágil",
     "Natural keeps the pauses each voice leaves between sentences. Brisk shortens them by punctuation and reads very short sentences together with the next one.": "Natural respeta las pausas que deja cada voz entre frases. Ágil las acorta según la puntuación y lee las frases muy cortas junto a la siguiente.",
+    # CarPlay
+    "Recent": "Recientes",
+    "No books yet": "Aún no hay libros",
+    "Import books on your iPhone to listen to them here.": "Importa libros en tu iPhone para escucharlos aquí.",
+    "Not downloaded": "No descargado",
+    "Chapters": "Capítulos",
 })

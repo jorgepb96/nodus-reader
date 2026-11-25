@@ -1042,6 +1042,7 @@ public final class PlaybackController {
         speedMultiplier = multiplier
         timePitch.rate = Float(multiplier)
         defaults.set(multiplier, forKey: Self.speedPreferenceKey)
+        updateNowPlaying()
         guard isPlaying else {
             if activeBook != nil { restartOnResume = true }
             return
@@ -2112,6 +2113,21 @@ public final class PlaybackController {
             Task { @MainActor in self?.previousChapter() }
             return .success
         }
+        #if os(iOS)
+        // CarPlay's speed button and other remotes choose among the reader's speeds.
+        center.changePlaybackRateCommand.supportedPlaybackRates = Self.speedOptions.map { NSNumber(value: $0) }
+        center.changePlaybackRateCommand.isEnabled = true
+        center.changePlaybackRateCommand.addTarget { [weak self] event in
+            guard let event = event as? MPChangePlaybackRateCommandEvent else { return .commandFailed }
+            let rate = Double(event.playbackRate)
+            Task { @MainActor in
+                guard let self else { return }
+                let nearest = Self.speedOptions.min { abs($0 - rate) < abs($1 - rate) } ?? 1.0
+                self.setSpeed(nearest)
+            }
+            return .success
+        }
+        #endif
         #if os(macOS)
         updateNowPlaying()
         #endif
@@ -2153,7 +2169,10 @@ public final class PlaybackController {
         // A sentence index is not elapsed seconds. Omit the timeline until
         // a complete narration duration is known.
         #else
-        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+        // CarPlay's speed button shows the current rate, so it is the
+        // reader's speed while narration plays.
+        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? speedMultiplier : 0.0
+        info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = speedMultiplier
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = Double(currentIndex)
         #endif
         info[MPNowPlayingInfoPropertyPlaybackQueueCount] = sentences.count

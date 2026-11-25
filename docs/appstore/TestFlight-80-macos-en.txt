@@ -1,0 +1,10 @@
+Nodus Reader for Mac 1.0.0 (80): a choice of narration pace, and two fixes.
+
+Read & Listen
+- Narration pace, in Settings › Voices & Models. Natural, the default, keeps the pauses each voice leaves between sentences. Brisk shortens them by punctuation and reads very short sentences together with the next one.
+- A very long book in continuous scrolling no longer walks back chapter after chapter just before Read & Listen starts.
+
+Library
+- The library remembers whether you chose the grid or the list, also after visiting another section or coming back from a book.
+
+Everything from build 79 is included.
