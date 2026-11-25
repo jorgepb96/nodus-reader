@@ -437,6 +437,35 @@ struct VoicesView: View {
 
     // MARK: Models
 
+    /// How narration moves between sentences. It applies to every voice, so
+    /// it sits with the engine rather than in each book.
+    private var narrationPaceCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Narration pace")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(palette.text)
+            Picker("Narration pace", selection: Binding(
+                get: { playback.narrationPace },
+                set: { playback.setNarrationPace($0) }
+            )) {
+                ForEach(NarrationPace.allCases) { pace in
+                    Text(pace.label).tag(pace)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .accessibilityLabel("Narration pace")
+            .accessibilityIdentifier("NarrationPace")
+            Text("Natural keeps the pauses each voice leaves between sentences. Brisk shortens them by punctuation and reads very short sentences together with the next one.")
+                .font(.caption)
+                .foregroundStyle(palette.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard(radius: 16)
+    }
+
     @ViewBuilder
     private var modelsContent: some View {
         Eyebrow("Voice engine")
@@ -460,6 +489,8 @@ struct VoicesView: View {
             .padding(14)
             .panelCard(radius: 16)
         }
+
+        narrationPaceCard
 
         Eyebrow("Available models")
             .padding(.top, 8)
