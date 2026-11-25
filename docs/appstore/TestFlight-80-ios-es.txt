@@ -1,0 +1,9 @@
+Nodus Reader 1.0.0 (80): CarPlay y un ritmo de narración a elegir.
+
+CarPlay
+- Escucha en el coche. Nodus Reader aparece ahora en CarPlay con dos pestañas, Recientes y Todos los libros. Elige un libro y su narración sigue donde la dejaste. La pantalla de reproducción muestra el capítulo y la portada, un botón Capítulos para saltar a otro capítulo y un botón de velocidad. El texto del libro nunca se muestra en el coche.
+
+Leer y escuchar
+- Ritmo de la narración, en Ajustes › Voces y modelos. Natural, el predeterminado, respeta las pausas que deja cada voz entre frases. Ágil las acorta según la puntuación y lee las frases muy cortas junto a la siguiente.
+
+Incluye todo lo de la build 79.

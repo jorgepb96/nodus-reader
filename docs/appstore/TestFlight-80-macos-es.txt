@@ -1,0 +1,10 @@
+Nodus Reader para Mac 1.0.0 (80): un ritmo de narración a elegir y dos arreglos.
+
+Leer y escuchar
+- Ritmo de la narración, en Ajustes › Voces y modelos. Natural, el predeterminado, respeta las pausas que deja cada voz entre frases. Ágil las acorta según la puntuación y lee las frases muy cortas junto a la siguiente.
+- Un libro muy largo en desplazamiento continuo ya no retrocede capítulo tras capítulo justo antes de que empiece Leer y escuchar.
+
+Biblioteca
+- La biblioteca recuerda si elegiste la cuadrícula o la lista, también al pasar por otra sección o al volver de un libro.
+
+Incluye todo lo de la build 79.

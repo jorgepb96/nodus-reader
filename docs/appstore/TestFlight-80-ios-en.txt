@@ -1,0 +1,9 @@
+Nodus Reader 1.0.0 (80): CarPlay, and a choice of narration pace.
+
+CarPlay
+- Listen in the car. Nodus Reader now appears in CarPlay with two tabs, Recent and All Books. Choose a book and its narration continues where you left it. The Now Playing screen shows the chapter and the cover, a Chapters button to jump to another chapter, and a speed button. Book text is never shown in the car.
+
+Read & Listen
+- Narration pace, in Settings › Voices & Models. Natural, the default, keeps the pauses each voice leaves between sentences. Brisk shortens them by punctuation and reads very short sentences together with the next one.
+
+Everything from build 79 is included.
