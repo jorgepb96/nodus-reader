@@ -33,6 +33,16 @@ included in profile". In Certificates, Identifiers & Profiles â€º Identifiers â€
 next build with automatic signing regenerates the profiles. It was enabled on
 2026-11-25, and a signed iOS build now embeds the entitlement in its profile.
 
+Enabling it invalidated every App Store profile of `ai.nodus.reader` (iOS and Mac). The
+App Store Connect API key cannot regenerate Xcode's cloud-managed "Team Store" profile
+("Cloud signing permission error"), so build 80 was exported with manual profiles made
+through the API with the Apple Distribution certificate: **Nodus Reader iOS App Store
+CarPlay** (`ai.nodus.reader`) and **Nodus Reader Share iOS App Store**
+(`ai.nodus.reader.share`), with `signingStyle` manual in the export options. **Nodus
+Reader Mac App Store CarPlay** also exists; the Mac export still succeeded with
+automatic signing. Use the same manual iOS export (or an Xcode export signed in with an
+Admin Apple ID, which regenerates the managed profile) for later builds.
+
 ## Verification status
 
 - Builds for iOS and macOS; `CarPlayChaptersTests` covers the chapter list (chapters
