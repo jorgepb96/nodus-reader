@@ -30,7 +30,8 @@ It is a managed capability: it must also be enabled on the App ID, or automatic 
 fails with "Entitlement com.apple.developer.carplay-audio not found and could not be
 included in profile". In Certificates, Identifiers & Profiles › Identifiers ›
 `ai.nodus.reader` › Additional Capabilities, enable **CarPlay Audio App** and save; the
-next build with automatic signing regenerates the profiles.
+next build with automatic signing regenerates the profiles. It was enabled on
+2026-11-25, and a signed iOS build now embeds the entitlement in its profile.
 
 ## Verification status
 
