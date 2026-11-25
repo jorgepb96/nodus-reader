@@ -994,4 +994,8 @@ ES.update({
     "Show original page": "Mostrar la página original",
     "Shown": "Visible",
     "Hidden": "Oculto",
+    "Narration pace": "Ritmo de la narración",
+    "Natural": "Natural",
+    "Brisk": "Ágil",
+    "Natural keeps the pauses each voice leaves between sentences. Brisk shortens them by punctuation and reads very short sentences together with the next one.": "Natural respeta las pausas que deja cada voz entre frases. Ágil las acorta según la puntuación y lee las frases muy cortas junto a la siguiente.",
 })

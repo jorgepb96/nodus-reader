@@ -112,8 +112,10 @@ public final class PlaybackController {
     @ObservationIgnored private var neuralStartTime: TimeInterval = 0
     /// Gapless narration: the next sentence queued behind the one playing, the player
     /// clock offset of the sentence playing, and the voice and book they were made for.
+    /// `start` is where the queued audio begins in the sentence (after its
+    /// leading silence at the Brisk pace), `duration` how much of it is queued.
     @ObservationIgnored private var chained: (index: Int, voiceID: String, key: String, narration: CachedNarration,
-                                              duration: TimeInterval, silence: TimeInterval)?
+                                              start: TimeInterval, duration: TimeInterval, silence: TimeInterval)?
     @ObservationIgnored private var timeline = NarrationTimeline()
     /// The next sentence is being prepared because the previous one ended (not a start,
     /// seek or voice change): only then may Low Power Mode wait to play two at once.
@@ -196,6 +198,10 @@ public final class PlaybackController {
         }
     }
     public private(set) var speedMultiplier: Double = 1.0
+    /// Settings › Voices & Models › Narration pace.
+    public private(set) var narrationPace: NarrationPace = .natural
+    /// The pace the current `sentences` were split for.
+    @ObservationIgnored private var sentencesPace: NarrationPace = .natural
     /// The narrating voice's level, from the atmosphere panel: full volume until
     /// the reader lowers it under music and ambience. Kept per device.
     public private(set) var voiceVolume: Double = 1
@@ -243,6 +249,7 @@ public final class PlaybackController {
         timePitch.rate = Float(speedMultiplier)
         voiceVolume = NarrationVolume.load(from: defaults)
         applyVoiceVolume()
+        narrationPace = defaults.string(forKey: NarrationPace.preferenceKey).flatMap(NarrationPace.init(rawValue:)) ?? .natural
         if let neuralFormat {
             audioEngine.attach(audioPlayer)
             audioEngine.attach(timePitch)
@@ -677,12 +684,14 @@ public final class PlaybackController {
             library.refreshChapterTitlesIfNeeded(book, chapters: loaded)
             // Splitting a serial novel into sentences takes seconds: off the
             // main thread, or the reader froze between Play and the voice.
+            let pace = narrationPace
             let built = await Task.detached(priority: .userInitiated) {
-                Self.buildSentences(from: loaded)
+                Self.buildSentences(from: loaded, joiningShortSentences: pace.joinsShortSentences)
             }.value
             guard token == loadToken, activeBook?.id == book.id else { return }
             chapters = loaded
             sentences = built
+            sentencesPace = pace
             resetPrefetch()
             guard !sentences.isEmpty else {
                 throw ImportError.emptyDocument(book.title)
@@ -1051,6 +1060,48 @@ public final class PlaybackController {
         speakCurrent(fromOffset: offset)
     }
 
+    /// Brisk joins very short sentences to a neighbour, so the book is split
+    /// into sentences again; narration carries on from the start of the
+    /// sentence it was in. The pauses follow the pace from the next sentence.
+    public func setNarrationPace(_ pace: NarrationPace) {
+        guard pace != narrationPace else { return }
+        narrationPace = pace
+        defaults.set(pace.rawValue, forKey: NarrationPace.preferenceKey)
+        guard let book = activeBook, !chapters.isEmpty,
+              sentencesPace.joinsShortSentences != pace.joinsShortSentences else { return }
+        let loaded = chapters
+        Task { @MainActor [weak self] in
+            let built = await Task.detached(priority: .userInitiated) {
+                Self.buildSentences(from: loaded, joiningShortSentences: pace.joinsShortSentences)
+            }.value
+            guard let self, self.activeBook?.id == book.id, self.narrationPace == pace,
+                  self.chapters.count == loaded.count, !built.isEmpty else { return }
+            self.replaceSentences(with: built, pace: pace)
+        }
+    }
+
+    private func replaceSentences(with built: [NarrationSentence], pace: NarrationPace) {
+        let anchor = sentences.indices.contains(currentIndex)
+            ? (chapter: sentences[currentIndex].chapterIndex, offset: sentences[currentIndex].chapterOffset) : nil
+        let wasPlaying = isPlaying
+        stopAudio(keepingEngine: wasPlaying)
+        isPlaying = false
+        sentences = built
+        sentencesPace = pace
+        resetPrefetch()
+        resetWordState()
+        if let anchor, let index = sentenceIndex(chapter: anchor.chapter, offset: anchor.offset) {
+            currentIndex = index
+        } else {
+            currentIndex = min(currentIndex, built.count - 1)
+        }
+        chapterIndex = sentences[currentIndex].chapterIndex
+        neuralStartOffset = 0
+        neuralPositionTime = nil
+        saveProgress()
+        if wasPlaying { speakCurrent() }
+    }
+
     public func setVoice(_ voice: VoiceCatalog.Voice) {
         guard let book = activeBook else { return }
         stopSamplePlayback()
@@ -1200,7 +1251,8 @@ public final class PlaybackController {
         cacheErrorMessage = nil
         do {
             let plan = OfflineNarrationPlan.make(book: book, chapters: chapters, voice: voice,
-                                                  paragraphsPerBlock: paragraphsPerBlock, cache: models.narrationCache)
+                                                  paragraphsPerBlock: paragraphsPerBlock, cache: models.narrationCache,
+                                                  pace: narrationPace)
             try offlineAudio.enqueue(plan)
         } catch { cacheErrorMessage = error.localizedDescription }
     }
@@ -1208,7 +1260,8 @@ public final class PlaybackController {
     func enqueueOfflineAudio(book: Book, voice: VoiceCatalog.Voice, paragraphsPerBlock: Int, lookAhead: Int? = nil) async throws {
         let chapters = try await BookTextLoader.loadChapters(for: book, fileStore: library.fileStore)
         let plan = OfflineNarrationPlan.make(book: book, chapters: chapters, voice: voice,
-                                              paragraphsPerBlock: paragraphsPerBlock, cache: models.narrationCache)
+                                              paragraphsPerBlock: paragraphsPerBlock, cache: models.narrationCache,
+                                              pace: narrationPace)
         try offlineAudio.enqueue(plan, lookAhead: lookAhead)
         offlineAudio.updateReadingPosition(bookID: book.id, chapterIndex: book.locator.chapterIndex, fraction: book.locator.scrollFraction)
     }
@@ -1263,14 +1316,17 @@ public final class PlaybackController {
 
     /// Every chapter is tokenized on its own, so a long book uses all the
     /// cores; the sentences keep the book's order and consecutive ids.
-    nonisolated static func buildSentences(from chapters: [ExtractedChapter]) -> [NarrationSentence] {
+    nonisolated static func buildSentences(from chapters: [ExtractedChapter],
+                                           joiningShortSentences: Bool = false) -> [NarrationSentence] {
         var perChapter = [[(text: String, range: NSRange)]](repeating: [], count: chapters.count)
         perChapter.withUnsafeMutableBufferPointer { buffer in
             let slots = UnsafeSendableBuffer(buffer)
             DispatchQueue.concurrentPerform(iterations: chapters.count) { chapterIndex in
                 let text = chapters[chapterIndex].text
                 let ns = text as NSString
-                slots.buffer[chapterIndex] = SentenceTokenizer.ranges(from: text).map {
+                let ranges = SentenceTokenizer.ranges(from: text)
+                slots.buffer[chapterIndex] = (joiningShortSentences
+                    ? NarrationPacing.joiningShortSentences(ranges, in: ns) : ranges).map {
                     (ns.substring(with: $0), $0)
                 }
             }
@@ -1409,12 +1465,17 @@ public final class PlaybackController {
         neuralWords = cached.words
         neuralBufferDuration = cached.duration
         narrationPeak = Self.peak(of: cached.buffer)
-        let start = restoredTime.flatMap { time in
+        var start = restoredTime.flatMap { time in
             time.isFinite && time >= 0 && time < cached.duration ? time : nil
         } ?? startTime(for: offset, in: cached)
+        // Brisk: the voice's own silence before and after the words is left out.
+        let speech = narrationPace == .brisk ? NarrationPacing.speechBounds(of: cached.buffer) : nil
+        if let speech, start < speech.start { start = speech.start }
         neuralStartTime = start
         neuralPositionTime = start
-        let sliced = slice(cached.buffer, from: start) ?? cached.buffer
+        let sliced = speech.flatMap { speech in
+            speech.end > start ? Self.excerpt(cached.buffer, from: start, to: speech.end) : nil
+        } ?? slice(cached.buffer, from: start) ?? cached.buffer
         neuralBufferDuration = Double(sliced.frameLength) / cached.buffer.format.sampleRate
         // The player is wired at 24 kHz and does not convert scheduled buffers
         // (only files): Ming's 44.1 kHz speech is converted here, or it would
@@ -1463,10 +1524,23 @@ public final class PlaybackController {
               ready.narration.buffer.frameLength > 0 else { return }
         let chapterIndex = sentences[index].chapterIndex
         let chapterText = chapters.indices.contains(chapterIndex) ? chapters[chapterIndex].text : ""
-        guard case .chain(let silence) = NarrationChain.plan(current: sentences[index], next: sentences[next],
-                                                             chapterText: chapterText, nextReady: true,
-                                                             stopsAtChapterEnd: sleepTimer == .endOfChapter) else { return }
-        let buffer = neuralFormat.flatMap { Self.converted(ready.narration.buffer, to: $0) } ?? ready.narration.buffer
+        guard case .chain(let naturalSilence) = NarrationChain.plan(current: sentences[index], next: sentences[next],
+                                                                    chapterText: chapterText, nextReady: true,
+                                                                    stopsAtChapterEnd: sleepTimer == .endOfChapter) else { return }
+        var silence = naturalSilence
+        var start: TimeInterval = 0
+        var source = ready.narration.buffer
+        if narrationPace == .brisk {
+            // The voice's own silence is replaced by the pause the punctuation asks for.
+            silence = NarrationPacing.pause(after: sentences[index].text, before: sentences[next].text,
+                                            newParagraph: naturalSilence > 0)
+            let speech = NarrationPacing.speechBounds(of: source)
+            if let excerpt = Self.excerpt(source, from: speech.start, to: speech.end) {
+                start = speech.start
+                source = excerpt
+            }
+        }
+        let buffer = neuralFormat.flatMap { Self.converted(source, to: $0) } ?? source
         if silence > 0, let pause = AVAudioPCMBuffer(pcmFormat: buffer.format,
                                                        frameCapacity: AVAudioFrameCount(silence * buffer.format.sampleRate)) {
             pause.frameLength = pause.frameCapacity
@@ -1480,7 +1554,7 @@ public final class PlaybackController {
                 self?.neuralSentenceFinished(token: token)
             }
         }
-        chained = (next, voice.id, key, ready.narration,
+        chained = (next, voice.id, key, ready.narration, start,
                    Double(buffer.frameLength) / buffer.format.sampleRate, silence)
     }
 
@@ -1638,6 +1712,28 @@ public final class PlaybackController {
             }
         }
         return buffer
+    }
+
+    /// The audio of a sentence between two times, faded in and out where it
+    /// is cut so the cut never clicks.
+    nonisolated static func excerpt(_ buffer: AVAudioPCMBuffer, from start: TimeInterval,
+                                    to end: TimeInterval) -> AVAudioPCMBuffer? {
+        guard let channel = buffer.floatChannelData?[0] else { return nil }
+        let rate = buffer.format.sampleRate
+        let total = Int(buffer.frameLength)
+        let first = max(0, min(Int(start * rate), total))
+        let last = max(first, min(Int((end * rate).rounded(.up)), total))
+        let count = last - first
+        guard count > 0, let format = AVAudioFormat(standardFormatWithSampleRate: rate, channels: 1),
+              let result = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(count)),
+              let destination = result.floatChannelData?[0] else { return nil }
+        destination.update(from: channel.advanced(by: first), count: count)
+        result.frameLength = AVAudioFrameCount(count)
+        let fadeIn = first > 0 ? min(Int(rate * 0.008), count) : 0
+        for index in 0..<fadeIn { destination[index] *= Float(index) / Float(fadeIn) }
+        let fadeOut = last < total ? min(Int(rate * 0.025), count) : 0
+        for index in 0..<fadeOut { destination[count - 1 - index] *= Float(index) / Float(fadeOut) }
+        return result
     }
 
     private func slice(_ buffer: AVAudioPCMBuffer, from time: TimeInterval) -> AVAudioPCMBuffer? {
@@ -1808,8 +1904,8 @@ public final class PlaybackController {
             prefetched[nextIndex] = nil
             resetWordState()
             neuralStartOffset = 0
-            neuralStartTime = 0
-            neuralPositionTime = 0
+            neuralStartTime = chain.start
+            neuralPositionTime = chain.start
             neuralPositionVoiceID = chain.voiceID
             neuralPositionAudioKey = chain.key
             neuralWords = chain.narration.words
